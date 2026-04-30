@@ -105,7 +105,7 @@ export default function KeibaApp() {
         </div>
 
         {state.races.length > 0 && (
-          <>
+          <div className="mobile-hidden">
             <div className="nav-section">直近レース</div>
             {state.races.slice(-5).reverse().map(race => (
               <div
@@ -119,7 +119,7 @@ export default function KeibaApp() {
                 </span>
               </div>
             ))}
-          </>
+          </div>
         )}
       </nav>
 

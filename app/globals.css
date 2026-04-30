@@ -632,8 +632,61 @@ html, body {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .app-shell { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .main-content { padding: 12px; }
+  .app-shell { 
+    grid-template-columns: 1fr; 
+    padding-bottom: 60px; /* Bottom nav space */
+  }
+  .header { padding: 0 12px; }
+  .header-stats { display: none; } /* Hide extra stats on small screens */
+
+  /* Bottom Navigation */
+  .sidebar { 
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 8px;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    z-index: 200;
+    background: rgba(13, 17, 23, 0.95);
+    backdrop-filter: blur(10px);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .nav-section { display: none; }
+  .nav-item {
+    flex-direction: column;
+    padding: 6px;
+    gap: 4px;
+    font-size: 0.6rem;
+    border: none;
+    border-radius: 0;
+    min-width: 60px;
+    justify-content: center;
+  }
+  .nav-item.active { border: none; color: var(--accent-gold); background: transparent; }
+  .nav-item.active .nav-icon { transform: scale(1.1); color: var(--accent-gold); }
+  .nav-icon { font-size: 1.2rem; }
+
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 8px; }
+  .main-content { padding: 12px 12px 80px; }
+  
+  .card { padding: 12px; margin-bottom: 12px; }
+  .section-title { font-size: 1rem; }
+  .tabs { overflow-x: auto; white-space: nowrap; padding-bottom: 4px; }
+  
+  /* Tables */
+  .horse-table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  .horse-table th, .horse-table td { padding: 8px; }
+  
+  .formation-grid { grid-template-columns: 1fr; }
+  .modal { padding: 16px; margin: 12px; max-height: 85vh; }
+  
+  /* Buttons */
+  .btn { padding: 6px 12px; font-size: 0.8rem; }
+  
+  .mobile-hidden { display: none !important; }
 }
