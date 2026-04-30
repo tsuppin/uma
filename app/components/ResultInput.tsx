@@ -129,7 +129,14 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
       if (!horseName) {
         const nameMatch = searchStr.match(/[\u3040-\u9FFF\u30A0-\u30FF\uFF00-\uFFEF]{2,}/);
-        horseName = nameMatch ? nameMatch[0] : (race.horses.find(h => h.number === horseNumber)?.name || "");
+        const matchedName = nameMatch ? nameMatch[0] : "";
+        if (race.horses.some(h => h.name.includes(matchedName))) {
+          horseName = matchedName;
+        } else if (horseNumber > 0) {
+          horseName = race.horses.find(h => h.number === horseNumber)?.name || matchedName;
+        } else {
+          horseName = ""; // ゴミデータを除外
+        }
       }
 
       // タイムを抽出 (1:33.3 や 1:33:3 に対応)
@@ -154,11 +161,12 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       return;
     }
 
-    // rankでソート
-    parsed.sort((a, b) => a.rank - b.rank);
+    // 有効なデータのみに絞ってからrankでソート
+    const validParsed = parsed.filter(p => p.horseNumber > 0 || p.horseName !== "");
+    validParsed.sort((a, b) => a.rank - b.rank);
 
     // 1着、2着、3着の3行のみ抽出
-    const top3 = parsed.filter(p => p.rank <= 3).slice(0, 3);
+    const top3 = validParsed.filter(p => p.rank <= 3).slice(0, 3);
     
     // 足りない場合は空行を補填して必ず3着まで入力できるようにする
     while (top3.length < 3) {
