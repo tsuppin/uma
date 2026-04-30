@@ -111,7 +111,16 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
     // rankでソート
     parsed.sort((a, b) => a.rank - b.rank);
-    setResults(parsed);
+
+    // 1着、2着、3着の3行のみ抽出
+    const top3 = parsed.filter(p => p.rank <= 3).slice(0, 3);
+    
+    // 足りない場合は空行を補填して必ず3着まで入力できるようにする
+    while (top3.length < 3) {
+      top3.push({ rank: top3.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
+    }
+
+    setResults(top3);
     setTab("manual");
   };
 
