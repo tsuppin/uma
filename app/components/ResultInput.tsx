@@ -80,6 +80,31 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         continue;
       }
 
+      // 0.2 NAR公式・ネット競馬等（完全縦並びコピー形式）
+      // 1行目: "1" (着順)
+      // 2行目: "4" (枠番)
+      // 3行目: "4" (馬番)
+      // 4行目: "ブリスタイム(岩手)" (馬名)
+      if (/^\d+$/.test(line) && i + 3 < lines.length && /^\d+$/.test(lines[i+1]) && /^\d+$/.test(lines[i+2]) && !/^\d/.test(lines[i+3])) {
+        const rank = parseInt(line);
+        const waku = parseInt(lines[i+1]);
+        const horseNumber = parseInt(lines[i+2]);
+        if (rank >= 1 && rank <= 18 && waku >= 1 && waku <= 8 && horseNumber >= 1 && horseNumber <= 18) {
+          const horseName = lines[i+3].replace(/\(.+\)$/, "").trim();
+          let time = "";
+          for (let j = i + 4; j < i + 12 && j < lines.length; j++) {
+            const timeMatch = lines[j].match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
+            if (timeMatch && timeMatch[1].includes(":")) {
+               time = timeMatch[1].replace(/:(\d+)$/, '.$1');
+               break;
+            }
+          }
+          parsed.push({ rank, horseNumber, horseName, time, odds: 0, prize: 0 });
+          i += 3; // 処理した行をスキップ (次でi++されるため馬名までスキップ)
+          continue;
+        }
+      }
+
       let rank = parsed.length + 1;
       let horseNumber = 0;
       let horseName = "";
