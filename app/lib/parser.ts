@@ -86,8 +86,8 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
 
   // 性齢 "牝4"
   let gender: Horse["gender"] = "牡", age = 4;
-  const gm = (lines[idx] || "").match(/([牡牝セ])(\d)/);
-  if (gm) { gender = gm[1] === "セ" ? "セン" : gm[1] as "牡"|"牝"; age = parseInt(gm[2]); idx++; }
+  const gm = (lines[idx] || "").match(/([牡牝セ]|せん)(\d)/);
+  if (gm) { gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝"; age = parseInt(gm[2]); idx++; }
 
   // 毛色
   if (lines[idx] && /毛$/.test(lines[idx])) idx++;
@@ -250,8 +250,8 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
 
   let gender: Horse["gender"] = "牡"; let age = 4;
-  const gm = (lines[idx] || "").match(/([牡牝セ])(\d+)\//);
-  if (gm) { gender = gm[1] === "セ" ? "セン" : gm[1] as "牡"|"牝"; age = parseInt(gm[2]); idx++; }
+  const gm = (lines[idx] || "").match(/([牡牝セ]|せん)(\d+)\//);
+  if (gm) { gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝"; age = parseInt(gm[2]); idx++; }
   while (idx < lines.length && lines[idx] === "") idx++;
 
   let kinryo = 55;

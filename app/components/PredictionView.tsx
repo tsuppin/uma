@@ -203,7 +203,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
         <div className="fade-in">
           <div className="card">
             <div className="card-header">
-              <div className="card-title">🎯 精密フォーメーション（13点）</div>
+              <div className="card-title">🎯 精密フォーメーション（{formation.totalPoints}点）</div>
               <select
                 className="form-select"
                 style={{ width: "auto", fontSize: "0.8rem" }}
@@ -272,7 +272,9 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                           background: formation.axisHorses.includes(n) ? "var(--accent-gold)30" : "var(--bg-elevated)",
                           color: formation.axisHorses.includes(n) ? "var(--accent-gold)" : "var(--text-primary)",
                         }}>{n}</span>
-                        {j < ticket.length - 1 && <span style={{ color: "var(--text-muted)", margin: "0 2px" }}>-</span>}
+                        {j < ticket.length - 1 && <span style={{ color: "var(--text-muted)", margin: "0 2px" }}>
+                          {['trifecta_exact', 'exacta'].includes(formationType) ? '→' : '-'}
+                        </span>}
                       </span>
                     ))}
                     {isHit && <span style={{ color: "var(--accent-green)", fontWeight: 900 }}>✓</span>}

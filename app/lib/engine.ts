@@ -416,8 +416,27 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
         }
       }
     }
+  } else if (raceType === 'exacta') {
+    // 馬単フォーメーション (3 -> 7)
+    for (const first of col1) {
+      for (const second of col3) {
+        if (first === second) continue;
+        tickets.push([first, second]);
+      }
+    }
+  } else if (raceType === 'quinella') {
+    // 馬連フォーメーション (3 - 7)
+    const ticketSet = new Set<string>();
+    for (const first of col1) {
+      for (const second of col3) {
+        if (first === second) continue;
+        const ticket = [first, second].sort((a, b) => a - b);
+        ticketSet.add(ticket.join('-'));
+      }
+    }
+    tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
   } else {
-    // 三連複13点生成 (デフォルト)
+    // 三連複13点生成 (デフォルト: trifecta)
     const ticketSet = new Set<string>();
     
     // 軸3頭の組み合わせ (1点)
