@@ -28,8 +28,33 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     const lines = pasteText.split("\n").map(l => l.trim()).filter(Boolean);
     const parsed: ResultRow[] = [];
 
-    for (const line of lines) {
-      if (line.includes("着順") || line.includes("単勝") || line.startsWith("着")) continue; // ヘッダー行をスキップ
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.includes("着順") || line.includes("単勝") || line.startsWith("着") || line.includes("馬名(所属)")) continue;
+
+      // 0. NAR公式の複数行コピー形式
+      // 1行目: "1 8" (着順 枠)
+      // 2行目: "10" (馬番)
+      // 3行目: "エポエポサン(兵庫)" (馬名)
+      const narMultiMatch = line.match(/^(\d+)\s+(\d+)$/);
+      if (narMultiMatch && i + 2 < lines.length && /^\d+$/.test(lines[i + 1])) {
+        const rank = parseInt(narMultiMatch[1]);
+        const horseNumber = parseInt(lines[i + 1]);
+        const horseName = lines[i + 2] || "";
+        let time = "";
+        
+        for (let j = i + 3; j < i + 8 && j < lines.length; j++) {
+          const timeMatch = lines[j].match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
+          if (timeMatch && timeMatch[1].includes(":")) {
+             time = timeMatch[1].replace(/:(\d+)$/, '.$1');
+             break;
+          }
+        }
+        
+        parsed.push({ rank, horseNumber, horseName, time, odds: 0, prize: 0 });
+        i += 4; // 処理した行をスキップ
+        continue;
+      }
 
       let rank = parsed.length + 1;
       let horseNumber = 0;
@@ -68,9 +93,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               if (n >= 1 && n <= 18) nums.push(n);
             }
             if (nums.length > 0) {
-              // 最初に見つかった数字が着順の可能性もあるため、1着〜18着ならそのまま
-              // しかし既に `rank` は `parsed.length + 1` なので、ここでの馬番判定は慎重に
-              // もし数字が2つ以上あれば、1つ目が着順、2つ目が馬番の可能性が高い
               if (nums.length >= 2 && nums[0] === rank) {
                 horseNumber = nums[1];
               } else {
@@ -86,9 +108,9 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         horseName = nameMatch ? nameMatch[0] : (race.horses.find(h => h.number === horseNumber)?.name || "");
       }
 
-      // タイムを抽出
-      const timeMatch = line.match(/(\d+[:.]\d+\.\d+|\d+\.\d+)/);
-      const time = timeMatch ? timeMatch[1].replace(/\.(\d+\.\d+)$/, ':$1') : "";
+      // タイムを抽出 (1:33.3 や 1:33:3 に対応)
+      const timeMatch = line.match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
+      const time = timeMatch ? timeMatch[1].replace(/:(\d+)$/, '.$1') : "";
 
       // オッズを抽出（数字.数字 + 倍）
       const oddsMatch = line.match(/(\d+\.?\d*)\s*倍/);
