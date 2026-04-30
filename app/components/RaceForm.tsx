@@ -3,147 +3,279 @@ import { useState } from "react";
 import { Race, Horse, PastRace } from "../types";
 import { generateId } from "../lib/storage";
 
-interface Props {
+// ==========================================
+// JRA出馬表テキストパーサー
+// ==========================================
+function parseJRAText(rawText: string): { horses: Horse[]; venue: string; raceNumber: number } {
+  const horses: Horse[] = [];
+
+  // レースヘッダー解析 "2回東京2日 12R"
+  const headerMatch = rawText.match(/\d+回(.+?)\d+日\s*(\d+)R/);
+  const venue = headerMatch?.[1]?.trim() || "";
+  const raceNumber = headerMatch ? parseInt(headerMatch[2]) : 1;
+
+  // 詳細ブロックを枠Nで分割（枠1白, 枠2黒 など）
+  const blockRegex = /枠\d+[^\n]*/g;
+  const lines = rawText.split("\n").map(l => l.trim());
+
+  // 枠行のインデックスを収集
+  const blockStarts: number[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^枠\d/.test(lines[i])) blockStarts.push(i);
+  }
+
+  for (let bi = 0; bi < blockStarts.length; bi++) {
+    const start = blockStarts[bi];
+    const end = bi + 1 < blockStarts.length ? blockStarts[bi + 1] : lines.length;
+    const block = lines.slice(start, end);
+    const horse = parseHorseBlock(block);
+    if (horse && horse.name) horses.push(horse as Horse);
+  }
+
+  return { horses, venue, raceNumber };
+}
+
+function parseHorseBlock(lines: string[]): Partial<Horse> | null {
+  if (!lines[0]) return null;
+
+  // 枠番・馬番 "枠1白\t1" or "枠1白\t1\n..."
+  const frameMatch = lines[0].match(/枠(\d)/);
+  const frame = frameMatch ? parseInt(frameMatch[1]) : 1;
+  const parts = lines[0].split(/\t/);
+  let number = parts[1] ? parseInt(parts[1].trim()) : 0;
+
+  let idx = 1;
+
+  // 馬番が次行にある場合
+  if (!number && lines[idx] && /^\d+$/.test(lines[idx].trim())) {
+    number = parseInt(lines[idx].trim());
+    idx++;
+  }
+
+  // ブリンカー
+  let hasBlinker = false;
+  if ((lines[idx] || "").includes("ブリンカー")) { hasBlinker = true; idx++; }
+
+  // 馬名（マルガイ除去）
+  const rawName = (lines[idx] || "").trim();
+  const name = rawName.replace(/^マルガイ/, "").trim();
+  idx++;
+
+  // 戦績・総賞金 "(2.3.5.11)\t4,182.1万円"
+  let record = "";
+  if (lines[idx] && lines[idx].includes("(")) {
+    record = lines[idx].split(/\t/)[0] || "";
+    idx++;
+  }
+
+  // 馬主
+  const owner = lines[idx] || ""; idx++;
+  // 生産者
+  while (idx < lines.length && lines[idx] === "") idx++;
+  const breeder = lines[idx] || ""; idx++;
+  // 調教師(所属)
+  while (idx < lines.length && lines[idx] === "") idx++;
+  let trainer = "";
+  const trainerMatch = (lines[idx] || "").match(/^(.+?)\s*[\(（][栗美][東浦][\)）]/);
+  if (trainerMatch) { trainer = trainerMatch[1].trim(); idx++; }
+  else if (lines[idx] && !lines[idx].includes("父：")) { trainer = lines[idx]; idx++; }
+  while (idx < lines.length && lines[idx] === "") idx++;
+
+  // 血統
+  let sire = "", dam = "", bms = "";
+  while (idx < lines.length) {
+    const l = lines[idx];
+    if (l === "父：") { idx++; sire = lines[idx] || ""; idx++; }
+    else if (l === "母：") { idx++; dam = lines[idx] || ""; idx++; }
+    else if (l.startsWith("(母の父：")) {
+      bms = l.replace(/^\(母の父：/, "").replace(/\)$/, "").trim(); idx++; break;
+    } else if (/^\d+\./.test(l) || l === "") break;
+    else idx++;
+  }
+
+  // オッズ（単独数値行）
+  let odds = 0, popularity = 0;
+  while (idx < lines.length) {
+    const l = lines[idx];
+    if (/^\d+\.?\d+$/.test(l) && !l.includes(":")) { odds = parseFloat(l); idx++; break; }
+    idx++;
+  }
+  // 人気
+  const popMatch = (lines[idx] || "").match(/(\d+)番人気/);
+  if (popMatch) { popularity = parseInt(popMatch[1]); idx++; }
+
+  // 勝負服 / 空白スキップ
+  while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
+
+  // 性齢 "牡5/鹿"
+  let gender: Horse["gender"] = "牡"; let age = 4;
+  const glMatch = (lines[idx] || "").match(/([牡牝セ])(\d+)\//);
+  if (glMatch) {
+    gender = glMatch[1] === "セ" ? "セン" : glMatch[1] as "牡" | "牝";
+    age = parseInt(glMatch[2]); idx++;
+  }
+  while (idx < lines.length && lines[idx] === "") idx++;
+
+  // 斤量 "58.0kg"
+  let kinryo = 55;
+  const kinMatch = (lines[idx] || "").match(/(\d+\.?\d*)kg/);
+  if (kinMatch) { kinryo = parseFloat(kinMatch[1]); idx++; }
+  while (idx < lines.length && lines[idx] === "") idx++;
+
+  // 騎手
+  const jockey = (lines[idx] || "").trim(); idx++;
+  while (idx < lines.length && lines[idx] === "") idx++;
+
+  // 前走〜4走前パース
+  const pastRaces: PastRace[] = [];
+  while (idx < lines.length && pastRaces.length < 4) {
+    const dateLine = lines[idx] || "";
+    const dateMatch = dateLine.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+    if (!dateMatch) { idx++; continue; }
+
+    const date = `${dateMatch[1]}-${String(dateMatch[2]).padStart(2,"0")}-${String(dateMatch[3]).padStart(2,"0")}`;
+    const dp = dateLine.split(/\t/);
+    const prVenue = dp[1]?.trim() || "";
+    idx++;
+
+    const raceName = lines[idx] || ""; idx++;
+    const raceClass = lines[idx] || ""; idx++;
+
+    // "5着\t16頭 5番"
+    const rl = lines[idx] || "";
+    const resMatch = rl.match(/(\d+)着/);
+    const headMatch = rl.match(/(\d+)頭\s*(\d+)番/);
+    const prResult = resMatch ? parseInt(resMatch[1]) : 0;
+    idx++;
+
+    // 人気行
+    const prPopLine = lines[idx] || ""; idx++;
+
+    // 騎手\t斤量 行
+    const prJockLine = lines[idx] || "";
+    const prJockey = prJockLine.split(/\t/)[0]?.trim() || "";
+    idx++;
+
+    // 距離+馬場 "1400ダ"
+    const distLine = lines[idx] || "";
+    const distMatch = distLine.match(/(\d+)(ダ|芝)/);
+    const prDist = distMatch ? parseInt(distMatch[1]) : 0;
+    const prSurf: PastRace["surface"] = distMatch?.[2] === "芝" ? "芝" : "ダート";
+    idx++;
+
+    // タイム
+    const tl = lines[idx] || "";
+    const prTime = /\d+:\d+/.test(tl) ? tl : "";
+    if (prTime) idx++;
+
+    // 空白
+    while (idx < lines.length && lines[idx] === "") idx++;
+
+    // 馬場状態
+    const condCandidates = ["良", "稍重", "重", "不良"];
+    let prCond: PastRace["condition"] = "良";
+    if (condCandidates.includes(lines[idx] || "")) { prCond = lines[idx] as PastRace["condition"]; idx++; }
+
+    // 馬体重
+    const wl = lines[idx] || "";
+    const wMatch = wl.match(/^(\d+)kg/);
+    const prWeight = wMatch ? parseInt(wMatch[1]) : 480;
+    if (wMatch) idx++;
+
+    // 空白〜コーナー通過・着差行をスキップ
+    while (idx < lines.length && lines[idx] === "") idx++;
+    if (lines[idx] && /^\d/.test(lines[idx]) && !lines[idx].match(/\d{4}年/)) idx++; // corner
+    if (lines[idx] && /[^\d\s]/.test(lines[idx]) && !lines[idx].match(/\d{4}年/)) idx++; // winner(diff)
+    while (idx < lines.length && lines[idx] === "") idx++;
+
+    pastRaces.push({
+      date, venue: prVenue, raceName, raceClass,
+      distance: prDist, surface: prSurf, condition: prCond,
+      result: prResult, time: prTime,
+      corner4Position: 5, cornerOuterCount: 1,
+      weight: prWeight, jockey: prJockey, odds: 0, prize: 0,
+    });
+  }
+
+  // 馬体重: 直近前走の馬体重を使用（レース当日は未公開のため）
+  const latestWeight = pastRaces[0]?.weight || 480;
+  const prevWeight = pastRaces[1]?.weight || latestWeight;
+  const weightChange = latestWeight - prevWeight;
+
+  return {
+    id: generateId(), number, frame, name,
+    age, gender, weight: latestWeight, weightChange,
+    jockey: jockey.replace(/\s+/g, " "),
+    jockeyWeight: kinryo, trainer, owner,
+    sire, dam, bms,
+    bloodline: [sire, bms].filter(Boolean).join(" / "),
+    style: "", odds, popularity, pastRaces,
+    isHelmetChange: hasBlinker,
+  };
+}
+
+// ==========================================
+// メインコンポーネント
+// ==========================================
+const CONDITIONS: Race["condition"][] = ["良", "稍重", "重", "不良"];
+const SURFACES: Race["surface"][] = ["ダート", "芝"];
+
+export default function RaceForm({ onSubmit, onCancel }: {
   onSubmit: (race: Race) => void;
   onCancel: () => void;
-}
+}) {
+  const [pasteText, setPasteText] = useState("");
+  const [parsed, setParsed] = useState<{ horses: Horse[]; venue: string; raceNumber: number } | null>(null);
+  const [parseError, setParseError] = useState("");
 
-const TRACKS = ["大井","門別","笠松","名古屋","弥富","阪神","中山","東京","京都","小倉","新潟","福島","函館","札幌","中京","船橋","浦和","川崎","金沢","高知","佐賀","荒尾","その他"];
-const CONDITIONS: Race["condition"][] = ["良","稍重","重","不良"];
-const SURFACES: Race["surface"][] = ["ダート","芝"];
-const GENDERS: Horse["gender"][] = ["牡","牝","セン"];
-const STYLES: Horse["style"][] = ["逃げ","先行","好位","中団","後方","追込",""];
-
-function emptyHorse(number: number): Horse {
-  return {
-    id: generateId(), number, frame: Math.ceil(number / 2),
-    name: "", age: 4, gender: "牡", weight: 480, weightChange: 0,
-    jockey: "", jockeyWeight: 55, trainer: "", owner: "",
-    sire: "", dam: "", bms: "", bloodline: "", style: "", odds: 0, popularity: number,
-    pastRaces: [],
-  };
-}
-
-function emptyPastRace(): PastRace {
-  return {
-    date: "", venue: "", raceName: "", raceClass: "", distance: 1200,
-    surface: "ダート", condition: "良", result: 0, time: "",
-    corner4Position: 5, cornerOuterCount: 1, weight: 480,
-    jockey: "", odds: 0, prize: 0,
-  };
-}
-
-export default function RaceForm({ onSubmit, onCancel }: Props) {
+  // レース基本情報（貼り付け後に入力）
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [venue, setVenue] = useState("大井");
+  const [venue, setVenue] = useState("");
   const [raceNumber, setRaceNumber] = useState(1);
   const [raceName, setRaceName] = useState("");
   const [distance, setDistance] = useState(1400);
   const [surface, setSurface] = useState<Race["surface"]>("ダート");
   const [condition, setCondition] = useState<Race["condition"]>("良");
-  const [headCount, setHeadCount] = useState(12);
   const [isWin5, setIsWin5] = useState(false);
   const [windSpeed, setWindSpeed] = useState(0);
-  const [season, setSeason] = useState<"winter" | "summer">("winter");
-  const [isNight, setIsNight] = useState(false);
-  const [horses, setHorses] = useState<Horse[]>(Array.from({ length: 12 }, (_, i) => emptyHorse(i + 1)));
-  const [tab, setTab] = useState<"race" | "horses" | "paste">("race");
-  const [pasteText, setPasteText] = useState("");
-  const [selectedHorse, setSelectedHorse] = useState(0);
 
-  // テキスト貼り付けパーサー (出馬表テキスト → 馬情報)
-  const parsePasteText = () => {
-    const lines = pasteText.split("\n").filter(l => l.trim());
-    const parsed: Partial<Horse>[] = [];
-    let current: Partial<Horse> = {};
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      // 馬番検出
-      const numMatch = trimmed.match(/^(\d+)\s+(.+)/);
-      if (numMatch) {
-        if (current.name) parsed.push(current);
-        current = {
-          number: parseInt(numMatch[1]),
-          frame: Math.ceil(parseInt(numMatch[1]) / 2),
-          name: numMatch[2].split(/\s+/)[0],
-          id: generateId(),
-          age: 4, gender: "牡", weight: 480, weightChange: 0,
-          jockey: "", jockeyWeight: 55, trainer: "", owner: "",
-          sire: "", dam: "", bms: "", bloodline: "", style: "", odds: 0,
-          popularity: parseInt(numMatch[1]),
-          pastRaces: [],
-        };
-        const rest = numMatch[2].split(/\s+/);
-        if (rest[1]) current.jockey = rest[1];
-        if (rest[2]) current.weight = parseInt(rest[2]) || 480;
-      } else if (trimmed.includes("kg") && current.name) {
-        const wMatch = trimmed.match(/(\d+)\(([+-]?\d+)\)/);
-        if (wMatch) {
-          current.weight = parseInt(wMatch[1]);
-          current.weightChange = parseInt(wMatch[2]);
-        }
-      }
+  const handleParse = () => {
+    setParseError("");
+    if (!pasteText.trim()) { setParseError("テキストを貼り付けてください"); return; }
+    const result = parseJRAText(pasteText);
+    if (result.horses.length === 0) {
+      setParseError("馬情報を解析できませんでした。\n枠番（枠1白、枠2黒…）が含まれるJRA出馬表のテキストを貼り付けてください。");
+      return;
     }
-    if (current.name) parsed.push(current);
-
-    if (parsed.length > 0) {
-      const newHorses = Array.from({ length: headCount }, (_, i) => {
-        const p = parsed.find(h => h.number === i + 1);
-        return p ? { ...emptyHorse(i + 1), ...p } : emptyHorse(i + 1);
-      });
-      setHorses(newHorses);
-      alert(`${parsed.length}頭の情報を読み込みました`);
-      setTab("horses");
-    } else {
-      alert("テキストを解析できませんでした。\n形式: [馬番] [馬名] [騎手] [馬体重(増減)]");
-    }
-  };
-
-  const updateHorse = (idx: number, field: keyof Horse, value: unknown) => {
-    setHorses(prev => prev.map((h, i) => i === idx ? { ...h, [field]: value } : h));
-  };
-
-  const updateHeadCount = (n: number) => {
-    setHeadCount(n);
-    setHorses(prev => {
-      if (n > prev.length) return [...prev, ...Array.from({ length: n - prev.length }, (_, i) => emptyHorse(prev.length + i + 1))];
-      return prev.slice(0, n);
-    });
-  };
-
-  const addPastRace = (horseIdx: number) => {
-    setHorses(prev => prev.map((h, i) => i === horseIdx ? { ...h, pastRaces: [...h.pastRaces, emptyPastRace()] } : h));
-  };
-
-  const updatePastRace = (horseIdx: number, prIdx: number, field: keyof PastRace, value: unknown) => {
-    setHorses(prev => prev.map((h, i) => {
-      if (i !== horseIdx) return h;
-      return { ...h, pastRaces: h.pastRaces.map((pr, j) => j === prIdx ? { ...pr, [field]: value } : pr) };
-    }));
-  };
-
-  const removePastRace = (horseIdx: number, prIdx: number) => {
-    setHorses(prev => prev.map((h, i) => {
-      if (i !== horseIdx) return h;
-      return { ...h, pastRaces: h.pastRaces.filter((_, j) => j !== prIdx) };
-    }));
+    setParsed(result);
+    if (result.venue) setVenue(result.venue);
+    if (result.raceNumber) setRaceNumber(result.raceNumber);
   };
 
   const handleSubmit = () => {
-    if (!raceName && !venue) { alert("競馬場とレース名を入力してください"); return; }
+    if (!parsed || parsed.horses.length === 0) { alert("先に出馬表を解析してください"); return; }
     const race: Race = {
-      id: generateId(),
-      date, venue, raceNumber, raceName: raceName || `${raceNumber}R`,
-      distance, surface, condition, headCount, isWin5, windSpeed,
+      id: generateId(), date, venue, raceNumber,
+      raceName: raceName || `${raceNumber}R`,
+      distance, surface, condition,
+      headCount: parsed.horses.length,
+      isWin5, windSpeed,
       trackName: venue,
-      season, isNight,
-      horses: horses.slice(0, headCount),
+      horses: parsed.horses,
     };
     onSubmit(race);
   };
 
-  const horse = horses[selectedHorse];
+  const removeHorse = (idx: number) => {
+    if (!parsed) return;
+    setParsed({ ...parsed, horses: parsed.horses.filter((_, i) => i !== idx) });
+  };
+
+  const updateHorse = (idx: number, field: keyof Horse, value: unknown) => {
+    if (!parsed) return;
+    const horses = parsed.horses.map((h, i) => i === idx ? { ...h, [field]: value } : h);
+    setParsed({ ...parsed, horses });
+  };
 
   return (
     <div className="fade-in">
@@ -151,273 +283,229 @@ export default function RaceForm({ onSubmit, onCancel }: Props) {
         <h2 className="section-title">➕ 新規レース登録</h2>
         <div style={{ display: "flex", gap: "8px" }}>
           <button className="btn btn-secondary" onClick={onCancel}>キャンセル</button>
-          <button className="btn btn-primary" onClick={handleSubmit}>💾 保存して予想へ</button>
+          {parsed && <button className="btn btn-primary" onClick={handleSubmit}>💾 保存して予想へ</button>}
         </div>
       </div>
 
-      <div className="tabs">
-        {(["race", "horses", "paste"] as const).map(t => (
-          <button key={t} className={`tab ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>
-            {t === "race" ? "🏇 レース情報" : t === "horses" ? "🐴 出馬表" : "📋 テキスト貼付"}
-          </button>
-        ))}
-      </div>
-
-      {tab === "race" && (
-        <div className="card">
-          <div className="grid-3">
-            <div className="form-group">
-              <label className="form-label">開催日</label>
-              <input type="date" className="form-input" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">競馬場</label>
-              <select className="form-select" value={venue} onChange={e => setVenue(e.target.value)}>
-                {TRACKS.map(t => <option key={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">レース番号</label>
-              <input type="number" className="form-input" min={1} max={12} value={raceNumber} onChange={e => setRaceNumber(+e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">レース名</label>
-              <input className="form-input" value={raceName} onChange={e => setRaceName(e.target.value)} placeholder="例: 未勝利戦" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">距離 (m)</label>
-              <input type="number" className="form-input" value={distance} onChange={e => setDistance(+e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">頭数</label>
-              <input type="number" className="form-input" min={2} max={18} value={headCount} onChange={e => updateHeadCount(+e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">馬場種別</label>
-              <select className="form-select" value={surface} onChange={e => setSurface(e.target.value as Race["surface"])}>
-                {SURFACES.map(s => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">馬場状態</label>
-              <select className="form-select" value={condition} onChange={e => setCondition(e.target.value as Race["condition"])}>
-                {CONDITIONS.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">風速 (m/s)</label>
-              <input type="number" className="form-input" step={0.5} value={windSpeed} onChange={e => setWindSpeed(+e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">季節</label>
-              <select className="form-select" value={season} onChange={e => setSeason(e.target.value as "winter" | "summer")}>
-                <option value="winter">冬（北風）</option>
-                <option value="summer">夏（南風）</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">夜間開催</label>
-              <select className="form-select" value={isNight ? "1" : "0"} onChange={e => setIsNight(e.target.value === "1")}>
-                <option value="0">昼間</option>
-                <option value="1">夜間（トゥインクル）</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">WIN5対象</label>
-              <select className="form-select" value={isWin5 ? "1" : "0"} onChange={e => setIsWin5(e.target.value === "1")}>
-                <option value="0">通常</option>
-                <option value="1">WIN5対象</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tab === "paste" && (
-        <div className="card">
+      {/* Step 1: テキスト貼り付け */}
+      {!parsed && (
+        <div className="card fade-in">
           <div className="card-header">
             <div className="card-title">📋 出馬表テキスト貼り付け</div>
           </div>
           <div className="alert alert-info">
-            💡 出馬表テキストをそのまま貼り付けると自動解析します（5000文字程度まで対応）
+            💡 <strong>JRA・地方競馬の出馬表ページをすべて選択（Ctrl+A）してコピー</strong>し、そのまま貼り付けてください。<br />
+            枠番（枠1白、枠2黒…）が含まれる詳細データを自動解析します。
           </div>
           <div className="form-group">
-            <label className="form-label">出馬表テキスト（前走・前前走含む）</label>
+            <label className="form-label">出馬表テキスト</label>
             <textarea
               className="form-textarea"
-              style={{ minHeight: "200px", fontFamily: "monospace", fontSize: "0.8rem" }}
+              style={{ minHeight: "280px", fontFamily: "monospace", fontSize: "0.78rem" }}
               value={pasteText}
-              onChange={e => setPasteText(e.target.value)}
-              placeholder={`例:\n1 ゴールデンアイル 井上瑛 442(-4)\n  前走: 門別1000m 良 1着 59.8秒\n2 スマイルムーン 小野俊 476(+20)\n  前走: 門別1200m 良 3着 1:14.2\n...`}
+              onChange={e => { setPasteText(e.target.value); setParseError(""); }}
+              placeholder={"ここにJRA出馬表テキストを貼り付け\n\n例:\n2回東京2日 12R\n枠1白\t1\nブリンカー着用\nフィリップ\n(2.3.5.11)\t4,182.1万円\n..."}
             />
+            <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px", textAlign: "right" }}>
+              {pasteText.length.toLocaleString()} 文字
+            </div>
           </div>
-          <button className="btn btn-primary" onClick={parsePasteText}>🔍 テキストを解析</button>
+          {parseError && (
+            <div className="alert alert-warning">⚠️ {parseError}</div>
+          )}
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              className="btn btn-primary"
+              style={{ fontSize: "1rem", padding: "10px 28px" }}
+              onClick={handleParse}
+              disabled={!pasteText.trim()}
+            >
+              🔍 解析実行
+            </button>
+            <button className="btn btn-secondary" onClick={() => setPasteText("")}>クリア</button>
+          </div>
         </div>
       )}
 
-      {tab === "horses" && (
-        <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: "16px" }}>
-          {/* Horse selector */}
-          <div className="card" style={{ padding: "12px", height: "fit-content" }}>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "8px", fontWeight: 700 }}>馬を選択</div>
-            {horses.map((h, i) => (
-              <div
-                key={i}
-                onClick={() => setSelectedHorse(i)}
-                style={{
-                  padding: "8px 10px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  background: selectedHorse === i ? "var(--bg-elevated)" : "transparent",
-                  borderLeft: selectedHorse === i ? "2px solid var(--accent-gold)" : "2px solid transparent",
-                  marginBottom: "2px",
-                  fontSize: "0.8rem",
-                  display: "flex", alignItems: "center", gap: "8px",
-                }}
-              >
-                <span style={{ fontWeight: 700, color: "var(--accent-gold)", minWidth: "20px" }}>{h.number}</span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.name || "（未入力）"}</span>
-              </div>
-            ))}
+      {/* Step 2: レース情報入力＋解析結果確認 */}
+      {parsed && (
+        <div className="fade-in">
+          <div className="alert alert-success">
+            ✅ {parsed.horses.length}頭の出走馬を解析しました
+            <button
+              className="btn btn-secondary btn-sm"
+              style={{ marginLeft: "12px" }}
+              onClick={() => setParsed(null)}
+            >
+              ← 貼り直す
+            </button>
           </div>
 
-          {/* Horse detail form */}
-          {horse && (
-            <div className="card">
-              <div className="card-header">
-                <div className="card-title">🐴 {horse.number}番 馬情報</div>
-              </div>
-              <div className="grid-3">
-                <div className="form-group">
-                  <label className="form-label">馬番</label>
-                  <input type="number" className="form-input" value={horse.number} readOnly />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">枠番</label>
-                  <input type="number" className="form-input" min={1} max={8} value={horse.frame} onChange={e => updateHorse(selectedHorse, "frame", +e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">馬名</label>
-                  <input className="form-input" value={horse.name} onChange={e => updateHorse(selectedHorse, "name", e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">性別</label>
-                  <select className="form-select" value={horse.gender} onChange={e => updateHorse(selectedHorse, "gender", e.target.value)}>
-                    {GENDERS.map(g => <option key={g}>{g}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">年齢</label>
-                  <input type="number" className="form-input" min={2} max={10} value={horse.age} onChange={e => updateHorse(selectedHorse, "age", +e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">馬体重 (kg)</label>
-                  <input type="number" className="form-input" value={horse.weight} onChange={e => updateHorse(selectedHorse, "weight", +e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">増減 (kg)</label>
-                  <input type="number" className="form-input" value={horse.weightChange} onChange={e => updateHorse(selectedHorse, "weightChange", +e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">騎手</label>
-                  <input className="form-input" value={horse.jockey} onChange={e => updateHorse(selectedHorse, "jockey", e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">斤量</label>
-                  <input type="number" className="form-input" step={0.5} value={horse.jockeyWeight} onChange={e => updateHorse(selectedHorse, "jockeyWeight", +e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">調教師</label>
-                  <input className="form-input" value={horse.trainer} onChange={e => updateHorse(selectedHorse, "trainer", e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">父（種牡馬）</label>
-                  <input className="form-input" value={horse.sire} onChange={e => updateHorse(selectedHorse, "sire", e.target.value)} placeholder="例: ヘニーヒューズ" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">母父（BMS）</label>
-                  <input className="form-input" value={horse.bms} onChange={e => updateHorse(selectedHorse, "bms", e.target.value)} placeholder="例: キングカメハメハ" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">血統系統</label>
-                  <input className="form-input" value={horse.bloodline} onChange={e => updateHorse(selectedHorse, "bloodline", e.target.value)} placeholder="例: パイロ / ホッコータルマエ" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">脚質</label>
-                  <select className="form-select" value={horse.style} onChange={e => updateHorse(selectedHorse, "style", e.target.value)}>
-                    {STYLES.map(s => <option key={s} value={s}>{s || "不明"}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">オッズ</label>
-                  <input type="number" className="form-input" step={0.1} value={horse.odds || ""} onChange={e => updateHorse(selectedHorse, "odds", +e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">人気</label>
-                  <input type="number" className="form-input" min={1} value={horse.popularity || horse.number} onChange={e => updateHorse(selectedHorse, "popularity", +e.target.value)} />
-                </div>
-              </div>
-
-              <hr className="divider" />
-              <div className="form-group">
-                <label className="form-label">前走騎手</label>
-                <input className="form-input" value={horse.prevJockey || ""} onChange={e => updateHorse(selectedHorse, "prevJockey", e.target.value)} />
-              </div>
-
-              {/* Flags */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
-                {([
-                  ["isTransferFirstRace", "転入初戦"],
-                  ["isAuction", "オークション馬"],
-                  ["isAfterRest", "休み明け"],
-                  ["isHelmetChange", "ヘルメット変更"],
-                  ["prizeCloseFlag", "賞金上限接近"],
-                  ["prevInnerLoadExp", "前走内負荷経験"],
-                ] as [keyof Horse, string][]).map(([field, label]) => (
-                  <label key={field} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "0.8rem" }}>
-                    <input type="checkbox" checked={!!(horse[field] as unknown as boolean)} onChange={e => updateHorse(selectedHorse, field, e.target.checked)} />
-                    {label}
-                  </label>
-                ))}
-              </div>
-
-              {/* Past races */}
-              <hr className="divider" />
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>📋 過去成績</div>
-                <button className="btn btn-secondary btn-sm" onClick={() => addPastRace(selectedHorse)}>＋ 前走追加</button>
-              </div>
-              {horse.pastRaces.map((pr, prIdx) => (
-                <div key={prIdx} style={{ background: "var(--bg-surface)", borderRadius: "8px", padding: "12px", marginBottom: "8px", border: "1px solid var(--border)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--accent-gold)" }}>
-                      {prIdx === 0 ? "前走" : prIdx === 1 ? "前前走" : `${prIdx + 1}走前`}
-                    </span>
-                    <button className="btn btn-danger btn-sm" onClick={() => removePastRace(selectedHorse, prIdx)}>削除</button>
-                  </div>
-                  <div className="grid-4" style={{ gap: "8px" }}>
-                    <div><label className="form-label">日付</label><input type="date" className="form-input" value={pr.date} onChange={e => updatePastRace(selectedHorse, prIdx, "date", e.target.value)} /></div>
-                    <div><label className="form-label">競馬場</label><input className="form-input" value={pr.venue} onChange={e => updatePastRace(selectedHorse, prIdx, "venue", e.target.value)} /></div>
-                    <div><label className="form-label">距離</label><input type="number" className="form-input" value={pr.distance} onChange={e => updatePastRace(selectedHorse, prIdx, "distance", +e.target.value)} /></div>
-                    <div>
-                      <label className="form-label">馬場</label>
-                      <select className="form-select" value={pr.condition} onChange={e => updatePastRace(selectedHorse, prIdx, "condition", e.target.value)}>
-                        {CONDITIONS.map(c => <option key={c}>{c}</option>)}
-                      </select>
-                    </div>
-                    <div><label className="form-label">着順</label><input type="number" className="form-input" min={1} value={pr.result} onChange={e => updatePastRace(selectedHorse, prIdx, "result", +e.target.value)} /></div>
-                    <div><label className="form-label">走破タイム</label><input className="form-input" value={pr.time} onChange={e => updatePastRace(selectedHorse, prIdx, "time", e.target.value)} placeholder="1:14.2" /></div>
-                    <div><label className="form-label">4角順位</label><input type="number" className="form-input" min={1} value={pr.corner4Position} onChange={e => updatePastRace(selectedHorse, prIdx, "corner4Position", +e.target.value)} /></div>
-                    <div><label className="form-label">外回し頭数</label><input type="number" className="form-input" min={1} value={pr.cornerOuterCount} onChange={e => updatePastRace(selectedHorse, prIdx, "cornerOuterCount", +e.target.value)} /></div>
-                    <div><label className="form-label">馬体重</label><input type="number" className="form-input" value={pr.weight} onChange={e => updatePastRace(selectedHorse, prIdx, "weight", +e.target.value)} /></div>
-                    <div><label className="form-label">騎手</label><input className="form-input" value={pr.jockey} onChange={e => updatePastRace(selectedHorse, prIdx, "jockey", e.target.value)} /></div>
-                    <div><label className="form-label">オッズ</label><input type="number" className="form-input" step={0.1} value={pr.odds} onChange={e => updatePastRace(selectedHorse, prIdx, "odds", +e.target.value)} /></div>
-                    <div><label className="form-label">基準タイム</label><input type="number" className="form-input" step={0.1} value={pr.classBaseTime || ""} onChange={e => updatePastRace(selectedHorse, prIdx, "classBaseTime", +e.target.value)} placeholder="任意" /></div>
-                  </div>
-                </div>
-              ))}
+          {/* レース基本情報 */}
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">🏇 レース基本情報</div>
             </div>
-          )}
+            <div className="grid-4" style={{ gap: "12px" }}>
+              <div className="form-group">
+                <label className="form-label">開催日</label>
+                <input type="date" className="form-input" value={date} onChange={e => setDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">競馬場</label>
+                <input className="form-input" value={venue} onChange={e => setVenue(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">レース番号</label>
+                <input type="number" className="form-input" min={1} max={12} value={raceNumber} onChange={e => setRaceNumber(+e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">レース名</label>
+                <input className="form-input" value={raceName} onChange={e => setRaceName(e.target.value)} placeholder="未勝利戦、2勝クラス など" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">距離 (m)</label>
+                <input type="number" className="form-input" value={distance} onChange={e => setDistance(+e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">馬場種別</label>
+                <select className="form-select" value={surface} onChange={e => setSurface(e.target.value as Race["surface"])}>
+                  {SURFACES.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">馬場状態</label>
+                <select className="form-select" value={condition} onChange={e => setCondition(e.target.value as Race["condition"])}>
+                  {CONDITIONS.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">風速 (m/s)</label>
+                <input type="number" className="form-input" step={0.5} value={windSpeed} onChange={e => setWindSpeed(+e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">WIN5</label>
+                <select className="form-select" value={isWin5 ? "1" : "0"} onChange={e => setIsWin5(e.target.value === "1")}>
+                  <option value="0">通常</option>
+                  <option value="1">WIN5対象</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* 解析結果テーブル */}
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">🐴 解析済み出走馬（{parsed.horses.length}頭）</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                ※馬体重は直近前走の値。レース当日に修正してください。
+              </div>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table className="horse-table">
+                <thead>
+                  <tr>
+                    <th>枠</th><th>馬番</th><th>馬名</th><th>性齢</th>
+                    <th>騎手</th><th>斤量</th><th>馬体重</th><th>増減</th>
+                    <th>父</th><th>母父</th><th>オッズ</th><th>人気</th>
+                    <th>前走</th><th>前々走</th><th>3走前</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsed.horses.map((h, i) => (
+                    <tr key={h.id}>
+                      <td>
+                        <span className={`frame-badge frame-${h.frame}`}>{h.frame}</span>
+                      </td>
+                      <td style={{ fontWeight: 700, color: "var(--accent-gold)" }}>{h.number}</td>
+                      <td>
+                        <div>
+                          <input
+                            className="form-input"
+                            style={{ width: "120px", padding: "4px 8px", fontSize: "0.8rem" }}
+                            value={h.name}
+                            onChange={e => updateHorse(i, "name", e.target.value)}
+                          />
+                          {h.isHelmetChange && <span className="tag tag-purple" style={{ marginLeft: "4px" }}>B</span>}
+                        </div>
+                      </td>
+                      <td style={{ fontSize: "0.8rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {h.gender}{h.age}
+                      </td>
+                      <td>
+                        <input
+                          className="form-input"
+                          style={{ width: "90px", padding: "4px 8px", fontSize: "0.8rem" }}
+                          value={h.jockey}
+                          onChange={e => updateHorse(i, "jockey", e.target.value)}
+                        />
+                      </td>
+                      <td style={{ fontSize: "0.8rem" }}>{h.jockeyWeight}</td>
+                      <td>
+                        <input
+                          type="number"
+                          className="form-input"
+                          style={{ width: "70px", padding: "4px 8px", fontSize: "0.8rem" }}
+                          value={h.weight}
+                          onChange={e => updateHorse(i, "weight", +e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          className="form-input"
+                          style={{ width: "60px", padding: "4px 8px", fontSize: "0.8rem" }}
+                          value={h.weightChange}
+                          onChange={e => updateHorse(i, "weightChange", +e.target.value)}
+                        />
+                      </td>
+                      <td style={{ fontSize: "0.72rem", color: "var(--text-muted)", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {h.sire || "—"}
+                      </td>
+                      <td style={{ fontSize: "0.72rem", color: "var(--text-muted)", maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {h.bms || "—"}
+                      </td>
+                      <td style={{ color: "var(--accent-gold)", fontWeight: 700 }}>
+                        <input
+                          type="number"
+                          className="form-input"
+                          style={{ width: "65px", padding: "4px 8px", fontSize: "0.8rem" }}
+                          step={0.1}
+                          value={h.odds || ""}
+                          onChange={e => updateHorse(i, "odds", +e.target.value)}
+                        />
+                      </td>
+                      <td style={{ fontSize: "0.8rem" }}>{h.popularity || "—"}</td>
+                      {/* 前走〜3走前 */}
+                      {[0, 1, 2].map(prIdx => {
+                        const pr = h.pastRaces[prIdx];
+                        return (
+                          <td key={prIdx} style={{ fontSize: "0.7rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            {pr ? (
+                              <span style={{ color: pr.result <= 3 ? "var(--accent-green)" : "var(--text-muted)" }}>
+                                {pr.venue} {pr.result}着
+                                <br />{pr.surface}{pr.distance}m {pr.condition}
+                              </span>
+                            ) : "—"}
+                          </td>
+                        );
+                      })}
+                      <td>
+                        <button className="btn btn-danger btn-sm" onClick={() => removeHorse(i)}>✕</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+            <button className="btn btn-secondary" onClick={() => setParsed(null)}>← 貼り直す</button>
+            <button className="btn btn-primary" style={{ fontSize: "1rem", padding: "10px 28px" }} onClick={handleSubmit}>
+              💾 保存して予想へ
+            </button>
+          </div>
         </div>
       )}
     </div>
