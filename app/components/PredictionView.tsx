@@ -21,7 +21,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
   onBack: () => void;
 }) {
   const [tab, setTab] = useState<"horses" | "prediction" | "formation" | "win5">("horses");
-  const [formationType, setFormationType] = useState<"trifecta" | "quinella" | "exacta">("trifecta");
+  const [formationType, setFormationType] = useState<"trifecta" | "trifecta_exact" | "quinella" | "exacta">("trifecta");
   const predictions = race.predictions || [];
   const hasPrediction = predictions.length > 0;
   const maxPotential = Math.max(...predictions.map(p => p.potential), 1);
@@ -211,6 +211,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                 onChange={e => setFormationType(e.target.value as typeof formationType)}
               >
                 <option value="trifecta">三連複</option>
+                <option value="trifecta_exact">三連単</option>
                 <option value="quinella">馬連</option>
                 <option value="exacta">馬単</option>
               </select>

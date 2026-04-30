@@ -362,7 +362,7 @@ export function calculateTsuchiyaScore(horse: Horse, race: Race, learningPatches
 // ==========================================
 // フォーメーション生成 (3-3-7 / 13点)
 // ==========================================
-export function generateFormation(predictions: Prediction[], raceType: 'trifecta' | 'exacta' | 'quinella' = 'trifecta'): Formation {
+export function generateFormation(predictions: Prediction[], raceType: Formation['type'] = 'trifecta'): Formation {
   // Potential上位3頭を軸に
   const sortedByPotential = [...predictions].sort((a, b) => b.potential - a.potential);
   const top3 = sortedByPotential.slice(0, 3);
@@ -378,25 +378,40 @@ export function generateFormation(predictions: Prediction[], raceType: 'trifecta
   const col2 = axisNos;
   const col3 = [...new Set([...axisNos, ...darkNos])].sort((a, b) => a - b);
 
-  // 三連複13点生成
-  const ticketSet = new Set<string>();
-  
-  // 軸3頭の組み合わせ (1点)
-  const axisCombos = combinations(axisNos, 3);
-  for (const combo of axisCombos) {
-    ticketSet.add(combo.sort((a, b) => a - b).join('-'));
-  }
+  let tickets: number[][] = [];
 
-  // 軸2頭 + ヒモ4頭 (12点)
-  const axisPairs = combinations(axisNos, 2);
-  for (const pair of axisPairs) {
-    for (const dark of darkNos) {
-      const ticket = [...pair, dark].sort((a, b) => a - b);
-      ticketSet.add(ticket.join('-'));
+  if (raceType === 'trifecta_exact') {
+    // 三連単フォーメーション (3-3-7) 30点
+    for (const first of col1) {
+      for (const second of col2) {
+        if (first === second) continue;
+        for (const third of col3) {
+          if (first === third || second === third) continue;
+          tickets.push([first, second, third]);
+        }
+      }
     }
-  }
+  } else {
+    // 三連複13点生成 (デフォルト)
+    const ticketSet = new Set<string>();
+    
+    // 軸3頭の組み合わせ (1点)
+    const axisCombos = combinations(axisNos, 3);
+    for (const combo of axisCombos) {
+      ticketSet.add(combo.sort((a, b) => a - b).join('-'));
+    }
 
-  const tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
+    // 軸2頭 + ヒモ4頭 (12点)
+    const axisPairs = combinations(axisNos, 2);
+    for (const pair of axisPairs) {
+      for (const dark of darkNos) {
+        const ticket = [...pair, dark].sort((a, b) => a - b);
+        ticketSet.add(ticket.join('-'));
+      }
+    }
+
+    tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
+  }
 
   return {
     type: raceType,

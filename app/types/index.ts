@@ -100,7 +100,7 @@ export interface Prediction {
 }
 
 export interface Formation {
-  type: 'trifecta' | 'exacta' | 'win' | 'place' | 'quinella' | 'win5';
+  type: 'trifecta' | 'trifecta_exact' | 'exacta' | 'win' | 'place' | 'quinella' | 'win5';
   col1: number[];  // 1列目
   col2?: number[]; // 2列目
   col3?: number[]; // 3列目
