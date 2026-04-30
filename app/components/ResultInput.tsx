@@ -30,35 +30,66 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     const parsed: ResultRow[] = [];
 
     for (const line of lines) {
-      // パターン例:
-      // "1着 3番 クラウンヴィラン 1:14.2 3.5倍"
-      // "1 3 クラウンヴィラン 1:14.2"
-      // "1位 3 クラウンヴィラン"
-      // "1 3番 馬名 タイム オッズ 賞金"
-      // "3 クラウンヴィラン 1:14.2" (着順省略で行順判定)
+      if (line.includes("着順") || line.includes("単勝") || line.startsWith("着")) continue; // ヘッダー行をスキップ
 
-      // 着順を抽出
-      const rankMatch = line.match(/^(\d+)\s*[着位]/);
-      const rank = rankMatch ? parseInt(rankMatch[1]) : parsed.length + 1;
+      let rank = parsed.length + 1;
+      let horseNumber = 0;
+      let horseName = "";
+      let searchStr = line;
 
-      // 馬番を抽出（1〜18の数字 + 任意の「番」）
-      const numPattern = /(?:^|\s)(\d{1,2})\s*番?(?:\s|$)/g;
-      const nums: number[] = [];
-      let m;
-      const searchStr = rankMatch ? line.slice(rankMatch[0].length) : line;
-      while ((m = numPattern.exec(searchStr)) !== null) {
-        const n = parseInt(m[1]);
-        if (n >= 1 && n <= 18) nums.push(n);
+      // 1. "1着 3番..." または "1着 枠3 3番..."
+      const explicitMatch = line.match(/^(\d+)\s*[着位]\s*(?:枠\d+)?\s*(\d+)\s*番?\s+(.+)/);
+      if (explicitMatch) {
+        rank = parseInt(explicitMatch[1]);
+        horseNumber = parseInt(explicitMatch[2]);
+        searchStr = explicitMatch[3];
+      } else {
+        // 2. "1 2 4 エルムラント" (着順 枠番 馬番 馬名)
+        const jraMatch = line.match(/^(\d+)\s+(\d+)\s+(\d+)\s+([^\s\d]+)/);
+        if (jraMatch && parseInt(jraMatch[1]) < 20 && parseInt(jraMatch[2]) <= 8 && parseInt(jraMatch[3]) <= 18) {
+          rank = parseInt(jraMatch[1]);
+          horseNumber = parseInt(jraMatch[3]);
+          searchStr = line.slice(jraMatch[0].length);
+          horseName = jraMatch[4];
+        } else {
+          // 3. "1 4 エルムラント" (着順 馬番 馬名)
+          const simpleMatch = line.match(/^(\d+)\s+(\d+)\s+([^\s\d]+)/);
+          if (simpleMatch && parseInt(simpleMatch[1]) < 20 && parseInt(simpleMatch[2]) <= 18) {
+            rank = parseInt(simpleMatch[1]);
+            horseNumber = parseInt(simpleMatch[2]);
+            searchStr = line.slice(simpleMatch[0].length);
+            horseName = simpleMatch[3];
+          } else {
+            // 4. フォールバック: 馬番だけ抽出、着順は行順
+            const numPattern = /(?:^|\s)(\d{1,2})\s*番?(?:\s|$)/g;
+            const nums: number[] = [];
+            let m;
+            while ((m = numPattern.exec(line)) !== null) {
+              const n = parseInt(m[1]);
+              if (n >= 1 && n <= 18) nums.push(n);
+            }
+            if (nums.length > 0) {
+              // 最初に見つかった数字が着順の可能性もあるため、1着〜18着ならそのまま
+              // しかし既に `rank` は `parsed.length + 1` なので、ここでの馬番判定は慎重に
+              // もし数字が2つ以上あれば、1つ目が着順、2つ目が馬番の可能性が高い
+              if (nums.length >= 2 && nums[0] === rank) {
+                horseNumber = nums[1];
+              } else {
+                horseNumber = nums[0];
+              }
+            }
+          }
+        }
       }
-      const horseNumber = nums[0] || 0;
 
-      // 馬名を抽出（日本語文字列）
-      const nameMatch = searchStr.match(/[\u3040-\u9FFF\u30A0-\u30FF\uFF00-\uFFEF]{2,}/);
-      const horseName = nameMatch ? nameMatch[0] : (race.horses.find(h => h.number === horseNumber)?.name || "");
+      if (!horseName) {
+        const nameMatch = searchStr.match(/[\u3040-\u9FFF\u30A0-\u30FF\uFF00-\uFFEF]{2,}/);
+        horseName = nameMatch ? nameMatch[0] : (race.horses.find(h => h.number === horseNumber)?.name || "");
+      }
 
       // タイムを抽出
-      const timeMatch = line.match(/(\d+:\d+\.\d+|\d+\.\d+)/);
-      const time = timeMatch ? timeMatch[1] : "";
+      const timeMatch = line.match(/(\d+[:.]\d+\.\d+|\d+\.\d+)/);
+      const time = timeMatch ? timeMatch[1].replace(/\.(\d+\.\d+)$/, ':$1') : "";
 
       // オッズを抽出（数字.数字 + 倍）
       const oddsMatch = line.match(/(\d+\.?\d*)\s*倍/);
@@ -74,7 +105,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     }
 
     if (parsed.length === 0) {
-      setParseError("着順を解析できませんでした。\n例: 「1着 3番 クラウンヴィラン 1:14.2 3.5倍」の形式で入力してください。");
+      setParseError("着順を解析できませんでした。\n例: 「1 2 4 エルムラント 1:14.2」のような形式で入力してください。");
       return;
     }
 
