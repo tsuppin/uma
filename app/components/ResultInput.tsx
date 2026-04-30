@@ -56,6 +56,30 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         continue;
       }
 
+      // 0.1 JRA公式・ネット競馬等の複数行コピー形式
+      // 1行目: "1  7  12  サトノフェンサー2番人気" (タブまたは複数スペース区切り)
+      // 2行目以降にタイム "1:39.5 / 36.9"
+      const jraMultiMatch = line.split(/\t|\s{2,}/);
+      if (jraMultiMatch.length >= 4 && /^\d+$/.test(jraMultiMatch[0]) && /^\d+$/.test(jraMultiMatch[1]) && /^\d+$/.test(jraMultiMatch[2])) {
+        const rank = parseInt(jraMultiMatch[0]);
+        const horseNumber = parseInt(jraMultiMatch[2]);
+        let horseName = jraMultiMatch[3] || "";
+        horseName = horseName.replace(/\d+番人気$/, "").trim(); // "2番人気"等を削除
+        
+        let time = "";
+        for (let j = i + 1; j < i + 5 && j < lines.length; j++) {
+          const timeMatch = lines[j].match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
+          if (timeMatch && (lines[j].includes("/") || timeMatch[1].includes(":"))) {
+             time = timeMatch[1].replace(/:(\d+)$/, '.$1');
+             break;
+          }
+        }
+        
+        parsed.push({ rank, horseNumber, horseName, time, odds: 0, prize: 0 });
+        i += 3; // 4行1セットとみなしてスキップ
+        continue;
+      }
+
       let rank = parsed.length + 1;
       let horseNumber = 0;
       let horseName = "";
