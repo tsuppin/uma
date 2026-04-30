@@ -293,18 +293,43 @@ export function calculateTsuchiyaScore(horse: Horse, race: Race, learningPatches
   }
 
   // ==========================================
-  // 阪神・中山その他競馬場
+  // 汎用スコアリング (全場共通ベース・補正)
   // ==========================================
-  else {
-    // 汎用スコアリング
+  
+  // 前走成績の反映 (データ不足時のスコア多様化)
+  if (horse.pastRaces && horse.pastRaces.length > 0) {
+    const pr1 = horse.pastRaces[0];
+    if (pr1 && pr1.result > 0) {
+      if (pr1.result === 1) {
+        potential += 15;
+        tags.push('前走1着ボーナス');
+      } else if (pr1.result <= 3) {
+        potential += 8;
+        tags.push('前走好走');
+      } else if (pr1.result >= 10) {
+        potential -= 10;
+      }
+    }
+    
+    // 前々走
+    const pr2 = horse.pastRaces[1];
+    if (pr2 && pr2.result === 1) {
+      potential += 10;
+    }
+  }
+
+  // JRA/その他競馬場用の騎手スコアリング
+  if (!['笠松', '大井', '門別', '名古屋', '弥富'].includes(trackName)) {
     const jockeyMap: Record<string, number> = {
       'D.レー': 25, 'C.ルメール': 25, '川田将': 25,
       '武豊': 20, '坂井瑠': 20, '横山武史': 20,
       '松山弘': 15, '岩田望': 15, '北村友': 10, '西村淳': 10
     };
     const jockeyBonus = jockeyMap[jockey] || 0;
-    potential += jockeyBonus;
-    if (jockeyBonus > 0) tags.push(`騎手加点(${jockeyBonus})`);
+    if (jockeyBonus > 0) {
+      potential += jockeyBonus;
+      tags.push(`騎手加点(${jockeyBonus})`);
+    }
   }
 
   // ==========================================
@@ -510,5 +535,20 @@ function combinations<T>(arr: T[], size: number): T[][] {
 }
 
 export function sortPredictions(predictions: Prediction[]): Prediction[] {
-  return [...predictions].sort((a, b) => b.potential - a.potential).map((p, i) => ({ ...p, rank: i + 1 }));
+  return [...predictions].sort((a, b) => {
+    // 1. Potential（EVIndex）で降順
+    if (Math.abs(b.potential - a.potential) > 0.01) {
+      return b.potential - a.potential;
+    }
+    // 2. 同スコアなら期待値の闇(Darkness)で降順
+    if (Math.abs(b.darkness - a.darkness) > 0.01) {
+      return b.darkness - a.darkness;
+    }
+    // 3. それでも同値なら馬番でバラけさせる（中央枠有利などの微細なタイブレーク）
+    const aTie = Math.abs(a.horseNumber - 5); // 5番に近いほど優先など
+    const bTie = Math.abs(b.horseNumber - 5);
+    if (aTie !== bTie) return aTie - bTie;
+    
+    return a.horseNumber - b.horseNumber;
+  }).map((p, i) => ({ ...p, rank: i + 1 }));
 }

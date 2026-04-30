@@ -11,7 +11,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   onCancel: () => void;
 }) {
   const existing = race.result;
-  const [tab, setTab] = useState<"manual" | "paste">("paste");
   const [pasteText, setPasteText] = useState("");
   const [parseError, setParseError] = useState("");
   const [results, setResults] = useState<ResultRow[]>(
@@ -121,7 +120,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     }
 
     setResults(top3);
-    setTab("manual");
   };
 
   const updateResult = (idx: number, field: string, value: unknown) => {
@@ -177,28 +175,12 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         {race.venue} {race.raceNumber}R {race.raceName} / {race.surface} {race.distance}m
       </div>
 
-      {/* タブ */}
-      <div className="tabs">
-        <button className={`tab ${tab === "paste" ? "active" : ""}`} onClick={() => setTab("paste")}>
-          📋 テキスト貼り付け
-        </button>
-        <button className={`tab ${tab === "manual" ? "active" : ""}`} onClick={() => setTab("manual")}>
-          ✏️ 手動入力
-          {results.some(r => r.horseNumber > 0) && (
-            <span className="tag tag-green" style={{ marginLeft: "6px", fontSize: "0.65rem" }}>
-              {results.filter(r => r.horseNumber > 0).length}着入力済
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* テキスト貼り付けタブ */}
-      {tab === "paste" && (
-        <div className="card fade-in">
-          <div className="card-header">
-            <div className="card-title">📋 レース結果テキスト貼り付け</div>
-          </div>
-          <div className="alert alert-info">
+      {/* 📋 テキスト貼り付け・解析エリア */}
+      <div className="card fade-in">
+        <div className="card-header">
+          <div className="card-title">📋 レース結果テキスト貼り付け（自動入力）</div>
+        </div>
+        <div className="alert alert-info">
             💡 レース結果をそのまま貼り付けると自動解析します。
             <br />
             <strong>対応形式例:</strong>
@@ -282,20 +264,16 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                   </select>
                 </div>
               ))}
-              <button className="btn btn-secondary btn-sm" onClick={() => setTab("manual")}>詳細入力 →</button>
             </div>
           </div>
         </div>
-      )}
 
-      {/* 手動入力タブ */}
-      {tab === "manual" && (
-        <div className="card fade-in">
-          <div className="card-header">
-            <div className="card-title">✏️ 着順入力</div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setTab("paste")}>← テキストに戻る</button>
-          </div>
-          <table className="horse-table">
+      {/* ✏️ 手動入力・詳細エリア */}
+      <div className="card fade-in" style={{ marginTop: "16px" }}>
+        <div className="card-header">
+          <div className="card-title">✏️ 着順・詳細入力</div>
+        </div>
+        <table className="horse-table">
             <thead>
               <tr>
                 <th>着順</th><th>馬番</th><th>馬名</th>
@@ -347,7 +325,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             ＋ 着順追加
           </button>
         </div>
-      )}
 
       {/* 的中確認 */}
       {formation && resultNums.length >= 3 && (
