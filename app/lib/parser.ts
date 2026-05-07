@@ -267,6 +267,8 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   const tm = (lines[idx] || "").match(/^(.+?)\s*[\(（][栗美][東浦][\)）]/);
   if (tm) { trainer = tm[1].trim(); idx++; }
   else if (lines[idx]) { trainer = lines[idx]; idx++; }
+
+  let sire = "", dam = "", bms = "";
   while (idx < lines.length && (lines[idx] === "" || lines[idx].includes("："))) {
     // 父・母などの血統情報を先に拾う
     const l = lines[idx];
