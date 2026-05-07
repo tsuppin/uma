@@ -260,7 +260,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
 
   const owner = lines[idx] || ""; idx++;
   while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
-  const breeder = lines[idx] || ""; idx++;
+  idx++; // breeder スキップ
   while (idx < lines.length && lines[idx] === "") idx++;
 
   let trainer = "";
@@ -350,7 +350,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     const prResult = rm ? parseInt(rm[1]) : 0;
     idx++;
 
-    const popLine = lines[idx] || ""; idx++; // 人気行
+    idx++; // 人気行
     
     const jl = lines[idx] || "";
     const prJockey = jl.split(/[\t\s]+/)[0]?.trim() || "";

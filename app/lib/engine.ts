@@ -62,17 +62,16 @@ export function calculateTsuchiyaScore(
 ): Prediction {
   let potential = 100.0;
   const bloodline = horse.bloodline || '';
-  const jockey = horse.jockey || '';
   const trackName = race.trackName;
   const dist = race.distance;
   const condition = race.condition;
   const weight = horse.weight;
   const weightChange = horse.weightChange;
   const frame = horse.frame;
-  const number = horse.number;
   const gender = horse.gender;
   const kinryo = horse.jockeyWeight || 55;
   const popularity = horse.popularity || 99;
+  const jockey = horse.jockey || '';
   const headCount = race.headCount || 10;
   const tags: string[] = [];
 
@@ -237,11 +236,14 @@ export function calculateTsuchiyaScore(
     if (patch.track && patch.track !== trackName) continue;
     if (patch.condition && patch.condition !== condition) continue;
     for (const adj of patch.adjustments) {
-      const val = (horse as any)[adj.field];
+      const field = adj.field as keyof Horse;
+      const val = horse[field];
       let applies = false;
-      if (adj.operator === '>=' && val >= adj.value) applies = true;
-      else if (adj.operator === '<=' && val <= adj.value) applies = true;
-      else if (adj.operator === '==' && val === adj.value) applies = true;
+      if (typeof val === 'number') {
+        if (adj.operator === '>=' && val >= adj.value) applies = true;
+        else if (adj.operator === '<=' && val <= adj.value) applies = true;
+        else if (adj.operator === '==' && val === adj.value) applies = true;
+      }
       if (applies) { potential += adj.scoreAdjust; tags.push(`学習パッチ(${patch.version})`); }
     }
   }

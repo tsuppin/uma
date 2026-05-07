@@ -179,4 +179,4 @@ export interface JockeyMaster {
   venueStats: Record<string, { total: number; wins: number; top3: number }>;
 }
 
-export type TrackName = '笠松' | '大井' | '門別' | '阪神' | '中山' | '名古屋' | '弥富' | '門別' | '東京' | '京都' | '新潟' | '中京' | '小倉' | '福島' | '函館' | '札幌';
+export type TrackName = '笠松' | '大井' | '門別' | '阪神' | '中山' | '名古屋' | '弥富' | '東京' | '京都' | '新潟' | '中京' | '小倉' | '福島' | '函館' | '札幌';
