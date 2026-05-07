@@ -44,7 +44,14 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
     <div className="fade-in">
       <div className="section-header">
         <h2 className="section-title">🧬 AI学習パッチ管理</h2>
-        <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>＋ 手動パッチ追加</button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button className="btn btn-secondary" onClick={() => {
+            const json = JSON.stringify(state.learningPatches, null, 2);
+            navigator.clipboard.writeText(json);
+            alert("パッチデータをクリップボードにコピーしました。これをAntigravityに伝えてGitに反映させてください。");
+          }}>📤 エクスポート</button>
+          <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>＋ 手動パッチ追加</button>
+        </div>
       </div>
 
       <div className="alert alert-info">
