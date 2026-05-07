@@ -4,7 +4,6 @@ import { AppState } from "../types";
 export default function StatsPanel({ state }: { state: AppState }) {
   const { stats } = state;
   const completed = state.races.filter(r => r.result);
-  const hitRaces = completed.filter(r => r.result?.hitTickets && r.result.hitTickets.length > 0);
 
   const venueStats = completed.reduce((acc, race) => {
     if (!acc[race.venue]) acc[race.venue] = { total: 0, hit: 0, profit: 0 };

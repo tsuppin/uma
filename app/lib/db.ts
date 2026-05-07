@@ -1,4 +1,4 @@
-import { AppState, Race, Horse, RaceResult, MasterData, HorseMaster, JockeyMaster } from "../types";
+import { MasterData, Race, RaceResult } from "../types";
 
 // ==========================================
 // データベース（MasterData）管理ロジック

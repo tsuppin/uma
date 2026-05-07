@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { AppState, Race } from "../types";
+import { AppState } from "../types";
 import { calculateTsuchiyaScore, sortPredictions } from "../lib/engine";
 
 export default function Win5Panel({ state }: { state: AppState }) {
@@ -55,7 +55,7 @@ export default function Win5Panel({ state }: { state: AppState }) {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {availableRaces.map((race, i) => {
+            {availableRaces.map((race) => {
               const isSelected = selectedRaceIds.includes(race.id);
               const order = selectedRaceIds.indexOf(race.id) + 1;
               return (
