@@ -33,12 +33,13 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       if (!line) continue;
       
       // セクション終了判定
-      if (line.includes("タイム") || line.includes("コーナー通過順位") || line.includes("払戻金") || line.includes("単勝")) {
-        // 払戻金セクション以降は解析不要
-        if (i > 10) break; 
+      // 「タイム」が単独行、または「払戻金」などのセクションヘッダーが来たら終了
+      const isResultSectionEnd = (line === "タイム" || line === "払戻金" || line === "コーナー通過順位" || line.startsWith("単勝") && line.includes("人気"));
+      if (isResultSectionEnd && i > 10) {
+        break; 
       }
       
-      if (line.includes("着順") || line.includes("馬名(所属)")) continue;
+      if (line.includes("着順") || line.includes("馬名(所属)") || line.includes("タイム(着差)")) continue;
 
       let rank = 0;
       let horseNumber = 0;
@@ -57,11 +58,16 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         if (!horseName || /^[^\u3040-\u9FFF\u30A0-\u30FF]+$/.test(horseName) || horseName.includes("ブリンカー")) {
            for (let j = i + 1; j < i + 4 && j < lines.length; j++) {
              if (lines[j] && !/^\d/.test(lines[j]) && !lines[j].includes("/") && !lines[j].includes(":") && lines[j].length > 1) {
-                horseName = lines[j].replace(/\d+番人気$/, "").trim();
+                horseName = lines[j].trim();
                 break;
              }
            }
         }
+        
+        // 馬名のクレンジング (注釈削除)
+        horseName = horseName.replace(/\d+番人気$/, "")
+                             .replace(/ブリンカー|マルチ|着用/g, "")
+                             .trim();
       } 
       // 2. NAR公式 複数行形式 (1 8 \n 8 \n 馬名)
       else if (/^\d+\s+\d+$/.test(line) && i + 1 < lines.length && /^\d+$/.test(lines[i+1])) {
