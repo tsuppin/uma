@@ -46,32 +46,22 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       let horseName = "";
       let time = "";
 
-      // 1. JRA/NAR タブ区切り・複数スペース・単一スペース区切りへの対応
-      let parts = line.split(/\t|\s{2,}/);
-      // もし3列未満で、かつ半角スペース区切りで数字が3つ並んでいる場合はそちらを採用
-      if (parts.length < 3) {
-        const singleParts = line.trim().split(/\s+/);
-        if (singleParts.length >= 3 && /^\d+$/.test(singleParts[0]) && /^\d+$/.test(singleParts[1]) && /^\d+$/.test(singleParts[2])) {
-          parts = singleParts;
-        }
-      }
-
-      if (parts.length >= 3 && /^\d+$/.test(parts[0].trim())) {
-        rank = parseInt(parts[0].trim());
-        // 馬番の判定: 3列目が数字ならそれが馬番（JRA形式 [着, 枠, 番]）
-        if (/^\d+$/.test(parts[2]?.trim())) {
-          horseNumber = parseInt(parts[2].trim());
-          horseName = parts[3] || "";
-        } else if (/^\d+$/.test(parts[1]?.trim())) {
-          horseNumber = parseInt(parts[1].trim());
-          horseName = parts[2] || "";
-        }
+      // 1. 数値パターンによる行解析 (JRA: [着, 枠, 番], NAR: [着, 番])
+      const lineParts = line.trim().split(/[\t\s]+/);
+      const rowNums = lineParts.filter(p => /^\d+$/.test(p)).map(Number);
+      
+      if (rowNums.length >= 2 && /^\d+/.test(lineParts[0])) {
+        rank = rowNums[0];
+        // 3つ以上数字があればJRA形式とみなして3つ目を馬番に、2つならNAR形式とみなして2つ目を馬番にする
+        horseNumber = (rowNums.length >= 3) ? rowNums[2] : rowNums[1];
+        
+        // 名前を探す: linePartsの中で数字でない最初の要素、または次の行
+        horseName = lineParts.find((p, idx) => idx >= 1 && !/^\d+$/.test(p) && !p.includes(":") && !p.includes("/")) || "";
         
         // 馬名が空、または注釈行の場合は次の行を見る
-        if (!horseName || /^[^\u3040-\u9FFF\u30A0-\u30FF]+$/.test(horseName) || horseName.includes("ブリンカー") || horseName.includes("着用")) {
-           for (let j = i + 1; j < i + 4 && j < lines.length; j++) {
+        if (!horseName || /^[^\u3040-\u9FFF\u30A0-\u30FF]+$/.test(horseName) || horseName.includes("ブリンカー") || horseName.includes("着用") || horseName === "マルチ") {
+           for (let j = i + 1; j < i + 5 && j < lines.length; j++) {
              const nextLine = lines[j].trim();
-             // 次の行が結果セクションの終わりでないことを確認
              if (nextLine === "払戻金" || nextLine === "コーナー通過順位") break;
              if (nextLine && !/^\d/.test(nextLine) && !nextLine.includes("/") && !nextLine.includes(":") && nextLine.length > 1) {
                 horseName = nextLine;
