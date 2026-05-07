@@ -46,17 +46,24 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       let horseName = "";
       let time = "";
 
-      // 1. JRA/NAR タブ区切り・複数スペース区切り (1  3  5  馬名...)
-      const parts = line.split(/\t|\s{2,}/);
-      if (parts.length >= 3 && /^\d+$/.test(parts[0])) {
-        rank = parseInt(parts[0]);
+      // 1. JRA/NAR タブ区切り・複数スペース・単一スペース区切りへの対応
+      let parts = line.split(/\t|\s{2,}/);
+      // もし3列未満で、かつ半角スペース区切りで数字が3つ並んでいる場合はそちらを採用
+      if (parts.length < 3) {
+        const singleParts = line.trim().split(/\s+/);
+        if (singleParts.length >= 3 && /^\d+$/.test(singleParts[0]) && /^\d+$/.test(singleParts[1]) && /^\d+$/.test(singleParts[2])) {
+          parts = singleParts;
+        }
+      }
+
+      if (parts.length >= 3 && /^\d+$/.test(parts[0].trim())) {
+        rank = parseInt(parts[0].trim());
         // 馬番の判定: 3列目が数字ならそれが馬番（JRA形式 [着, 枠, 番]）
-        // 2列目が数字で3列目が名前なら2列目が馬番（NAR形式 [着, 番, 名前]）
-        if (/^\d+$/.test(parts[2])) {
-          horseNumber = parseInt(parts[2]);
+        if (/^\d+$/.test(parts[2]?.trim())) {
+          horseNumber = parseInt(parts[2].trim());
           horseName = parts[3] || "";
-        } else if (/^\d+$/.test(parts[1])) {
-          horseNumber = parseInt(parts[1]);
+        } else if (/^\d+$/.test(parts[1]?.trim())) {
+          horseNumber = parseInt(parts[1].trim());
           horseName = parts[2] || "";
         }
         
@@ -64,6 +71,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         if (!horseName || /^[^\u3040-\u9FFF\u30A0-\u30FF]+$/.test(horseName) || horseName.includes("ブリンカー") || horseName.includes("着用")) {
            for (let j = i + 1; j < i + 4 && j < lines.length; j++) {
              const nextLine = lines[j].trim();
+             // 次の行が結果セクションの終わりでないことを確認
+             if (nextLine === "払戻金" || nextLine === "コーナー通過順位") break;
              if (nextLine && !/^\d/.test(nextLine) && !nextLine.includes("/") && !nextLine.includes(":") && nextLine.length > 1) {
                 horseName = nextLine;
                 break;
@@ -74,6 +83,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         // 馬名のクレンジング (注釈削除)
         horseName = horseName.replace(/\d+番人気$/, "")
                              .replace(/ブリンカー|マルチ|着用/g, "")
+                             .replace(/\t/g, " ")
                              .trim();
       } 
       // 2. NAR公式 複数行形式 (例: 1 8 \n 8 \n 馬名)
