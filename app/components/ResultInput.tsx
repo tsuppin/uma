@@ -33,9 +33,9 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       if (!line) continue;
       
       // セクション終了判定
-      // 「タイム」が単独行、または「払戻金」などのセクションヘッダーが来たら終了
-      const isResultSectionEnd = (line === "タイム" || line === "払戻金" || line === "コーナー通過順位" || line.startsWith("単勝") && line.includes("人気"));
-      if (isResultSectionEnd && i > 10) {
+      // 結果の抽出が始まっている状態で、払戻金などのセクションヘッダーが来たら終了
+      const isResultSectionEnd = (line === "払戻金" || line === "コーナー通過順位" || (line.startsWith("単勝") && line.includes("円")));
+      if (isResultSectionEnd && parsedMap.size > 0) {
         break; 
       }
       
@@ -48,17 +48,24 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
       // 1. JRA/NAR タブ区切り・複数スペース区切り (1  3  5  馬名...)
       const parts = line.split(/\t|\s{2,}/);
-      if (parts.length >= 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[parts.length > 3 ? 2 : 1])) {
+      if (parts.length >= 3 && /^\d+$/.test(parts[0])) {
         rank = parseInt(parts[0]);
-        // 3列目が数字ならそれが馬番
-        horseNumber = /^\d+$/.test(parts[2]) ? parseInt(parts[2]) : parseInt(parts[1]);
-        horseName = parts[3] || parts[2] || "";
+        // 馬番の判定: 3列目が数字ならそれが馬番（JRA形式 [着, 枠, 番]）
+        // 2列目が数字で3列目が名前なら2列目が馬番（NAR形式 [着, 番, 名前]）
+        if (/^\d+$/.test(parts[2])) {
+          horseNumber = parseInt(parts[2]);
+          horseName = parts[3] || "";
+        } else if (/^\d+$/.test(parts[1])) {
+          horseNumber = parseInt(parts[1]);
+          horseName = parts[2] || "";
+        }
         
-        // 馬名が「ブリンカー」等の場合は次の行を見る
-        if (!horseName || /^[^\u3040-\u9FFF\u30A0-\u30FF]+$/.test(horseName) || horseName.includes("ブリンカー")) {
+        // 馬名が空、または注釈行の場合は次の行を見る
+        if (!horseName || /^[^\u3040-\u9FFF\u30A0-\u30FF]+$/.test(horseName) || horseName.includes("ブリンカー") || horseName.includes("着用")) {
            for (let j = i + 1; j < i + 4 && j < lines.length; j++) {
-             if (lines[j] && !/^\d/.test(lines[j]) && !lines[j].includes("/") && !lines[j].includes(":") && lines[j].length > 1) {
-                horseName = lines[j].trim();
+             const nextLine = lines[j].trim();
+             if (nextLine && !/^\d/.test(nextLine) && !nextLine.includes("/") && !nextLine.includes(":") && nextLine.length > 1) {
+                horseName = nextLine;
                 break;
              }
            }
