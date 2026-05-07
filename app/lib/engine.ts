@@ -86,14 +86,47 @@ export function calculateTsuchiyaScore(
     // コース実績加点
     const courseWins = hm.results.filter(r => r.venue === race.venue && r.rank === 1).length;
     if (courseWins > 0) {
-      potential += 15;
+      potential += 20;
       tags.push(`コース実績馬(${courseWins}勝)`);
     }
     // 距離実績
-    if (hm.results.some(r => r.distance === race.distance && r.rank <= 3)) {
-      potential += 10;
-      tags.push('距離適性あり');
+    const distTop3 = hm.results.filter(r => Math.abs(r.distance - race.distance) <= 100 && r.rank <= 3).length;
+    if (distTop3 > 0) {
+      potential += 15;
+      tags.push(`距離・近接適性(${distTop3}回)`);
     }
+  }
+
+  // ==========================================
+  // 【新設】直近の走績（Form）解析 - 1,2,3着を当てる核
+  // ==========================================
+  if (horse.pastRaces && horse.pastRaces.length > 0) {
+    const validPastRaces = horse.pastRaces.filter(pr => pr.result > 0);
+    const recent3 = validPastRaces.slice(0, 3);
+    
+    // 近3走での好走
+    const top3Count = recent3.filter(pr => pr.result <= 3).length;
+    if (top3Count >= 2) { potential += 35; tags.push('近3走安定勢'); }
+    else if (top3Count === 1) { potential += 15; tags.push('近走好走あり'); }
+
+    // 掲示板（5着以内）確保
+    const top5Count = recent3.filter(pr => pr.result <= 5).length;
+    if (top5Count === 3) { potential += 20; tags.push('掲示板パーフェクト'); }
+
+    // 上昇気配（前走が過去3走でベスト）
+    if (recent3.length >= 2 && recent3[0].result < Math.min(...recent3.slice(1).map(r => r.result))) {
+      potential += 15;
+      tags.push('上昇カーブ');
+    }
+  }
+
+  // ==========================================
+  // 【全場共通】鞍上（騎手）エリート補正
+  // ==========================================
+  const eliteJockeys = ['ルメール', '川田将雅', '武豊', '坂井瑠星', '戸崎圭太', 'モレイラ', 'レーン', '横山武史', '笹川翼', '御神本訓'];
+  if (eliteJockeys.some(ej => jockey.includes(ej))) {
+    potential += 25;
+    tags.push('エリート鞍上');
   }
 
   if (jm && jm.venueStats[race.venue]) {
@@ -101,8 +134,8 @@ export function calculateTsuchiyaScore(
     if (vs.total >= 3) {
       const winRate = vs.wins / vs.total;
       const top3Rate = vs.top3 / vs.total;
-      if (winRate > 0.20) { potential += 20; tags.push('会場勝率エリート'); }
-      else if (top3Rate > 0.40) { potential += 15; tags.push('会場安定勢'); }
+      if (winRate > 0.20) { potential += 25; tags.push('会場勝率エリート'); }
+      else if (top3Rate > 0.40) { potential += 20; tags.push('会場安定勢'); }
     }
   }
 
@@ -111,10 +144,10 @@ export function calculateTsuchiyaScore(
   // ==========================================
   const weightRatio = (kinryo / weight) * 100;
   if (gender === '牝' && weightRatio > 12.5) {
-    potential -= 40;
+    potential -= 50;
     tags.push('斤量限界超過');
   } else if ((gender === '牡' || gender === 'セン') && weightRatio > 12.6) {
-    potential -= 40;
+    potential -= 50;
     tags.push('斤量限界超過');
   }
 
@@ -127,25 +160,38 @@ export function calculateTsuchiyaScore(
     else if (weight < 440) { potential -= 15; }
   } else if (dist <= 2000) {
     if (480 <= weight && weight <= 520) { potential += 20; tags.push('PMR黄金帯域'); }
-    else if (weight > 520) { potential += 10; }
+    else if (weight > 520) { potential += 15; tags.push('大型馬パワー'); }
     else if (weight < 450) { potential += 5; }
   } else {
     if (460 <= weight && weight <= 480) { potential += 15; tags.push('PMR最適（長距離）'); }
-    else if (weight >= 530) { potential += 10; }
+    else if (weight >= 530) { potential += 15; tags.push('スタミナ型質量'); }
   }
 
   // ==========================================
   // 馬体重増減エントロピー解析
   // ==========================================
-  if (weightChange >= 10) { potential += 15; tags.push('出力拡張Turbo'); }
-  else if (weightChange <= -10) { potential += 5; tags.push('冷却効率UP'); }
-  else if (-4 <= weightChange && weightChange <= 4) { potential += 5; tags.push('質量安定'); }
+  if (weightChange >= 10 && weightChange <= 20) { potential += 20; tags.push('成長加速'); }
+  else if (weightChange >= 22) { potential -= 15; tags.push('太目残り懸念'); }
+  else if (weightChange <= -12) { potential -= 20; tags.push('究極仕上げ/疲弊'); }
+  else if (-4 <= weightChange && weightChange <= 4) { potential += 10; tags.push('質量安定'); }
 
   // ==========================================
   // GIS幾何学適性 - 枠順バイアス
   // ==========================================
   if (frame <= 3) { potential += 15; tags.push('内枠最短経路'); }
-  else if (frame >= 10) { potential -= 5; }
+  else if (frame >= (headCount - 1)) { potential += 10; tags.push('外枠被せなし'); }
+
+  // ==========================================
+  // 血統・適性解析
+  // ==========================================
+  const dirtSires = ['ヘニーヒューズ', 'シニスターミニスター', 'ホッコータルマエ', 'パイロ', 'ドレフォン', 'マジェスティックウォリアー', 'ダノンレジェンド'];
+  const turfSires = ['ディープインパクト', 'ハーツクライ', 'キズナ', 'エピファネイア', 'モーリス', 'ロードカナロア', 'ドゥラメンテ'];
+
+  if (race.surface === 'ダート') {
+    if (dirtSires.some(s => bloodline.includes(s))) { potential += 25; tags.push('ダートエリート血統'); }
+  } else {
+    if (turfSires.some(s => bloodline.includes(s))) { potential += 25; tags.push('芝エリート血統'); }
+  }
 
   // ==========================================
   // 競馬場別ロジック
@@ -173,7 +219,6 @@ export function calculateTsuchiyaScore(
     if (dist === 1600 && bloodline.includes('ヘニーヒューズ')) { potential += 45; tags.push('大井1600特注ヘニーヒューズ'); }
     const goldenCombos: Record<string, number> = { '佐々木洋一 × 矢野貴之': 40, '林正人 × 町田直希': 40, '荒山勝徳 × 笹川翼': 30 };
     if (goldenCombos[`${horse.trainer} × ${jockey}`]) { potential += goldenCombos[`${horse.trainer} × ${jockey}`]; tags.push('黄金コンビ'); }
-    if (horse.prizeCloseFlag) { potential -= 60; tags.push('ヤラズ判定'); }
   } else if (trackName === '門別') {
     const powerSires = ['パイロ', 'ホッコータルマエ', 'ルヴァンスレーヴ'];
     if (powerSires.some(s => bloodline.includes(s))) { potential += 35; tags.push('門別パワー血統'); }
