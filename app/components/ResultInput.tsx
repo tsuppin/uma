@@ -25,179 +25,95 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   // ==========================================
   const parsePasteText = () => {
     setParseError("");
-    const lines = pasteText.split("\n").map(l => l.trim()).filter(Boolean);
-    const parsed: ResultRow[] = [];
+    const lines = pasteText.split("\n").map(l => l.trim());
+    const parsedMap = new Map<number, ResultRow>();
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (line.includes("着順") || line.includes("単勝") || line.startsWith("着") || line.includes("馬名(所属)")) continue;
-
-      // 0. NAR公式の複数行コピー形式
-      // 1行目: "1 8" (着順 枠)
-      // 2行目: "10" (馬番)
-      // 3行目: "エポエポサン(兵庫)" (馬名)
-      const narMultiMatch = line.match(/^(\d+)\s+(\d+)$/);
-      if (narMultiMatch && i + 2 < lines.length && /^\d+$/.test(lines[i + 1])) {
-        const rank = parseInt(narMultiMatch[1]);
-        const horseNumber = parseInt(lines[i + 1]);
-        const horseName = lines[i + 2] || "";
-        let time = "";
-        
-        for (let j = i + 3; j < i + 8 && j < lines.length; j++) {
-          const timeMatch = lines[j].match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
-          if (timeMatch && timeMatch[1].includes(":")) {
-             time = timeMatch[1].replace(/:(\d+)$/, '.$1');
-             break;
-          }
-        }
-        
-        parsed.push({ rank, horseNumber, horseName, time, odds: 0, prize: 0 });
-        i += 4; // 処理した行をスキップ
-        continue;
+      if (!line) continue;
+      
+      // セクション終了判定
+      if (line.includes("タイム") || line.includes("コーナー通過順位") || line.includes("払戻金") || line.includes("単勝")) {
+        // 払戻金セクション以降は解析不要
+        if (i > 10) break; 
       }
+      
+      if (line.includes("着順") || line.includes("馬名(所属)")) continue;
 
-      // 0.1 JRA公式・ネット競馬等の複数行コピー形式
-      // 1行目: "1  7  12  サトノフェンサー2番人気" (タブまたは複数スペース区切り)
-      // 2行目以降にタイム "1:39.5 / 36.9"
-      const jraMultiMatch = line.split(/\t|\s{2,}/);
-      if (jraMultiMatch.length >= 4 && /^\d+$/.test(jraMultiMatch[0]) && /^\d+$/.test(jraMultiMatch[1]) && /^\d+$/.test(jraMultiMatch[2])) {
-        const rank = parseInt(jraMultiMatch[0]);
-        const horseNumber = parseInt(jraMultiMatch[2]);
-        let horseName = jraMultiMatch[3] || "";
-        horseName = horseName.replace(/\d+番人気$/, "").trim(); // "2番人気"等を削除
-        
-        let time = "";
-        for (let j = i + 1; j < i + 5 && j < lines.length; j++) {
-          const timeMatch = lines[j].match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
-          if (timeMatch && (lines[j].includes("/") || timeMatch[1].includes(":"))) {
-             time = timeMatch[1].replace(/:(\d+)$/, '.$1');
-             break;
-          }
-        }
-        
-        parsed.push({ rank, horseNumber, horseName, time, odds: 0, prize: 0 });
-        i += 3; // 4行1セットとみなしてスキップ
-        continue;
-      }
-
-      // 0.2 NAR公式・ネット競馬等（完全縦並びコピー形式）
-      // 1行目: "1" (着順)
-      // 2行目: "4" (枠番)
-      // 3行目: "4" (馬番)
-      // 4行目: "ブリスタイム(岩手)" (馬名)
-      if (/^\d+$/.test(line) && i + 3 < lines.length && /^\d+$/.test(lines[i+1]) && /^\d+$/.test(lines[i+2]) && !/^\d/.test(lines[i+3])) {
-        const rank = parseInt(line);
-        const waku = parseInt(lines[i+1]);
-        const horseNumber = parseInt(lines[i+2]);
-        if (rank >= 1 && rank <= 18 && waku >= 1 && waku <= 8 && horseNumber >= 1 && horseNumber <= 18) {
-          const horseName = lines[i+3].replace(/\(.+\)$/, "").trim();
-          let time = "";
-          for (let j = i + 4; j < i + 12 && j < lines.length; j++) {
-            const timeMatch = lines[j].match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
-            if (timeMatch && timeMatch[1].includes(":")) {
-               time = timeMatch[1].replace(/:(\d+)$/, '.$1');
-               break;
-            }
-          }
-          parsed.push({ rank, horseNumber, horseName, time, odds: 0, prize: 0 });
-          i += 3; // 処理した行をスキップ (次でi++されるため馬名までスキップ)
-          continue;
-        }
-      }
-
-      let rank = parsed.length + 1;
+      let rank = 0;
       let horseNumber = 0;
       let horseName = "";
-      let searchStr = line;
+      let time = "";
 
-      // 1. "1着 3番..." または "1着 枠3 3番..."
-      const explicitMatch = line.match(/^(\d+)\s*[着位]\s*(?:枠\d+)?\s*(\d+)\s*番?\s+(.+)/);
-      if (explicitMatch) {
-        rank = parseInt(explicitMatch[1]);
-        horseNumber = parseInt(explicitMatch[2]);
-        searchStr = explicitMatch[3];
-      } else {
-        // 2. "1 2 4 エルムラント" (着順 枠番 馬番 馬名)
-        const jraMatch = line.match(/^(\d+)\s+(\d+)\s+(\d+)\s+([^\s\d]+)/);
-        if (jraMatch && parseInt(jraMatch[1]) < 20 && parseInt(jraMatch[2]) <= 8 && parseInt(jraMatch[3]) <= 18) {
-          rank = parseInt(jraMatch[1]);
-          horseNumber = parseInt(jraMatch[3]);
-          searchStr = line.slice(jraMatch[0].length);
-          horseName = jraMatch[4];
-        } else {
-          // 3. "1 4 エルムラント" (着順 馬番 馬名)
-          const simpleMatch = line.match(/^(\d+)\s+(\d+)\s+([^\s\d]+)/);
-          if (simpleMatch && parseInt(simpleMatch[1]) < 20 && parseInt(simpleMatch[2]) <= 18) {
-            rank = parseInt(simpleMatch[1]);
-            horseNumber = parseInt(simpleMatch[2]);
-            searchStr = line.slice(simpleMatch[0].length);
-            horseName = simpleMatch[3];
-          } else {
-            // 4. フォールバック: 馬番だけ抽出、着順は行順
-            const numPattern = /(?:^|\s)(\d{1,2})\s*番?(?:\s|$)/g;
-            const nums: number[] = [];
-            let m;
-            while ((m = numPattern.exec(line)) !== null) {
-              const n = parseInt(m[1]);
-              if (n >= 1 && n <= 18) nums.push(n);
-            }
-            if (nums.length > 0) {
-              if (nums.length >= 2 && nums[0] === rank) {
-                horseNumber = nums[1];
-              } else {
-                horseNumber = nums[0];
-              }
-            }
+      // 1. JRA/NAR タブ区切り・複数スペース区切り (1  3  5  馬名...)
+      const parts = line.split(/\t|\s{2,}/);
+      if (parts.length >= 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[parts.length > 3 ? 2 : 1])) {
+        rank = parseInt(parts[0]);
+        // 3列目が数字ならそれが馬番
+        horseNumber = /^\d+$/.test(parts[2]) ? parseInt(parts[2]) : parseInt(parts[1]);
+        horseName = parts[3] || parts[2] || "";
+        
+        // 馬名が「ブリンカー」等の場合は次の行を見る
+        if (!horseName || /^[^\u3040-\u9FFF\u30A0-\u30FF]+$/.test(horseName) || horseName.includes("ブリンカー")) {
+           for (let j = i + 1; j < i + 4 && j < lines.length; j++) {
+             if (lines[j] && !/^\d/.test(lines[j]) && !lines[j].includes("/") && !lines[j].includes(":") && lines[j].length > 1) {
+                horseName = lines[j].replace(/\d+番人気$/, "").trim();
+                break;
+             }
+           }
+        }
+      } 
+      // 2. NAR公式 複数行形式 (1 8 \n 8 \n 馬名)
+      else if (/^\d+\s+\d+$/.test(line) && i + 1 < lines.length && /^\d+$/.test(lines[i+1])) {
+        rank = parseInt(line.split(/\s+/)[0]);
+        horseNumber = parseInt(lines[i+1]);
+        horseName = (lines[i+2] || "").replace(/\(.+\)$/, "").trim();
+      }
+      // 3. 縦並び形式 (着順 \n 枠 \n 馬番 \n 馬名)
+      else if (/^\d+$/.test(line) && i + 3 < lines.length && /^\d+$/.test(lines[i+1]) && /^\d+$/.test(lines[i+2]) && !/^\d/.test(lines[i+3])) {
+        rank = parseInt(line);
+        horseNumber = parseInt(lines[i+2]);
+        horseName = lines[i+3].replace(/\(.+\)$/, "").trim();
+      }
+      // 4. 一行完結形式 (1着 8番 馬名 1:52.9)
+      else {
+        const m = line.match(/^(\d+)[着位]\s*(?:枠\d+)?\s*(\d+)番?\s+([^\s\d]+)/);
+        if (m) {
+          rank = parseInt(m[1]);
+          horseNumber = parseInt(m[2]);
+          horseName = m[3];
+        }
+      }
+
+      // 共通: タイム抽出 (付近の行からも探す)
+      for (let j = i; j < i + 5 && j < lines.length; j++) {
+        const tm = lines[j].match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
+        if (tm && (lines[j].includes(":") || lines[j].includes("/"))) {
+          time = tm[1].replace(/:(\d+)$/, '.$1');
+          break;
+        }
+      }
+
+      if (rank > 0 && (horseNumber > 0 || horseName)) {
+        if (!parsedMap.has(rank)) {
+          // 馬名補完
+          if (!horseName && horseNumber > 0) {
+            horseName = race.horses.find(h => h.number === horseNumber)?.name || "";
           }
+          parsedMap.set(rank, { rank, horseNumber, horseName, time, odds: 0, prize: 0 });
         }
-      }
-
-      if (!horseName) {
-        const nameMatch = searchStr.match(/[\u3040-\u9FFF\u30A0-\u30FF\uFF00-\uFFEF]{2,}/);
-        const matchedName = nameMatch ? nameMatch[0] : "";
-        if (race.horses.some(h => h.name.includes(matchedName))) {
-          horseName = matchedName;
-        } else if (horseNumber > 0) {
-          horseName = race.horses.find(h => h.number === horseNumber)?.name || matchedName;
-        } else {
-          horseName = ""; // ゴミデータを除外
-        }
-      }
-
-      // タイムを抽出 (1:33.3 や 1:33:3 に対応)
-      const timeMatch = line.match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
-      const time = timeMatch ? timeMatch[1].replace(/:(\d+)$/, '.$1') : "";
-
-      // オッズを抽出（数字.数字 + 倍）
-      const oddsMatch = line.match(/(\d+\.?\d*)\s*倍/);
-      const odds = oddsMatch ? parseFloat(oddsMatch[1]) : 0;
-
-      // 賞金（万円）を抽出
-      const prizeMatch = line.match(/(\d+[\d,]*)\s*万?円/);
-      const prize = prizeMatch ? parseInt(prizeMatch[1].replace(",", "")) : 0;
-
-      if (horseNumber > 0 || horseName) {
-        parsed.push({ rank, horseNumber, horseName, time, odds, prize });
       }
     }
 
+    const parsed = Array.from(parsedMap.values()).sort((a, b) => a.rank - b.rank);
+
     if (parsed.length === 0) {
-      setParseError("着順を解析できませんでした。\n例: 「1 2 4 エルムラント 1:14.2」のような形式で入力してください。");
+      setParseError("着順を解析できませんでした。形式を確認してください。");
       return;
     }
 
-    // 有効なデータのみに絞ってからrankでソート
-    const validParsed = parsed.filter(p => p.horseNumber > 0 || p.horseName !== "");
-    validParsed.sort((a, b) => a.rank - b.rank);
-
-    // 1着、2着、3着の3行のみ抽出
-    const top3 = validParsed.filter(p => p.rank <= 3).slice(0, 3);
-    
-    // 足りない場合は空行を補填して必ず3着まで入力できるようにする
-    while (top3.length < 3) {
-      top3.push({ rank: top3.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
-    }
-
+    // 1-3着を抽出（なければ空を補填）
+    const top3 = [1, 2, 3].map(r => parsed.find(p => p.rank === r) || { rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
     setResults(top3);
   };
 
