@@ -283,18 +283,47 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   }
   const pm = (lines[idx] || "").match(/(\d+)番人気/);
   if (pm) { popularity = parseInt(pm[1]); idx++; }
+  let gender: Horse["gender"] = "牡"; let age = 4;
+  let horseWeight = 480, horseWeightChange = 0;
+  let kinryo = 55;
+
+  // 馬体重・増減 (JRA)
+  while (idx < lines.length) {
+    const l = lines[idx] || "";
+    const wm = l.match(/^(\d+)kg/);
+    if (wm) {
+      horseWeight = parseInt(wm[1]);
+      idx++;
+      const wcm = (lines[idx] || "").match(/\(([+-]?\d+|初出走)\)/);
+      if (wcm) {
+        horseWeightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]);
+        idx++;
+      }
+      break;
+    }
+    if (/([牡牝セ]|せん)\d+/.test(l) || /\d+kg/.test(l)) break;
+    idx++;
+  }
   while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
 
-  let gender: Horse["gender"] = "牡"; let age = 4;
+  // 性齢 "牡3/青鹿"
   const gm = (lines[idx] || "").match(/([牡牝セ]|せん)(\d+)\//);
-  if (gm) { gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝"; age = parseInt(gm[2]); idx++; }
+  if (gm) {
+    gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝";
+    age = parseInt(gm[2]);
+    idx++;
+  }
   while (idx < lines.length && lines[idx] === "") idx++;
 
-  let kinryo = 55;
+  // 斤量 "57.0kg"
   const kMatch = (lines[idx] || "").match(/(\d+\.?\d*)kg/);
-  if (kMatch) { kinryo = parseFloat(kMatch[1]); idx++; }
+  if (kMatch) {
+    kinryo = parseFloat(kMatch[1]);
+    idx++;
+  }
   while (idx < lines.length && lines[idx] === "") idx++;
 
+  // 騎手
   const jockey = (lines[idx] || "").trim(); idx++;
   while (idx < lines.length && lines[idx] === "") idx++;
 
@@ -347,12 +376,9 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     }
   }
 
-  const w = pastRaces[0]?.weight || 480;
-  const w2 = pastRaces[1]?.weight || w;
-
   return {
     id: generateId(), number, frame, name, age, gender,
-    weight: w, weightChange: w - w2,
+    weight: horseWeight, weightChange: horseWeightChange,
     jockey: jockey.replace(/\s+/g, " "), jockeyWeight: kinryo,
     trainer, owner, sire, dam, bms,
     bloodline: [sire, bms].filter(Boolean).join(" / "),
