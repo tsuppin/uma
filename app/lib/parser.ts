@@ -46,10 +46,12 @@ export function parseNARText(rawText: string): {
     if (/^[Ａ-Ｚ][０-９]/.test(l) || l.includes("クラス") || l.includes("特別")) raceName = l;
   }
 
-  // 馬ブロック分割: 行が "N\tN\t馬名(...)" パターン
+  // 馬ブロック分割: 行が "枠 番 馬名" パターン
   const blockStarts: number[] = [];
   for (let i = 0; i < lines.length; i++) {
-    if (/^\d\t\d+\t[^\t]+/.test(lines[i])) blockStarts.push(i);
+    const l = lines[i].trim();
+    // 枠(1桁) 番(1-2桁) 馬名 のパターンをより柔軟に検知
+    if (/^\d+[\t\s]+\d+[\t\s]+[^\t\s]+/.test(l)) blockStarts.push(i);
   }
 
   const horses: Horse[] = [];
@@ -66,77 +68,82 @@ export function parseNARText(rawText: string): {
 function parseNARHorse(lines: string[]): Partial<Horse> | null {
   if (!lines[0]) return null;
 
-  // "1\t1\tダーカザンブラック(大井)"
-  const hp = lines[0].split("\t");
-  const frame = parseInt(hp[0]) || 1;
-  const number = parseInt(hp[1]) || 1;
+  // "1 1 ジーティートレイン(大井)"
+  const hp = lines[0].trim().split(/[\t\s]+/);
+  if (hp.length < 3) return null;
+
+  const frame = parseInt(hp[0]);
+  const number = parseInt(hp[1]);
   const name = (hp[2] || "").replace(/\(.+?\)$/, "").trim();
 
   let idx = 1;
-
-  // 父・母
   let sire = "", dam = "";
-  for (let i = idx; i < Math.min(idx + 4, lines.length); i++) {
-    const l = lines[i];
-    if (/^\s*父\s+/.test(l)) { sire = l.replace(/^\s*父\s+/, "").trim(); }
-    else if (/^\s*母\s+/.test(l)) { dam = l.replace(/^\s*母\s+/, "").trim(); }
-  }
-  // Skip 父/母 lines
-  while (idx < lines.length && /^\s*[父母]\s/.test(lines[idx])) idx++;
 
-  // 性齢 "牝4"
-  let gender: Horse["gender"] = "牡", age = 4;
+  // 父・母の抽出 (全角・半角スペース両対応)
+  while (idx < Math.min(lines.length, 10)) {
+    const l = lines[idx].trim();
+    if (l.includes("父") && !sire) { sire = l.replace(/^.*?父\s+/, "").trim(); idx++; }
+    else if (l.includes("母") && !dam) { dam = l.replace(/^.*?母\s+/, "").trim(); idx++; }
+    else if (l.match(/^[牡牝セ]|せん/)) break;
+    else idx++;
+  }
+
+  // 性齢 "牡3"
+  let gender: Horse["gender"] = "牡", age = 3;
   const gm = (lines[idx] || "").match(/([牡牝セ]|せん)(\d)/);
   if (gm) { gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝"; age = parseInt(gm[2]); idx++; }
 
-  // 毛色・記号などのメタデータ
-  while (idx < lines.length && (
-    /[栗栃鹿黒青芦粕白]毛?$/.test(lines[idx]) || 
-    lines[idx] === "—" || 
-    lines[idx] === "-" || 
-    lines[idx] === "ー" ||
-    lines[idx] === "未定" ||
-    lines[idx] === ""
-  )) {
+  // 毛色・増減などのメタデータ + オッズの探索
+  let odds = 0, popularity = 0;
+  while (idx < lines.length && !lines[idx].match(/\d{2}\/\d{2}\/\d{2}/)) {
+    const l = lines[idx].trim();
+    if (!l) { idx++; continue; }
+
+    // オッズ判定 (例: "2.5" 単独行、または "2.5 (1)" 形式)
+    const om = l.match(/^(\d+\.\d+)(?:\s*\((\d+)人\))?$/);
+    if (om) {
+      odds = parseFloat(om[1]);
+      if (om[2]) popularity = parseInt(om[2]);
+      idx++;
+      continue;
+    }
+
+    if (l.match(/^[栗栃鹿黒青芦粕白]毛?$/) || l === "—" || l === "-" || l === "ー" || l === "未定") {
+      idx++; continue;
+    }
+    
+    // 馬体重
+    const wm = l.match(/(\d+)kg/);
+    if (wm) break; // 馬体重行に来たら抜ける
+    
+    // 騎手名らしきものがあればストップ
+    if (l.length >= 2 && l.length <= 5 && !/\d/.test(l)) break;
+
     idx++;
   }
 
   // 馬体重・増減
   let weight = 480, weightChange = 0;
-  const wm = (lines[idx] || "").match(/(\d+)kg/);
-  if (wm) { weight = parseInt(wm[1]); idx++; }
+  if (lines[idx]) {
+    const wm = lines[idx].match(/(\d+)kg/);
+    if (wm) { weight = parseInt(wm[1]); idx++; }
+  }
   
-  // 増減判定 (±0, +2, -4, 初出走など)
   if (lines[idx]) {
     const wcm = lines[idx].match(/\(([±+-]?\d+|初出走|[\d]+)\)/);
     if (wcm) {
       const val = wcm[1].replace("±", "");
       weightChange = val === "初出走" ? 0 : parseInt(val) || 0;
       idx++;
-    } else if (lines[idx].match(/^[±\d\(\)\-\—\ー]+$/) || lines[idx] === "—" || lines[idx] === "-" || lines[idx] === "ー") {
-      // 記号のみの行や (0) などの特殊ケースをスキップ
-      idx++;
     }
   }
 
-  // 騎手前の再度メタデータスキップ（ブリンカー等）
-  while (idx < lines.length && (
-    lines[idx] === "—" || 
-    lines[idx] === "-" || 
-    lines[idx] === "ー" || 
-    lines[idx] === "" || 
-    lines[idx].match(/^[栗栃鹿黒青芦粕白]毛?$/) ||
-    lines[idx].includes("ブリンカー") ||
-    lines[idx].startsWith("(") // (±0) などがまだ残っている場合の保険
-  )) {
-    idx++;
-  }
-
   // 騎手
+  while (idx < lines.length && (lines[idx] === "" || lines[idx].match(/^[栗栃鹿黒青芦粕白]毛?$/) || lines[idx].includes("ブリンカー"))) idx++;
+
   let jockey = "", kinryo = 56;
-  if (lines[idx] && !/^\(/.test(lines[idx]) && !/^\d/.test(lines[idx]) && !/^[\-—ー]$/.test(lines[idx])) {
+  if (lines[idx]) {
     const rawJockey = lines[idx].replace(/^[▲△☆◇]/, "").trim();
-    // 騎手名と斤量が同一行にある場合 (例: "笹川翼 54.0")
     const jm = rawJockey.match(/^(.+?)\s+(\d+\.\d+|\d{2})$/);
     if (jm) {
       jockey = jm[1].trim();
@@ -147,32 +154,23 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     idx++;
   }
   
-  // 斤量 (別行の場合: (56.0) または 56.0)
   const km = (lines[idx] || "").match(/\((\d+\.?\d*)\)/);
   if (km) { kinryo = parseFloat(km[1]); idx++; }
-  else if (lines[idx] && /^\d{2}\.?\d?$/.test(lines[idx])) {
-    kinryo = parseFloat(lines[idx]); idx++;
-  }
 
-  // 調教師・馬主・生産者
   const trainer = lines[idx] || ""; idx++;
   const owner = lines[idx] || ""; idx++;
-  idx++; // 生産者スキップ
+  idx++; // 生産者
 
   // 前走データ
   const pastRaces: PastRace[] = [];
   while (idx < lines.length && pastRaces.length < 5) {
-    const l = lines[idx];
-    const pp = l.split("\t");
+    const l = lines[idx].trim();
+    if (!l) { idx++; continue; }
+    
+    const pp = l.split(/[\t\s]+/);
     if (pp.length < 4) { idx++; continue; }
 
-    const resultStr = pp[0];
-    if (resultStr === "除外" || resultStr === "取消") { idx += 4; continue; }
-
-    const prResult = parseInt(resultStr);
-    if (!prResult) { idx++; continue; }
-
-    // 日付 "26/04/15" → "2026-04-15"
+    const prResult = parseInt(pp[0]) || 0;
     const dm = (pp[1] || "").match(/(\d{2})\/(\d{2})\/(\d{2})/);
     const prDate = dm ? `20${dm[1]}-${dm[2]}-${dm[3]}` : "";
     const prVenue = pp[2]?.trim() || "";
@@ -180,25 +178,20 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     const distM = distStr.match(/(\d+)m/);
     const prDist = distM ? parseInt(distM[1]) : 0;
     const prSurf: PastRace["surface"] = distStr.includes("芝") ? "芝" : "ダート";
-    const condStr = pp[4]?.trim() || "";
-    const prCond: PastRace["condition"] = (["良","稍重","重","不良"] as string[]).includes(condStr)
-      ? condStr as PastRace["condition"] : "良";
+    const prCond: PastRace["condition"] = (["良","稍重","重","不良"] as string[]).includes(pp[4])
+      ? pp[4] as PastRace["condition"] : "良";
     idx++;
 
-    // クラス
     const raceClass = lines[idx] || ""; idx++;
 
-    // "13頭 2番 2人 笹川翼 54.0 462kg 3-3"
     const info = lines[idx] || "";
-    const im = info.match(/(\d+)頭\s+(\d+)番\s+(\d+)人\s+(.+?)\s+\d+\.\d+\s+(\d+)kg/);
+    const im = info.match(/(\d+)頭\s+(\d+)番\s+(\d+)人\s+(.+?)\s+(\d+\.\d+)\s+(\d+)kg/);
     const prJockey = im ? im[4].trim().replace(/^[▲△☆◇]/, "") : "";
-    const prWeight = im ? parseInt(im[5]) : 480;
+    const prWeight = im ? parseInt(im[6]) : 480;
     idx++;
 
-    // タイム行 "1:15:6(38.5) アイビーブリザード(+1.6)"
     const tl = lines[idx] || "";
     const tm = tl.match(/^(\d+:\d+[:.]\d+)/);
-    // "1:15:6" → "1:15.6"
     const prTime = tm ? tm[1].replace(/(\d+:\d+):(\d+)$/, "$1.$2") : "";
     idx++;
 
@@ -218,7 +211,7 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     weight, weightChange,
     jockey: jockey.replace(/\s+/g, " "), jockeyWeight: kinryo,
     trainer, owner, sire, dam, bms: "",
-    bloodline: sire || "", style: "", odds: 0, popularity: 0, pastRaces,
+    bloodline: sire || "", style: "", odds, popularity, pastRaces,
   };
 }
 
