@@ -102,21 +102,24 @@ export function calculateTsuchiyaScore(
   // ==========================================
   if (horse.pastRaces && horse.pastRaces.length > 0) {
     const validPastRaces = horse.pastRaces.filter(pr => pr.result > 0);
-    const recent3 = validPastRaces.slice(0, 3);
+    const recent5 = validPastRaces.slice(0, 5);
     
-    // 近3走での好走
-    const top3Count = recent3.filter(pr => pr.result <= 3).length;
-    if (top3Count >= 2) { potential += 35; tags.push('近3走安定勢'); }
-    else if (top3Count === 1) { potential += 15; tags.push('近走好走あり'); }
+    // 近5走での好走（連対・3着以内）
+    const top3Count = recent5.filter(pr => pr.result <= 3).length;
+    const winsCount = recent5.filter(pr => pr.result === 1).length;
+    
+    if (winsCount >= 2) { potential += 40; tags.push(`近5走で${winsCount}勝`); }
+    if (top3Count >= 3) { potential += 35; tags.push('近5走安定勢(50%超)'); }
+    else if (top3Count >= 1) { potential += 15; tags.push('近走好走実績あり'); }
 
     // 掲示板（5着以内）確保
-    const top5Count = recent3.filter(pr => pr.result <= 5).length;
-    if (top5Count === 3) { potential += 20; tags.push('掲示板パーフェクト'); }
+    const top5Count = recent5.filter(pr => pr.result <= 5).length;
+    if (top5Count >= 4) { potential += 20; tags.push('入着率エリート'); }
 
-    // 上昇気配（前走が過去3走でベスト）
-    if (recent3.length >= 2 && recent3[0].result < Math.min(...recent3.slice(1).map(r => r.result))) {
-      potential += 15;
-      tags.push('上昇カーブ');
+    // 上昇気配（直近3走の着順が改善傾向）
+    if (recent5.length >= 3 && recent5[0].result < recent5[1].result && recent5[1].result < recent5[2].result) {
+      potential += 25;
+      tags.push('3走連続上昇');
     }
   }
 
