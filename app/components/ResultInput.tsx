@@ -31,96 +31,117 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (!line) continue;
-      
+
       // セクション終了判定
-      // 結果の抽出が始まっている状態で、払戻金などのセクションヘッダーが来たら終了
-      const isResultSectionEnd = (line === "払戻金" || line === "コーナー通過順位" || (line.startsWith("単勝") && line.includes("円")));
-      if (isResultSectionEnd && parsedMap.size > 0) {
-        break; 
-      }
-      
+      if ((line === "払戻金" || line === "コーナー通過順位" || line.startsWith("タイム")) && parsedMap.size > 0) break;
+      if (line.startsWith("単勝") && line.includes("円") && parsedMap.size > 0) break;
+
+      // スキップ行
       if (line.includes("着順") || line.includes("馬名(所属)") || line.includes("タイム(着差)")) continue;
 
-      let rank = 0;
-      let horseNumber = 0;
-      let horseName = "";
-      let time = "";
+      let rank = 0, horseNumber = 0, horseName = "", time = "";
 
-      // 1. 数値パターンによる行解析 (JRA: [着, 枠, 番], NAR: [着, 番])
-      const lineParts = line.trim().split(/[\t\s]+/);
-      const rowNums = lineParts.filter(p => /^\d+$/.test(p)).map(Number);
-      
-      if (rowNums.length >= 2 && /^\d+/.test(lineParts[0])) {
-        rank = rowNums[0];
-        // 3つ以上数字があればJRA形式とみなして3つ目を馬番に、2つならNAR形式とみなして2つ目を馬番にする
-        horseNumber = (rowNums.length >= 3) ? rowNums[2] : rowNums[1];
-        
-        // 名前を探す: linePartsの中で数字でない最初の要素、または次の行
-        horseName = lineParts.find((p, idx) => idx >= 1 && !/^\d+$/.test(p) && !p.includes(":") && !p.includes("/")) || "";
-        
-        // 馬名が空、または注釈行の場合は次の行を見る
-        if (!horseName || /^[^\u3040-\u9FFF\u30A0-\u30FF]+$/.test(horseName) || horseName.includes("ブリンカー") || horseName.includes("着用") || horseName === "マルチ") {
-           for (let j = i + 1; j < i + 5 && j < lines.length; j++) {
-             const nextLine = lines[j].trim();
-             if (nextLine === "払戻金" || nextLine === "コーナー通過順位") break;
-             if (nextLine && !/^\d/.test(nextLine) && !nextLine.includes("/") && !nextLine.includes(":") && nextLine.length > 1) {
-                horseName = nextLine;
-                break;
-             }
-           }
-        }
-        
-        // 馬名のクレンジング (注釈削除)
-        horseName = horseName.replace(/\d+番人気$/, "")
-                             .replace(/ブリンカー|マルチ|着用/g, "")
-                             .replace(/\t/g, " ")
-                             .trim();
-      } 
-      // 2. NAR公式 複数行形式 (例: 1 8 \n 8 \n 馬名)
-      else if (/^\d+[\t\s]+\d+\s*$/.test(line) && i + 1 < lines.length && /^\d+\s*$/.test(lines[i+1])) {
-        const rankParts = line.trim().split(/[\t\s]+/);
-        rank = parseInt(rankParts[0]);
-        horseNumber = parseInt(lines[i+1].trim());
-        horseName = (lines[i+2] || "").replace(/\(.+?\)$/, "").trim();
-        
-        // 馬名が数値や空の場合はさらに次を探す
-        if (!horseName || /^\d+$/.test(horseName)) {
-           horseName = (lines[i+3] || "").replace(/\(.+?\)$/, "").trim();
+      // --- パターン1: JRA タブ区切り "1\t3\t5\tクインズショコラ1番人気" ---
+      if (line.includes("\t")) {
+        const parts = line.split("\t");
+        const r = parseInt(parts[0]);
+        // parts[1]=枠, parts[2]=馬番
+        const n = parts.length >= 3 ? parseInt(parts[2]) : parseInt(parts[1]);
+        if (r >= 1 && r <= 20 && n >= 1 && n <= 28) {
+          rank = r;
+          horseNumber = n;
+          // 馬名は parts[3] か parts[2]
+          const rawName = parts.length >= 4 ? parts[3] : (parts[2] || "");
+          horseName = rawName
+            .replace(/\d+番人気$/, "")
+            .replace(/ブリンカー|マルチ|着用/g, "")
+            .trim();
         }
       }
-      // 3. 縦並び形式 (着順 \n 枠 \n 馬番 \n 馬名)
-      else if (/^\d+\s*$/.test(line) && i + 3 < lines.length && /^\d+\s*$/.test(lines[i+1]) && /^\d+\s*$/.test(lines[i+2]) && !/^\d/.test(lines[i+3])) {
-        rank = parseInt(line.trim());
-        horseNumber = parseInt(lines[i+2].trim());
-        horseName = lines[i+3].replace(/\(.+?\)$/, "").trim();
+
+      // --- パターン2: スペース区切り "1 3 5 クインズショコラ..." ---
+      if (rank === 0) {
+        const parts = line.split(/\s+/);
+        // 先頭3要素が全て数値 → JRA形式 (着, 枠, 馬番)
+        if (parts.length >= 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1]) && /^\d+$/.test(parts[2])) {
+          const r = parseInt(parts[0]);
+          const ku = parseInt(parts[1]);
+          const n = parseInt(parts[2]);
+          if (r >= 1 && r <= 20 && ku >= 1 && ku <= 8 && n >= 1 && n <= 28) {
+            rank = r;
+            horseNumber = n;
+            horseName = parts.slice(3).find(p => /[\u3040-\u9FFF\u30A0-\u30FF]/.test(p) || (p.length > 1 && !/^\d+$/.test(p))) || "";
+            horseName = horseName.replace(/\d+番人気$/, "").replace(/ブリンカー|マルチ|着用/g, "").trim();
+          }
+        }
+        // 先頭2要素が数値 → NAR形式 (着, 馬番)
+        else if (parts.length >= 2 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1])) {
+          const r = parseInt(parts[0]);
+          const n = parseInt(parts[1]);
+          if (r >= 1 && r <= 20 && n >= 1 && n <= 28) {
+            rank = r;
+            horseNumber = n;
+            horseName = parts.slice(2).find(p => p.length > 1 && !/^\d+$/.test(p)) || "";
+            horseName = horseName.replace(/\d+番人気$/, "").replace(/ブリンカー|マルチ|着用/g, "").trim();
+          }
+        }
       }
-      // 4. 一行完結形式 (1着 8番 馬名 1:52.9)
-      else {
-        const m = line.match(/^(\d+)[着位]\s*(?:枠\d+)?\s*(\d+)番?\s+([^\s\d]+)/);
+
+      // --- パターン3: NAR縦並び 着順のみの行 "1" "6" "9" "馬名" ---
+      if (rank === 0 && /^\d+$/.test(line)) {
+        const r = parseInt(line);
+        if (r >= 1 && r <= 20 && i + 3 < lines.length) {
+          const l1 = lines[i + 1], l2 = lines[i + 2], l3 = lines[i + 3];
+          if (/^\d+$/.test(l1) && /^\d+$/.test(l2) && !/^\d/.test(l3) && l3.length > 1) {
+            rank = r;
+            horseNumber = parseInt(l2);
+            horseName = l3.replace(/\(.+?\)$/, "").trim();
+          } else if (/^\d+$/.test(l1) && !/^\d/.test(l2) && l2.length > 1) {
+            rank = r;
+            horseNumber = parseInt(l1);
+            horseName = l2.replace(/\(.+?\)$/, "").trim();
+          }
+        }
+      }
+
+      // --- パターン4: "1着 3番 馬名" 形式 ---
+      if (rank === 0) {
+        const m = line.match(/^(\d+)[着位]\s*(?:枠\d+)?\s*(\d+)番?\s+([^\s\d][^\s]*)/);
         if (m) {
-          rank = m[1] ? parseInt(m[1]) : 0;
-          horseNumber = m[2] ? parseInt(m[2]) : 0;
-          horseName = m[3] || "";
+          rank = parseInt(m[1]);
+          horseNumber = parseInt(m[2]);
+          horseName = m[3].replace(/\d+番人気$/, "").trim();
         }
       }
 
-      // 共通: タイム抽出 (付近の行からも探す)
-      for (let j = i; j < i + 5 && j < lines.length; j++) {
-        const tm = lines[j].match(/(\d+[:.]\d+[:.]\d+|\d+[:.]\d+)/);
-        if (tm && (lines[j].includes(":") || lines[j].includes("/"))) {
-          time = tm[1].replace(/:(\d+)$/, '.$1');
+      // 馬名が取れていない場合、後続行の日本語行を探す
+      if (rank > 0 && !horseName) {
+        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+          const nl = lines[j].trim();
+          if (!nl || /^\d/.test(nl) || nl.includes("/") || nl.length <= 1) continue;
+          if (nl === "払戻金" || nl === "コーナー通過順位") break;
+          if (/[\u3040-\u9FFF\u30A0-\u30FF]/.test(nl)) {
+            horseName = nl.replace(/\d+番人気$/, "").replace(/ブリンカー|マルチ|着用/g, "").trim();
+            break;
+          }
+        }
+      }
+
+      // タイム抽出（近隣6行から探す）
+      for (let j = i; j < Math.min(i + 6, lines.length); j++) {
+        const tm = lines[j].match(/(\d+:\d+\.\d+|\d+:\d+:\d+)/);
+        if (tm) {
+          time = tm[1].replace(/(\d+:\d+):(\d+)$/, "$1.$2");
           break;
         }
       }
 
-      if (rank > 0 && (horseNumber > 0 || horseName)) {
-        if (!parsedMap.has(rank)) {
-          // 馬名補完
-          if (!horseName && horseNumber > 0) {
-            horseName = race.horses.find(h => h.number === horseNumber)?.name || "";
-          }
-          parsedMap.set(rank, { rank, horseNumber, horseName, time, odds: 0, prize: 0 });
+      // 登録
+      if (rank >= 1 && rank <= 20 && (horseNumber > 0 || horseName) && !parsedMap.has(rank)) {
+        if (!horseName && horseNumber > 0) {
+          horseName = race.horses.find(h => h.number === horseNumber)?.name || "";
         }
+        parsedMap.set(rank, { rank, horseNumber, horseName, time, odds: 0, prize: 0 });
       }
     }
 
@@ -131,7 +152,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       return;
     }
 
-    // 1-3着を抽出（なければ空を補填）
     const top3 = [1, 2, 3].map(r => parsed.find(p => p.rank === r) || { rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
     setResults(top3);
   };
@@ -195,92 +215,81 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           <div className="card-title">📋 レース結果テキスト貼り付け（自動入力）</div>
         </div>
         <div className="alert alert-info">
-            💡 レース結果をそのまま貼り付けると自動解析します。
-            <br />
-            <strong>対応形式例:</strong>
+            💡 レース結果をそのまま貼り付けると自動解析します。JRA・地方競馬どちらにも対応。
             <br />
             <code style={{ fontSize: "0.75rem", display: "block", marginTop: "6px", color: "var(--text-secondary)" }}>
-              1着 3番 クラウンヴィラン 1:14.2 3.5倍<br />
-              2着 8番 バイアーナ 1:14.5 4.5倍<br />
-              3着 12番 シナモンデイジー 1:14.8 35.6倍<br />
-              <br />
-              ※ネットの払戻テキスト・JRA/地方競馬公式サイトのコピー文字列もそのまま貼付け可
+              対応形式: JRAタブ区切り / スペース区切り / 地方競馬縦並び形式
             </code>
-          </div>
+        </div>
 
-          <div className="form-group">
-            <label className="form-label">結果テキスト（5000文字まで）</label>
-            <textarea
-              className="form-textarea"
-              style={{ minHeight: "180px", fontFamily: "monospace", fontSize: "0.8rem" }}
-              value={pasteText}
-              onChange={e => { setPasteText(e.target.value); setParseError(""); }}
-              placeholder={`例:\n1着 3番 クラウンヴィラン 1:14.2 3.5倍\n2着 8番 バイアーナ 1:14.5 4.5倍\n3着 12番 シナモンデイジー 1:14.8 35.6倍\n\n（netkeibaやJRAのレース結果をコピーしてそのまま貼付けもOK）`}
-              maxLength={5000}
-            />
-            <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px", textAlign: "right" }}>
-              {pasteText.length} / 5000文字
-            </div>
-          </div>
-
-          {parseError && (
-            <div className="alert alert-warning">
-              ⚠️ {parseError}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              className="btn btn-primary"
-              onClick={parsePasteText}
-              disabled={!pasteText.trim()}
-              style={{ opacity: pasteText.trim() ? 1 : 0.5 }}
-            >
-              🔍 テキストを解析
-            </button>
-            <button className="btn btn-secondary" onClick={() => setPasteText("")}>
-              クリア
-            </button>
-          </div>
-
-          {/* クイック入力ガイド */}
-          <hr className="divider" />
-          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            <div style={{ fontWeight: 600, marginBottom: "8px" }}>🏇 クイック馬番入力</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              {[1, 2, 3].map(rank => (
-                <span key={rank} style={{ color: "var(--text-secondary)" }}>{rank}着:</span>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
-              {[1, 2, 3].map((rank, ri) => (
-                <div key={rank} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <span className={`rank-badge rank-${rank}`}>{rank}着</span>
-                  <select
-                    className="form-select"
-                    style={{ width: "80px" }}
-                    value={results[ri]?.horseNumber || 0}
-                    onChange={e => {
-                      const num = +e.target.value;
-                      const h = race.horses.find(h => h.number === num);
-                      setResults(prev => {
-                        const next = [...prev];
-                        while (next.length <= ri) next.push({ rank: next.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
-                        next[ri] = { ...next[ri], horseNumber: num, horseName: h?.name || "" };
-                        return next;
-                      });
-                    }}
-                  >
-                    <option value={0}>—</option>
-                    {race.horses.map(h => (
-                      <option key={h.id} value={h.number}>{h.number}番 {h.name}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
+        <div className="form-group">
+          <label className="form-label">結果テキスト（5000文字まで）</label>
+          <textarea
+            className="form-textarea"
+            style={{ minHeight: "180px", fontFamily: "monospace", fontSize: "0.8rem" }}
+            value={pasteText}
+            onChange={e => { setPasteText(e.target.value); setParseError(""); }}
+            placeholder={`例:\n1着 3番 クラウンヴィラン 1:14.2\n2着 8番 バイアーナ 1:14.5\n3着 12番 シナモンデイジー 1:14.8\n\n（JRA・地方競馬の結果テキストをそのまま貼付けもOK）`}
+            maxLength={5000}
+          />
+          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px", textAlign: "right" }}>
+            {pasteText.length} / 5000文字
           </div>
         </div>
+
+        {parseError && (
+          <div className="alert alert-warning">
+            ⚠️ {parseError}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            className="btn btn-primary"
+            onClick={parsePasteText}
+            disabled={!pasteText.trim()}
+            style={{ opacity: pasteText.trim() ? 1 : 0.5 }}
+          >
+            🔍 テキストを解析
+          </button>
+          <button className="btn btn-secondary" onClick={() => setPasteText("")}>
+            クリア
+          </button>
+        </div>
+
+        {/* クイック入力ガイド */}
+        <hr className="divider" />
+        <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+          <div style={{ fontWeight: 600, marginBottom: "8px" }}>🏇 クイック馬番入力</div>
+          <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
+            {[1, 2, 3].map((rank, ri) => (
+              <div key={rank} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <span className={`rank-badge rank-${rank}`}>{rank}着</span>
+                <select
+                  className="form-select"
+                  style={{ width: "80px" }}
+                  value={results[ri]?.horseNumber || 0}
+                  onChange={e => {
+                    const num = +e.target.value;
+                    const h = race.horses.find(h => h.number === num);
+                    setResults(prev => {
+                      const next = [...prev];
+                      while (next.length <= ri) next.push({ rank: next.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
+                      next[ri] = { ...next[ri], horseNumber: num, horseName: h?.name || "" };
+                      return next;
+                    });
+                  }}
+                >
+                  <option value={0}>—</option>
+                  {race.horses.map(h => (
+                    <option key={h.id} value={h.number}>{h.number}番 {h.name}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* ✏️ 手動入力・詳細エリア */}
       <div className="card fade-in" style={{ marginTop: "16px" }}>
