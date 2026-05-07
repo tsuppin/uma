@@ -106,10 +106,18 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   const wm = (lines[idx] || "").match(/(\d+)kg/);
   if (wm) { weight = parseInt(wm[1]); idx++; }
   
-  // 増減がない場合や、記号が入っている場合を考慮
-  const wcm = (lines[idx] || "").match(/\(([+-]?\d+)\)/);
-  if (wcm) { weightChange = parseInt(wcm[1]); idx++; }
-  else if (lines[idx] === "—" || lines[idx] === "-" || lines[idx] === "ー") { idx++; }
+  // 増減判定 (±0, +2, -4, 初出走など)
+  if (lines[idx]) {
+    const wcm = lines[idx].match(/\(([±+-]?\d+|初出走|[\d]+)\)/);
+    if (wcm) {
+      const val = wcm[1].replace("±", "");
+      weightChange = val === "初出走" ? 0 : parseInt(val) || 0;
+      idx++;
+    } else if (lines[idx].match(/^[±\d\(\)\-\—\ー]+$/) || lines[idx] === "—" || lines[idx] === "-" || lines[idx] === "ー") {
+      // 記号のみの行や (0) などの特殊ケースをスキップ
+      idx++;
+    }
+  }
 
   // 騎手前の再度メタデータスキップ（ブリンカー等）
   while (idx < lines.length && (
@@ -117,7 +125,9 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     lines[idx] === "-" || 
     lines[idx] === "ー" || 
     lines[idx] === "" || 
-    lines[idx].includes("ブリンカー")
+    lines[idx].match(/^[栗栃鹿黒青芦粕白]毛?$/) ||
+    lines[idx].includes("ブリンカー") ||
+    lines[idx].startsWith("(") // (±0) などがまだ残っている場合の保険
   )) {
     idx++;
   }
@@ -136,10 +146,11 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     }
     idx++;
   }
+  
+  // 斤量 (別行の場合: (56.0) または 56.0)
   const km = (lines[idx] || "").match(/\((\d+\.?\d*)\)/);
   if (km) { kinryo = parseFloat(km[1]); idx++; }
   else if (lines[idx] && /^\d{2}\.?\d?$/.test(lines[idx])) {
-    // カッコなしの斤量 (例: 56.0)
     kinryo = parseFloat(lines[idx]); idx++;
   }
 
