@@ -112,7 +112,13 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   else if (lines[idx] === "—" || lines[idx] === "-" || lines[idx] === "ー") { idx++; }
 
   // 騎手前の再度メタデータスキップ（ブリンカー等）
-  while (idx < lines.length && (lines[idx] === "—" || lines[idx] === "-" || lines[idx] === "ー" || lines[idx] === "")) {
+  while (idx < lines.length && (
+    lines[idx] === "—" || 
+    lines[idx] === "-" || 
+    lines[idx] === "ー" || 
+    lines[idx] === "" || 
+    lines[idx].includes("ブリンカー")
+  )) {
     idx++;
   }
 
