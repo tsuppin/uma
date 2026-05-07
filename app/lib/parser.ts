@@ -89,23 +89,53 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   const gm = (lines[idx] || "").match(/([牡牝セ]|せん)(\d)/);
   if (gm) { gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝"; age = parseInt(gm[2]); idx++; }
 
-  // 毛色
-  if (lines[idx] && /毛$/.test(lines[idx])) idx++;
+  // 毛色・記号などのメタデータ
+  while (idx < lines.length && (
+    /[栗栃鹿黒青芦粕白]毛?$/.test(lines[idx]) || 
+    lines[idx] === "—" || 
+    lines[idx] === "-" || 
+    lines[idx] === "ー" ||
+    lines[idx] === "未定" ||
+    lines[idx] === ""
+  )) {
+    idx++;
+  }
 
   // 馬体重・増減
   let weight = 480, weightChange = 0;
   const wm = (lines[idx] || "").match(/(\d+)kg/);
   if (wm) { weight = parseInt(wm[1]); idx++; }
+  
+  // 増減がない場合や、記号が入っている場合を考慮
   const wcm = (lines[idx] || "").match(/\(([+-]?\d+)\)/);
   if (wcm) { weightChange = parseInt(wcm[1]); idx++; }
+  else if (lines[idx] === "—" || lines[idx] === "-" || lines[idx] === "ー") { idx++; }
+
+  // 騎手前の再度メタデータスキップ（ブリンカー等）
+  while (idx < lines.length && (lines[idx] === "—" || lines[idx] === "-" || lines[idx] === "ー" || lines[idx] === "")) {
+    idx++;
+  }
 
   // 騎手
   let jockey = "", kinryo = 56;
-  if (lines[idx] && !/^\(/.test(lines[idx]) && !/^\d/.test(lines[idx])) {
-    jockey = lines[idx].replace(/^[▲△☆◇]/, "").trim(); idx++;
+  if (lines[idx] && !/^\(/.test(lines[idx]) && !/^\d/.test(lines[idx]) && !/^[\-—ー]$/.test(lines[idx])) {
+    const rawJockey = lines[idx].replace(/^[▲△☆◇]/, "").trim();
+    // 騎手名と斤量が同一行にある場合 (例: "笹川翼 54.0")
+    const jm = rawJockey.match(/^(.+?)\s+(\d+\.\d+|\d{2})$/);
+    if (jm) {
+      jockey = jm[1].trim();
+      kinryo = parseFloat(jm[2]);
+    } else {
+      jockey = rawJockey;
+    }
+    idx++;
   }
   const km = (lines[idx] || "").match(/\((\d+\.?\d*)\)/);
   if (km) { kinryo = parseFloat(km[1]); idx++; }
+  else if (lines[idx] && /^\d{2}\.?\d?$/.test(lines[idx])) {
+    // カッコなしの斤量 (例: 56.0)
+    kinryo = parseFloat(lines[idx]); idx++;
+  }
 
   // 調教師・馬主・生産者
   const trainer = lines[idx] || ""; idx++;
