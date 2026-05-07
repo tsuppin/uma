@@ -7,6 +7,8 @@ import { INITIAL_PATCHES } from './constants';
 
 const STORAGE_KEY = 'tsuchiya_keiba_ai_v1';
 
+import { updateMasterDataWithRace, updateMasterDataWithResult } from './db';
+
 const defaultState: AppState = {
   races: [],
   learningPatches: [],
@@ -19,6 +21,10 @@ const defaultState: AppState = {
     totalReturn: 0,
     roi: 0,
   },
+  masterData: {
+    horses: {},
+    jockeys: {}
+  }
 };
 
 export function loadState(): AppState {
@@ -26,6 +32,11 @@ export function loadState(): AppState {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     const state = stored ? { ...defaultState, ...JSON.parse(stored) } : defaultState;
+    
+    // masterData がなければ初期化
+    if (!state.masterData) {
+      state.masterData = defaultState.masterData;
+    }
     
     // 初期パッチをマージ (既存のIDがあればスキップ)
     const existingIds = new Set(state.learningPatches.map(p => p.id));
@@ -53,6 +64,7 @@ export function addRace(state: AppState, race: Race): AppState {
   const newState = {
     ...state,
     races: [...state.races, race],
+    masterData: updateMasterDataWithRace(state.masterData, race)
   };
   saveState(newState);
   return newState;
@@ -62,17 +74,19 @@ export function updateRace(state: AppState, updatedRace: Race): AppState {
   const newState = {
     ...state,
     races: state.races.map(r => r.id === updatedRace.id ? updatedRace : r),
+    masterData: updateMasterDataWithRace(state.masterData, updatedRace)
   };
   saveState(newState);
   return newState;
 }
 
 export function addResult(state: AppState, result: RaceResult): AppState {
-  const updatedRaces = state.races.map(race => {
-    if (race.id === result.raceId) {
-      return { ...race, result };
+  const race = state.races.find(r => r.id === result.raceId);
+  const updatedRaces = state.races.map(r => {
+    if (r.id === result.raceId) {
+      return { ...r, result };
     }
-    return race;
+    return r;
   });
 
   // 統計更新
@@ -91,6 +105,7 @@ export function addResult(state: AppState, result: RaceResult): AppState {
       totalReturn,
       roi: completedRaces.length > 0 ? (totalReturn - completedRaces.length * 1300) / (completedRaces.length * 1300) : 0,
     },
+    masterData: race ? updateMasterDataWithResult(state.masterData, result, race) : state.masterData
   };
   saveState(newState);
   return newState;

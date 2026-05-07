@@ -39,7 +39,7 @@ export default function KeibaApp() {
 
   const handleRunPrediction = (race: Race) => {
     const predictions = race.horses.map(h =>
-      calculateTsuchiyaScore(h, race, state.learningPatches)
+      calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
     );
     const sorted = sortPredictions(predictions);
     const formation = generateFormation(sorted);

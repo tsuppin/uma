@@ -155,6 +155,28 @@ export interface AppState {
     totalReturn: number;
     roi: number;
   };
+  masterData: MasterData; // 蓄積されたエンティティデータ
 }
 
-export type TrackName = '笠松' | '大井' | '門別' | '阪神' | '中山' | '名古屋' | '弥富' | '門別';
+export interface MasterData {
+  horses: Record<string, HorseMaster>;
+  jockeys: Record<string, JockeyMaster>;
+}
+
+export interface HorseMaster {
+  name: string;
+  lastWeight?: number;
+  lastWeightChange?: number;
+  bestTime?: Record<string, string>; // { "venue_dist": "time" }
+  results: { date: string; rank: number; venue: string; distance: number }[];
+}
+
+export interface JockeyMaster {
+  name: string;
+  totalRaces: number;
+  wins: number;
+  top3: number;
+  venueStats: Record<string, { total: number; wins: number; top3: number }>;
+}
+
+export type TrackName = '笠松' | '大井' | '門別' | '阪神' | '中山' | '名古屋' | '弥富' | '門別' | '東京' | '京都' | '新潟' | '中京' | '小倉' | '福島' | '函館' | '札幌';
