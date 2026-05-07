@@ -76,25 +76,31 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                              .replace(/ブリンカー|マルチ|着用/g, "")
                              .trim();
       } 
-      // 2. NAR公式 複数行形式 (1 8 \n 8 \n 馬名)
-      else if (/^\d+\s+\d+$/.test(line) && i + 1 < lines.length && /^\d+$/.test(lines[i+1])) {
-        rank = parseInt(line.split(/\s+/)[0]);
-        horseNumber = parseInt(lines[i+1]);
-        horseName = (lines[i+2] || "").replace(/\(.+\)$/, "").trim();
+      // 2. NAR公式 複数行形式 (例: 1 8 \n 8 \n 馬名)
+      else if (/^\d+[\t\s]+\d+\s*$/.test(line) && i + 1 < lines.length && /^\d+\s*$/.test(lines[i+1])) {
+        const rankParts = line.trim().split(/[\t\s]+/);
+        rank = parseInt(rankParts[0]);
+        horseNumber = parseInt(lines[i+1].trim());
+        horseName = (lines[i+2] || "").replace(/\(.+?\)$/, "").trim();
+        
+        // 馬名が数値や空の場合はさらに次を探す
+        if (!horseName || /^\d+$/.test(horseName)) {
+           horseName = (lines[i+3] || "").replace(/\(.+?\)$/, "").trim();
+        }
       }
       // 3. 縦並び形式 (着順 \n 枠 \n 馬番 \n 馬名)
-      else if (/^\d+$/.test(line) && i + 3 < lines.length && /^\d+$/.test(lines[i+1]) && /^\d+$/.test(lines[i+2]) && !/^\d/.test(lines[i+3])) {
-        rank = parseInt(line);
-        horseNumber = parseInt(lines[i+2]);
-        horseName = lines[i+3].replace(/\(.+\)$/, "").trim();
+      else if (/^\d+\s*$/.test(line) && i + 3 < lines.length && /^\d+\s*$/.test(lines[i+1]) && /^\d+\s*$/.test(lines[i+2]) && !/^\d/.test(lines[i+3])) {
+        rank = parseInt(line.trim());
+        horseNumber = parseInt(lines[i+2].trim());
+        horseName = lines[i+3].replace(/\(.+?\)$/, "").trim();
       }
       // 4. 一行完結形式 (1着 8番 馬名 1:52.9)
       else {
         const m = line.match(/^(\d+)[着位]\s*(?:枠\d+)?\s*(\d+)番?\s+([^\s\d]+)/);
         if (m) {
-          rank = parseInt(m[1]);
-          horseNumber = parseInt(m[2]);
-          horseName = m[3];
+          rank = m[1] ? parseInt(m[1]) : 0;
+          horseNumber = m[2] ? parseInt(m[2]) : 0;
+          horseName = m[3] || "";
         }
       }
 
