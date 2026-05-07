@@ -39,10 +39,10 @@ export function loadState(): AppState {
     }
     
     // 初期パッチをマージ (既存のIDがあればスキップ)
-    const existingIds = new Set(state.learningPatches.map(p => p.id));
+    const existingIds = new Set(state.learningPatches.map((p: LearningPatch) => p.id));
     const mergedPatches = [
       ...state.learningPatches,
-      ...INITIAL_PATCHES.filter(p => !existingIds.has(p.id))
+      ...INITIAL_PATCHES.filter((p: LearningPatch) => !existingIds.has(p.id))
     ];
     
     return { ...state, learningPatches: mergedPatches };
@@ -124,7 +124,7 @@ export function addLearningPatch(state: AppState, patch: LearningPatch): AppStat
 export function togglePatch(state: AppState, patchId: string): AppState {
   const newState = {
     ...state,
-    learningPatches: state.learningPatches.map(p =>
+    learningPatches: state.learningPatches.map((p: LearningPatch) =>
       p.id === patchId ? { ...p, active: !p.active } : p
     ),
   };

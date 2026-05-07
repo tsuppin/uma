@@ -21,7 +21,7 @@ export default function Win5Panel({ state }: { state: AppState }) {
     const picks = selectedRaceIds.map(id => {
       const race = state.races.find(r => r.id === id);
       if (!race) return { raceId: id, picks: [] };
-      const preds = race.predictions || race.horses.map(h => calculateTsuchiyaScore(h, race, state.learningPatches));
+      const preds = race.predictions || race.horses.map(h => calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData));
       const sorted = sortPredictions(preds);
       return { raceId: id, picks: sorted.slice(0, 3).map(p => p.horseNumber) };
     });
@@ -108,7 +108,7 @@ export default function Win5Panel({ state }: { state: AppState }) {
             {win5Picks.map((pick, i) => {
               const race = state.races.find(r => r.id === pick.raceId);
               if (!race) return null;
-              const preds = race.predictions || race.horses.map(h => calculateTsuchiyaScore(h, race, state.learningPatches));
+              const preds = race.predictions || race.horses.map(h => calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData));
               const sorted = sortPredictions(preds);
               return (
                 <div key={pick.raceId} style={{ background: "var(--bg-surface)", borderRadius: "8px", padding: "14px", border: "1px solid var(--border)" }}>
