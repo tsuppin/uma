@@ -1,7 +1,7 @@
 "use client";
 import { Race } from "../types";
 
-const FRAME_COLORS = ["","#e2e8f0","#1a1a1a","#e53e3e","#3182ce","#d69e2e","#2f855a","#d6bcfa","#fc8181"];
+
 
 export default function RaceCard({ race, onClick }: { race: Race; onClick: () => void }) {
   const hasResult = !!race.result;

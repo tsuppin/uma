@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Race, Prediction, Formation } from "../types";
+import { Race, Formation } from "../types";
 import { generateFormation } from "../lib/engine";
 
 const FRAME_BG = ["","#e2e8f0","#1a1a1a","#e53e3e","#3182ce","#d69e2e","#2f855a","#d6bcfa","#fc8181"];
@@ -133,7 +133,6 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
             </thead>
             <tbody>
               {predictions.map((p, i) => {
-                const horse = race.horses.find(h => h.id === p.horseId);
                 const isAxis = i < 3;
                 const isDark = !isAxis && i < 7;
                 return (

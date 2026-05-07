@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AppState, Race, RaceResult } from "../types";
-import { loadState, saveState, addRace, updateRace, addResult, addLearningPatch, generateId } from "../lib/storage";
+import { loadState, addRace, updateRace, addResult, addLearningPatch } from "../lib/storage";
 import { calculateTsuchiyaScore, generateFormation, generateLearningPatch, sortPredictions } from "../lib/engine";
 import RaceForm from "./RaceForm";
 import RaceCard from "./RaceCard";
