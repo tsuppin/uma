@@ -262,11 +262,11 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   let hasBlinker = false;
   if ((lines[idx] || "").includes("ブリンカー")) { hasBlinker = true; idx++; }
 
-  const name = (lines[idx] || "").replace(/^マルガイ/, "").trim(); idx++;
-  if (lines[idx] && lines[idx].includes("(")) idx++; // 戦績行
+  const name = (lines[idx] || "").replace(/^(マルガイ|マルチ)/, "").trim(); idx++;
+  while (idx < lines.length && (lines[idx] === "" || lines[idx].includes("("))) idx++; // 戦績行や空行スキップ
 
   const owner = lines[idx] || ""; idx++;
-  while (idx < lines.length && lines[idx] === "") idx++;
+  while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
   const breeder = lines[idx] || ""; idx++;
   while (idx < lines.length && lines[idx] === "") idx++;
 
@@ -274,15 +274,12 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   const tm = (lines[idx] || "").match(/^(.+?)\s*[\(（][栗美][東浦][\)）]/);
   if (tm) { trainer = tm[1].trim(); idx++; }
   else if (lines[idx]) { trainer = lines[idx]; idx++; }
-  while (idx < lines.length && lines[idx] === "") idx++;
-
-  let sire = "", dam = "", bms = "";
-  while (idx < lines.length) {
+  while (idx < lines.length && (lines[idx] === "" || lines[idx].includes("："))) {
+    // 父・母などの血統情報を先に拾う
     const l = lines[idx];
     if (l === "父：") { idx++; sire = lines[idx] || ""; idx++; }
     else if (l === "母：") { idx++; dam = lines[idx] || ""; idx++; }
-    else if (l.startsWith("(母の父：")) { bms = l.replace(/^\(母の父：/, "").replace(/\)$/, "").trim(); idx++; break; }
-    else if (/^\d+\./.test(l) || l === "") break;
+    else if (l.startsWith("(母の父：")) { bms = l.replace(/^\(母の父：/, "").replace(/\)$/, "").trim(); idx++; }
     else idx++;
   }
 
@@ -294,6 +291,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   }
   const pm = (lines[idx] || "").match(/(\d+)番人気/);
   if (pm) { popularity = parseInt(pm[1]); idx++; }
+  
   let gender: Horse["gender"] = "牡"; let age = 4;
   let horseWeight = 480, horseWeightChange = 0;
   let kinryo = 55;
@@ -305,19 +303,19 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     if (wm) {
       horseWeight = parseInt(wm[1]);
       idx++;
-      const wcm = (lines[idx] || "").match(/\(([+-]?\d+|初出走)\)/);
+      const wcm = (lines[idx] || "").match(/\(([+-]?\d+|初出走|[\d]+)\)/);
       if (wcm) {
-        horseWeightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]);
+        const val = wcm[1].replace("±", "");
+        horseWeightChange = val === "初出走" ? 0 : parseInt(val) || 0;
         idx++;
       }
       break;
     }
-    if (/([牡牝セ]|せん)\d+/.test(l) || /\d+kg/.test(l)) break;
     idx++;
   }
   while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
 
-  // 性齢 "牡3/青鹿"
+  // 性齢 "牡5/栗"
   const gm = (lines[idx] || "").match(/([牡牝セ]|せん)(\d+)\//);
   if (gm) {
     gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝";
@@ -326,7 +324,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   }
   while (idx < lines.length && lines[idx] === "") idx++;
 
-  // 斤量 "57.0kg"
+  // 斤量 "55.0kg"
   const kMatch = (lines[idx] || "").match(/(\d+\.?\d*)kg/);
   if (kMatch) {
     kinryo = parseFloat(kMatch[1]);
@@ -339,46 +337,59 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   while (idx < lines.length && lines[idx] === "") idx++;
 
   const pastRaces: PastRace[] = [];
-  while (idx < lines.length && pastRaces.length < 4) {
+  while (idx < lines.length && pastRaces.length < 5) {
     const dl = lines[idx] || "";
     const dm = dl.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
     if (!dm) { idx++; continue; }
+    
     const prDate = `${dm[1]}-${String(dm[2]).padStart(2,"0")}-${String(dm[3]).padStart(2,"0")}`;
-    const dp = dl.split(/\t/);
-    const prVenue = dp[1]?.trim() || "";
+    const dp = dl.split(/[\t\s]+/);
+    const prVenue = dp[dp.length - 1]?.trim() || "";
     idx++;
-    const raceName = lines[idx] || ""; idx++;
-    const raceClass = lines[idx] || ""; idx++;
+
+    const prRaceName = lines[idx] || ""; idx++;
+    const prRaceClass = lines[idx] || ""; idx++;
+    
     const rl = lines[idx] || "";
     const rm = rl.match(/(\d+)着/);
     const prResult = rm ? parseInt(rm[1]) : 0;
     idx++;
-    idx++; // 人気行
+
+    const popLine = lines[idx] || ""; idx++; // 人気行
+    
     const jl = lines[idx] || "";
-    const prJockey = jl.split(/\t/)[0]?.trim() || "";
+    const prJockey = jl.split(/[\t\s]+/)[0]?.trim() || "";
     idx++;
+    
     const distL = lines[idx] || "";
     const distM = distL.match(/(\d+)(ダ|芝)/);
     const prDist = distM ? parseInt(distM[1]) : 0;
-    const prSurf: PastRace["surface"] = distM?.[2] === "芝" ? "芝" : "ダート";
+    const prSurf: PastRace["surface"] = (distM?.[2] === "芝" || distL.includes("芝")) ? "芝" : "ダート";
     idx++;
+    
     const tl = lines[idx] || "";
-    const prTime = /\d+:\d+/.test(tl) ? tl : ""; if (prTime) idx++;
+    const prTime = /\d+:\d+/.test(tl) ? tl : ""; 
+    if (prTime) idx++;
+    
     while (idx < lines.length && lines[idx] === "") idx++;
+    
     const cands = ["良","稍重","重","不良"];
     let prCond: PastRace["condition"] = "良";
-    if (cands.includes(lines[idx] || "")) { prCond = lines[idx] as PastRace["condition"]; idx++; }
+    if (cands.includes(lines[idx] || "")) { 
+      prCond = lines[idx] as PastRace["condition"]; 
+      idx++; 
+    }
+    
     const wl = lines[idx] || "";
     const wm = wl.match(/^(\d+)kg/);
     const prWeight = wm ? parseInt(wm[1]) : 480;
     if (wm) idx++;
-    while (idx < lines.length && lines[idx] === "") idx++;
-    if (lines[idx] && /^\d/.test(lines[idx]) && !lines[idx].match(/\d{4}年/)) idx++;
-    if (lines[idx] && /[^\d\s]/.test(lines[idx]) && !lines[idx].match(/\d{4}年/)) idx++;
-    while (idx < lines.length && lines[idx] === "") idx++;
+    
+    while (idx < lines.length && (lines[idx] === "" || /^\d+\s+\d/.test(lines[idx]) || lines[idx].includes("F"))) idx++;
+    
     if (prDate && prResult) {
       pastRaces.push({
-        date: prDate, venue: prVenue, raceName, raceClass,
+        date: prDate, venue: prVenue, raceName: prRaceName, raceClass: prRaceClass,
         distance: prDist, surface: prSurf, condition: prCond,
         result: prResult, time: prTime,
         corner4Position: 5, cornerOuterCount: 1,
