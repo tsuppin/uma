@@ -590,7 +590,35 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ==========================================
+  // 【新設】オッズの歪み（Odds Distortion）解析
+  // ==========================================
   const odds = horse.odds || 10;
+
+  // 1. 1番人気の過剰人気（不振リスク）
+  if (popularity === 1) {
+    if (odds < 2.0) {
+      potential -= 15;
+      tags.push('⚠️過剰人気警戒(期待値低)');
+    } else if (odds < 3.5) {
+      potential -= 5;
+      tags.push('⚠️1番人気:取りこぼし注意');
+    }
+  }
+
+  // 2. 過小評価馬（大穴）の激走ポテンシャル
+  if (odds >= 50.0) {
+    // 激走のトリガーとなる要因（血統、実績、先行力など）があれば大幅加点
+    const hasTrigger = tags.some(t => t.match(/(血統|実績|先行|スピード|キレ|底力)/));
+    if (hasTrigger) {
+      potential += 25;
+      tags.push('🔥歪み:過小評価(爆穴候補)');
+    } else {
+      potential += 10;
+      tags.push('🔎歪み:ヒモ荒れ警戒');
+    }
+  }
+
   const darkness = (potential / 100) * Math.pow(odds, 1.1);
 
   return {
