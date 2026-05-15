@@ -448,12 +448,29 @@ export function calculateTsuchiyaScore(
       tags.push('🏆総合スピード能力(タイム×上がり相関)');
     }
     
-    // 通過順位による展開利（川崎・門別・笠松等）
+    // ⑧ 安定した先行力（Positioning Consistency）の解析
+    // 過去3走で継続的に前目（1-3番手）のポジションを確保できている馬を、主導権を握れる馬として評価
+    const frontPosCount = horse.pastRaces.slice(0, 3).filter(pr => {
+      if (!pr.passingPositions) return false;
+      const pos = pr.passingPositions.split('-').map(Number);
+      return pos[0] > 0 && pos[0] <= 3;
+    }).length;
+
+    if (frontPosCount >= 2) {
+      potential += 25;
+      tags.push('🚀安定した先行力(1-3番手確保実績)');
+    } else if (frontPosCount === 1 && (horse.style === '逃げ' || horse.style === '先行')) {
+      potential += 15;
+      tags.push('🏹好位・先行ポテンシャル');
+    }
+
+    // 通過順位による展開利（小回り・地方・特定コース）
     if (lastRace.passingPositions) {
       const pos = lastRace.passingPositions.split('-').map(Number);
-      if ((pos[0] <= 3 || pos[1] <= 3) && (trackName === '川崎' || trackName === '門別' || trackName === '笠松')) {
-        potential += 15;
-        tags.push('🏇先行・展開利(検証済み)');
+      const isFront = pos[0] <= 3 || pos[1] <= 3;
+      if (isFront && (trackName === '川崎' || trackName === '門別' || trackName === '笠松' || trackName === '園田')) {
+        potential += 20;
+        tags.push('🏇小回り先行実績(展開利)');
       }
     }
   }
@@ -469,7 +486,14 @@ export function calculateTsuchiyaScore(
     // ダート戦：先行・好位抜け出しが王道（4角5番手以内想定）
     if (hStyle === '逃げ' || hStyle === '先行' || hStyle === '好位') {
       potential += 35;
+      tags.push('🔥ダート王道展開(先行・好位)');
       tags.push('💪ダート先行利:キックバック回避');
+      
+      // 下級クラスならさらに「前残り」を強く評価
+      if (isLClass) {
+        potential += 15;
+        tags.push('🛡️下級ダート:物理的先行有利');
+      }
     } else {
       potential -= 15;
       tags.push('⚠️ダート差し・追込:展開不備注意');
