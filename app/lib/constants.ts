@@ -399,4 +399,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778841950299",
+    version: "v17.1",
+    date: "2026-05-15T10:45:50.299Z",
+    description: "笠松 - 好走馬(ユイノサシガネ等)の特性学習",
+    track: "笠松",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "塚本征",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アルアイン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
