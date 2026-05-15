@@ -297,18 +297,20 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 【新設】パワーウェイトレシオ（馬体重 / 斤量）
   // ==========================================
-  const powerRatio = weight / kinryo;
-  if (powerRatio >= 10.0) {
-    potential += 30;
-    tags.push('💪超抜パワー(斤量比極小)');
-  } else if (powerRatio >= 9.5) {
-    potential += 20;
-    tags.push('💪絶対パワー(馬格優位)');
-  } else if (powerRatio < 8.2) {
-    potential -= 15;
-    tags.push('⚠️パワー不足(斤量負担重)');
+  // 【新設】斤量比率（負担重量 ÷ 馬体重）解析
+  // ==========================================
+  // 平均11〜12%。13%超は重く、11%未満はパワー優位。
+  const jockWeightRatio = (kinryo / weight) * 100;
+  if (jockWeightRatio < 11.0) {
+    potential += 35; // 500kg超大型馬の圧倒的パワー
+    tags.push('💪斤量比率10%台(パワー無双)');
+  } else if (jockWeightRatio <= 12.5) {
+    potential += 20; // 450-490kg前後の適正サイズ
+    tags.push('💪斤量比率適正(勝ちきり期待)');
+  } else if (jockWeightRatio >= 14.0) {
+    potential -= 20; // 小柄な馬の1着は厳しい
+    tags.push('⚠️斤量高負荷(2-3着ヒモ穴特化)');
   }
 
   // 馬格(500kg+) と 成長(+10kg+) のシナジー評価
@@ -925,6 +927,12 @@ export function calculateTsuchiyaScore(
   if (popularity >= 10) {
     distortionBoost += (popularity - 9) * 0.15;
     tags.push('🌌人気逆数加速(爆穴補正)');
+  }
+
+  // 斤量比率（14%超）によるヒモ穴ブースト
+  if (jockWeightRatio >= 14.0) {
+    distortionBoost += 0.6;
+    tags.push('💎3連系:高負荷激走ブースト');
   }
 
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
