@@ -774,4 +774,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778846294019",
+    version: "v59.1",
+    date: "2026-05-15T11:58:14.019Z",
+    description: "川崎 - 好走馬(ルリール等)の特性学習",
+    track: "川崎",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "新原周",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ディープブリランテ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "本田紀",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "エピカリス",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
