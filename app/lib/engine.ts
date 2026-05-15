@@ -1023,14 +1023,14 @@ export function calculateTsuchiyaScore(
     
     // ② 中穴の勝ちきり（4〜6番人気、10〜30倍）
     if (popularity >= 4 && popularity <= 6 && odds >= 10 && odds <= 30) {
-      potential += 25;
-      tags.push('東京:中穴勝ちきり警戒(過小評価)');
+      potential += 30; // 期待値の妙味を高く評価
+      tags.push('東京:中穴勝ちきり警戒(妙味あり)');
     }
     
     // ③ 大穴の激走（10番人気以下、50倍以上）
     if (popularity >= 10 && odds >= 50) {
-      potential += 35;
-      tags.push('東京:オッズ偏差値特大(爆穴ポテンシャル)');
+      potential += 45; // 爆穴ポテンシャルをさらに強化
+      tags.push('東京:オッズ偏差値特大(爆穴候補)');
     }
 
     // 10. 前走着差バイアス：二極化解析（王道 vs 一変）
@@ -1260,6 +1260,12 @@ export function calculateTsuchiyaScore(
   if (lastTDiff >= 3.0 && horse.pastRaces && horse.pastRaces.slice(1, 5).some(pr => pr.result <= 3)) {
     distortionBoost += 0.5;
     tags.push('💎3連系:隠れた実力激走ブースト');
+  }
+
+  // 東京開催特有の「爆穴激走」ブースト
+  if (trackName === '東京' && popularity >= 10 && odds >= 50.0) {
+    distortionBoost += 0.8;
+    tags.push('🌌東京:爆穴ポテンシャル加速');
   }
 
   // タイム異常値（着順大敗・タイム僅差）ブースト
