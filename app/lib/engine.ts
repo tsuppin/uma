@@ -1077,30 +1077,34 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 【新設】オッズの歪み（Odds Distortion）解析
+  // 【新設】オッズ偏差値 (Odds Deviation) システム
   // ==========================================
+  const impliedProb = 1.0 / (odds || 999.9);
+  // AI算出勝率（暫定評価値を0-1スケールに近似：500点を50%勝率と仮定）
+  const aiWinProb = Math.min(potential / 1000.0, 1.0);
+  const oddsDeviation = aiWinProb - impliedProb;
 
-  // 1. 1番人気の過剰人気（不振リスク）
-  if (popularity === 1) {
-    if (odds < 2.0) {
-      potential -= 15;
-      tags.push('⚠️過剰人気警戒(期待値低)');
-    } else if (odds < 3.5) {
-      potential -= 5;
-      tags.push('⚠️1番人気:取りこぼし注意');
+  // ① 過小評価（不当穴馬）の検知と爆発的ブースト
+  if (oddsDeviation >= 0.05) { // 期待値が5%以上プラス乖離
+    const deviationBonus = Math.floor(oddsDeviation * 250); // 乖離幅に応じた加点
+    potential += deviationBonus;
+    tags.push(`💎期待値乖離(+${(oddsDeviation * 100).toFixed(1)}%)`);
+    
+    // 強力なトリガー（ブリンカー・激絞り）とのシナジー
+    const hasSynergyTrigger = tags.some(t => t.match(/(ブリンカー|極限の仕上げ|一変トリガー|激走フラグ)/));
+    if (hasSynergyTrigger) {
+      potential += 45;
+      tags.push('🚀期待値シナジー(歪み×一変トリガー)');
     }
   }
 
-  // 2. 過小評価馬（大穴）の激走ポテンシャル
-  if (odds >= 50.0) {
-    // 激走のトリガーとなる要因（血統、実績、先行力など）があれば大幅加点
-    const hasTrigger = tags.some(t => t.match(/(血統|実績|先行|スピード|キレ|底力)/));
-    if (hasTrigger) {
-      potential += 25;
-      tags.push('🔥歪み:過小評価(爆穴候補)');
-    } else {
-      potential += 10;
-      tags.push('🔎歪み:ヒモ荒れ警戒');
+  // ② 危険な過剰人気馬（過大評価）の割引
+  if (oddsDeviation <= -0.15) { // 期待値が15%以上マイナス乖離
+    potential -= 35;
+    tags.push('⚠️期待値マイナス乖離(過剰人気)');
+    if (odds < 2.5) {
+      potential -= 25; // 人気馬の皮を被った伏兵（AI視点）を排除
+      tags.push('⚠️危険な過剰人気馬');
     }
   }
 
