@@ -900,13 +900,26 @@ export function calculateTsuchiyaScore(
       potential += 20;
       tags.push('東京:大型馬パワー優位');
     }
-    // 3. 空間物理：外枠のスムーズな加速空間確保
+    // 3. 空間物理：枠順バイアス（WIN5/1着予測の最重要ファクター）
+    // 東京の広大なコースでは、外枠によるスムーズな進路確保が物理的に有利に働く
     if (frame >= 6) {
-      potential += 40;
-      tags.push('東京:外枠(空間物理的優位・加速空間)');
+      potential += 45; // WIN5/単勝向けに比重を強化
+      tags.push('🛡️空間物理:外枠(クリーン進路・加速空間確保)');
+      
+      // 大型馬×外枠の物理的シナジー
+      if (weight >= 500) {
+        potential += 20;
+        tags.push('🛡️物理シナジー:大型馬×外枠(パワー全開)');
+      }
     } else if (frame <= 3) {
-      potential -= 30;
-      tags.push('東京:内枠(密集・砂被りリスク)');
+      potential -= 35;
+      tags.push('⚠️空間物理:内枠(密集・キックバックリスク)');
+      
+      // 先行馬が内枠を引いた場合、包まれる物理的リスクを重く評価
+      if (horse.style === '逃げ' || horse.style === '先行') {
+        potential -= 15;
+        tags.push('⚠️物理リスク:内枠×先行(包まれ・砂被り)');
+      }
     }
 
     // 4. 性別・馬格バイアス：牡馬優勢と大型牝馬限定の活躍
