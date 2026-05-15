@@ -1292,6 +1292,26 @@ export function calculateTsuchiyaScore(
         tags.push('🌌盛岡後半:波乱激走ポテンシャル');
       }
     }
+
+    // ⑦ 岩手・好調厩舎バイアス（固め打ち＆連対特化）
+    const trainer = horse.trainer || '';
+    const mHotStables = /(佐藤雅彦|板垣吉則|菅原右吉)/;
+    const mPlacingStables = /(小林俊彦|及川良春|佐々木由則)/;
+    
+    if (trainer.match(mHotStables)) {
+      potential += 30;
+      tags.push('🔥岩手好調厩舎:勝利量産フェーズ');
+    } else if (trainer.match(mPlacingStables)) {
+      potential += 15;
+      distortionBoost += 0.3; // 相手・ヒモとしての優秀さを評価
+      tags.push('🛡️岩手安定厩舎:馬券圏内（ヒモ）軸');
+    }
+    
+    // 勝負所（11R以降）の佐藤浩厩舎
+    if (race.raceNumber >= 11 && trainer.includes('佐藤浩')) {
+      potential += 25;
+      tags.push('🎯岩手勝負厩舎:メイン競走特化');
+    }
   }
 
   // ---------------------------------------------------
