@@ -118,6 +118,16 @@ export function addLearningPatch(state: AppState, patch: LearningPatch): AppStat
     modelVersion: `TsuchiyaProtocol-Omega ${patch.version}`,
   };
   saveState(newState);
+
+  // Trigger Git Sync asynchronously
+  if (typeof window !== 'undefined') {
+    fetch('/api/git-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch)
+    }).catch(e => console.error("Git sync failed:", e));
+  }
+
   return newState;
 }
 
