@@ -323,6 +323,17 @@ export function calculateTsuchiyaScore(
     if (dist === 1600 && bloodline.includes('ヘニーヒューズ')) { potential += 45; tags.push('大井1600特注ヘニーヒューズ'); }
     const goldenCombos: Record<string, number> = { '佐々木洋一 × 矢野貴之': 40, '林正人 × 町田直希': 40, '荒山勝徳 × 笹川翼': 30 };
     if (goldenCombos[`${horse.trainer} × ${jockey}`]) { potential += goldenCombos[`${horse.trainer} × ${jockey}`]; tags.push('黄金コンビ'); }
+  } else if (trackName === '川崎') {
+    // 川崎実証分析：中枠（4枠・5枠）の圧倒的優位性
+    if (frame === 4 || frame === 5) {
+      potential += 30;
+      tags.push('川崎:中枠無双(1着候補)');
+    }
+    // 川崎実証分析：極端な内枠・外枠の勝ちきれなさ
+    if (frame === 1 || frame === 8) {
+      potential -= 15;
+      tags.push('川崎:1・8枠(頭は危険)');
+    }
   } else if (trackName === '門別') {
     const powerSires = ['パイロ', 'ホッコータルマエ', 'ルヴァンスレーヴ'];
     if (powerSires.some(s => bloodline.includes(s))) { potential += 35; tags.push('門別パワー血統'); }
