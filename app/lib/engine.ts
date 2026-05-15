@@ -281,10 +281,30 @@ export function calculateTsuchiyaScore(
       tags.push('🎯特殊馬具(集中力向上)');
     }
 
-    // 馬体重絞り込みとのシナジー（陣営の「ここが勝負」のサイン）
-    if (weightChange <= -10 && weightChange >= -24) {
+    // 2. 走場・年齢・人気のシナジー（陣営の「一変」と「確勝」のサイン）
+    
+    // ① ダート若駒×ブリンカー：砂被り・キックバック克服
+    if (race.surface === 'ダート' && age <= 3) {
+      blinkerBonus += 30;
+      tags.push('🚀若駒ダート×ブリンカー(集中力UP)');
+    }
+    
+    // ② 人気上位×ブリンカー：陣営の「確勝を期した」勝負サイン
+    if (popularity <= 2) {
       blinkerBonus += 25;
-      tags.push('🚀勝負気配(馬体減×ブリンカー)');
+      tags.push('🔥確勝気配(人気×ブリンカー)');
+    }
+
+    // ③ 大穴×ブリンカー：過去大敗をリセットする「一変」の起爆剤
+    if (popularity >= 10) {
+      blinkerBonus += 35;
+      tags.push('⚡大穴一変(ブリンカー爆弾)');
+    }
+
+    // ④ 馬体重大幅変動とのシナジー（±10kg以上の変化との掛け合わせ）
+    if (Math.abs(weightChange) >= 10) {
+      blinkerBonus += 25;
+      tags.push('🚀激走トリガー(馬体変動×ブリンカー)');
     }
     
     potential += blinkerBonus;
