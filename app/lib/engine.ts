@@ -978,30 +978,39 @@ export function calculateTsuchiyaScore(
   // ---------------------------------------------------
   // 年齢・クラス・人気・上がりタイムの共通バイアス（前半/後半）
   // ---------------------------------------------------
+  // レースフェーズ解析（前半:1-6R vs 後半:7-12R）
+  // ---------------------------------------------------
   if (race.raceNumber <= 6) {
-    // 前半は1番人気が圧倒的に有利
-    if (popularity === 1) {
+    // 前半：差し・追い込み展開利 ＆ 中穴（7-8人気）の台頭
+    if (horse.style === '中団' || horse.style === '後方') {
       potential += 20;
-      tags.push('前半:1番人気大加点');
-    } else if (popularity >= 6) {
-      potential -= 10;
-      tags.push('前半:下位人気減点');
-    } else {
-      // 中位人気は軽く加点
-      potential += 5;
-      tags.push('前半:中位人気加点');
+      tags.push('前半:差し・追い込み波乱警戒');
     }
-    // 前半は3歳馬が中心 → 若齢馬は軽く加点
-    if (horse.age <= 3) {
-      potential += 5;
-      tags.push('前半:3歳軽加点');
+    if (popularity >= 6 && popularity <= 8) {
+      potential += 25;
+      tags.push('前半:中穴激走ゾーン');
     }
-    // 前半は人気が分散しやすい → トップ人気のボーナスは抑える
-    if (popularity <= 2) {
+    // 1番人気の取りこぼし注意
+    if (popularity === 1) {
       potential += 5;
-      tags.push('前半:トップ人気軽加点');
+      tags.push('前半:1番人気(単勝期待値低め)');
     }
   } else {
+    // 後半：先行・好位押し切り ＆ 人気サイド vs 超大穴の二極化
+    if (horse.style === '逃げ' || horse.style === '先行' || horse.style === '好位') {
+      potential += 25;
+      tags.push('後半:先行・好位実力押し切り');
+    }
+    // 1番人気の信頼度アップ
+    if (popularity === 1) {
+      potential += 30;
+      tags.push('後半:1番人気(単勝期待値高)');
+    }
+    // 超大穴（11人気以降）の特大配当トリガー
+    if (popularity >= 11) {
+      potential += 20;
+      tags.push('🔥後半:超大穴特大配当警戒');
+    }
     // 後半は古馬（B級・A級）中心 → 高齢・大型馬に加点
     if (horse.age >= 5) {
       potential += 15;
@@ -1010,21 +1019,6 @@ export function calculateTsuchiyaScore(
     if (weight >= 500) {
       potential += 20;
       tags.push('後半:大型馬パワー加点');
-    }
-    // 後半はトップ人気が結果に直結 → 強めのボーナス
-    if (popularity <= 2) {
-      potential += 25;
-      tags.push('後半:トップ人気高加点');
-    }
-    // 後半で下位人気が勝つ傾向を反映
-    if (race.raceNumber > 7 && popularity >= 6) {
-      potential += 15;
-      tags.push('後半:下位人気加点');
-    }
-    // 速い上がりタイムがある馬に追加ボーナス
-    if (horse.pastRaces && horse.pastRaces.some(pr => pr.distance <= 1400 && pr.result <= 3)) {
-      potential += 15;
-      tags.push('後半:速い上がり期待');
     }
   }
 
