@@ -364,4 +364,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778841887566",
+    version: "v16.1",
+    date: "2026-05-15T10:44:47.566Z",
+    description: "笠松 - 好走馬(リックカリーナ等)の特性学習",
+    track: "笠松",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "(-)",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ロゴタイプ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
