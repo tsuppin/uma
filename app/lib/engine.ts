@@ -900,7 +900,6 @@ export function calculateTsuchiyaScore(
       potential += 20;
       tags.push('東京:大型馬パワー優位');
     }
-    
     // 3. 空間物理：外枠のスムーズな加速空間確保
     if (frame >= 6) {
       potential += 40;
