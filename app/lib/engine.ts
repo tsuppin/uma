@@ -172,6 +172,31 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ---------------------------------------------------
+  // 【新設】厩舎・所属バイアス解析（固め打ち厩舎 & 遠征馬エッジ）
+  // ---------------------------------------------------
+  // ① 園田・好調厩舎（実績に基づく固め打ち警戒）
+  const sonodaHotStables = /(山口浩幸|永島太郎|盛本信尋|長倉功|高馬元昭|諏訪貴正)/;
+  if (trainer.match(sonodaHotStables)) {
+    potential += 25;
+    tags.push('🔥園田好調厩舎:固め打ち警戒');
+  }
+
+  // ② 地方全国交流重賞における「他地区遠征馬」の圧倒的優位
+  // （のじぎく賞等の交流重賞では大井・北海道等の他地区勢が上位独占する傾向）
+  const isExchangeRace = race.raceName?.match(/(交流|のじぎく賞|全国|選抜)/);
+  const eliteAwayRegions = /(大井|北海道|門別|浦和|船橋|川崎)/;
+  
+  if (isExchangeRace) {
+    if (horse.stableLocation?.match(eliteAwayRegions)) {
+      potential += 50; // エリート地区のレベル差を最重視
+      tags.push(`🏹交流戦エッジ:他地区遠征馬(${horse.stableLocation})`);
+    } else if (horse.stableLocation?.match(/(兵庫|園田|西脇)/)) {
+      potential -= 25; // 地元勢の劣勢を反映（Sランク相当の能力差）
+      tags.push('⚠️交流戦リスク:地元兵庫勢(レベル差懸念)');
+    }
+  }
+
   // 3. 陣営の思惑（仕上げ・叩き）
   // 前走大敗からしっかり絞ってきた場合
   if (weightChange < 0 && weightChange >= -10 && horse.pastRaces && horse.pastRaces.length > 0 && horse.pastRaces[0].result > 5) {
