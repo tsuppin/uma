@@ -69,6 +69,7 @@ export function calculateTsuchiyaScore(
   const weightChange = horse.weightChange;
   const frame = horse.frame;
   const gender = horse.gender;
+  const age = horse.age;
   const kinryo = horse.jockeyWeight || 55;
   const popularity = horse.popularity || 99;
   const jockey = horse.jockey || '';
@@ -568,7 +569,6 @@ export function calculateTsuchiyaScore(
       potential += 30; tags.push('金沢:中央勢エッジ');
     }
     // 2. クラス・年齢別の馬格（馬体重）バイアス
-    const age = horse.age;
     if (age <= 3) {
       if (weight <= 400) { potential += 10; tags.push('金沢3歳:小柄牝馬許容'); }
     } else {
@@ -607,6 +607,29 @@ export function calculateTsuchiyaScore(
     } else if (frame <= 3) {
       potential -= 30;
       tags.push('東京:内枠(密集・砂被りリスク)');
+    }
+
+    // 4. 性別・馬格バイアス：牡馬優勢と大型牝馬限定の活躍
+    if (gender === '牝') {
+      if (weight < 500) {
+        potential -= 25;
+        tags.push('東京:牝馬(パワー不足懸念)');
+      } else {
+        potential += 20;
+        tags.push('東京:大型牝馬(物理的優位)');
+      }
+    } else {
+      potential += 15;
+      tags.push('東京:牡・セン(絶対的優位)');
+    }
+
+    // 5. 年齢・世代バイアス：4-5歳充実期と高齢馬のヒモ穴
+    if (age === 4 || age === 5) {
+      potential += 25;
+      tags.push('東京:4-5歳充実期(頭候補)');
+    } else if (age >= 6) {
+      potential -= 10;
+      tags.push('東京:高齢馬(3着ヒモ穴警戒)');
     }
   }
 
