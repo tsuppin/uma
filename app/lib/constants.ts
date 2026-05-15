@@ -645,4 +645,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778842643140",
+    version: "v23.1",
+    date: "2026-05-15T10:57:23.140Z",
+    description: "笠松 - 好走馬(エイシンソロモン等)の特性学習",
+    track: "笠松",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "森島貴",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アルアイン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
