@@ -766,6 +766,36 @@ export function calculateTsuchiyaScore(
         tags.push('⚠️危険な人気馬(アウェイ美浦)');
       }
     }
+
+    // ⑥ 枠順バイアス（中〜外枠優勢）
+    if (frame === 6) {
+      potential += 35;
+      tags.push('京都:6枠(1着最多・最強枠)');
+    } else if (frame === 5) {
+      potential += 30;
+      tags.push('京都:5枠(安定感抜群・軸推奨)');
+    } else if (frame === 3 || frame === 7) {
+      potential += 20;
+      tags.push('京都:3-7枠(上位進出期待)');
+    } else if (frame === 2) {
+      potential -= 25;
+      tags.push('⚠️京都:2枠(最弱・割引対象)');
+    } else if (frame === 1 || frame === 4) {
+      potential -= 15;
+      tags.push('⚠️京都:1-4枠(包まれ懸念)');
+    }
+    
+    // 脚質×枠順シナジー（交差特徴量）
+    const hStyle = horse.style || '中団';
+    if ((hStyle === '逃げ' || hStyle === '先行') && (frame === 1 || frame === 2)) {
+      if (popularity <= 3) {
+        potential -= 20;
+        tags.push('⚠️危険な人気馬(内枠×先行の罠)');
+      }
+    } else if ((hStyle === '中団' || hStyle === '後方') && (frame >= 5 && frame <= 7)) {
+      potential += 25;
+      tags.push('🚀京都シナジー(外枠×差し)');
+    }
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
     if (topJockeys.includes(jockey)) { potential += 15; tags.push('鞍上強化'); }
