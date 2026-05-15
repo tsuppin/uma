@@ -994,10 +994,29 @@ export function calculateTsuchiyaScore(
     }
 
     // 9. 市場心理・オッズ歪み補正：東京開催特有の人気バランス
-    // ① 信頼の1番人気（1.7倍〜2.9倍）
     if (popularity === 1 && odds >= 1.7 && odds <= 2.9) {
       potential += 20;
       tags.push('東京:信頼の1番人気(期待値適合)');
+    }
+
+    // ⑩ レースフェーズの波乱傾向：前半（先行）vs 後半（差し）
+    if (race.raceNumber <= 6) {
+      // 前半レース（主に未勝利・1勝クラス）：先行・前残り有利
+      if (hStyle === '逃げ' || hStyle === '先行' || hStyle === '好位') {
+        potential += 25;
+        tags.push('東京前半:先行・前残り期待');
+      }
+    } else {
+      // 後半レース（上級条件・重賞）：差し・追込の爆発有利
+      if (hStyle === '中団' || hStyle === '後方') {
+        potential += 35;
+        tags.push('東京後半:差し・追込の爆発期待');
+        // 芝の上級条件ならさらにブースト
+        if (race.surface === '芝' && (race.raceName?.match(/(重賞|カップ|記念|オープン|リステッド|G[123])/) || race.raceNumber >= 10)) {
+          potential += 20;
+          tags.push('🔥東京メイン:極限の末脚狙い');
+        }
+      }
     }
     
     // ② 中穴の勝ちきり（4〜6番人気、10〜30倍）
