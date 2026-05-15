@@ -60,7 +60,6 @@ export function calculateTsuchiyaScore(
   learningPatches: LearningPatch[],
   masterData: MasterData
 ): Prediction {
-  let potential = 100.0;
   const bloodline = horse.bloodline || '';
   const trackName = race.trackName;
   const dist = race.distance;
@@ -76,6 +75,9 @@ export function calculateTsuchiyaScore(
   const jockey = horse.jockey || '';
   const oddsSS = horse.oddsStandardScore || 50;
   const headCount = race.headCount || 10;
+  
+  let potential = 500;
+  let distortionBoost = 1.0;
   const tags: string[] = [];
 
   // ==========================================
@@ -1256,6 +1258,40 @@ export function calculateTsuchiyaScore(
       potential += 25;
       tags.push('🚀盛岡:爆速差し(異次元末脚ポテンシャル)');
     }
+
+    // ⑥ レースフェーズ解析（盛岡特有の時系列バイアスシフト）
+    if (race.raceNumber <= 6) {
+      // 前半：堅実・安定・中枠・馬体重キープが絶対条件
+      if (popularity === 1) {
+        potential += 25; 
+        tags.push('🌅盛岡前半:1番人気鉄板傾向');
+      }
+      if (frame >= 2 && frame <= 5) {
+        potential += 15; 
+        tags.push('🌅盛岡前半:中枠優位性');
+      }
+      if (Math.abs(weightChange) > 3) {
+        potential -= 20; // 前半は微増減すら許容しない極端な安定志向
+        tags.push('⚠️盛岡前半:馬体変動リスク割引');
+      }
+    } else {
+      // 後半：波乱・外枠・特定の固め打ち騎手・パワー（馬体増）重視
+      const mHotJockeys = /(高松亮|高橋悠|山本聡)/;
+      if (jockey.match(mHotJockeys)) {
+        potential += 30;
+        tags.push('🌃盛岡後半:固め打ち・勝負騎手エッジ');
+      }
+      // 内外極端枠の台頭（特に外枠4勝の実績）
+      if (frame === 1 || (frame >= 6 && frame <= 8)) {
+        potential += 20;
+        tags.push('🌃盛岡後半:内外極端枠有利');
+      }
+      // 下位人気による高配当決着への警戒
+      if (popularity >= 4) {
+        distortionBoost += 0.5;
+        tags.push('🌌盛岡後半:波乱激走ポテンシャル');
+      }
+    }
   }
 
   // ---------------------------------------------------
@@ -1401,7 +1437,6 @@ export function calculateTsuchiyaScore(
   // 【新設】3連系特化型「闇の期待値 (Darkness)」解析
   // ==========================================
   // WIN5向け(potential)は物理・シナジー重視、3連系向け(darkness)はオッズの歪み・人気逆数を重視
-  let distortionBoost = 1.0;
   
   // オッズ偏差値による過小評価ブースト
   const currentOddsSS = horse.oddsStandardScore || 50;
