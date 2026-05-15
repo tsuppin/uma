@@ -668,9 +668,30 @@ export function calculateTsuchiyaScore(
         potential += 15;
         tags.push('東京後半:栗東馬の意地');
       } else {
-        potential -= 20;
         tags.push('東京:遠征栗東馬(アウェイ不利)');
       }
+    }
+
+    // 8. 東京特注血統補正：コース性質に合致する血統ブースト
+    const sire = horse.sire || '';
+    if (race.surface === 'ダート') {
+      // 米国系パワー型（東京ダート無双）
+      if (sire.match(/(ヘニーヒューズ|ダノンレジェンド|シニスターミニスター|マインドユアビスケッツ|Into Mischief)/)) {
+        potential += 40;
+        tags.push('東京ダート:米国系パワー特注血統');
+      }
+    } else {
+      // 王道瞬発力型（東京芝の直線勝負）
+      if (sire.match(/(サートゥルナーリア|キタサンブラック|レイデオロ|キズナ)/)) {
+        potential += 35;
+        tags.push('東京芝:王道瞬発力血統');
+      }
+    }
+    
+    // 芝ダート不問・二刀流爆弾（穴の急先鋒）
+    if (sire.includes('モズアスコット')) {
+      potential += 35;
+      tags.push('🔥二刀流爆弾(モズアスコット産駒)');
     }
   }
 
