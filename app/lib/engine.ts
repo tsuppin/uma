@@ -327,6 +327,36 @@ export function calculateTsuchiyaScore(
     const powerSires = ['パイロ', 'ホッコータルマエ', 'ルヴァンスレーヴ'];
     if (powerSires.some(s => bloodline.includes(s))) { potential += 35; tags.push('門別パワー血統'); }
     if (weightChange >= 5) { potential += 30; tags.push('成長曲線EVA'); }
+    
+    // 門別実証分析：牝馬の活躍傾向（上位独占事例あり）
+    if (gender === '牝') {
+      potential += 15;
+      tags.push('門別:牝馬優勢');
+    }
+    
+    // 門別実証分析：若い3歳馬による古馬撃破
+    if (race.raceName?.includes('3歳以上') && horse.age === 3) {
+      potential += 20;
+      tags.push('門別:3歳馬古馬撃破');
+    }
+    
+    // 門別実証分析：後半レースのベテラン・せん馬の底力
+    if (race.raceNumber >= 8) {
+      if (horse.age >= 6) {
+        potential += 15;
+        tags.push('門別後半:ベテラン底力');
+      }
+      if (gender === 'セン') {
+        potential += 20;
+        tags.push('門別後半:せん馬激走警戒');
+      }
+    }
+    
+    // 門別実証分析：先行力重視（上がり最速よりポジション）
+    if (horse.style === '逃げ' || horse.style === '先行') {
+      potential += 20;
+      tags.push('門別:先行力優位');
+    }
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
     if (topJockeys.includes(jockey)) { potential += 15; tags.push('鞍上強化'); }
