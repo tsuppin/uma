@@ -353,6 +353,36 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ---------------------------------------------------
+  // 年齢・クラス・人気・上がりタイムの共通バイアス（前半/後半）
+  // ---------------------------------------------------
+  if (race.raceNumber <= 7) {
+    // 前半は3歳馬が中心 → 若齢馬は軽く加点
+    if (horse.age <= 3) {
+      potential += 5; tags.push('前半:3歳軽加点');
+    }
+    // 前半は人気が分散しやすい → トップ人気のボーナスは抑える
+    if (popularity <= 2) {
+      potential += 5; tags.push('前半:トップ人気軽加点');
+    }
+  } else {
+    // 後半は古馬（B級・A級）中心 → 高齢・大型馬に加点
+    if (horse.age >= 5) {
+      potential += 15; tags.push('後半:古馬年齢加点');
+    }
+    if (weight >= 500) {
+      potential += 20; tags.push('後半:大型馬パワー加点');
+    }
+    // 後半はトップ人気が結果に直結 → 強めのボーナス
+    if (popularity <= 2) {
+      potential += 25; tags.push('後半:トップ人気高加点');
+    }
+    // 速い上がりタイム（過去3Fが 39秒台）を持つ馬に追加ボーナス
+    if (horse.pastRaces && horse.pastRaces.some(pr => pr.distance <= 1400 && pr.result <= 3)) {
+      potential += 15; tags.push('後半:速い上がり期待');
+    }
+  }
+
   // 動的学習パッチの適用
   for (const patch of learningPatches) {
     if (!patch.active) continue;
