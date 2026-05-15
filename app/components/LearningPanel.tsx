@@ -44,7 +44,7 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
     <div className="fade-in">
       <div className="section-header">
         <h2 className="section-title">🧬 AI学習パッチ管理</h2>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="flex gap-8">
           <button className="btn btn-secondary" onClick={() => {
             const json = JSON.stringify(state.learningPatches, null, 2);
             navigator.clipboard.writeText(json);
@@ -64,23 +64,23 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
           <div className="card-header"><div className="card-title">➕ 手動パッチ追加</div></div>
           <div className="grid-3">
             <div className="form-group">
-              <label className="form-label">説明</label>
-              <input className="form-input" value={newPatch.description} onChange={e => setNewPatch(p => ({ ...p, description: e.target.value }))} />
+              <label className="form-label" htmlFor="patch-desc">説明</label>
+              <input id="patch-desc" className="form-input" value={newPatch.description} onChange={e => setNewPatch(p => ({ ...p, description: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label className="form-label">対象競馬場（空=全場）</label>
-              <input className="form-input" value={newPatch.track} onChange={e => setNewPatch(p => ({ ...p, track: e.target.value }))} placeholder="大井, 門別 など" />
+              <label className="form-label" htmlFor="patch-track">対象競馬場（空=全場）</label>
+              <input id="patch-track" className="form-input" value={newPatch.track} onChange={e => setNewPatch(p => ({ ...p, track: e.target.value }))} placeholder="大井, 門別 など" />
             </div>
             <div className="form-group">
-              <label className="form-label">対象馬場状態（空=全て）</label>
-              <select className="form-select" value={newPatch.condition} onChange={e => setNewPatch(p => ({ ...p, condition: e.target.value }))}>
+              <label className="form-label" htmlFor="patch-cond">対象馬場状態（空=全て）</label>
+              <select id="patch-cond" className="form-select" value={newPatch.condition} onChange={e => setNewPatch(p => ({ ...p, condition: e.target.value }))}>
                 <option value="">全て</option>
                 {["良","稍重","重","不良"].map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">対象フィールド</label>
-              <select className="form-select" value={newPatch.field} onChange={e => setNewPatch(p => ({ ...p, field: e.target.value }))}>
+              <label className="form-label" htmlFor="patch-field">対象フィールド</label>
+              <select id="patch-field" className="form-select" value={newPatch.field} onChange={e => setNewPatch(p => ({ ...p, field: e.target.value }))}>
                 <option value="weight">馬体重</option>
                 <option value="weightChange">馬体重増減</option>
                 <option value="frame">枠番</option>
@@ -88,18 +88,18 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">条件</label>
-              <select className="form-select" value={newPatch.operator} onChange={e => setNewPatch(p => ({ ...p, operator: e.target.value }))}>
+              <label className="form-label" htmlFor="patch-op">条件</label>
+              <select id="patch-op" className="form-select" value={newPatch.operator} onChange={e => setNewPatch(p => ({ ...p, operator: e.target.value }))}>
                 {[">=","<=","==",">","<"].map(op => <option key={op}>{op}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">閾値</label>
-              <input type="number" className="form-input" value={newPatch.value} onChange={e => setNewPatch(p => ({ ...p, value: +e.target.value }))} />
+              <label className="form-label" htmlFor="patch-val">閾値</label>
+              <input id="patch-val" type="number" className="form-input" value={newPatch.value} onChange={e => setNewPatch(p => ({ ...p, value: +e.target.value }))} />
             </div>
             <div className="form-group">
-              <label className="form-label">スコア調整</label>
-              <input type="number" className="form-input" value={newPatch.scoreAdjust} onChange={e => setNewPatch(p => ({ ...p, scoreAdjust: +e.target.value }))} />
+              <label className="form-label" htmlFor="patch-adj">スコア調整</label>
+              <input id="patch-adj" type="number" className="form-input" value={newPatch.scoreAdjust} onChange={e => setNewPatch(p => ({ ...p, scoreAdjust: +e.target.value }))} />
             </div>
           </div>
           <button className="btn btn-primary" onClick={handleAdd}>追加</button>
@@ -124,19 +124,19 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
               {state.learningPatches.map(patch => (
                 <tr key={patch.id}>
                   <td><span className="tag tag-purple">{patch.version}</span></td>
-                  <td style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{patch.date.slice(0, 10)}</td>
-                  <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{patch.description}</td>
-                  <td>{patch.track || <span style={{ color: "var(--text-muted)" }}>全場</span>}</td>
-                  <td>{patch.condition || <span style={{ color: "var(--text-muted)" }}>全て</span>}</td>
-                  <td style={{ fontSize: "0.75rem", fontFamily: "monospace" }}>
+                  <td className="fs-xs text-muted">{patch.date.slice(0, 10)}</td>
+                  <td className="max-w-200 ellipsis">{patch.description}</td>
+                  <td>{patch.track || <span className="text-muted">全場</span>}</td>
+                  <td>{patch.condition || <span className="text-muted">全て</span>}</td>
+                  <td className="fs-xs mono">
                     {patch.adjustments.map((a, i) => (
                       <span key={i}>{a.field} {a.operator} {a.value} → {a.scoreAdjust > 0 ? `+${a.scoreAdjust}` : a.scoreAdjust}</span>
                     ))}
                   </td>
                   <td>
-                    <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
-                      <input type="checkbox" checked={patch.active} onChange={() => handleToggle(patch.id)} />
-                      <span style={{ fontSize: "0.75rem", color: patch.active ? "var(--accent-green)" : "var(--text-muted)" }}>
+                    <label className="flex items-center gap-6 cursor-pointer">
+                      <input type="checkbox" checked={patch.active} onChange={() => handleToggle(patch.id)} aria-label={`${patch.version} 有効化`} />
+                      <span className={`fs-xs ${patch.active ? "text-green" : "text-muted"}`} style={patch.active ? { color: "var(--accent-green)" } : {}}>
                         {patch.active ? "有効" : "無効"}
                       </span>
                     </label>
