@@ -152,8 +152,15 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       return;
     }
 
-    const top3 = [1, 2, 3].map(r => parsed.find(p => p.rank === r) || { rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
-    setResults(top3);
+    let resultsData = parsed.length > 0 ? parsed : [1, 2, 3].map(r => ({ rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 }));
+    // 少なくとも3着までは入力欄を確保
+    for (let r = 1; r <= 3; r++) {
+      if (!resultsData.find(p => p.rank === r)) {
+        resultsData.push({ rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
+      }
+    }
+    resultsData.sort((a, b) => a.rank - b.rank);
+    setResults(resultsData);
   };
 
   const updateResult = (idx: number, field: string, value: unknown) => {
