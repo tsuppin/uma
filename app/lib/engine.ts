@@ -272,6 +272,12 @@ export function calculateTsuchiyaScore(
     if (horse.age >= 9) {
       potential += 20; tags.push('盛岡:ベテラン激走警戒');
     }
+    // 3. 特効上位騎手とヒモ穴（若手・減量）の傾向
+    if (jockey.includes('高松') || jockey.includes('高橋悠') || jockey.includes('山本聡')) {
+      potential += 25; tags.push('盛岡:特効上位騎手(頭候補)');
+    } else if (jockey.includes('塚本涼') || jockey.includes('坂井瑛') || /[☆△▲◇]/.test(jockey)) {
+      potential += 15; tags.push('盛岡:ヒモ穴警戒(減量/若手)');
+    }
   }
 
   // ==========================================
