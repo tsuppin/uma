@@ -313,6 +313,26 @@ export function calculateTsuchiyaScore(
     tags.push('⚠️斤量高負荷(2-3着ヒモ穴特化)');
   }
 
+  // ==========================================
+  // 【新設】絶対斤量（負担重量）解析
+  // ==========================================
+  // 55kgが最多勝利。54kg以下はヒモ、57kg以上は後半のみ信頼。
+  if (kinryo === 55) {
+    potential += 25; 
+    tags.push('🎯黄金斤量(55kg)');
+  } else if (kinryo <= 54) {
+    potential -= 15;
+    tags.push('🎐軽量馬(2-3着ヒモ穴特化)');
+  } else if (kinryo >= 57) {
+    if (race.raceNumber >= 7) {
+      potential += 20;
+      tags.push('🏰重量実力馬(後半勝負)');
+    } else {
+      potential -= 15;
+      tags.push('⚠️重量負担(前半戦回避)');
+    }
+  }
+
   // 馬格(500kg+) と 成長(+10kg+) のシナジー評価
   if (weight >= 500 && weightChange >= 10) {
     potential += 25;
@@ -933,6 +953,12 @@ export function calculateTsuchiyaScore(
   if (jockWeightRatio >= 14.0) {
     distortionBoost += 0.6;
     tags.push('💎3連系:高負荷激走ブースト');
+  }
+
+  // 軽量馬（54kg以下）によるヒモ穴ブースト
+  if (kinryo <= 54) {
+    distortionBoost += 0.4;
+    tags.push('💎3連系:軽量激走ブースト');
   }
 
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
