@@ -1217,34 +1217,33 @@ export function calculateTsuchiyaScore(
       tags.push('前半:中穴激走ゾーン');
     }
     // 1番人気の取りこぼし注意
-    if (popularity === 1) {
-      potential += 5;
-      tags.push('前半:1番人気(単勝期待値低め)');
-    }
-  } else {
-    // 後半：先行・好位押し切り ＆ 人気サイド vs 超大穴の二極化
-    if (horse.style === '逃げ' || horse.style === '先行' || horse.style === '好位') {
-      potential += 25;
-      tags.push('後半:先行・好位実力押し切り');
-    }
     // 1番人気の信頼度アップ
     if (popularity === 1) {
-      potential += 30;
-      tags.push('後半:1番人気(単勝期待値高)');
+      potential += 25;
+      tags.push('後半:1番人気(信頼度アップ)');
     }
-    // 超大穴（11人気以降）の特大配当トリガー
-    if (popularity >= 11) {
+    // 10番人気以下の超大穴の一発警戒
+    if (popularity >= 10) {
       potential += 20;
-      tags.push('🔥後半:超大穴特大配当警戒');
+      tags.push('後半:爆穴(ヒモ穴・高配当狙い)');
     }
-    // 後半は古馬（B級・A級）中心 → 高齢・大型馬に加点
-    if (horse.age >= 5) {
-      potential += 15;
-      tags.push('後半:古馬年齢加点');
-    }
-    if (weight >= 500) {
-      potential += 20;
-      tags.push('後半:大型馬パワー加点');
+  }
+
+  // ==========================================
+  // 【新設】市場心理：上位人気の圧倒的信頼（園田・地方限定バイアス）
+  // ==========================================
+  // 24戦23勝が3番人気以内という極端な「堅実決着」パターンを学習
+  if (trackName === '園田' || trackName === '西脇' || trackName === '姫路') {
+    if (popularity === 1) {
+      potential += 60; // 1番人気の鉄板級信頼度(勝率60%超)
+      tags.push('👑園田:1番人気(鉄板級信頼度)');
+    } else if (popularity <= 3) {
+      potential += 35; // 3番人気以内の圧倒的勝率(24戦23勝)を反映
+      tags.push('🛡️園田:上位人気(堅実決着ゾーン)');
+    } else if (popularity >= 6) {
+      // 穴馬の激走確率が極めて低い馬場・展開条件を反映して大幅割引
+      potential -= 40; 
+      tags.push('⚠️園田:下位人気(激走確率低下・波乱要素薄)');
     }
   }
 
