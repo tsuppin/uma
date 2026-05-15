@@ -229,6 +229,71 @@ export function calculateTsuchiyaScore(
   else if (weightChange >= 22) { potential -= 15; tags.push('太目残り懸念'); }
   else if (weightChange <= -12) { potential -= 20; tags.push('究極仕上げ/疲弊'); }
   else if (-4 <= weightChange && weightChange <= 4) { potential += 10; tags.push('質量安定'); }
+  
+  // ±10kg以上の大きな変動（独立激走フラグ）
+  if (Math.abs(weightChange) >= 10) {
+    potential += 15;
+    tags.push('🔥物理エントロピー(激走サイン)');
+  }
+
+  // ==========================================
+  // 【新設】特殊馬具・厩舎所属・マーケット偏差値
+  // ==========================================
+  // 1. 特殊馬具（ブリンカー）
+  if (horse.useBlinkers) {
+    potential += 15;
+    tags.push('🎯特殊馬具(集中力向上)');
+  }
+
+  // 2. 厩舎所属エリア（栗東/美浦）
+  if (horse.stableLocation === '栗東') {
+    potential += 15;
+    tags.push('🏰西高東低(栗東所属)');
+  } else if (horse.stableLocation === '美浦') {
+    potential += 5;
+  }
+
+  // 3. オッズ偏差値解析（歪みの標準化）
+  if (horse.oddsStandardScore) {
+    if (horse.oddsStandardScore >= 65) {
+      potential += 25;
+      tags.push('💎不当過小評価(歪み特大)');
+    } else if (horse.oddsStandardScore <= 35) {
+      potential -= 15;
+      tags.push('⚠️不当過剰評価');
+    }
+  }
+
+  // ==========================================
+  // 【新設】過去走ダイナミクス（タイム差・通過順）
+  // ==========================================
+  if (horse.pastRaces && horse.pastRaces.length > 0) {
+    const lastRace = horse.pastRaces[0];
+    // 勝ち馬とのタイム差（0.3秒以内なら次走勝ち負け）
+    if (lastRace.timeDiff !== undefined && lastRace.timeDiff <= 0.3 && lastRace.timeDiff >= 0) {
+      potential += 25;
+      tags.push('📈直近タイム差僅少');
+    }
+    
+    // 通過順位による脚質・展開適性
+    if (lastRace.passingPositions) {
+      const pos = lastRace.passingPositions.split('-').map(Number);
+      const isFront = pos[0] <= 3 || pos[1] <= 3;
+      if (isFront && (trackName === '川崎' || trackName === '門別')) {
+        potential += 15;
+        tags.push('🏇先行・展開利(前走検証済み)');
+      }
+    }
+  }
+
+  // ==========================================
+  // 【新設】パワーウェイトレシオ（馬体重 / 斤量）
+  // ==========================================
+  const powerRatio = weight / kinryo;
+  if (powerRatio >= 9.5) {
+    potential += 20;
+    tags.push('💪絶対パワー(馬格優位)');
+  }
 
   // ==========================================
   // 【新設】盛岡競馬場 時間帯・枠順・クラス別バイアス解析

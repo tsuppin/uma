@@ -40,6 +40,9 @@ export interface Horse {
   prizeCloseFlag?: boolean; // 賞金上限接近フラグ
   rotation?: string;   // ローテ
   prevInnerLoadExp?: boolean; // 前走内負荷経験
+  useBlinkers?: boolean;     // 特殊馬具（ブリンカー）
+  stableLocation?: '栗東' | '美浦' | '地方' | ''; // 厩舎・所属エリア
+  oddsStandardScore?: number; // オッズ偏差値
 }
 
 export interface PastRace {
@@ -60,6 +63,9 @@ export interface PastRace {
   prize: number;    // 賞金
   classBaseTime?: number; // クラス基準タイム
   otherVenueExp?: boolean; // 他場実績
+  timeDiff?: number;       // 勝ち馬とのタイム差
+  passingPositions?: string; // 通過順位（例：「1-1-2-2」）
+  last3fTime?: string;     // 上がり3ハロン
 }
 
 export interface Race {
