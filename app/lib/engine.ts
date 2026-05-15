@@ -389,6 +389,36 @@ export function calculateTsuchiyaScore(
       tags.push('💎タイム異常値(着順不問・実力不一致)');
     }
     
+    // ⑥ 走場別上がりタイム（末脚ボーダーライン）解析
+    const bestLast3f = Math.min(...horse.pastRaces.map(pr => parseFloat(pr.last3fTime || '99.9')));
+    
+    if (race.surface === '芝') {
+      if (bestLast3f <= 33.3) {
+        potential += 35;
+        tags.push(`🚀芝瞬発力エリート(上がり${bestLast3f.toFixed(1)}s)`);
+        if (bestLast3f <= 32.8) {
+          potential += 15;
+          tags.push('⚡芝異次元の末脚(32秒台)');
+        }
+      }
+    } else if (race.surface === 'ダート') {
+      if (bestLast3f <= 36.8) {
+        potential += 30;
+        tags.push(`💪ダート高速末脚エリート(上がり${bestLast3f.toFixed(1)}s)`);
+      }
+    }
+
+    // ⑦ 全体タイムと上がりのバランス評価（総合能力）
+    const sameDistBalanced = horse.pastRaces.find(pr => 
+      pr.distance === race.distance && 
+      parseFloat(pr.last3fTime || '99.9') <= (race.surface === '芝' ? 34.2 : 37.5) &&
+      pr.result <= 3
+    );
+    if (sameDistBalanced) {
+      potential += 20;
+      tags.push('🛡️総合能力(タイム×上がり両立)');
+    }
+    
     // 通過順位による展開利（川崎・門別・笠松等）
     if (lastRace.passingPositions) {
       const pos = lastRace.passingPositions.split('-').map(Number);
