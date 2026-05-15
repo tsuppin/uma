@@ -345,8 +345,11 @@ export function calculateTsuchiyaScore(
       const val = horse[field];
       let applies = false;
       if (typeof val === 'number') {
-        if (adj.operator === '>=' && val >= adj.value) applies = true;
-        else if (adj.operator === '<=' && val <= adj.value) applies = true;
+        if (adj.operator === '>=' && val >= Number(adj.value)) applies = true;
+        else if (adj.operator === '<=' && val <= Number(adj.value)) applies = true;
+        else if (adj.operator === '==' && val === Number(adj.value)) applies = true;
+      } else if (typeof val === 'string' && typeof adj.value === 'string') {
+        if (adj.operator === 'includes' && val.includes(adj.value)) applies = true;
         else if (adj.operator === '==' && val === adj.value) applies = true;
       }
       if (applies) { potential += adj.scoreAdjust; tags.push(`学習パッチ(${patch.version})`); }
@@ -408,19 +411,61 @@ export function generateWin5Picks(races: Race[], allPredictions: Record<string, 
 }
 
 export function generateLearningPatch(race: Race, predictions: Prediction[], actualResult: { rank: number; horseNumber: number; }[], existingPatches: LearningPatch[]): LearningPatch | null {
-  const winner = actualResult.find(r => r.rank === 1);
-  if (!winner) return null;
-  const winnerHorse = race.horses.find(h => h.number === winner.horseNumber);
-  if (!winnerHorse) return null;
-  const axisRank = predictions.findIndex(p => p.horseNumber === winner.horseNumber) + 1;
-  if (axisRank > 3) {
-    const adjustments = [];
-    if (winnerHorse.weight >= 480 && winnerHorse.weight <= 520) adjustments.push({ field: 'weight', operator: '>=', value: 480, scoreAdjust: 10 });
-    if (winnerHorse.weightChange >= 10) adjustments.push({ field: 'weightChange', operator: '>=', value: 10, scoreAdjust: 15 });
-    if (adjustments.length === 0) return null;
-    return { id: `patch_${Date.now()}`, version: `v${existingPatches.length + 1}.1`, date: new Date().toISOString(), description: `${race.venue} - 勝ち馬(${winnerHorse.name})の特性学習`, track: race.trackName, condition: race.condition, adjustments, active: true };
+  const adjustments: any[] = [];
+  let learningTargetName = "";
+
+  // 1〜3着馬をすべてチェックし、AIが低く評価していた馬から複合的に学習する
+  const top3Results = actualResult.filter(r => r.rank <= 3);
+  
+  for (const result of top3Results) {
+    const horse = race.horses.find(h => h.number === result.horseNumber);
+    if (!horse) continue;
+    
+    const aiRank = predictions.findIndex(p => p.horseNumber === result.horseNumber) + 1;
+    
+    // AIが軽視していた（4位以下）のに好走した場合、その馬から反省点を見つける
+    if (aiRank > 3) {
+      if (!learningTargetName) learningTargetName = horse.name;
+
+      // 馬体重バイアス
+      if (horse.weight >= 480) adjustments.push({ field: 'weight', operator: '>=', value: 480, scoreAdjust: 10 });
+      else if (horse.weight <= 440) adjustments.push({ field: 'weight', operator: '<=', value: 440, scoreAdjust: 10 });
+
+      // 馬体重増減バイアス
+      if (horse.weightChange >= 10) adjustments.push({ field: 'weightChange', operator: '>=', value: 10, scoreAdjust: 15 });
+      else if (horse.weightChange <= -10) adjustments.push({ field: 'weightChange', operator: '<=', value: -10, scoreAdjust: 10 });
+
+      // 枠順バイアス
+      if (horse.frame <= 2) adjustments.push({ field: 'frame', operator: '<=', value: 2, scoreAdjust: 15 });
+      else if (horse.frame >= 7) adjustments.push({ field: 'frame', operator: '>=', value: 7, scoreAdjust: 15 });
+
+      // 年齢バイアス（ベテラン・若駒激走）
+      if (horse.age >= 8) adjustments.push({ field: 'age', operator: '>=', value: 8, scoreAdjust: 20 });
+      else if (horse.age === 3) adjustments.push({ field: 'age', operator: '==', value: 3, scoreAdjust: 15 });
+
+      // 騎手・血統バイアス
+      if (horse.jockey) adjustments.push({ field: 'jockey', operator: 'includes', value: horse.jockey.replace(/[☆△▲◇]/g, ''), scoreAdjust: 15 });
+      if (horse.sire) adjustments.push({ field: 'sire', operator: 'includes', value: horse.sire, scoreAdjust: 15 });
+    }
   }
-  return null;
+
+  // 重複ルールの排除
+  const uniqueAdjustments = adjustments.filter((adj, index, self) =>
+    index === self.findIndex((t) => t.field === adj.field && t.value === adj.value)
+  );
+
+  if (uniqueAdjustments.length === 0) return null;
+
+  return { 
+    id: `patch_${Date.now()}`, 
+    version: `v${existingPatches.length + 1}.1`, 
+    date: new Date().toISOString(), 
+    description: `${race.venue} - 好走馬(${learningTargetName}等)の特性学習`, 
+    track: race.trackName, 
+    condition: race.condition, 
+    adjustments: uniqueAdjustments, 
+    active: true 
+  };
 }
 
 function combinations<T>(arr: T[], size: number): T[][] {

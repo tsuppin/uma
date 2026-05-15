@@ -136,7 +136,7 @@ export interface LearningPatch {
   adjustments: {
     field: string;
     operator: string;
-    value: number;
+    value: number | string;
     scoreAdjust: number;
   }[];
   active: boolean;
