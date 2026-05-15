@@ -631,6 +631,23 @@ export function calculateTsuchiyaScore(
       potential -= 10;
       tags.push('東京:高齢馬(3着ヒモ穴警戒)');
     }
+
+    // 6. 騎手シナジー補正：役割別の特性評価
+    if (jockey.includes('ルメー')) {
+      potential += 45; // 勝ち切るシナジー最大（WIN5/単勝向け）
+      tags.push('東京:ルメール(1着勝負強さ特大)');
+    } else if (jockey.includes('戸崎')) {
+      potential += 35; // 馬券圏内安定度最大（3連系軸向け）
+      tags.push('東京:戸崎(2-3着安定感エリート)');
+    } else if (jockey.match(/(岩田康|三浦|横山和)/)) {
+      if (popularity >= 6) {
+        potential += 30; // 穴馬激走シナジー（ヒモ穴向け）
+        tags.push('東京:爆発力ジョッキー(穴警戒)');
+      } else {
+        potential += 15;
+        tags.push('東京:爆発力ジョッキー');
+      }
+    }
   }
 
   // ---------------------------------------------------
