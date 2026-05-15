@@ -903,4 +903,57 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778847490909",
+    version: "v62.1",
+    date: "2026-05-15T12:18:10.909Z",
+    description: "川崎 - 好走馬(ピンクタオルチャン等)の特性学習",
+    track: "川崎",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "笹川翼",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "トビーズコーナー",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "黒鹿毛",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ダノンレジェンド",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "エスポワールシチー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
