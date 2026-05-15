@@ -714,6 +714,24 @@ export function calculateTsuchiyaScore(
       potential += 35;
       tags.push('東京:オッズ偏差値特大(爆穴ポテンシャル)');
     }
+
+    // 10. 前走着差バイアス：二極化解析（王道 vs 一変）
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const lastRace = horse.pastRaces[0];
+      const tDiff = lastRace.timeDiff ?? 9.9;
+      
+      // ① 王道の信頼：上位人気且つ前走1秒未満の惜敗
+      if (popularity <= 3 && tDiff < 1.0) {
+        potential += 25;
+        tags.push('東京:王道パターン(前走僅差)');
+      }
+      
+      // ② 一変の爆発：前走1秒以上の大敗 ＋ 変わり身のトリガー
+      if (tDiff >= 1.0 && (horse.useBlinkers || frame >= 6 || weightChange >= 10)) {
+        potential += 30;
+        tags.push('東京:一変パターン(前走大敗×トリガー)');
+      }
+    }
   }
 
   // ---------------------------------------------------
