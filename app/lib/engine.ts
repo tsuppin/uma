@@ -375,6 +375,21 @@ export function calculateTsuchiyaScore(
       potential += 20;
       tags.push('門別:減量騎手(波乱警戒)');
     }
+    
+    // 門別実証分析：枠順バイアス（中〜外枠優勢、4枠苦戦）
+    if (frame === 6 || frame === 7) {
+      potential += 25;
+      tags.push('門別:6-7枠(1着有力)');
+    } else if (frame === 5) {
+      potential += 20;
+      tags.push('門別:5枠(2着期待)');
+    } else if (frame === 8) {
+      potential += 20;
+      tags.push('門別:8枠(ヒモ席巻)');
+    } else if (frame === 4) {
+      potential -= 20;
+      tags.push('門別:4枠(最苦戦傾向)');
+    }
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
     if (topJockeys.includes(jockey)) { potential += 15; tags.push('鞍上強化'); }
