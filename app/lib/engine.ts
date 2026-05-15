@@ -330,6 +330,27 @@ export function calculateTsuchiyaScore(
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
     if (topJockeys.includes(jockey)) { potential += 15; tags.push('鞍上強化'); }
+  } else if (trackName === '金沢') {
+    // 1. JRA移籍・交流馬エッジ
+    if (horse.transferFrom === 'JRA' || (horse.ownerType === 'JRA')) {
+      potential += 30; tags.push('金沢:中央勢エッジ');
+    }
+    // 2. クラス・年齢別の馬格（馬体重）バイアス
+    const age = horse.age;
+    if (age <= 3) {
+      if (weight <= 400) { potential += 10; tags.push('金沢3歳:小柄牝馬許容'); }
+    } else {
+      // 古馬戦（後半）は500kg超のパワー必須
+      if (weight >= 500) { potential += 25; tags.push('金沢古馬:大型馬パワー優位'); }
+      else if (weight <= 440) { potential -= 20; tags.push('金沢古馬:パワー不足懸念'); }
+    }
+    // 3. 後半レース（上級クラス）の末脚持続力
+    if (race.raceNumber >= 9) {
+      // 過去に速い上がり（ここでは実績で代用）がある馬を評価
+      if (horse.pastRaces && horse.pastRaces.some(r => r.result <= 3)) {
+        potential += 15; tags.push('金沢後半:末脚持続期待');
+      }
+    }
   }
 
   // 動的学習パッチの適用
