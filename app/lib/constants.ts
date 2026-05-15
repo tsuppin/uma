@@ -815,4 +815,63 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778847400743",
+    version: "v60.1",
+    date: "2026-05-15T12:16:40.743Z",
+    description: "川崎 - 好走馬(エレファントラン等)の特性学習",
+    track: "川崎",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "御神訓",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ニューイヤーズデイ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "黒鹿毛",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "フリオーソ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "新原周",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ハービンジャー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
