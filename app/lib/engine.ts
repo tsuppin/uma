@@ -234,7 +234,7 @@ export function calculateTsuchiyaScore(
   // 【新設】盛岡競馬場 時間帯・枠順・クラス別バイアス解析
   // ==========================================
   if (trackName === '盛岡' || race.venue === '盛岡') {
-    }
+
     
     // 枠順バイアス（全時間帯共通の強力な傾向）
     if (frame >= 7) {
@@ -381,6 +381,19 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces && horse.pastRaces.some(pr => pr.distance <= 1400 && pr.result <= 3)) {
       potential += 15; tags.push('後半:速い上がり期待');
     }
+  }
+
+  // ---------------------------------------------------
+  // 上位3頭枠順バイアス（実績分析に基づく固定加点）
+  // ---------------------------------------------------
+  if (frame === 6 || frame === 7) {
+    potential += 15; tags.push('枠:6-7上位優位');
+  } else if (frame === 5) {
+    potential += 10; tags.push('枠:5上位候補');
+  } else if (frame === 8) {
+    potential += 12; tags.push('枠:8ヒモ期待');
+  } else if (frame === 4) {
+    potential -= 8; tags.push('枠:4苦戦');
   }
 
   // 動的学習パッチの適用
