@@ -566,6 +566,28 @@ export function calculateTsuchiyaScore(
         potential += 15; tags.push('金沢後半:末脚持続期待');
       }
     }
+  } else if (trackName === '東京') {
+    // 東京実証分析：物理・馬体パラメータ（フィジカル特徴量）
+    // 1. 大幅な馬体重増減（±10kg以上）の明暗
+    if (weightChange >= 10) {
+      potential += 25;
+      tags.push('東京:大幅プラス体重(成長ヤリ)');
+    } else if (weightChange <= -10) {
+      potential -= 30;
+      tags.push('東京:大幅マイナス体重(消耗懸念)');
+    }
+    
+    // 2. 馬格（500kg以上の大型馬）の物理的優位
+    if (weight >= 500) {
+      potential += 20;
+      tags.push('東京:大型馬パワー優位');
+    }
+    
+    // 3. 空間物理：外枠のスムーズな加速空間確保
+    if (frame >= 6) {
+      potential += 20;
+      tags.push('東京:外枠(空間物理的優位)');
+    }
   }
 
   // ---------------------------------------------------
