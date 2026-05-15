@@ -226,19 +226,25 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 馬体重増減エントロピー解析（成長 vs 疲弊）
+  // 馬体重増減エントロピー解析（成長 vs 絞り込み vs 疲弊）
   // ==========================================
   if (weightChange >= 10) {
-    if (weightChange <= 20) {
-      potential += 30; 
-      tags.push('🚀成長加速(パワーアップ期待)'); 
+    if (weightChange <= 16) {
+      potential += 25; 
+      tags.push('🚀馬体充実(成長加速)'); 
     } else {
-      potential -= 10; 
-      tags.push('太目残り懸念'); 
+      potential -= 15; 
+      tags.push('⚠️太目残り・調整不足'); 
     }
   } else if (weightChange <= -10) {
-    potential -= 30;
-    tags.push('⚠️大幅減・消耗(パワーダウン警戒)');
+    // 京都の実証分析に基づき、-24kgまでの絞り込みを「仕上げ」として再定義
+    if (weightChange >= -24) {
+      potential += 20; 
+      tags.push('🎯仕上げ確変(究極の絞り込み)');
+    } else {
+      potential -= 30;
+      tags.push('⚠️過剰消耗(パワーダウン警戒)');
+    }
   } else if (-4 <= weightChange && weightChange <= 4) {
     potential += 10;
     tags.push('質量安定');
@@ -602,6 +608,29 @@ export function calculateTsuchiyaScore(
     } else if (frame === 4) {
       potential -= 20;
       tags.push('門別:4枠(最苦戦傾向)');
+    }
+  }
+
+  // ==========================================
+  // 【新設】京都競馬場 馬体重変動・成長バイアス解析
+  // ==========================================
+  if (trackName === '京都' || race.venue === '京都') {
+    // ① 極限の絞り込み（-10kg〜-24kg）：勝負気配MAX
+    if (weightChange <= -10 && weightChange >= -24) {
+      potential += 35; // 一般の絞り込み加算に加え、京都専用の特大ブースト
+      tags.push('京都:極限の仕上げ(激走フラグ)');
+    } else if (weightChange < -25) {
+      potential -= 25;
+      tags.push('⚠️京都:過剰な馬体減(消耗懸念)');
+    }
+
+    // ② 成長と立て直し（3歳以下 +10kg〜+14kg）
+    if (age <= 3 && weightChange >= 10 && weightChange <= 14) {
+      potential += 30;
+      tags.push('京都:若駒成長シナジー(大幅増)');
+    } else if (weightChange > 16) {
+      potential -= 25;
+      tags.push('⚠️京都:過剰な馬体増(調整不足)');
     }
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
