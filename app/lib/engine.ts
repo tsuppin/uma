@@ -234,21 +234,18 @@ export function calculateTsuchiyaScore(
   // 【新設】盛岡競馬場 時間帯・枠順・クラス別バイアス解析
   // ==========================================
   if (trackName === '盛岡' || race.venue === '盛岡') {
-    if (race.raceNumber <= 6) {
-      // 前半戦：上位人気（本命）中心、内〜中枠有利
-      if (frame === 2 || frame === 4 || frame === 5) {
-        potential += 15; tags.push('盛岡前半:内〜中枠有利');
-      }
-      if (popularity <= 3) {
-        potential += 20; tags.push('盛岡前半:本命堅実');
-      }
-    } else {
-      // 後半戦：波乱傾向（穴馬台頭）、極端な枠（最内or外枠）有利
-      if (frame === 1) {
-        potential += 20; tags.push('盛岡後半:最内枠有利');
-      } else if (frame >= 6 && frame <= 8) {
-        potential += 20; tags.push('盛岡後半:外枠有利');
-      }
+    }
+    
+    // 枠順バイアス（全時間帯共通の強力な傾向）
+    if (frame >= 7) {
+      potential += 30; tags.push('盛岡:外枠絶対優位');
+    } else if (frame === 1) {
+      potential += 20; tags.push('盛岡:最内枠健闘');
+    } else if (frame === 2 || frame === 4) {
+      potential -= 25; tags.push('盛岡:死滅枠(2/4枠)懸念');
+    }
+
+    if (race.raceNumber >= 7) {
       if (popularity >= 6 && popularity <= 10) {
         potential += 25; tags.push('盛岡後半:波乱警戒(大穴)');
       }
