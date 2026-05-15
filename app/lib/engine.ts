@@ -260,56 +260,49 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 馬体重増減エントロピー解析（王道絞り込み vs パワーアップ）
+  // 馬体重増減エントロピー解析（安定性 vs 激変の期待値）
   // ==========================================
-  // ① 王道パターン：マイナス〜維持（-8kg 〜 ±0kg）
-  if (weightChange <= 0 && weightChange >= -8) {
-    potential += 20;
-    tags.push('🏹王道:馬体絞り・維持(勝負気配)');
+  // ① 1着候補パターン：小幅な変動（±8kg以内）
+  // 統計的に勝ち馬の多くがこの範囲に集中（安定した仕上げ）
+  if (Math.abs(weightChange) <= 8) {
+    potential += 35;
+    tags.push('🏹安定馬体(1着候補:±8kg内)');
     
     // 後半レース（8R〜12R）でのマイナス体重は「究極の仕上げ」としてさらに評価
     if (race.raceNumber >= 8 && weightChange < 0) {
-      potential += 25;
+      potential += 20;
       tags.push('🔥後半戦マイナス体重(メイチ絞り)');
     }
-  } else if (weightChange >= 1 && weightChange <= 5) {
-    // ② 準王道：微増（+1kg 〜 +5kg）パワー温存・好調維持
-    potential += 15;
-    tags.push('🛡️準王道:馬体微増(パワー温存)');
-  }
+  } 
+  
+  // ② 紐穴（2-3着）候補パターン：大幅な変動（±10kg以上）
+  // 勝ち切る力は削がれる傾向にあるが、波乱の主役（ヒモ）になりやすい
+  else if (Math.abs(weightChange) >= 10) {
+    // ポテンシャル（1着確率）は控えめに、歪み（紐穴期待値）を大幅増
+    distortionBoost += 0.8;
+    tags.push('💎馬体激変:紐穴激走サイン');
 
-  // ③ 大幅な変動（激走サイン or 危険信号）
-  if (weightChange >= 10) {
-    // 若い馬（3歳以下）は成長分として大幅増（+20kg以上）も積極的に評価
-    if (age <= 3) {
-      if (weightChange <= 35) {
-        potential += 45; // 成長分を含めた特大ブースト
-        tags.push('🚀若駒成長・パワーアップ(S)');
-      } else {
+    if (weightChange >= 10) {
+      // 大幅増（成長分または休養明け）
+      if (age <= 3 && weightChange <= 35) {
+        potential += 20; // 若駒は成長分として一定の勝機も残す
+        tags.push('🚀若駒成長分(3着内期待)');
+      } else if (weightChange <= 16) {
         potential += 10;
-        tags.push('🚀過剰な成長分(要確認)');
-      }
-    } else {
-      // 古馬の大幅増
-      if (weightChange <= 16) {
-        potential += 20; 
-        tags.push('🚀馬体充実(成長・充実期)'); 
+        tags.push('🚀馬体充実(ヒモ警戒)');
       } else {
-        potential -= 30; 
-        tags.push('⚠️太目残り・調整不足(要警戒)'); 
+        potential -= 20;
+        tags.push('⚠️太目残り注意(2-3着まで)');
       }
-    }
-  } else if (weightChange <= -10) {
-    // 絞り込み（-10kg〜-14kg）を「黄金の絞り」として再定義
-    if (weightChange >= -14) {
-      potential += 40; 
-      tags.push('🎯黄金の絞り(ベストコンディション)');
-    } else if (weightChange >= -19) {
-      potential += 25;
-      tags.push('🎯究極の仕上げ(絞り込み激走サイン)');
-    } else if (weightChange <= -20) {
-      potential -= 40; // -20kg以上の大幅減は「過剰消耗」として厳しく判定
-      tags.push('⚠️過剰消耗・パワーダウン(危険信号)');
+    } else if (weightChange <= -10) {
+      // 大幅減（絞り込みまたは消耗）
+      if (weightChange >= -18) {
+        potential += 15;
+        tags.push('🎯究極の絞り(ヒモ荒れ注意)');
+      } else {
+        potential -= 30;
+        tags.push('⚠️過剰消耗懸念(危険な紐穴)');
+      }
     }
   }
 
@@ -550,11 +543,19 @@ export function calculateTsuchiyaScore(
         }
       }
       
-      // 走破タイムが遅い（下級クラス）レースの特性：上がり最速よりもポジション（位置取り）を重視
-      if (!isUpperClass) {
-        if (horse.style === '逃げ' || horse.style === '先行') {
-          potential += 25;
-          tags.push('🛡️下級クラス:ポジション優位(時計不問・前残り期待)');
+      // 【重要】ダート・前残りバイアス解析
+      // 上がり最速（35-36秒台）を後方から出す馬よりも、
+      // ポジションを取って37-38秒台（短距離）で粘り込む馬を上位評価
+      if (horse.style === '逃げ' || horse.style === '先行' || horse.style === '好位') {
+        if (bestLast3f <= 38.5) {
+          potential += 30;
+          tags.push('🛡️先行持続脚(前残りバイアス適合)');
+        }
+      } else if (horse.style === '差し' || horse.style === '追込') {
+        if (bestLast3f <= 36.5) {
+          potential -= 10; // 上がり最速でも届かないリスクを考慮
+          distortionBoost += 0.5; // 2-3着（紐）としての期待値を上げる
+          tags.push('⚠️末脚不発リスク(前残り馬場考慮)');
         }
       }
       
@@ -572,41 +573,41 @@ export function calculateTsuchiyaScore(
     // ⑦ 総合スピード能力（走破タイム×上がりの相関評価）
     // 厳しいペース（高速走破）の中で速い上がりを両立できる馬を最高評価
     const hasFastAndLate = horse.pastRaces.find(pr => {
-      const timeVal = parseFloat(pr.time || '999');
+      const timeStr = pr.time || '9:59.9';
+      const [min, sec] = timeStr.includes(':') ? timeStr.split(':').map(parseFloat) : [0, parseFloat(timeStr)];
+      const timeVal = min * 60 + sec;
       const l3fVal = parseFloat(pr.last3fTime || '99.9');
-      // 1400m基準: 1:32:0以下（Star Candy級の1:31.8を評価）且つ上がり39.5s以下
+
+      // 1000m基準: 1:01.2(上位) / 1:02.5(標準)
+      if (pr.distance === 1000 && timeVal <= 62.5 && l3fVal <= 37.5) return true;
+      // 1100m基準: 1:09.0以下且つ上がり38.5s以下
+      if (pr.distance === 1100 && timeVal <= 69.0 && l3fVal <= 38.5) return true;
+      // 1200m基準: 1:15.8以下且つ上がり38.5s以下
+      if (pr.distance === 1200 && timeVal <= 75.8 && l3fVal <= 38.5) return true;
+      // 1400m基準: 1:31.8(Star Candy級)を評価
       if (pr.distance === 1400 && timeVal <= 92.0 && l3fVal <= 39.5) return true;
-      // 1230m基準: 1:19:5以下且つ上がり38.5s以下
-      if (pr.distance === 1230 && timeVal <= 79.5 && l3fVal <= 38.5) return true;
       // 1500m基準: クラス別判定（JRA交流1:38.6 / 古馬B級1:39.5 / 3歳1:41.0）
       if (pr.distance === 1500) {
-        if (timeVal <= 99.0 && l3fVal <= 40.0) return true; // 1:39.0以下
-        if (age <= 3 && timeVal <= 101.5) return true; // 3歳で1:41.5以下なら超抜
+        if (timeVal <= 99.5 && l3fVal <= 40.0) return true;
+        if (age <= 3 && timeVal <= 101.5) return true;
       }
-      // 1700m基準: 1:53:0以下且つ上がり40.0s以下
-      if (pr.distance === 1700 && timeVal <= 113.0 && l3fVal <= 40.0) return true;
+      // 1700m基準: 1:51.3(ジャスパードリーム級)を評価
+      if (pr.distance === 1700 && timeVal <= 111.5 && l3fVal <= 41.5) return true;
       return false;
     });
     
-    if (hasFastAndLate) {
-      potential += 30;
-      tags.push('🏆総合スピード能力(タイム×上がり相関)');
-    }
-    
-    // ⑧ 安定した先行力（Positioning Consistency）の解析
-    // 過去3走で継続的に前目（1-3番手）のポジションを確保できている馬を、主導権を握れる馬として評価
-    const frontPosCount = horse.pastRaces.slice(0, 3).filter(pr => {
-      if (!pr.passingPositions) return false;
-      const pos = pr.passingPositions.split('-').map(Number);
-      return pos[0] > 0 && pos[0] <= 3;
-    }).length;
-
     if (frontPosCount >= 2) {
-      potential += 25;
-      tags.push('🚀安定した先行力(1-3番手確保実績)');
+      potential += 30;
+      tags.push('🚀安定した先行力(1-3番手保持実績)');
     } else if (frontPosCount === 1 && (horse.style === '逃げ' || horse.style === '先行')) {
       potential += 15;
-      tags.push('🏹好位・先行ポテンシャル');
+      tags.push('🏹先行実績あり');
+    }
+
+    // ⑨ 超短距離（1100m以下）における「テンの速さ」特化評価
+    if (dist <= 1100 && (horse.style === '逃げ' || horse.style === '先行')) {
+      potential += 25;
+      tags.push('⚡超短距離エッジ(テンの速さ重視)');
     }
 
     // 通過順位による展開利（小回り・地方・特定コース）
