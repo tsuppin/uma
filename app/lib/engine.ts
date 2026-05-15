@@ -253,10 +253,29 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【新設】特殊馬具・厩舎所属・マーケット偏差値
   // ==========================================
-  // 1. 特殊馬具（ブリンカー）
+  // 1. 特殊馬具（ブリンカー）解析
   if (horse.useBlinkers) {
-    potential += 15;
-    tags.push('🎯特殊馬具(集中力向上)');
+    const blinkerHorses = race.horses.filter(h => h.useBlinkers).length;
+    let blinkerBonus = 20;
+    
+    // 希少性によるブースト（着用馬が少ないほど一変の期待値が高い）
+    if (blinkerHorses <= 2) {
+      blinkerBonus += 15;
+      tags.push('🎯特殊馬具(希少一変期待)');
+    } else if (blinkerHorses >= 5) {
+      blinkerBonus -= 10;
+      tags.push('📢ブリンカー多用(効果分散)');
+    } else {
+      tags.push('🎯特殊馬具(集中力向上)');
+    }
+
+    // 馬体重絞り込みとのシナジー（陣営の「ここが勝負」のサイン）
+    if (weightChange <= -10 && weightChange >= -24) {
+      blinkerBonus += 25;
+      tags.push('🚀勝負気配(馬体減×ブリンカー)');
+    }
+    
+    potential += blinkerBonus;
   }
 
   // 2. 厩舎所属エリア（栗東/美浦）
@@ -631,6 +650,12 @@ export function calculateTsuchiyaScore(
     } else if (weightChange > 16) {
       potential -= 25;
       tags.push('⚠️京都:過剰な馬体増(調整不足)');
+    }
+
+    // ③ 特殊馬具（ブリンカー）：京都一変トリガー
+    if (horse.useBlinkers) {
+      potential += 25;
+      tags.push('京都:ブリンカー着用(一変トリガー)');
     }
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
