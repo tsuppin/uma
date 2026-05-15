@@ -746,6 +746,26 @@ export function calculateTsuchiyaScore(
       potential += 25;
       tags.push('京都:万能・勝負強さ(上位血統)');
     }
+
+    // ⑤ 厩舎・所属バイアス（栗東ホームアドバンテージ）
+    const trainer = horse.trainer || '';
+    if (horse.stableLocation === '栗東') {
+      potential += 20;
+      tags.push('🏰京都ホーム:栗東所属馬');
+      
+      // 京都特注エリート厩舎（ホットハンド実績）
+      if (trainer.match(/(高野友和|田中克典|斉藤崇史|佐藤悠太)/)) {
+        potential += 25;
+        tags.push('🔥京都エリート厩舎(勝負気配)');
+      }
+    } else if (horse.stableLocation === '美浦') {
+      potential -= 15;
+      tags.push('⚠️京都アウェイ:美浦所属馬(割引)');
+      if (popularity <= 3) {
+        potential -= 15; // 危険な関東馬
+        tags.push('⚠️危険な人気馬(アウェイ美浦)');
+      }
+    }
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
     if (topJockeys.includes(jockey)) { potential += 15; tags.push('鞍上強化'); }
