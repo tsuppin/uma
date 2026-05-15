@@ -657,6 +657,30 @@ export function calculateTsuchiyaScore(
       potential += 25;
       tags.push('京都:ブリンカー着用(一変トリガー)');
     }
+
+    // ④ 血統バイアス（種牡馬適性）
+    const sire = horse.sire || '';
+    if (race.surface === 'ダート') {
+      if (sire.includes('ルヴァンスレーヴ')) {
+        potential += 40;
+        tags.push('京都ダート:ルヴァンスレーヴ産駒(特注)');
+      } else if (sire.includes('ドレフォン') || sire.includes('シニスターミニスター')) {
+        potential += 30;
+        tags.push('京都ダート:パワー血統(爆発期待)');
+      }
+    } else if (race.surface === '芝') {
+      if (sire.includes('エピファネイア')) {
+        potential -= 15; // 1着候補としては割り引き
+        tags.push('京都芝:エピファネイア(ヒモ特化)');
+      } else if (sire.includes('ゴールドシップ') && race.distance >= 2000) {
+        potential += 25;
+        tags.push('京都芝長距離:スタミナ血統(Gシップ)');
+      }
+    }
+    if (sire.includes('コントレイル') || sire.includes('キズナ')) {
+      potential += 25;
+      tags.push('京都:万能・勝負強さ(上位血統)');
+    }
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
     if (topJockeys.includes(jockey)) { potential += 15; tags.push('鞍上強化'); }
@@ -1037,6 +1061,12 @@ export function calculateTsuchiyaScore(
   if (lastTDiff >= 3.0 && horse.pastRaces && horse.pastRaces.slice(1, 5).some(pr => pr.result <= 3)) {
     distortionBoost += 0.5;
     tags.push('💎3連系:隠れた実力激走ブースト');
+  }
+
+  // 京都芝×エピファネイア（ヒモ穴特化）
+  if (trackName === '京都' && race.surface === '芝' && horse.sire?.includes('エピファネイア')) {
+    distortionBoost += 0.4;
+    tags.push('💎3連系:エピファネイア適性ブースト');
   }
 
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
