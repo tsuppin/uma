@@ -1097,4 +1097,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778887870694",
+    version: "v33.1",
+    date: "2026-05-15T23:31:10.694Z",
+    description: "笠松 - 好走馬(ジョリーメモリー等)の特性学習",
+    track: "笠松",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "馬渕繁",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "リアルインパクト",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
