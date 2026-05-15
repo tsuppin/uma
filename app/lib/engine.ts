@@ -378,6 +378,38 @@ export function calculateTsuchiyaScore(
       potential += 15;
       tags.push('川崎:3-4歳若駒エッジ');
     }
+
+    // 川崎実証分析：展開・時間帯・距離バイアス
+    if (race.raceNumber <= 6) {
+      // 前半：スタミナ持久力勝負 ＆ 上位人気の堅実性
+      if (popularity <= 2) {
+        potential += 20;
+        tags.push('川崎前半:上位人気信頼');
+      }
+      if (horse.style === '先行' || horse.style === '逃げ') {
+        potential += 15;
+        tags.push('川崎前半:先行押し切り期待');
+      }
+    } else {
+      // 後半：鋭い末脚の要求 ＆ 伏兵の台頭
+      if (horse.pastRaces && horse.pastRaces.some(pr => pr.result <= 3)) {
+        potential += 15;
+        tags.push('川崎後半:末脚キレ要求');
+      }
+      if (popularity >= 4 && popularity <= 7) {
+        potential += 15;
+        tags.push('川崎後半:中穴警戒');
+      }
+    }
+
+    // 距離別展開ロジック
+    if (dist <= 900) {
+      potential += 25;
+      tags.push('川崎900m:超スピード決着適性');
+    } else if (dist >= 2000) {
+      potential += 20;
+      tags.push('川崎長距離:スタミナ・道中待機');
+    }
   } else if (trackName === '門別') {
     const powerSires = ['パイロ', 'ホッコータルマエ', 'ルヴァンスレーヴ'];
     if (powerSires.some(s => bloodline.includes(s))) { potential += 35; tags.push('門別パワー血統'); }
