@@ -10,26 +10,17 @@ export default function RaceCard({ race, onClick, onDelete }: { race: Race; onCl
   return (
     <div
       onClick={onClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        padding: "12px 16px",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-sm)",
-        cursor: "pointer",
-        transition: "all 0.2s",
-      }}
+      className="flex items-center gap-12 p-12-16 bg-surface border rounded-sm pointer transition-all"
+      style={{ transition: "all 0.2s" }}
       onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--accent-gold)50")}
       onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}
     >
-      <div style={{ fontSize: "1.2rem" }}>{hasResult ? "✅" : hasPrediction ? "🎯" : "🏇"}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: "0.9rem", marginBottom: "2px" }}>
+      <div className="fs-xl">{hasResult ? "✅" : hasPrediction ? "🎯" : "🏇"}</div>
+      <div className="flex-1 min-w-0">
+        <div className="fw-700 fs-md mb-2">
           {race.date} {race.venue} {race.raceNumber}R {race.raceName}
         </div>
-        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", gap: "12px" }}>
+        <div className="fs-xs text-muted flex gap-12">
           <span>{race.surface} {race.distance}m</span>
           <span>{race.condition}</span>
           <span>{race.headCount}頭立て</span>
@@ -43,32 +34,22 @@ export default function RaceCard({ race, onClick, onDelete }: { race: Race; onCl
         <span className="tag tag-blue">予想済み</span>
       )}
       {!hasPrediction && (
-        <span className="tag" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>未予想</span>
+        <span className="tag text-muted" style={{ background: "var(--bg-elevated)" }}>未予想</span>
       )}
       {onDelete && (
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          style={{
-            background: "transparent",
-            border: "none",
-            color: "var(--accent-red)",
-            cursor: "pointer",
-            fontSize: "1.2rem",
-            padding: "4px 8px",
-            marginLeft: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: 0.7,
-          }}
+          className="bg-transparent border-transparent text-red pointer fs-xl p-4-8 ml-8 flex items-center justify-center"
+          style={{ opacity: 0.7 }}
           onMouseEnter={e => e.currentTarget.style.opacity = "1"}
           onMouseLeave={e => e.currentTarget.style.opacity = "0.7"}
           title="レースを削除"
+          aria-label={`${race.venue} ${race.raceNumber}R 削除`}
         >
           🗑️
         </button>
       )}
-      <span style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginLeft: "4px" }}>›</span>
+      <span className="text-muted fs-sm ml-4">›</span>
     </div>
   );
 }

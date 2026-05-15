@@ -121,7 +121,7 @@ export default function KeibaApp() {
                 onClick={() => { setSelectedRaceId(race.id); setView("prediction"); }}
               >
                 <span className="nav-icon">{race.result ? "✅" : "🏇"}</span>
-                <span style={{ fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span className="fs-xs ellipsis">
                   {race.venue} {race.raceNumber}R
                 </span>
               </div>
@@ -194,7 +194,7 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
           <div className="stat-card-label">総レース数</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value" style={{ color: "var(--accent-green)" }}>{stats.hitCount}</div>
+          <div className="stat-card-value text-green">{stats.hitCount}</div>
           <div className="stat-card-label">的中数</div>
         </div>
         <div className="stat-card">
@@ -218,7 +218,7 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
           <div className="card-header">
             <div className="card-title">⏳ 未予測・未確定レース</div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="flex flex-col gap-8">
             {pending.map(race => (
               <RaceCard key={race.id} race={race} onClick={() => onSelectRace(race.id)} onDelete={() => onDeleteRace(race.id)} />
             ))}
@@ -231,7 +231,7 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
           <div className="card-header">
             <div className="card-title">✅ 確定済みレース（直近10件）</div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="flex flex-col gap-8">
             {completed.map(race => (
               <RaceCard key={race.id} race={race} onClick={() => onSelectRace(race.id)} />
             ))}

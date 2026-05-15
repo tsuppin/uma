@@ -29,8 +29,8 @@ export default function StatsPanel({ state }: { state: AppState }) {
           ["ROI", `${(stats.roi * 100).toFixed(1)}%`, "📊", stats.roi >= 0 ? "var(--accent-green)" : "var(--accent-red)"],
         ].map(([label, value, icon, color]) => (
           <div className="stat-card" key={label as string}>
-            <div style={{ fontSize: "1.5rem", marginBottom: "4px" }}>{icon}</div>
-            <div className="stat-card-value" style={{ fontSize: "1.5rem", color: color as string }}>{value}</div>
+            <div className="fs-2xl mb-4">{icon}</div>
+            <div className="stat-card-value fs-2xl" style={{ color: color as string }}>{value}</div>
             <div className="stat-card-label">{label}</div>
           </div>
         ))}
@@ -50,11 +50,11 @@ export default function StatsPanel({ state }: { state: AppState }) {
                 const profit = s.profit - invested;
                 return (
                   <tr key={venue}>
-                    <td style={{ fontWeight: 600 }}>{venue}</td>
+                    <td className="fw-600">{venue}</td>
                     <td>{s.total}</td>
-                    <td style={{ color: "var(--accent-green)" }}>{s.hit}</td>
+                    <td className="text-green">{s.hit}</td>
                     <td>{(hitRate * 100).toFixed(1)}%</td>
-                    <td style={{ color: profit >= 0 ? "var(--accent-green)" : "var(--accent-red)", fontWeight: 700 }}>
+                    <td className={`fw-700 ${profit >= 0 ? 'text-green' : 'text-red'}`} style={{ color: profit >= 0 ? "var(--accent-green)" : "var(--accent-red)" }}>
                       {profit >= 0 ? "+" : ""}{profit.toLocaleString()}円
                     </td>
                   </tr>
@@ -79,20 +79,20 @@ export default function StatsPanel({ state }: { state: AppState }) {
                 const profit = (race.result?.profit || 0) - invested;
                 return (
                   <tr key={race.id}>
-                    <td style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{race.date}</td>
+                    <td className="fs-sm text-muted">{race.date}</td>
                     <td>{race.venue}</td>
                     <td>{race.raceNumber}R {race.raceName}</td>
                     <td>{race.surface}{race.distance}m</td>
-                    <td style={{ fontWeight: 600 }}>
+                    <td className="fw-600">
                       {race.result?.result[0] ? `${race.result.result[0].horseNumber}番 ${race.result.result[0].horseName}` : "—"}
                     </td>
                     <td>
                       {isHit
                         ? <span className="tag tag-green">的中</span>
-                        : <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>不的中</span>
+                        : <span className="text-muted fs-sm">不的中</span>
                       }
                     </td>
-                    <td style={{ fontWeight: 700, color: profit >= 0 ? "var(--accent-green)" : "var(--accent-red)" }}>
+                    <td className={`fw-700 ${profit >= 0 ? 'text-green' : 'text-red'}`} style={{ color: profit >= 0 ? "var(--accent-green)" : "var(--accent-red)" }}>
                       {profit >= 0 ? "+" : ""}{profit.toLocaleString()}円
                     </td>
                   </tr>
