@@ -516,4 +516,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778842531663",
+    version: "v20.1",
+    date: "2026-05-15T10:55:31.663Z",
+    description: "笠松 - 好走馬(シュネルカガ等)の特性学習",
+    track: "笠松",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "黒鹿毛",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "シゲルカガ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アメリカンペイトリ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
