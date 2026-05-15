@@ -445,7 +445,7 @@ export function calculateTsuchiyaScore(
   }
 
   // ② 特定厩舎のクラス別優位性（加藤義厩舎のA級戦独占など）
-  if (trainer === '加藤義' && (race.raceClass?.match(/A[123]/) || race.raceNumber >= 11)) {
+  if (trainer === '加藤義' && (horse.raceClass?.match(/A[123]/) || race.raceNumber >= 11)) {
     potential += 35;
     tags.push('🏰有力厩舎:加藤義(A級戦・メイン勝負)');
   }
@@ -595,7 +595,20 @@ export function calculateTsuchiyaScore(
       if (pr.distance === 1700 && timeVal <= 111.5 && l3fVal <= 41.5) return true;
       return false;
     });
+
+    if (hasFastAndLate) {
+      potential += 30;
+      tags.push('🏆総合スピード能力(タイム×上がり相関)');
+    }
     
+    // ⑧ 安定した先行力（Positioning Consistency）の解析
+    // 過去3走で継続的に前目（1-3番手）のポジションを確保できている馬を、主導権を握れる馬として評価
+    const frontPosCount = horse.pastRaces.slice(0, 3).filter(pr => {
+      if (!pr.passingPositions) return false;
+      const pos = pr.passingPositions.split('-').map(Number);
+      return pos[0] > 0 && pos[0] <= 3;
+    }).length;
+
     if (frontPosCount >= 2) {
       potential += 30;
       tags.push('🚀安定した先行力(1-3番手保持実績)');

@@ -19,7 +19,7 @@ export interface Horse {
   dam: string;     // 母
   bms: string;     // 母父（BMS）
   bloodline: string; // 血統系統
-  style: '逃げ' | '先行' | '好位' | '中団' | '後方' | '追込' | '';  // 脚質
+  style: '逃げ' | '先行' | '好位' | '差し' | '中団' | '後方' | '追込' | '';  // 脚質
   odds?: number;   // オッズ
   popularity?: number; // 人気
   // 前走・過去成績
