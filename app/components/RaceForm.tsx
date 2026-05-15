@@ -87,8 +87,8 @@ export default function RaceForm({ onSubmit, onCancel }: {
       <div className="section-header">
         <h2 className="section-title">➕ 新規レース登録</h2>
         <div className="flex gap-8">
-          <button className="btn btn-secondary" onClick={onCancel}>キャンセル</button>
-          {parsed && <button className="btn btn-primary" onClick={handleSubmit}>💾 保存して予想へ</button>}
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>キャンセル</button>
+          {parsed && <button type="button" className="btn btn-primary" onClick={handleSubmit}>💾 保存して予想へ</button>}
         </div>
       </div>
 
@@ -105,8 +105,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
             <label className="form-label" htmlFor="paste-text">出馬表テキスト</label>
             <textarea
               id="paste-text"
-              className="form-textarea"
-              style={{ minHeight: "300px" }}
+              className="form-textarea min-h-300 mono fs-sm"
               value={pasteText}
               onChange={e => { setPasteText(e.target.value); setParseError(""); }}
               placeholder={"JRA形式:\n2回東京2日 12R\n枠1白\t1\nスナッピードレッサ\n...\n\n地方競馬形式:\n2026/4/29\n大井 2R\nＣ３二三\n1200m    13頭...\n天候：曇 馬場状態：稍重\n1\t1\tダーカザンブラック(大井)\n　父　サートゥルナーリア\n..."}
@@ -117,11 +116,11 @@ export default function RaceForm({ onSubmit, onCancel }: {
           </div>
           {parseError && <div className="alert alert-warning">⚠️ {parseError}</div>}
           <div className="flex gap-8">
-            <button className="btn btn-primary" style={{ fontSize: "1rem", padding: "10px 28px" }}
+            <button type="button" className="btn btn-primary p-10-28 fs-md"
               onClick={handleParse} disabled={!pasteText.trim()}>
               🔍 解析実行
             </button>
-            <button className="btn btn-secondary" onClick={() => setPasteText("")}>クリア</button>
+            <button type="button" className="btn btn-secondary" onClick={() => setPasteText("")}>クリア</button>
           </div>
         </div>
       )}
@@ -131,7 +130,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
         <div className="fade-in">
           <div className="alert alert-success">
             ✅ {parsed.horses.length}頭を解析完了（{detectFormat(pasteText) === "nar" ? "地方競馬" : "JRA"}形式）
-            <button className="btn btn-secondary btn-sm ml-8" onClick={() => setParsed(null)}>
+            <button type="button" className="btn btn-secondary btn-sm ml-8" onClick={() => setParsed(null)}>
               ← 貼り直す
             </button>
           </div>
@@ -177,7 +176,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
                 <div className="flex gap-6">
                   <input id="race-wind" type="number" className="form-input" step={0.5} value={windSpeed}
                     onChange={e => setWindSpeed(+e.target.value)} placeholder="風速" />
-                  <select className="form-select w-auto" aria-label="WIN5対象レース選択"
+                  <select id="race-is-win5" className="form-select w-auto" aria-label="WIN5対象レース選択"
                     value={isWin5 ? "1" : "0"} onChange={e => setIsWin5(e.target.value === "1")}>
                     <option value="0">通常</option>
                     <option value="1">WIN5</option>
@@ -195,7 +194,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
                 ※馬体重は前走の値。当日発表後に修正可能
               </div>
             </div>
-            <div style={{ overflowX: "auto" }}>
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="出走馬一覧テーブル">
               <table className="horse-table">
                 <thead>
                   <tr>
@@ -210,10 +209,9 @@ export default function RaceForm({ onSubmit, onCancel }: {
                   {parsed.horses.map((h, i) => (
                     <tr key={h.id}>
                       <td><span className={`frame-badge frame-${h.frame}`}>{h.frame}</span></td>
-                      <td className="fw-700" style={{ color: "var(--accent-gold)" }}>{h.number}</td>
+                      <td className="fw-700 text-gold">{h.number}</td>
                       <td>
-                        <input className="form-input" aria-label={`${h.number}番 馬名`}
-                          style={{ width: "110px", padding: "4px 8px", fontSize: "0.8rem" }}
+                        <input id={`h-name-${h.id}`} className="form-input w-110 p-4-8 fs-sm" aria-label={`${h.number}番 馬名`}
                           value={h.name} onChange={e => updateHorse(i, "name", e.target.value)} />
                         {h.isHelmetChange && <span className="tag tag-purple ml-6 fs-xs">B</span>}
                       </td>
@@ -221,61 +219,57 @@ export default function RaceForm({ onSubmit, onCancel }: {
                         {h.gender}{h.age}
                       </td>
                       <td>
-                        <input className="form-input" aria-label={`${h.number}番 騎手`}
-                          style={{ width: "80px", padding: "4px 8px", fontSize: "0.8rem" }}
+                        <input id={`h-jockey-${h.id}`} className="form-input w-80 p-4-8 fs-sm" aria-label={`${h.number}番 騎手`}
                           value={h.jockey} onChange={e => updateHorse(i, "jockey", e.target.value)} />
-                      </td>
-                      <td className="fs-sm">{h.jockeyWeight}</td>
-                      <td>
-                        <input type="number" className="form-input" aria-label={`${h.number}番 馬体重`}
-                          style={{ width: "64px", padding: "4px 8px", fontSize: "0.8rem" }}
-                          value={h.weight} onChange={e => updateHorse(i, "weight", +e.target.value)} />
-                      </td>
-                      <td>
-                        <input type="number" className="form-input" aria-label={`${h.number}番 馬体重増減`}
-                          style={{ width: "55px", padding: "4px 8px", fontSize: "0.8rem" }}
-                          value={h.weightChange} onChange={e => updateHorse(i, "weightChange", +e.target.value)} />
-                      </td>
-                      <td className="fs-xs text-muted ellipsis" style={{ maxWidth: "90px" }}>
-                        {h.sire || "—"}
-                      </td>
-                      <td>
-                        <input type="number" className="form-input" step={0.1}
-                          style={{ width: "60px", padding: "4px 8px", fontSize: "0.8rem" }}
-                          value={h.odds || ""} onChange={e => updateHorse(i, "odds", +e.target.value)}
-                          placeholder="倍" aria-label={`${h.number}番 オッズ`} />
-                      </td>
-                      {[0, 1, 2].map(pi => {
-                        const pr = h.pastRaces[pi];
-                        return (
-                          <td key={pi} className="fs-xs nowrap">
-                            {pr ? (
-                              <span style={{ color: pr.result <= 3 ? "var(--accent-green)" : "var(--text-muted)" }}>
-                                {pr.venue} <strong>{pr.result}着</strong><br />
-                                {pr.surface}{pr.distance}m {pr.condition}
-                              </span>
-                            ) : "—"}
-                          </td>
-                        );
-                      })}
-                      <td>
-                        <button className="btn btn-danger btn-sm" onClick={() => removeHorse(i)} aria-label={`${h.number}番 削除`}>✕</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="flex gap-8" style={{ justifyContent: "flex-end" }}>
-            <button className="btn btn-secondary" onClick={() => setParsed(null)}>← 貼り直す</button>
-            <button className="btn btn-primary" style={{ fontSize: "1rem", padding: "10px 28px" }} onClick={handleSubmit}>
-              💾 保存して予想へ
-            </button>
+                    </td>
+                    <td className="fs-sm">{h.jockeyWeight}</td>
+                    <td>
+                      <input id={`h-weight-${h.id}`} type="number" className="form-input w-60 p-4-8 fs-sm" aria-label={`${h.number}番 馬体重`}
+                        value={h.weight} onChange={e => updateHorse(i, "weight", +e.target.value)} />
+                    </td>
+                    <td>
+                      <input id={`h-weight-change-${h.id}`} type="number" className="form-input w-60 p-4-8 fs-sm" aria-label={`${h.number}番 馬体重増減`}
+                        value={h.weightChange} onChange={e => updateHorse(i, "weightChange", +e.target.value)} />
+                    </td>
+                    <td className="fs-xs text-muted ellipsis max-w-80">
+                      {h.sire || "—"}
+                    </td>
+                    <td>
+                      <input id={`h-odds-${h.id}`} type="number" className="form-input w-60 p-4-8 fs-sm" step={0.1}
+                        value={h.odds || ""} onChange={e => updateHorse(i, "odds", +e.target.value)}
+                        placeholder="倍" aria-label={`${h.number}番 オッズ`} />
+                    </td>
+                    {[0, 1, 2].map(pi => {
+                      const pr = h.pastRaces[pi];
+                      return (
+                        <td key={pi} className="fs-xs nowrap">
+                          {pr ? (
+                            <span className={pr.result <= 3 ? "text-green" : "text-muted"}>
+                              {pr.venue} <strong>{pr.result}着</strong><br />
+                              {pr.surface}{pr.distance}m {pr.condition}
+                            </span>
+                          ) : "—"}
+                        </td>
+                      );
+                    })}
+                    <td>
+                      <button type="button" className="btn btn-danger btn-sm" onClick={() => removeHorse(i)} aria-label={`${h.number}番 削除`}>✕</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
+
+        <div className="flex gap-8 justify-end">
+          <button type="button" className="btn btn-secondary" onClick={() => setParsed(null)}>← 貼り直す</button>
+          <button type="button" className="btn btn-primary p-10-28 fs-md" onClick={handleSubmit}>
+            💾 保存して予想へ
+          </button>
+        </div>
+      </div>
+    )}
     </div>
   );
 }

@@ -7,8 +7,9 @@ const FRAME_BG = ["","#e2e8f0","#1a1a1a","#e53e3e","#3182ce","#d69e2e","#2f855a"
 const FRAME_COLOR = ["","#000","#fff","#fff","#fff","#000","#fff","#000","#000"];
 
 function FrameBadge({ frame }: { frame: number }) {
+  const frameClass = frame >= 1 && frame <= 8 ? `frame-${frame}` : 'frame-other';
   return (
-    <span className="frame-badge" style={{ background: FRAME_BG[frame] || "#666", color: FRAME_COLOR[frame] || "#fff" }}>
+    <span className={`frame-badge ${frameClass}`}>
       {frame}
     </span>
   );
@@ -41,30 +42,30 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
           </div>
         </div>
         <div className="flex gap-8">
-          <button className="btn btn-secondary btn-sm" onClick={onBack}>← 戻る</button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={onBack}>← 戻る</button>
           {!hasPrediction && (
-            <button className="btn btn-primary" onClick={onRunPrediction}>🛰️ 予想実行</button>
+            <button type="button" className="btn btn-primary" onClick={onRunPrediction}>🛰️ 予想実行</button>
           )}
           {hasPrediction && !race.result && (
             <>
-              <button className="btn btn-secondary" onClick={onRunPrediction}>🔄 再予想</button>
-              <button className="btn btn-success" onClick={onEnterResult}>✅ 結果入力</button>
+              <button type="button" className="btn btn-secondary" onClick={onRunPrediction}>🔄 再予想</button>
+              <button type="button" className="btn btn-success" onClick={onEnterResult}>✅ 結果入力</button>
             </>
           )}
           {race.result && (
-            <button className="btn btn-secondary" onClick={onEnterResult}>📊 結果確認</button>
+            <button type="button" className="btn btn-secondary" onClick={onEnterResult}>📊 結果確認</button>
           )}
         </div>
       </div>
 
-      <div className="tabs">
-        <button className={`tab ${tab === "horses" ? "active" : ""}`} onClick={() => setTab("horses")}>🐴 出馬表</button>
+      <nav className="tabs" aria-label="予測ビュータブ">
+        <button type="button" className={`tab ${tab === "horses" ? "active" : ""}`} onClick={() => setTab("horses")}>🐴 出馬表</button>
         {hasPrediction && <>
-          <button className={`tab ${tab === "prediction" ? "active" : ""}`} onClick={() => setTab("prediction")}>📊 予想結果</button>
-          <button className={`tab ${tab === "formation" ? "active" : ""}`} onClick={() => setTab("formation")}>🎯 買い目</button>
+          <button type="button" className={`tab ${tab === "prediction" ? "active" : ""}`} onClick={() => setTab("prediction")}>📊 予想結果</button>
+          <button type="button" className={`tab ${tab === "formation" ? "active" : ""}`} onClick={() => setTab("formation")}>🎯 買い目</button>
         </>}
-        {race.isWin5 && <button className={`tab ${tab === "win5" ? "active" : ""}`} onClick={() => setTab("win5")}>🎯 WIN5</button>}
-      </div>
+        {race.isWin5 && <button type="button" className={`tab ${tab === "win5" ? "active" : ""}`} onClick={() => setTab("win5")}>🎯 WIN5</button>}
+      </nav>
 
       {/* 出馬表タブ */}
       {tab === "horses" && (
@@ -91,12 +92,12 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                   <td>{h.jockey || "—"}</td>
                   <td className="text-muted">{h.jockeyWeight}</td>
                   <td className="fw-600">{h.weight}kg</td>
-                  <td style={{ color: h.weightChange > 0 ? "var(--accent-red)" : h.weightChange < 0 ? "var(--accent-blue)" : "var(--text-muted)" }}>
+                  <td className={h.weightChange > 0 ? "text-red" : h.weightChange < 0 ? "text-blue" : "text-muted"}>
                     {h.weightChange > 0 ? `+${h.weightChange}` : h.weightChange}
                   </td>
                   <td className="fs-xs text-muted">{h.sire || "—"}</td>
                   <td className="fs-xs">{h.style || "—"}</td>
-                  <td className="fw-700" style={{ color: "var(--accent-gold)" }}>{h.odds ? `${h.odds}倍` : "—"}</td>
+                  <td className="fw-700 text-gold">{h.odds ? `${h.odds}倍` : "—"}</td>
                   <td className="fs-xs text-muted">
                     {h.pastRaces[0] ? `${h.pastRaces[0].venue} ${h.pastRaces[0].result}着` : "—"}
                   </td>
@@ -106,7 +107,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
           </table>
           {!hasPrediction && (
             <div className="mt-20 text-center">
-              <button className="btn btn-primary" onClick={onRunPrediction} style={{ fontSize: "1rem", padding: "12px 32px" }}>
+              <button type="button" className="btn btn-primary p-12-32 fs-lg" onClick={onRunPrediction}>
                 🛰️ 土屋プロトコル実行
               </button>
             </div>
@@ -135,39 +136,38 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
               {predictions.map((p, i) => {
                 const isAxis = i < 3;
                 const isDark = !isAxis && i < 7;
+                const numBg = isAxis ? "bg-gold-muted" : isDark ? "bg-purple-muted" : "bg-elevated";
+                const numText = isAxis ? "text-gold" : isDark ? "text-purple" : "text-muted";
+                const numBorder = isAxis ? "border-gold-50" : "no-border";
                 return (
                   <tr key={p.horseId}>
                     <td>
                       <span className={`rank-badge rank-${i < 3 ? i + 1 : "other"}`}>{i + 1}</span>
                     </td>
                     <td>
-                      <span className="horse-num" style={{
-                        background: isAxis ? "var(--accent-gold)30" : isDark ? "var(--accent-purple)20" : "var(--bg-elevated)",
-                        color: isAxis ? "var(--accent-gold)" : isDark ? "var(--accent-purple)" : "var(--text-muted)",
-                        border: isAxis ? "1px solid var(--accent-gold)50" : "none",
-                      }}>
+                      <span className={`horse-num ${numBg} ${numText} ${numBorder}`}>
                         {p.horseNumber}
                       </span>
                     </td>
                     <td className={isAxis ? "fw-700" : ""}>
                       {p.horseName}
-                      {isAxis && <span className="ml-6 fs-xs" style={{ color: "var(--accent-gold)" }}>◎軸</span>}
-                      {isDark && <span className="ml-6 fs-xs" style={{ color: "var(--accent-purple)" }}>▲闇</span>}
+                      {isAxis && <span className="ml-6 fs-xs text-gold">◎軸</span>}
+                      {isDark && <span className="ml-6 fs-xs text-purple">▲闇</span>}
                     </td>
                     <td>
                       <div className="score-bar-wrap">
-                        <div className="score-bar max-w-80">
+                        <div className="score-bar w-80">
                           <div className="score-bar-fill" style={{
                             width: `${(p.potential / maxPotential) * 100}%`,
                             background: isAxis ? "var(--gradient-gold)" : "var(--gradient-blue)",
                           }} />
                         </div>
-                        <span className="score-value" style={{ color: isAxis ? "var(--accent-gold)" : "var(--text-primary)" }}>
+                        <span className={`score-value ${isAxis ? 'text-gold' : 'text-primary'}`}>
                           {p.potential}
                         </span>
                       </div>
                     </td>
-                    <td className="fw-600 fs-sm" style={{ color: "var(--accent-purple)" }}>
+                    <td className="fw-600 fs-sm text-purple">
                       {p.darkness.toFixed(2)}
                     </td>
                     <td>
@@ -218,15 +218,15 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
 
             <div className="formation-grid">
               {[
-                ["1列目（軸）", formation.col1, "var(--accent-gold)"],
-                ["2列目（軸）", formation.col2 || [], "var(--accent-gold)"],
-                ["3列目（相手）", formation.col3 || [], "var(--accent-blue)"],
-              ].map(([title, horses, color]) => (
+                ["1列目（軸）", formation.col1, "text-gold", "bg-gold-muted", "border-gold-50"],
+                ["2列目（軸）", formation.col2 || [], "text-gold", "bg-gold-muted", "border-gold-50"],
+                ["3列目（相手）", formation.col3 || [], "text-blue", "bg-blue-muted", "border-blue-50"],
+              ].map(([title, horses, textClass, bgClass, borderClass]) => (
                 <div className="formation-col" key={title as string}>
                   <div className="formation-col-title">{title as string}</div>
                   <div className="formation-horses">
                     {(horses as number[]).map(n => (
-                      <span key={n} className="horse-num" style={{ background: `${color}20`, color: color as string, border: `1px solid ${color}50` }}>
+                      <span key={n} className={`horse-num ${textClass} ${bgClass} ${borderClass}`}>
                         {n}
                       </span>
                     ))}
@@ -264,19 +264,18 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                 );
                 return (
                   <div key={i} className={`ticket-item ${isHit ? "hit" : ""}`}>
-                    <span className="fs-xs text-muted" style={{ minWidth: "18px" }}>{String(i + 1).padStart(2, "0")}</span>
+                    <span className="fs-xs text-muted w-20">{String(i + 1).padStart(2, "0")}</span>
                     {ticket.map((n, j) => (
                       <span key={j}>
-                        <span className="ticket-num" style={{
-                          background: formation.axisHorses.includes(n) ? "var(--accent-gold)30" : "var(--bg-elevated)",
-                          color: formation.axisHorses.includes(n) ? "var(--accent-gold)" : "var(--text-primary)",
-                        }}>{n}</span>
-                        {j < ticket.length - 1 && <span className="text-muted ml-6" style={{ margin: "0 2px" }}>
+                        <span className={`ticket-num ${formation.axisHorses.includes(n) ? "bg-gold-muted text-gold" : "bg-elevated text-primary"}`}>
+                          {n}
+                        </span>
+                        {j < ticket.length - 1 && <span className="text-muted ml-4 mr-4">
                           {['trifecta_exact', 'exacta'].includes(formationType) ? '→' : '-'}
                         </span>}
                       </span>
                     ))}
-                    {isHit && <span className="fw-900" style={{ color: "var(--accent-green)" }}>✓</span>}
+                    {isHit && <span className="fw-900 text-green">✓</span>}
                   </div>
                 );
               })}

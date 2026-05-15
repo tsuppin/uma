@@ -8,12 +8,10 @@ export default function RaceCard({ race, onClick, onDelete }: { race: Race; onCl
   const hasPrediction = (race.predictions?.length || 0) > 0;
 
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="flex items-center gap-12 p-12-16 bg-surface border rounded-sm pointer transition-all"
-      style={{ transition: "all 0.2s" }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--accent-gold)50")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}
+      className="race-card flex items-center gap-12 p-12-16 bg-surface border rounded-sm pointer w-full text-left transition-all"
     >
       <div className="fs-xl">{hasResult ? "✅" : hasPrediction ? "🎯" : "🏇"}</div>
       <div className="flex-1 min-w-0">
@@ -34,22 +32,20 @@ export default function RaceCard({ race, onClick, onDelete }: { race: Race; onCl
         <span className="tag tag-blue">予想済み</span>
       )}
       {!hasPrediction && (
-        <span className="tag text-muted" style={{ background: "var(--bg-elevated)" }}>未予想</span>
+        <span className="tag tag-muted">未予想</span>
       )}
       {onDelete && (
         <button
+          type="button"
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="bg-transparent border-transparent text-red pointer fs-xl p-4-8 ml-8 flex items-center justify-center"
-          style={{ opacity: 0.7 }}
-          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
-          onMouseLeave={e => e.currentTarget.style.opacity = "0.7"}
+          className="btn-icon text-red ml-8"
           title="レースを削除"
           aria-label={`${race.venue} ${race.raceNumber}R 削除`}
         >
           🗑️
         </button>
       )}
-      <span className="text-muted fs-sm ml-4">›</span>
-    </div>
+      <span className="text-muted fs-sm ml-4" aria-hidden="true">›</span>
+    </button>
   );
 }

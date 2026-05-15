@@ -207,8 +207,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       <div className="section-header">
         <h2 className="section-title">✅ 結果入力</h2>
         <div className="flex gap-8">
-          <button className="btn btn-secondary" onClick={onCancel}>キャンセル</button>
-          <button className="btn btn-primary" onClick={handleSubmit}>💾 確定・自学習開始</button>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>キャンセル</button>
+          <button type="button" className="btn btn-primary" onClick={handleSubmit}>💾 確定・自学習開始</button>
         </div>
       </div>
 
@@ -233,8 +233,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           <label className="form-label" htmlFor="result-paste">結果テキスト（5000文字まで）</label>
           <textarea
             id="result-paste"
-            className="form-textarea"
-            style={{ minHeight: "180px" }}
+            className="form-textarea min-h-180 mono fs-sm"
             value={pasteText}
             onChange={e => { setPasteText(e.target.value); setParseError(""); }}
             placeholder={`例:\n1着 3番 クラウンヴィラン 1:14.2\n2着 8番 バイアーナ 1:14.5\n3着 12番 シナモンデイジー 1:14.8\n\n（JRA・地方競馬の結果テキストをそのまま貼付けもOK）`}
@@ -253,6 +252,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
         <div className="flex gap-8">
           <button
+            type="button"
             className="btn btn-primary"
             onClick={parsePasteText}
             disabled={!pasteText.trim()}
@@ -260,7 +260,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           >
             🔍 テキストを解析
           </button>
-          <button className="btn btn-secondary" onClick={() => setPasteText("")}>
+          <button type="button" className="btn btn-secondary" onClick={() => setPasteText("")}>
             クリア
           </button>
         </div>
@@ -274,7 +274,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               <div key={rank} className="flex items-center gap-4">
                 <span className={`rank-badge rank-${rank}`}>{rank}着</span>
                 <select
-                  className="form-select w-auto"
+                  className="form-select w-80"
                   value={results[ri]?.horseNumber || 0}
                   aria-label={`${rank}着 クイック馬番選択`}
                   onChange={e => {
@@ -319,8 +319,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                   </td>
                   <td>
                     <select
-                      className="form-select"
-                      style={{ width: "90px" }}
+                      className="form-select w-90"
                       value={r.horseNumber}
                       aria-label={`${r.rank}着 馬番選択`}
                       onChange={e => updateResult(i, "horseNumber", +e.target.value)}
@@ -335,25 +334,25 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                     {r.horseName || (r.horseNumber ? race.horses.find(h => h.number === r.horseNumber)?.name || "—" : "—")}
                   </td>
                   <td>
-                    <input className="form-input" style={{ width: "100px" }} value={r.time}
+                    <input className="form-input w-100" value={r.time}
                       onChange={e => updateResult(i, "time", e.target.value)} placeholder="1:14.2" aria-label={`${r.rank}着 タイム`} />
                   </td>
                   <td>
-                    <input type="number" className="form-input" style={{ width: "80px" }} step={0.1}
+                    <input type="number" className="form-input w-80" step={0.1}
                       value={r.odds || ""} onChange={e => updateResult(i, "odds", +e.target.value)} placeholder="倍" aria-label={`${r.rank}着 オッズ`} />
                   </td>
                   <td>
-                    <input type="number" className="form-input" style={{ width: "100px" }}
+                    <input type="number" className="form-input w-100"
                       value={r.prize || ""} onChange={e => updateResult(i, "prize", +e.target.value)} placeholder="万円" aria-label={`${r.rank}着 賞金`} />
                   </td>
                   <td>
-                    <button className="btn btn-danger btn-sm" onClick={() => removeRow(i)} aria-label={`${r.rank}着 削除`}>✕</button>
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => removeRow(i)} aria-label={`${r.rank}着 削除`}>✕</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <button className="btn btn-secondary btn-sm mt-8" onClick={addRow}>
+          <button type="button" className="btn btn-secondary btn-sm mt-8" onClick={addRow}>
             ＋ 着順追加
           </button>
         </div>
@@ -372,7 +371,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               🎉 的中！ 買い目 {hitTickets.map(t => t.join("-")).join(", ")} が的中しました
             </div>
           ) : (
-            <div className="alert alert-warning">
+            <div className="alert alert-warning mt-12">
               😞 今回は不的中でした。AIが自動学習して次回に活かします。
             </div>
           )}
@@ -392,19 +391,17 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             {race.predictions.slice(0, 7).map((p, i) => {
               const hitResult = results.find(r => r.horseNumber === p.horseNumber);
               const isHit = !!hitResult;
+              const cardBg = isHit ? "bg-green-muted" : "bg-surface";
+              const cardBorder = isHit ? "border-green-40" : "border";
               return (
-                <div key={p.horseId} style={{
-                  padding: "10px 14px",
-                  background: isHit ? "var(--accent-green)15" : "var(--bg-surface)",
-                  border: `1px solid ${isHit ? "var(--accent-green)40" : "var(--border)"}`,
-                }} className="card-sm text-center">
+                <div key={p.horseId} className={`p-10-14 text-center rounded-8 ${cardBg} ${cardBorder}`}>
                   <div className="fs-xs text-muted">予想{i + 1}位</div>
-                  <div className={`fw-700 ${isHit ? "text-green" : ""}`} style={isHit ? { color: "var(--accent-green)" } : {}}>
+                  <div className={`fw-700 ${isHit ? "text-green" : ""}`}>
                     {p.horseNumber}番
                   </div>
                   <div className="fs-sm">{p.horseName}</div>
                   {isHit && (
-                    <div className="fs-xs fw-700" style={{ color: "var(--accent-green)" }}>
+                    <div className="fs-xs fw-700 text-green">
                       {hitResult.rank}着 ✓
                     </div>
                   )}

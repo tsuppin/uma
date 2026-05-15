@@ -266,6 +266,12 @@ export function calculateTsuchiyaScore(
   if (weightChange <= 0 && weightChange >= -8) {
     potential += 20;
     tags.push('🏹王道:馬体絞り・維持(勝負気配)');
+    
+    // 後半レース（8R〜12R）でのマイナス体重は「究極の仕上げ」としてさらに評価
+    if (race.raceNumber >= 8 && weightChange < 0) {
+      potential += 25;
+      tags.push('🔥後半戦マイナス体重(メイチ絞り)');
+    }
   } else if (weightChange >= 1 && weightChange <= 5) {
     // ② 準王道：微増（+1kg 〜 +5kg）パワー温存・好調維持
     potential += 15;
@@ -274,25 +280,35 @@ export function calculateTsuchiyaScore(
 
   // ③ 大幅な変動（激走サイン or 危険信号）
   if (weightChange >= 10) {
-    if (weightChange <= 16) {
-      if (age <= 3) {
-        potential += 35; // 若い馬の大幅増は「成長・パワーアップ」のSランク評価
+    // 若い馬（3歳以下）は成長分として大幅増（+20kg以上）も積極的に評価
+    if (age <= 3) {
+      if (weightChange <= 35) {
+        potential += 45; // 成長分を含めた特大ブースト
         tags.push('🚀若駒成長・パワーアップ(S)');
       } else {
-        potential += 20; 
-        tags.push('🚀馬体充実(成長・充実期)'); 
+        potential += 10;
+        tags.push('🚀過剰な成長分(要確認)');
       }
     } else {
-      potential -= 25; 
-      tags.push('⚠️太目残り・調整不足(要警戒)'); 
+      // 古馬の大幅増
+      if (weightChange <= 16) {
+        potential += 20; 
+        tags.push('🚀馬体充実(成長・充実期)'); 
+      } else {
+        potential -= 30; 
+        tags.push('⚠️太目残り・調整不足(要警戒)'); 
+      }
     }
   } else if (weightChange <= -10) {
-    // 絞り込み（-10kg〜-24kg）は「究極の仕上げ」として再定義
-    if (weightChange >= -24) {
-      potential += 30; // 絞り込み成功への評価を微増
+    // 絞り込み（-10kg〜-14kg）を「黄金の絞り」として再定義
+    if (weightChange >= -14) {
+      potential += 40; 
+      tags.push('🎯黄金の絞り(ベストコンディション)');
+    } else if (weightChange >= -19) {
+      potential += 25;
       tags.push('🎯究極の仕上げ(絞り込み激走サイン)');
-    } else {
-      potential -= 40; // -25kg以上は「パワーダウン・疲弊」の明確な危険信号
+    } else if (weightChange <= -20) {
+      potential -= 40; // -20kg以上の大幅減は「過剰消耗」として厳しく判定
       tags.push('⚠️過剰消耗・パワーダウン(危険信号)');
     }
   }
@@ -364,6 +380,60 @@ export function calculateTsuchiyaScore(
       potential -= 15;
       tags.push('⚠️不当過剰評価');
     }
+  }
+
+  // ==========================================
+  // 【新設】レース・フェーズ別人気信頼度解析
+  // ==========================================
+  if (race.raceNumber <= 7) {
+    // 前半レース（3歳戦）：波乱含みの傾向
+    // 3〜5番人気の伏兵馬に期待値のボーナスを付与
+    if (popularity >= 3 && popularity <= 5) {
+      potential += 15;
+      tags.push('🎲前半戦:波乱含みの伏兵(3-5番人気期待)');
+    }
+  } else if (race.raceNumber >= 8) {
+    // 後半レース（古馬戦）：実力上位が堅実に勝ち切る傾向
+    // 1〜2番人気の信頼度を大幅に評価
+    if (popularity <= 2) {
+      potential += 30;
+      tags.push('🛡️後半戦:実力上位の盤石性(1-2番人気)');
+    } else if (popularity >= 6) {
+      // 後半戦の穴馬は1着確率は低いが、紐穴としての期待値は前述の展開ロジックでケア
+      potential -= 10;
+    }
+  }
+
+  // ==========================================
+  // 【新設】厩舎・馬主・所属バイアス解析
+  // ==========================================
+  const trainer = horse.trainer || '';
+  const owner = horse.owner || '';
+  const isJRAHorse = horse.stableLocation === '栗東' || horse.stableLocation === '美浦';
+  const isExchangeRace = race.raceName.match(/(交流|中央|JRA)/);
+
+  // ① JRA所属馬の交流戦バイアス（中央未勝利交流戦など）
+  if (isExchangeRace && isJRAHorse) {
+    potential += 60; // 圧倒的な実力差を考慮
+    tags.push('🚀中央所属馬(交流戦バイアス)');
+  }
+
+  // ② 特定厩舎のクラス別優位性（加藤義厩舎のA級戦独占など）
+  if (trainer === '加藤義' && (race.raceClass?.match(/A[123]/) || race.raceNumber >= 11)) {
+    potential += 35;
+    tags.push('🏰有力厩舎:加藤義(A級戦・メイン勝負)');
+  }
+
+  // ③ 特定の「馬主×厩舎」強力タッグ
+  // ミルファーム × 金田一
+  if (owner.match(/ミルファーム/) && trainer === '金田一') {
+    potential += 40;
+    tags.push('🤝強力タッグ:ミルファーム×金田一');
+  }
+  // (株)ファーストビジネス × 加藤和
+  if (owner.match(/(ファーストビジネス|First Business)/) && trainer === '加藤和') {
+    potential += 40;
+    tags.push('🤝強力タッグ:ファーストビジネス×加藤和');
   }
 
   // ==========================================
@@ -454,6 +524,16 @@ export function calculateTsuchiyaScore(
           tags.push('🛡️下級クラス:ポジション優位(時計不問・前残り期待)');
         }
       }
+      
+      // 【新設】後半レース(8R〜12R)における末脚持続力（39秒台〜40秒台前半）の正当な評価
+      if (race.raceNumber >= 8 && bestLast3f <= 40.5) {
+        potential += 30;
+        tags.push(`🌃後半戦:安定した末脚(上がり${bestLast3f.toFixed(1)}s)`);
+        if (bestLast3f <= 39.9) {
+          potential += 15;
+          tags.push('🔥後半戦:39秒台の決定力');
+        }
+      }
     }
 
     // ⑦ 総合スピード能力（走破タイム×上がりの相関評価）
@@ -461,12 +541,17 @@ export function calculateTsuchiyaScore(
     const hasFastAndLate = horse.pastRaces.find(pr => {
       const timeVal = parseFloat(pr.time || '999');
       const l3fVal = parseFloat(pr.last3fTime || '99.9');
-      // 1400m基準: 1:32:0以下且つ上がり39.2s以下 (高速決着対応)
-      if (pr.distance === 1400 && timeVal <= 92.5 && l3fVal <= 39.2) return true;
-      // 1230m基準: 1:19:5以下且つ上がり38.5s以下 (スプリント能力)
+      // 1400m基準: 1:32:0以下（Star Candy級の1:31.8を評価）且つ上がり39.5s以下
+      if (pr.distance === 1400 && timeVal <= 92.0 && l3fVal <= 39.5) return true;
+      // 1230m基準: 1:19:5以下且つ上がり38.5s以下
       if (pr.distance === 1230 && timeVal <= 79.5 && l3fVal <= 38.5) return true;
-      // 1700m基準: 1:53:0以下且つ上がり39.0s以下 (中距離スピード)
-      if (pr.distance === 1700 && timeVal <= 113.0 && l3fVal <= 39.0) return true;
+      // 1500m基準: クラス別判定（JRA交流1:38.6 / 古馬B級1:39.5 / 3歳1:41.0）
+      if (pr.distance === 1500) {
+        if (timeVal <= 99.0 && l3fVal <= 40.0) return true; // 1:39.0以下
+        if (age <= 3 && timeVal <= 101.5) return true; // 3歳で1:41.5以下なら超抜
+      }
+      // 1700m基準: 1:53:0以下且つ上がり40.0s以下
+      if (pr.distance === 1700 && timeVal <= 113.0 && l3fVal <= 40.0) return true;
       return false;
     });
     
@@ -516,14 +601,26 @@ export function calculateTsuchiyaScore(
       tags.push('🔥ダート王道展開(先行・好位)');
       tags.push('💪ダート先行利:キックバック回避');
       
-      // 下級クラスならさらに「前残り」を強く評価
-      if (isLClass) {
+      // 下級クラスや後半の古馬戦ならさらに「前残り」を強く評価
+      if (isLClass || race.raceNumber >= 8) {
         potential += 15;
-        tags.push('🛡️下級ダート:物理的先行有利');
+        tags.push('🛡️ダート物理的先行有利(1着候補)');
       }
     } else {
-      potential -= 15;
-      tags.push('⚠️ダート差し・追込:展開不備注意');
+      // ダート差し・追込：通常は割引だが、前半の3歳戦(JRA移籍等)は例外
+      if (age <= 3 || race.raceNumber <= 7) {
+        potential += 15; // 差し切りのポテンシャルを評価
+        tags.push('🚀若駒ダート:末脚一閃期待(差し切り)');
+      } else {
+        potential -= 15;
+        tags.push('⚠️ダート差し・追込:展開不備注意');
+        
+        // 後半の差し馬は「紐穴（2-3着）」として期待値を調整
+        if (race.raceNumber >= 8) {
+          distortionBoost += 0.5;
+          tags.push('💎後半戦差し馬:2-3着強襲期待');
+        }
+      }
     }
   } else if (race.surface === '芝') {
     if (isLClass || race.raceNumber <= 6) {

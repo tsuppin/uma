@@ -136,13 +136,13 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
                   <td>
                     <label className="flex items-center gap-6 cursor-pointer">
                       <input type="checkbox" checked={patch.active} onChange={() => handleToggle(patch.id)} aria-label={`${patch.version} 有効化`} />
-                      <span className={`fs-xs ${patch.active ? "text-green" : "text-muted"}`} style={patch.active ? { color: "var(--accent-green)" } : {}}>
+                      <span className={`fs-xs ${patch.active ? "text-green" : "text-muted"}`}>
                         {patch.active ? "有効" : "無効"}
                       </span>
                     </label>
                   </td>
                   <td>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(patch.id)}>削除</button>
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDelete(patch.id)}>削除</button>
                   </td>
                 </tr>
               ))}

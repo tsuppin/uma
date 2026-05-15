@@ -21,16 +21,16 @@ export default function StatsPanel({ state }: { state: AppState }) {
 
       <div className="stats-grid">
         {[
-          ["総レース数", stats.totalRaces, "🏇", "var(--text-primary)"],
-          ["的中数", stats.hitCount, "✅", "var(--accent-green)"],
-          ["的中率", `${(stats.hitRate * 100).toFixed(1)}%`, "🎯", "var(--accent-gold)"],
-          ["総投資", `¥${stats.totalInvested.toLocaleString()}`, "💴", "var(--text-secondary)"],
-          ["総払戻", `¥${stats.totalReturn.toLocaleString()}`, "💰", "var(--accent-gold)"],
-          ["ROI", `${(stats.roi * 100).toFixed(1)}%`, "📊", stats.roi >= 0 ? "var(--accent-green)" : "var(--accent-red)"],
-        ].map(([label, value, icon, color]) => (
+          ["総レース数", stats.totalRaces, "🏇", "text-primary"],
+          ["的中数", stats.hitCount, "✅", "text-green"],
+          ["的中率", `${(stats.hitRate * 100).toFixed(1)}%`, "🎯", "text-gold"],
+          ["総投資", `¥${stats.totalInvested.toLocaleString()}`, "💴", "text-secondary"],
+          ["総払戻", `¥${stats.totalReturn.toLocaleString()}`, "💰", "text-gold"],
+          ["ROI", `${(stats.roi * 100).toFixed(1)}%`, "📊", stats.roi >= 1.0 ? "text-green" : "text-red"],
+        ].map(([label, value, icon, colorClass]) => (
           <div className="stat-card" key={label as string}>
             <div className="fs-2xl mb-4">{icon}</div>
-            <div className="stat-card-value fs-2xl" style={{ color: color as string }}>{value}</div>
+            <div className={`stat-card-value fs-2xl ${colorClass}`}>{value}</div>
             <div className="stat-card-label">{label}</div>
           </div>
         ))}
@@ -52,9 +52,9 @@ export default function StatsPanel({ state }: { state: AppState }) {
                   <tr key={venue}>
                     <td className="fw-600">{venue}</td>
                     <td>{s.total}</td>
-                    <td className="text-green">{s.hit}</td>
+                    <td className="text-green fw-700">{s.hit}</td>
                     <td>{(hitRate * 100).toFixed(1)}%</td>
-                    <td className={`fw-700 ${profit >= 0 ? 'text-green' : 'text-red'}`} style={{ color: profit >= 0 ? "var(--accent-green)" : "var(--accent-red)" }}>
+                    <td className={`fw-700 ${profit >= 0 ? "text-green" : "text-red"}`}>
                       {profit >= 0 ? "+" : ""}{profit.toLocaleString()}円
                     </td>
                   </tr>
@@ -92,7 +92,7 @@ export default function StatsPanel({ state }: { state: AppState }) {
                         : <span className="text-muted fs-sm">不的中</span>
                       }
                     </td>
-                    <td className={`fw-700 ${profit >= 0 ? 'text-green' : 'text-red'}`} style={{ color: profit >= 0 ? "var(--accent-green)" : "var(--accent-red)" }}>
+                    <td className={`fw-700 ${profit >= 0 ? "text-green" : "text-red"}`}>
                       {profit >= 0 ? "+" : ""}{profit.toLocaleString()}円
                     </td>
                   </tr>

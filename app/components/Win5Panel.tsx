@@ -36,7 +36,7 @@ export default function Win5Panel({ state }: { state: AppState }) {
       <div className="section-header">
         <h2 className="section-title">🎯 WIN5予想</h2>
         {selectedRaceIds.length > 0 && (
-          <button className="btn btn-primary" onClick={handleAnalyze}>🛰️ AI解析実行</button>
+          <button type="button" className="btn btn-primary" onClick={handleAnalyze}>🛰️ AI解析実行</button>
         )}
       </div>
 
@@ -59,18 +59,15 @@ export default function Win5Panel({ state }: { state: AppState }) {
               const isSelected = selectedRaceIds.includes(race.id);
               const order = selectedRaceIds.indexOf(race.id) + 1;
               return (
-                <div
+                <button
+                  type="button"
                   key={race.id}
                   onClick={() => toggleRace(race.id)}
-                  className={`flex items-center gap-12 p-12-16 border rounded-8 pointer transition-all ${isSelected ? 'bg-gold-muted border-gold' : 'bg-surface'}`}
-                  style={isSelected ? { backgroundColor: "var(--accent-gold)15", borderColor: "var(--accent-gold)50" } : {}}
+                  className={`flex items-center gap-12 p-12-16 border rounded-8 pointer text-left transition-all ${isSelected ? "bg-gold-muted border-gold" : "bg-surface"}`}
+                  aria-pressed={isSelected}
+                  aria-label={`${race.venue} ${race.raceNumber}R 選択`}
                 >
-                  <div className={`rounded-circle flex items-center justify-center fw-900 fs-sm ${isSelected ? 'text-gold' : 'text-transparent'}`}
-                    style={{
-                      width: "24px", height: "24px",
-                      border: `2px solid ${isSelected ? "var(--accent-gold)" : "var(--border)"}`,
-                      background: isSelected ? "var(--accent-gold)20" : "transparent",
-                    }}>
+                  <div className={`rounded-circle flex items-center justify-center fw-900 fs-sm w-24 h-24 border ${isSelected ? "text-gold border-gold bg-gold-20" : "text-transparent"}`}>
                     {isSelected ? order : ""}
                   </div>
                   <div className="flex-1">
@@ -82,7 +79,7 @@ export default function Win5Panel({ state }: { state: AppState }) {
                     </div>
                   </div>
                   {isSelected && <span className="tag tag-gold">レース{order}</span>}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -112,13 +109,13 @@ export default function Win5Panel({ state }: { state: AppState }) {
                     {pick.picks.map((num, j) => {
                       const pred = sorted.find(p => p.horseNumber === num);
                       const horse = race.horses.find(h => h.number === num);
+                      const isFavorite = j === 0;
                       return (
-                        <div key={num} className={`p-8-12 border rounded-8 text-center ${j === 0 ? 'border-gold' : ''}`}
-                          style={j === 0 ? { backgroundColor: "var(--accent-gold)20", borderColor: "var(--accent-gold)50" } : { backgroundColor: "var(--bg-elevated)" }}>
-                          <div className={`fw-900 fs-lg ${j === 0 ? 'text-gold' : 'text-primary'}`}>{num}番</div>
-                          <div className="fs-xs text-secondary">{horse?.name}</div>
+                        <div key={num} className={`p-8-12 border rounded-8 text-center min-w-80 ${isFavorite ? "border-gold bg-gold-20" : "bg-elevated"}`}>
+                          <div className={`fw-900 fs-lg ${isFavorite ? "text-gold" : "text-primary"}`}>{num}番</div>
+                          <div className="fs-xs text-secondary ellipsis max-w-80">{horse?.name}</div>
                           <div className="fs-xs text-muted">EV: {pred?.potential}</div>
-                          {j === 0 && <div className="fs-xs text-gold fw-700">◎本命</div>}
+                          {isFavorite && <div className="fs-xs text-gold fw-700">◎本命</div>}
                         </div>
                       );
                     })}

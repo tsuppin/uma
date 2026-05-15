@@ -25,26 +25,28 @@ export default function KnowledgePanel() {
       <div className="flex gap-10 mb-16">
         {tabs.map(tab => (
           <button
+            type="button"
             key={tab.id}
             onClick={() => { setActiveTab(tab.id as any); setSelectedFile(null); }}
-            className={`btn ${activeTab === tab.id ? 'btn-primary' : 'btn-secondary'}`}
+            className={`btn ${activeTab === tab.id ? "btn-primary" : "btn-secondary"}`}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-1 gap-20 min-h-60vh">
-        <div className="border-right pr-10 overflow-y-auto" style={{ width: '30%' }}>
+      <div className="flex flex-1 gap-20 min-h-300">
+        <div className="w-110 border-right pr-10 overflow-y-auto" style={{ width: "30%" }}>
           {currentFiles.map((file: any, index: number) => (
-            <div
+            <button
+              type="button"
               key={index}
               onClick={() => setSelectedFile(file)}
-              className={`p-10 pointer rounded-8 mb-4 border-transparent ${selectedFile?.path === file.path ? 'bg-card border-gold' : ''}`}
+              className={`w-full text-left p-10 pointer rounded-8 mb-4 border transition-all ${selectedFile?.path === file.path ? "bg-card border-gold" : "bg-transparent border-transparent hover-bg-surface"}`}
             >
-              <div className="fw-700 fs-md text-main">{file.name}</div>
-              <div className="fs-xs text-muted">{file.path}</div>
-            </div>
+              <div className="fw-700 fs-md text-primary">{file.name}</div>
+              <div className="fs-xs text-muted ellipsis">{file.path}</div>
+            </button>
           ))}
           {currentFiles.length === 0 && (
             <div className="text-muted fs-md mt-20">
@@ -55,13 +57,13 @@ export default function KnowledgePanel() {
 
         <div className="flex-1 overflow-y-auto pl-10 pr-10 pb-40">
           {selectedFile ? (
-            <div className="card">
+            <div className="card m-0">
               <div className="card-header">
                 <div className="card-title">{selectedFile.name}</div>
               </div>
               <div className="p-16 bg-card rounded-8 mt-10 overflow-x-auto">
-                {selectedFile.name.endsWith('.md') ? (
-                  <div className="markdown-body text-main" style={{ lineHeight: '1.6' }}>
+                {selectedFile.name.endsWith(".md") ? (
+                  <div className="markdown-body text-primary lh-1-6">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {selectedFile.content}
                     </ReactMarkdown>
