@@ -430,30 +430,40 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 【新設】展開・ポジション適性解析（クラス別交差評価）
+  // 【新設】展開・ポジション適性解析（馬場・クラス別交差評価）
   // ==========================================
   const hStyle = horse.style || '中団';
   const isLClass = horse.raceClass?.match(/(未勝利|1勝クラス|新馬)/);
   const isUClass = horse.raceClass?.match(/(2勝クラス|3勝クラス|オープン|重賞|リステッド|G[123])/);
 
-  if (isLClass) {
-    // 下位クラス：差し・追い込み有利
-    if (hStyle === '中団' || hStyle === '後方') {
-      potential += 25;
-      tags.push('🏹下位クラス:差し・追い込み展開利');
-      if (isHighPaceSim) {
-        potential += 15;
-        tags.push('🏹ハイペース激戦:末脚ブースト');
-      }
-    }
-  } else if (isUClass) {
-    // 上位クラス：先行・好位有利
+  if (race.surface === 'ダート') {
+    // ダート戦：先行・好位抜け出しが王道（4角5番手以内想定）
     if (hStyle === '逃げ' || hStyle === '先行' || hStyle === '好位') {
-      potential += 30;
-      tags.push('🏰上位クラス:先行・好位展開利');
-      if (isSlowPaceSim) {
-        potential += 20;
-        tags.push('🏰スローペース単騎:展開利ブースト');
+      potential += 35;
+      tags.push('💪ダート先行利:キックバック回避');
+    } else {
+      potential -= 15;
+      tags.push('⚠️ダート差し・追込:展開不備注意');
+    }
+  } else if (race.surface === '芝') {
+    if (isLClass || race.raceNumber <= 6) {
+      // 芝前半レース（下位クラス）：先行・好位抜け出し有利
+      if (hStyle === '逃げ' || hStyle === '先行' || hStyle === '好位') {
+        potential += 30;
+        tags.push('🏹芝前半:先行・好位展開利');
+      }
+    } else if (isUClass || race.raceNumber >= 7) {
+      // 芝後半レース（上級条件）：差し・追込の爆発有利
+      if (hStyle === '中団' || hStyle === '後方') {
+        potential += 40;
+        tags.push('🚀芝後半:差し・追込展開利');
+        if (isHighPaceSim) {
+          potential += 15;
+          tags.push('🔥ハイペース激戦:末脚ブースト');
+        }
+      } else if (hStyle === '逃げ' || hStyle === '先行') {
+        potential -= 10;
+        tags.push('⚠️芝後半:前目目標にされるリスク');
       }
     }
   }
