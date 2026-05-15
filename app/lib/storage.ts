@@ -9,7 +9,7 @@ const STORAGE_KEY = 'tsuchiya_keiba_ai_v1';
 
 import { updateMasterDataWithRace, updateMasterDataWithResult } from './db';
 
-const defaultState: AppState = {
+export const defaultState: AppState = {
   races: [],
   learningPatches: [],
   modelVersion: 'TsuchiyaProtocol-Omega v7.0',

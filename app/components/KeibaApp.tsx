@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppState, Race, RaceResult } from "../types";
-import { loadState, addRace, updateRace, addResult, addLearningPatch, deleteRace } from "../lib/storage";
+import { loadState, addRace, updateRace, addResult, addLearningPatch, deleteRace, defaultState } from "../lib/storage";
 import { calculateTsuchiyaScore, generateFormation, generateLearningPatch, sortPredictions } from "../lib/engine";
 import RaceForm from "./RaceForm";
 import RaceCard from "./RaceCard";
@@ -15,11 +15,17 @@ import KnowledgePanel from "./KnowledgePanel";
 type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge";
 
 export default function KeibaApp() {
-  const [state, setState] = useState<AppState>(() => loadState());
+  const [state, setState] = useState<AppState>(defaultState);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
 
-  if (!state) return null;
+  useEffect(() => {
+    setState(loadState());
+    setIsLoaded(true);
+  }, []);
+
+  if (!isLoaded) return null;
 
   const selectedRace = state.races.find(r => r.id === selectedRaceId) || null;
 
