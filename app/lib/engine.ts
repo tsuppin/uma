@@ -275,23 +275,40 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 【新設】過去走ダイナミクス（タイム差・通過順）
+  // 【新設】過去走パフォーマンス（着順・タイム差）解析
   // ==========================================
   if (horse.pastRaces && horse.pastRaces.length > 0) {
     const lastRace = horse.pastRaces[0];
-    // 勝ち馬とのタイム差（0.3秒以内なら次走勝ち負け）
-    if (lastRace.timeDiff !== undefined && lastRace.timeDiff <= 0.3 && lastRace.timeDiff >= 0) {
+    const tDiff = lastRace.timeDiff ?? 9.9;
+    
+    // ① アタマ(1着)候補の王道：前走僅差または上位着順
+    if (tDiff < 0) {
+      potential += 35; // 前走圧勝
+      tags.push(`🔥前走圧勝実績(着差${tDiff}秒)`);
+    } else if (tDiff <= 1.0 || lastRace.result <= 3) {
       potential += 25;
-      tags.push('📈直近タイム差僅少');
+      tags.push('🔥王道パターン(前走好走/僅差)');
     }
     
-    // 通過順位による脚質・展開適性
+    // ② JRA転入馬の「格上」評価（大敗無視）
+    const isJRATransfer = horse.pastRaces.some(pr => pr.venue.match(/(東京|中山|阪神|京都|新潟|中京|小倉|福島|函館|札幌)/));
+    if (isJRATransfer && tDiff >= 2.0) {
+      potential += 40;
+      tags.push('🚀JRA転入馬(格上/前走大敗無視)');
+    }
+    
+    // ③ ヒモ穴(2-3着)：近走大敗だが5走以内に好走歴あり
+    if (tDiff >= 3.0 && horse.pastRaces.slice(1, 5).some(pr => pr.result <= 3)) {
+      potential -= 15; // 1着確率は下がる
+      tags.push('💎隠れた実力馬(過去5走以内好走)');
+    }
+    
+    // 通過順位による展開利（川崎・門別・笠松等）
     if (lastRace.passingPositions) {
       const pos = lastRace.passingPositions.split('-').map(Number);
-      const isFront = pos[0] <= 3 || pos[1] <= 3;
-      if (isFront && (trackName === '川崎' || trackName === '門別')) {
+      if ((pos[0] <= 3 || pos[1] <= 3) && (trackName === '川崎' || trackName === '門別' || trackName === '笠松')) {
         potential += 15;
-        tags.push('🏇先行・展開利(前走検証済み)');
+        tags.push('🏇先行・展開利(検証済み)');
       }
     }
   }
@@ -959,6 +976,13 @@ export function calculateTsuchiyaScore(
   if (kinryo <= 54) {
     distortionBoost += 0.4;
     tags.push('💎3連系:軽量激走ブースト');
+  }
+
+  // 隠れた実力馬（近走大敗だが5走以内実績あり）ブースト
+  const lastTDiff = (horse.pastRaces && horse.pastRaces[0]) ? (horse.pastRaces[0].timeDiff ?? 0) : 0;
+  if (lastTDiff >= 3.0 && horse.pastRaces && horse.pastRaces.slice(1, 5).some(pr => pr.result <= 3)) {
+    distortionBoost += 0.5;
+    tags.push('💎3連系:隠れた実力激走ブースト');
   }
 
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
