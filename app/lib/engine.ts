@@ -950,24 +950,26 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 7. 厩舎・所属エリア補正：ホーム（美浦）の絶対的優位
+    // 7. 厩舎・所属エリア補正：ホーム（美浦）の圧倒的無双
     const trainerName = horse.trainer || '';
     if (horse.stableLocation === '美浦') {
-      potential += 30;
-      tags.push('東京:美浦所属(ホームアドバンテージ)');
+      potential += 40; // 地の利を最大化評価
+      tags.push('🏰東京ホーム:美浦所属(圧倒的優位)');
       
-      // 特定の好調厩舎
-      if (trainerName.match(/(高木登|木村哲也|上原博之)/)) {
-        potential += 20;
-        tags.push('東京:絶好調厩舎(美浦エリート)');
+      // 東京エリート厩舎（固め打ち実績・勝負仕上げ）
+      if (trainerName.match(/(木村哲也|上原博之|高木登|辻哲英|鹿戸雄一|宮田敬介|栗田徹)/)) {
+        potential += 30;
+        tags.push('🔥東京エリート厩舎(勝負気配MAX)');
       }
     } else if (horse.stableLocation === '栗東') {
-      // 栗東馬は基本マイナスだが、日曜後半・重賞のみ意地を見せる
-      if (race.raceNumber >= 10 || race.raceName?.match(/(重賞|カップ|記念)/)) {
-        potential += 15;
-        tags.push('東京後半:栗東馬の意地');
-      } else {
-        tags.push('東京:遠征栗東馬(アウェイ不利)');
+      // 通常の西高東低を覆す東京開催バイアス（栗東馬の割引）
+      potential -= 20;
+      tags.push('⚠️東京アウェイ:栗東所属馬(割引)');
+      
+      // メイン・重賞クラスのみ、遠征の意図と能力を考慮
+      if (race.raceNumber >= 10 || race.raceName?.match(/(重賞|カップ|記念|オープン|リステッド|G[123])/)) {
+        potential += 25;
+        tags.push('🏹アウェイ栗東馬:実力による逆襲期待');
       }
     }
 
