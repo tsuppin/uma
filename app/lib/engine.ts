@@ -1223,20 +1223,47 @@ export function calculateTsuchiyaScore(
     }
   }
 
-  // ---------------------------------------------------
-  // 上位3頭枠順バイアス（実績分析に基づく固定加点）
-  // ---------------------------------------------------
-  if (frame === 6 || frame === 7) {
-    potential += 15; tags.push('枠:6-7上位優位');
-  } else if (frame === 5) {
-    potential += 10; tags.push('枠:5上位候補');
-  } else if (frame === 8) {
-    potential += 12; tags.push('枠:8ヒモ期待');
-  } else if (frame === 4) {
-    potential -= 8; tags.push('枠:4苦戦');
+  // ==========================================
+  // 【新設】レースフェーズ（時間軸）バイアス解析
+  // ==========================================
+  // ① 前半フェーズ（1-6R / 下級条件）：先行力・ポジションが絶対正義
+  if (race.raceNumber <= 6) {
+    if (horse.style === '逃げ' || horse.style === '先行' || horse.style === '好位') {
+      potential += 25;
+      tags.push('🌅前半フェーズ:先行・ポジション優位');
+    }
+  } 
+  // ② 後半フェーズ（7-12R / 上位条件・特別）：末脚の質とトップ騎手の勝負強さ
+  else {
+    // 高速化した馬場に対応できる鋭い上がり性能
+    const hasSharpLast3f = horse.pastRaces.some(pr => {
+      const l3f = parseFloat(pr.last3fTime || '99.9');
+      return race.surface === '芝' ? l3f <= 33.8 : l3f <= 38.5;
+    });
+    if (hasSharpLast3f) {
+      potential += 30;
+      tags.push('🌃後半フェーズ:鋭い末脚(上がり重視)');
+    }
+    
+    // 重要な局面（特別・メイン）でのリーディング上位騎手への期待値
+    if (isEliteJockey) {
+      potential += 25;
+      tags.push('🌃後半フェーズ:トップ騎手の勝負強さ');
+    }
+    
+    // 上位クラスでの持ち時計実績（高速決着対応）
+    if (isUClass) {
+      const hasFastTime = horse.pastRaces.some(pr => pr.distance === race.distance && pr.result <= 3);
+      if (hasFastTime) {
+        potential += 20;
+        tags.push('🌃後半フェーズ:上位クラス時計実績');
+      }
+    }
   }
 
+  // ---------------------------------------------------
   // 動的学習パッチの適用
+  // ---------------------------------------------------
   for (const patch of learningPatches) {
     if (!patch.active) continue;
     if (patch.track && patch.track !== trackName) continue;
