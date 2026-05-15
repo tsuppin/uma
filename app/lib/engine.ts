@@ -180,6 +180,13 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【新設】レース展開シミュレーション（先行争いの激しさ予測）
+  // ==========================================
+  const frontRunnersCount = race.horses.filter(h => h.style === '逃げ' || h.style === '先行' || h.style === '好位').length;
+  const isHighPaceSim = frontRunnersCount >= 6; // 先行馬が多い -> 激戦 -> 差し有利
+  const isSlowPaceSim = frontRunnersCount <= 2; // 先行馬が少ない -> 展開利 -> 逃げ有利
+
+  // ==========================================
   // 【全場共通】鞍上（騎手）エリート補正
   // ==========================================
   if (isEliteJockey) {
@@ -363,6 +370,35 @@ export function calculateTsuchiyaScore(
       if ((pos[0] <= 3 || pos[1] <= 3) && (trackName === '川崎' || trackName === '門別' || trackName === '笠松')) {
         potential += 15;
         tags.push('🏇先行・展開利(検証済み)');
+      }
+    }
+  }
+
+  // ==========================================
+  // 【新設】展開・ポジション適性解析（クラス別交差評価）
+  // ==========================================
+  const hStyle = horse.style || '中団';
+  const isLClass = horse.raceClass?.match(/(未勝利|1勝クラス|新馬)/);
+  const isUClass = horse.raceClass?.match(/(2勝クラス|3勝クラス|オープン|重賞|リステッド|G[123])/);
+
+  if (isLClass) {
+    // 下位クラス：差し・追い込み有利
+    if (hStyle === '中団' || hStyle === '後方') {
+      potential += 25;
+      tags.push('🏹下位クラス:差し・追い込み展開利');
+      if (isHighPaceSim) {
+        potential += 15;
+        tags.push('🏹ハイペース激戦:末脚ブースト');
+      }
+    }
+  } else if (isUClass) {
+    // 上位クラス：先行・好位有利
+    if (hStyle === '逃げ' || hStyle === '先行' || hStyle === '好位') {
+      potential += 30;
+      tags.push('🏰上位クラス:先行・好位展開利');
+      if (isSlowPaceSim) {
+        potential += 20;
+        tags.push('🏰スローペース単騎:展開利ブースト');
       }
     }
   }
