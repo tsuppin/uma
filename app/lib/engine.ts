@@ -231,10 +231,46 @@ export function calculateTsuchiyaScore(
   else if (-4 <= weightChange && weightChange <= 4) { potential += 10; tags.push('質量安定'); }
 
   // ==========================================
-  // GIS幾何学適性 - 枠順バイアス
+  // 【新設】盛岡競馬場 時間帯・枠順・クラス別バイアス解析
   // ==========================================
-  if (frame <= 3) { potential += 15; tags.push('内枠最短経路'); }
-  else if (frame >= (headCount - 1)) { potential += 10; tags.push('外枠被せなし'); }
+  if (trackName === '盛岡' || race.venue === '盛岡') {
+    if (race.raceNumber <= 6) {
+      // 前半戦：上位人気（本命）中心、内〜中枠有利
+      if (frame === 2 || frame === 4 || frame === 5) {
+        potential += 15; tags.push('盛岡前半:内〜中枠有利');
+      }
+      if (popularity <= 3) {
+        potential += 20; tags.push('盛岡前半:本命堅実');
+      }
+    } else {
+      // 後半戦：波乱傾向（穴馬台頭）、極端な枠（最内or外枠）有利
+      if (frame === 1) {
+        potential += 20; tags.push('盛岡後半:最内枠有利');
+      } else if (frame >= 6 && frame <= 8) {
+        potential += 20; tags.push('盛岡後半:外枠有利');
+      }
+      if (popularity >= 6 && popularity <= 10) {
+        potential += 25; tags.push('盛岡後半:波乱警戒(大穴)');
+      }
+      
+      // 1200m戦の上級クラス（後半戦）における上がりタイム要求
+      if (dist === 1200 && horse.pastRaces && horse.pastRaces.length > 0) {
+        // 近走1200mで好走（末脚上位相当）しているか
+        const pastFast = horse.pastRaces.some(pr => pr.distance <= 1400 && pr.result <= 3);
+        if (pastFast) {
+          potential += 20; tags.push('盛岡後半1200m:末脚要求適合');
+        }
+      }
+    }
+  }
+
+  // ==========================================
+  // GIS幾何学適性 - 枠順バイアス (盛岡以外)
+  // ==========================================
+  if (trackName !== '盛岡' && race.venue !== '盛岡') {
+    if (frame <= 3) { potential += 15; tags.push('内枠最短経路'); }
+    else if (frame >= (headCount - 1)) { potential += 10; tags.push('外枠被せなし'); }
+  }
 
   // ==========================================
   // 血統・適性解析
