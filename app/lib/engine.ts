@@ -233,8 +233,19 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 馬体重増減エントロピー解析（成長 vs 絞り込み vs 疲弊）
+  // 馬体重増減エントロピー解析（王道絞り込み vs パワーアップ）
   // ==========================================
+  // ① 王道パターン：マイナス〜維持（-8kg 〜 ±0kg）
+  if (weightChange <= 0 && weightChange >= -8) {
+    potential += 20;
+    tags.push('🏹王道:馬体絞り・維持(勝負気配)');
+  } else if (weightChange >= 1 && weightChange <= 5) {
+    // ② 準王道：微増（+1kg 〜 +5kg）パワー温存・好調維持
+    potential += 15;
+    tags.push('🛡️準王道:馬体微増(パワー温存)');
+  }
+
+  // ③ 大幅な変動（激走サイン or 危険信号）
   if (weightChange >= 10) {
     if (weightChange <= 16) {
       if (age <= 3) {
@@ -242,24 +253,21 @@ export function calculateTsuchiyaScore(
         tags.push('🚀若駒成長・パワーアップ(S)');
       } else {
         potential += 20; 
-        tags.push('🚀馬体充実(成長加速)'); 
+        tags.push('🚀馬体充実(成長・充実期)'); 
       }
     } else {
       potential -= 25; 
-      tags.push('⚠️太目残り・調整不足(割引)'); 
+      tags.push('⚠️太目残り・調整不足(要警戒)'); 
     }
   } else if (weightChange <= -10) {
     // 絞り込み（-10kg〜-24kg）は「究極の仕上げ」として再定義
     if (weightChange >= -24) {
-      potential += 25; 
+      potential += 30; // 絞り込み成功への評価を微増
       tags.push('🎯究極の仕上げ(絞り込み激走サイン)');
     } else {
       potential -= 40; // -25kg以上は「パワーダウン・疲弊」の明確な危険信号
       tags.push('⚠️過剰消耗・パワーダウン(危険信号)');
     }
-  } else if (-4 <= weightChange && weightChange <= 4) {
-    potential += 10;
-    tags.push('質量安定');
   }
 
   // ==========================================
