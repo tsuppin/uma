@@ -327,6 +327,35 @@ export function calculateTsuchiyaScore(
       potential -= 15; // 1着確率は下がる
       tags.push('💎隠れた実力馬(過去5走以内好走)');
     }
+
+    // ④ タイム・上がり性能解析（クラス別スイートスポット）
+    const isLowerClass = horse.raceClass?.match(/(未勝利|1勝クラス|新馬)/);
+    const isUpperClass = horse.raceClass?.match(/(2勝クラス|3勝クラス|オープン|重賞|リステッド|G[123])/);
+    
+    // 下位クラス：上がり性能重視（末脚上位実績）
+    const last3fTimes = horse.pastRaces.map(pr => parseFloat(pr.last3fTime || '99.9'));
+    const best3f = Math.min(...last3fTimes);
+    if (isLowerClass && best3f <= 34.2) {
+      potential += 30;
+      tags.push('🚀下位クラス末脚エッジ');
+    }
+    
+    // 上位クラス：走破タイム（持ち時計）重視
+    if (isUpperClass) {
+      const sameDistRaces = horse.pastRaces.filter(pr => pr.distance === race.distance);
+      const bestTime = sameDistRaces.length > 0 ? Math.min(...sameDistRaces.map(pr => parseFloat(pr.time || '999'))) : 999;
+      if (bestTime < 999) {
+        potential += 25;
+        tags.push('🛡️上位クラス持ち時計エッジ');
+      }
+    }
+
+    // ⑤ 隠れた「タイム異常値」検知：着順は大敗でもタイム差が極少な馬
+    const hiddenGem = horse.pastRaces.find(pr => pr.result >= 8 && pr.timeDiff !== undefined && pr.timeDiff <= 0.5);
+    if (hiddenGem) {
+      potential += 35;
+      tags.push('💎タイム異常値(着順不問・実力不一致)');
+    }
     
     // 通過順位による展開利（川崎・門別・笠松等）
     if (lastRace.passingPositions) {
@@ -1061,6 +1090,12 @@ export function calculateTsuchiyaScore(
   if (lastTDiff >= 3.0 && horse.pastRaces && horse.pastRaces.slice(1, 5).some(pr => pr.result <= 3)) {
     distortionBoost += 0.5;
     tags.push('💎3連系:隠れた実力激走ブースト');
+  }
+
+  // タイム異常値（着順大敗・タイム僅差）ブースト
+  if (horse.pastRaces && horse.pastRaces.find(pr => pr.result >= 8 && pr.timeDiff !== undefined && pr.timeDiff <= 0.5)) {
+    distortionBoost += 0.6;
+    tags.push('💎3連系:タイム異常値ブースト');
   }
 
   // 京都芝×エピファネイア（ヒモ穴特化）
