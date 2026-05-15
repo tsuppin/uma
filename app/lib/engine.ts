@@ -186,7 +186,7 @@ export function calculateTsuchiyaScore(
 
   // ② 地方全国交流重賞における「他地区遠征馬」の圧倒的優位
   // （のじぎく賞等の交流重賞では大井・北海道等の他地区勢が上位独占する傾向）
-  const isExchangeRace = race.raceName?.match(/(交流|のじぎく賞|全国|選抜)/);
+  const isExchangeRace = race.raceName?.match(/(交流|のじぎく賞|全国|選抜|中央|JRA)/);
   const eliteAwayRegions = /(大井|北海道|門別|浦和|船橋|川崎)/;
   
   if (isExchangeRace) {
@@ -361,6 +361,37 @@ export function calculateTsuchiyaScore(
     potential += blinkerBonus;
   }
 
+  // ==========================================
+  // 【新設】枠順バイアス解析（金沢競馬・統計的期待値）
+  // ==========================================
+  // 独自算出の「枠順バイアススコア」に基づく補正
+  if (frame === 1) {
+    // 1枠：スコア1位(1.08) 複勝率50%の最強軸
+    potential += 40;
+    tags.push('🏹1枠:黄金期待値(軸信頼度1位)');
+  } else if (frame === 7) {
+    // 7枠：スコア2位(0.93) 勝率26.7%の勝ち切りバイアス
+    potential += 35;
+    tags.push('🚀7枠:勝負の突き抜け(勝率1位)');
+  } else if (frame === 4) {
+    // 4枠：スコア3位(0.75) 複勝率58.3%のヒモ穴バイアス
+    potential += 10;
+    distortionBoost += 0.6; // 2-3着への食い込みやすさを強化
+    tags.push('💎4枠:激走の紐穴(複勝率1位)');
+  } else if (frame === 8) {
+    // 8枠：スコア4位(0.70) 標準以上の期待値
+    potential += 15;
+    tags.push('🛡️8枠:外枠の安定感');
+  } else if (frame === 2) {
+    // 2枠：スコア最下位(0.25) 明確な死角
+    potential -= 35;
+    tags.push('⚠️2枠:枠順死角(期待値最下位)');
+  } else if (frame === 3 || frame === 5 || frame === 6) {
+    // 中間・死角枠：スコア0.46〜0.54の低迷帯
+    potential -= 15;
+    tags.push('🎐中間枠:バイアス劣勢');
+  }
+
   // 2. 厩舎所属エリア（栗東/美浦）
   if (trackName !== '東京' && race.venue !== '東京') {
     if (horse.stableLocation === '栗東') {
@@ -386,31 +417,33 @@ export function calculateTsuchiyaScore(
   // 【新設】レース・フェーズ別人気信頼度解析
   // ==========================================
   if (race.raceNumber <= 7) {
-    // 前半レース（3歳戦）：波乱含みの傾向
-    // 3〜5番人気の伏兵馬に期待値のボーナスを付与
-    if (popularity >= 3 && popularity <= 5) {
-      potential += 15;
-      tags.push('🎲前半戦:波乱含みの伏兵(3-5番人気期待)');
+    // 前半レース（3歳戦）：波乱含みだが、特に3番人気が1番人気に匹敵する勝率をマーク
+    if (popularity === 1) {
+      potential += 20; 
+      tags.push('🎯前半戦:1番人気(標準信頼)');
+    } else if (popularity === 3) {
+      potential += 25;
+      tags.push('🎲前半戦:激走の3番人気(有力穴候補)');
+    } else if (popularity >= 4 && popularity <= 5) {
+      potential += 10;
+      tags.push('🎲前半戦:波乱含みの伏兵(4-5番人気期待)');
     }
   } else if (race.raceNumber >= 8) {
-    // 後半レース（古馬戦）：実力上位が堅実に勝ち切る傾向
-    // 1〜2番人気の信頼度を大幅に評価
+    // 後半レース（古馬戦）：1〜2番人気が全勝（勝率100%）という極めて堅実な傾向
     if (popularity <= 2) {
-      potential += 30;
-      tags.push('🛡️後半戦:実力上位の盤石性(1-2番人気)');
-    } else if (popularity >= 6) {
-      // 後半戦の穴馬は1着確率は低いが、紐穴としての期待値は前述の展開ロジックでケア
-      potential -= 10;
+      potential += 45; // 盤石な上位人気を強力に評価
+      tags.push('🛡️後半戦:実力上位の盤石性(1-2番人気独占傾向)');
+    } else if (popularity >= 3) {
+      potential -= 25; // 3番人気以下は1着確率が極端に低下
+      tags.push('⚠️後半戦:上位人気壁厚(単勝期待値低下)');
     }
   }
 
   // ==========================================
   // 【新設】厩舎・馬主・所属バイアス解析
   // ==========================================
-  const trainer = horse.trainer || '';
   const owner = horse.owner || '';
   const isJRAHorse = horse.stableLocation === '栗東' || horse.stableLocation === '美浦';
-  const isExchangeRace = race.raceName.match(/(交流|中央|JRA)/);
 
   // ① JRA所属馬の交流戦バイアス（中央未勝利交流戦など）
   if (isExchangeRace && isJRAHorse) {
