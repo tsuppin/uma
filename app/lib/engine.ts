@@ -360,9 +360,9 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // GIS幾何学適性 - 枠順バイアス (盛岡以外)
+  // GIS幾何学適性 - 枠順バイアス (盛岡・東京以外)
   // ==========================================
-  if (trackName !== '盛岡' && race.venue !== '盛岡') {
+  if (trackName !== '盛岡' && trackName !== '東京' && race.venue !== '盛岡' && race.venue !== '東京') {
     if (frame <= 3) { potential += 15; tags.push('内枠最短経路'); }
     else if (frame >= (headCount - 1)) { potential += 10; tags.push('外枠被せなし'); }
   }
@@ -602,8 +602,11 @@ export function calculateTsuchiyaScore(
     
     // 3. 空間物理：外枠のスムーズな加速空間確保
     if (frame >= 6) {
-      potential += 20;
-      tags.push('東京:外枠(空間物理的優位)');
+      potential += 40;
+      tags.push('東京:外枠(空間物理的優位・加速空間)');
+    } else if (frame <= 3) {
+      potential -= 30;
+      tags.push('東京:内枠(密集・砂被りリスク)');
     }
   }
 
