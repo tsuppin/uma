@@ -223,17 +223,22 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 馬体重増減エントロピー解析
+  // 馬体重増減エントロピー解析（成長 vs 疲弊）
   // ==========================================
-  if (weightChange >= 10 && weightChange <= 20) { potential += 20; tags.push('成長加速'); }
-  else if (weightChange >= 22) { potential -= 15; tags.push('太目残り懸念'); }
-  else if (weightChange <= -12) { potential -= 20; tags.push('究極仕上げ/疲弊'); }
-  else if (-4 <= weightChange && weightChange <= 4) { potential += 10; tags.push('質量安定'); }
-  
-  // ±10kg以上の大きな変動（独立激走フラグ）
-  if (Math.abs(weightChange) >= 10) {
-    potential += 15;
-    tags.push('🔥物理エントロピー(激走サイン)');
+  if (weightChange >= 10) {
+    if (weightChange <= 20) {
+      potential += 30; 
+      tags.push('🚀成長加速(パワーアップ期待)'); 
+    } else {
+      potential -= 10; 
+      tags.push('太目残り懸念'); 
+    }
+  } else if (weightChange <= -10) {
+    potential -= 30;
+    tags.push('⚠️大幅減・消耗(パワーダウン警戒)');
+  } else if (-4 <= weightChange && weightChange <= 4) {
+    potential += 10;
+    tags.push('質量安定');
   }
 
   // ==========================================
