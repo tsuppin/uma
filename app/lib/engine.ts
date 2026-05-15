@@ -1220,6 +1220,23 @@ export function calculateTsuchiyaScore(
       potential += 20;
       tags.push('🚀岩手:成長・立て直し(実力馬の馬体増)');
     }
+
+    // ④ スピード性能・上がりタイム解析（盛岡高速馬場への適応）
+    // 良馬場でも時計が出るスピード馬場であるため、絶対的なスピードと上がりの鋭さを重視
+    const mBestL3f = Math.min(...horse.pastRaces.map(pr => parseFloat(pr.last3fTime || '99.9')));
+    if (race.distance === 1200) {
+      // 1200m: 1分12秒台以下、上がり37秒台前半が勝ち切りライン
+      if (mBestL3f <= 37.2) {
+        potential += 35;
+        tags.push(`⚡盛岡1200:高速末脚実績(上がり${mBestL3f.toFixed(1)}s)`);
+      }
+    } else if (race.distance === 1400) {
+      // 1400m: 1分26秒台、上がり37秒台前半が優秀
+      if (mBestL3f <= 37.5) {
+        potential += 30;
+        tags.push(`⚡盛岡1400:スピード持続力(上がり${mBestL3f.toFixed(1)}s)`);
+      }
+    }
   }
 
   // ---------------------------------------------------
