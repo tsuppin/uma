@@ -764,6 +764,33 @@ export function calculateTsuchiyaScore(
         tags.push('☀️良馬場実績(高速決着適応)');
       }
     }
+
+    // 13. 東京展開・脚質バイアス：芝の差し vs ダートの先行
+    if (race.surface === '芝') {
+      if (horse.style === '中団' || horse.style === '後方' || horse.style === '追込') {
+        potential += 30;
+        tags.push('東京芝:差し・追込優位(直線末脚)');
+        // 後半レース（上級条件）ではさらに差しが強調
+        if (race.raceNumber >= 7) {
+          potential += 15;
+          tags.push('東京後半芝:差し加速バイアス');
+        }
+      } else if (horse.style === '逃げ') {
+        potential -= 25;
+        tags.push('東京芝:逃げ馬(標的・失速リスク)');
+      }
+    } else {
+      // ダート：先行〜中団のパワー押し切り
+      if (horse.style === '先行' || horse.style === '好位' || horse.style === '中団') {
+        potential += 25;
+        tags.push('東京ダート:好位〜中団(パワー押し切り)');
+      }
+      // 前半のダート戦のみ前残り警戒
+      if (race.raceNumber <= 6 && horse.style === '逃げ') {
+        potential += 20;
+        tags.push('東京前半ダート:前残り・先行警戒');
+      }
+    }
   }
 
   // ---------------------------------------------------
