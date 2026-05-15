@@ -1348,6 +1348,23 @@ export function calculateTsuchiyaScore(
   
   // オッズ偏差値による過小評価ブースト
   const currentOddsSS = horse.oddsStandardScore || 50;
+  
+  // ---------------------------------------------------
+  // 市場収束バイアス（園田:低偏差・堅実収束パターン）
+  // ---------------------------------------------------
+  // 平均1.75番人気で決着する「低偏差馬場」では、高SS（上位人気）ほど正解率が向上する
+  if (trackName === '園田' || trackName === '西脇' || trackName === '姫路') {
+    if (currentOddsSS >= 65 || popularity <= 2) {
+      potential += 30; // 圧倒的人気への実力集中を評価
+      tags.push('🛡️市場収束:上位人気への能力集中');
+    }
+    // 穴馬の歪みブーストをこの馬場では抑制（紛れが少ないため）
+    if (popularity >= 6) {
+      distortionBoost *= 0.4;
+      tags.push('⚠️市場収束:穴馬期待値抑制');
+    }
+  }
+
   if (currentOddsSS <= 35) {
     distortionBoost += 0.4;
     tags.push('💎3連系:オッズ偏差値ブースト');
