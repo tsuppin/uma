@@ -357,6 +357,24 @@ export function calculateTsuchiyaScore(
       potential += 20;
       tags.push('門別:先行力優位');
     }
+    
+    // 門別実証分析：騎手傾向（固め打ちと安定感）
+    const monbetsuElite = ['小野楓', '阿部龍', '落合玄', '桑村真'];
+    const monbetsuStable = ['服部茂', '岩橋勇'];
+    
+    if (monbetsuElite.some(j => jockey.includes(j))) {
+      potential += 25;
+      tags.push('門別:トップジョッキー(頭候補)');
+    } else if (monbetsuStable.some(j => jockey.includes(j))) {
+      potential += 15;
+      tags.push('門別:安定ジョッキー(ヒモ候補)');
+    }
+    
+    // 減量騎手（▲△など）による波乱と好走
+    if (/[▲△☆★◇]/.test(jockey)) {
+      potential += 20;
+      tags.push('門別:減量騎手(波乱警戒)');
+    }
   } else if (trackName === '名古屋' || trackName === '弥富') {
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
     if (topJockeys.includes(jockey)) { potential += 15; tags.push('鞍上強化'); }
