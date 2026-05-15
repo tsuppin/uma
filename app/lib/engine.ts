@@ -290,9 +290,21 @@ export function calculateTsuchiyaScore(
   // 【新設】パワーウェイトレシオ（馬体重 / 斤量）
   // ==========================================
   const powerRatio = weight / kinryo;
-  if (powerRatio >= 9.5) {
+  if (powerRatio >= 10.0) {
+    potential += 30;
+    tags.push('💪超抜パワー(斤量比極小)');
+  } else if (powerRatio >= 9.5) {
     potential += 20;
     tags.push('💪絶対パワー(馬格優位)');
+  } else if (powerRatio < 8.2) {
+    potential -= 15;
+    tags.push('⚠️パワー不足(斤量負担重)');
+  }
+
+  // 馬格(500kg+) と 成長(+10kg+) のシナジー評価
+  if (weight >= 500 && weightChange >= 10) {
+    potential += 25;
+    tags.push('🚀大型馬×大幅増(成長パワーアップ)');
   }
 
   // ==========================================
