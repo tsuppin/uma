@@ -731,6 +731,38 @@ export function calculateTsuchiyaScore(
         potential += 30;
         tags.push('東京:一変パターン(前走大敗×トリガー)');
       }
+
+      // 11. 条件変更・隠れた適性の開花（一変の急先鋒）
+      // ① 芝⇔ダート替わり
+      if (lastRace.surface !== race.surface) {
+        potential += 45;
+        tags.push('🚀東京:二刀流替わり(一変警戒)');
+      }
+      // ② 距離変更（大幅な距離短縮・延長）
+      if (Math.abs(lastRace.distance - race.distance) >= 200) {
+        potential += 25;
+        tags.push('🚀東京:距離変更(追走負荷一変)');
+      }
+      // ③ 東京直線：末脚性能の再評価（上がり3F）
+      if (lastRace.last3fTime) {
+        const l3f = parseFloat(lastRace.last3fTime);
+        if (l3f <= 34.5 && race.surface === '芝') {
+          potential += 25;
+          tags.push('東京芝:高速末脚実績あり');
+        } else if (l3f <= 36.5 && race.surface === 'ダート') {
+          potential += 25;
+          tags.push('東京ダート:鋭い末脚実績');
+        }
+      }
+    }
+
+    // 12. 馬場状態適応力（良馬場スペシャリスト）
+    if (condition === '良') {
+      const ryoResults = horse.pastRaces?.filter(pr => pr.condition === '良' && pr.result <= 3).length || 0;
+      if (ryoResults >= 2) {
+        potential += 20;
+        tags.push('☀️良馬場実績(高速決着適応)');
+      }
     }
   }
 
