@@ -123,12 +123,65 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【新設】人脈・相性・陣営の思惑 (Human Network & Intention)
+  // ==========================================
+  const eliteJockeys = ['ルメール', '川田将雅', '武豊', '坂井瑠星', '戸崎圭太', 'モレイラ', 'レーン', '横山武史', '笹川翼', '御神本訓', '吉村智洋', '渡邊竜也', '岡部誠'];
+  const isEliteJockey = eliteJockeys.some(ej => jockey.includes(ej));
+
+  // 1. 馬と騎手の相性（主戦騎手ボーナス）
+  if (horse.pastRaces && horse.pastRaces.length > 0) {
+    // 過去の騎乗履歴をチェック
+    const pastRides = horse.pastRaces.filter(pr => pr.jockey && jockey && pr.jockey.includes(jockey.split(' ')[0] || jockey));
+    const pastWins = pastRides.filter(pr => pr.result === 1).length;
+    const pastTop3 = pastRides.filter(pr => pr.result <= 3).length;
+
+    if (pastWins > 0) {
+      potential += 20;
+      tags.push('🤝主戦騎手(勝利実績)');
+    } else if (pastTop3 > 0) {
+      potential += 10;
+      tags.push('🤝主戦騎手(好走実績)');
+    } else if (pastRides.length === 0) {
+      // 初騎乗（乗り替わり）
+      // 陣営の思惑：前走負けていて、今回エリート騎手に乗り替わりなら「勝負気配（ヤリ）」
+      if (horse.pastRaces[0].result > 3 && isEliteJockey) {
+        potential += 35;
+        tags.push('🔥勝負気配(エリート乗り替わり)');
+      }
+    }
+  }
+
+  // 2. 騎手と調教師の黄金ライン（相性）
+  const trainer = horse.trainer || '';
+  if (trainer && jockey) {
+    if (trainer.includes('笹野') && jockey.includes('渡邊')) {
+      potential += 30; tags.push('🌟黄金ライン(笹野×渡邊)');
+    } else if (trainer.includes('友道') && (jockey.includes('川田') || jockey.includes('ルメール') || jockey.includes('武豊'))) {
+      potential += 25; tags.push('🌟勝負ライン(友道×エリート)');
+    } else if (trainer.includes('矢作') && jockey.includes('坂井')) {
+      potential += 30; tags.push('🌟黄金ライン(矢作×坂井)');
+    } else if (trainer.includes('木村') && jockey.includes('ルメール')) {
+      potential += 30; tags.push('🌟黄金ライン(木村×ルメール)');
+    } else if (trainer.includes('中内田') && jockey.includes('川田')) {
+      potential += 30; tags.push('🌟黄金ライン(中内田×川田)');
+    } else if (trainer.includes('打越') && jockey.includes('吉村')) {
+      potential += 25; tags.push('🌟黄金ライン(打越×吉村)');
+    }
+  }
+
+  // 3. 陣営の思惑（仕上げ・叩き）
+  // 前走大敗からしっかり絞ってきた場合
+  if (weightChange < 0 && weightChange >= -10 && horse.pastRaces && horse.pastRaces.length > 0 && horse.pastRaces[0].result > 5) {
+    potential += 15;
+    tags.push('🔥メイチ仕上げ推測(馬体重絞り)');
+  }
+
+  // ==========================================
   // 【全場共通】鞍上（騎手）エリート補正
   // ==========================================
-  const eliteJockeys = ['ルメール', '川田将雅', '武豊', '坂井瑠星', '戸崎圭太', 'モレイラ', 'レーン', '横山武史', '笹川翼', '御神本訓'];
-  if (eliteJockeys.some(ej => jockey.includes(ej))) {
+  if (isEliteJockey) {
     potential += 25;
-    tags.push('エリート鞍上');
+    tags.push('👑エリート鞍上');
   }
 
   if (jm && jm.venueStats[race.venue]) {
