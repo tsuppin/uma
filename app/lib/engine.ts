@@ -252,11 +252,13 @@ export function calculateTsuchiyaScore(
   }
 
   // 2. 厩舎所属エリア（栗東/美浦）
-  if (horse.stableLocation === '栗東') {
-    potential += 15;
-    tags.push('🏰西高東低(栗東所属)');
-  } else if (horse.stableLocation === '美浦') {
-    potential += 5;
+  if (trackName !== '東京' && race.venue !== '東京') {
+    if (horse.stableLocation === '栗東') {
+      potential += 15;
+      tags.push('🏰西高東低(栗東所属)');
+    } else if (horse.stableLocation === '美浦') {
+      potential += 5;
+    }
   }
 
   // 3. オッズ偏差値解析（歪みの標準化）
@@ -646,6 +648,28 @@ export function calculateTsuchiyaScore(
       } else {
         potential += 15;
         tags.push('東京:爆発力ジョッキー');
+      }
+    }
+
+    // 7. 厩舎・所属エリア補正：ホーム（美浦）の絶対的優位
+    const trainerName = horse.trainer || '';
+    if (horse.stableLocation === '美浦') {
+      potential += 30;
+      tags.push('東京:美浦所属(ホームアドバンテージ)');
+      
+      // 特定の好調厩舎
+      if (trainerName.match(/(高木登|木村哲也|上原博之)/)) {
+        potential += 20;
+        tags.push('東京:絶好調厩舎(美浦エリート)');
+      }
+    } else if (horse.stableLocation === '栗東') {
+      // 栗東馬は基本マイナスだが、日曜後半・重賞のみ意地を見せる
+      if (race.raceNumber >= 10 || race.raceName?.match(/(重賞|カップ|記念)/)) {
+        potential += 15;
+        tags.push('東京後半:栗東馬の意地');
+      } else {
+        potential -= 20;
+        tags.push('東京:遠征栗東馬(アウェイ不利)');
       }
     }
   }
