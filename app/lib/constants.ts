@@ -118,4 +118,21 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778809055791",
+    version: "v12.1",
+    date: "2026-05-15T01:37:35.791Z",
+    description: "盛岡 - 勝ち馬(クイーンカード)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      }
+    ],
+    active: true
+  },
 ];
