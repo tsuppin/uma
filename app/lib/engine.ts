@@ -334,6 +334,32 @@ export function calculateTsuchiyaScore(
       potential -= 15;
       tags.push('川崎:1・8枠(頭は危険)');
     }
+
+    // 川崎実証分析：騎手傾向（トップジョッキーと穴メーカー）
+    const kawasakiElite = ['矢野貴', '笹川翼'];
+    const kawasakiLeaders = ['町田直', '新原周', '野畑凌', '伊藤裕'];
+    const kawasakiUpsets = ['古岡勇', '藤江渉'];
+
+    if (kawasakiElite.some(j => jockey.includes(j))) {
+      potential += 25;
+      tags.push('川崎:トップジョッキー(軸信頼)');
+    } else if (kawasakiLeaders.some(j => jockey.includes(j))) {
+      potential += 15;
+      tags.push('川崎:主力ジョッキー(好調)');
+    }
+
+    if (kawasakiUpsets.some(j => jockey.includes(j))) {
+      potential += 20;
+      tags.push('川崎:穴メーカー(一発警戒)');
+    }
+
+    // 川崎実証分析：特別・交流戦の遠征騎手（ルメール、御神本など）
+    if (race.raceName?.match(/(交流|重賞|杯|記念|チャレンジ)/)) {
+      if (jockey.match(/(ルメー|御神訓|川田|武豊|モレイラ|田山旺)/)) {
+        potential += 30;
+        tags.push('川崎:特別戦エリート騎手');
+      }
+    }
   } else if (trackName === '門別') {
     const powerSires = ['パイロ', 'ホッコータルマエ', 'ルヴァンスレーヴ'];
     if (powerSires.some(s => bloodline.includes(s))) { potential += 35; tags.push('門別パワー血統'); }
