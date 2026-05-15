@@ -341,4 +341,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778834777575",
+    version: "v48.1",
+    date: "2026-05-15T08:46:17.575Z",
+    description: "門別 - 好走馬(スイレンチャン等)の特性学習",
+    track: "門別",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "小野楓",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ラブリーデイ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
