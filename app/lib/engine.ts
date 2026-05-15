@@ -360,6 +360,24 @@ export function calculateTsuchiyaScore(
         tags.push('川崎:特別戦エリート騎手');
       }
     }
+
+    // 川崎実証分析：馬の属性（血統・馬格・年齢）
+    if (bloodline.includes('ミスターメロディ')) {
+      potential += 35;
+      tags.push('川崎:特注ミスターメロディ産駒');
+    }
+    if (weight >= 500) {
+      potential += 20;
+      tags.push('川崎:大型馬パワー');
+    }
+    if (gender === '牝') {
+      potential += 10;
+      tags.push('川崎:牝馬健闘傾向');
+    }
+    if (horse.age === 3 || horse.age === 4) {
+      potential += 15;
+      tags.push('川崎:3-4歳若駒エッジ');
+    }
   } else if (trackName === '門別') {
     const powerSires = ['パイロ', 'ホッコータルマエ', 'ルヴァンスレーヴ'];
     if (powerSires.some(s => bloodline.includes(s))) { potential += 35; tags.push('門別パワー血統'); }
