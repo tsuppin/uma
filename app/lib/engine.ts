@@ -70,6 +70,7 @@ export function calculateTsuchiyaScore(
   const frame = horse.frame;
   const gender = horse.gender;
   const age = horse.age;
+  const odds = horse.odds || 10;
   const kinryo = horse.jockeyWeight || 55;
   const popularity = horse.popularity || 99;
   const jockey = horse.jockey || '';
@@ -693,6 +694,25 @@ export function calculateTsuchiyaScore(
       potential += 35;
       tags.push('🔥二刀流爆弾(モズアスコット産駒)');
     }
+
+    // 9. 市場心理・オッズ歪み補正：東京開催特有の人気バランス
+    // ① 信頼の1番人気（1.7倍〜2.9倍）
+    if (popularity === 1 && odds >= 1.7 && odds <= 2.9) {
+      potential += 20;
+      tags.push('東京:信頼の1番人気(期待値適合)');
+    }
+    
+    // ② 中穴の勝ちきり（4〜6番人気、10〜30倍）
+    if (popularity >= 4 && popularity <= 6 && odds >= 10 && odds <= 30) {
+      potential += 25;
+      tags.push('東京:中穴勝ちきり警戒(過小評価)');
+    }
+    
+    // ③ 大穴の激走（10番人気以下、50倍以上）
+    if (popularity >= 10 && odds >= 50) {
+      potential += 35;
+      tags.push('東京:オッズ偏差値特大(爆穴ポテンシャル)');
+    }
   }
 
   // ---------------------------------------------------
@@ -785,7 +805,6 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【新設】オッズの歪み（Odds Distortion）解析
   // ==========================================
-  const odds = horse.odds || 10;
 
   // 1. 1番人気の過剰人気（不振リスク）
   if (popularity === 1) {
