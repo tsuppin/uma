@@ -1237,6 +1237,25 @@ export function calculateTsuchiyaScore(
         tags.push(`⚡盛岡1400:スピード持続力(上がり${mBestL3f.toFixed(1)}s)`);
       }
     }
+
+    // ⑤ 展開・脚質バイアス：逃げ先行の物理的優位 vs 爆速差しの強襲
+    // 盛岡の基本は逃げ・先行による「前残り」が正義（7/12勝が先行実績馬）
+    const isMoriokaFront = horse.pastRaces.slice(0, 2).some(pr => {
+      if (!pr.passingPositions) return false;
+      const pos = pr.passingPositions.split('-').map(Number);
+      return pos[0] <= 2; // 安定して1-2番手を取れる脚
+    });
+
+    if (isMoriokaFront) {
+      potential += 30;
+      tags.push('🛡️盛岡:前残り優位(先行・逃げ実績)');
+    }
+
+    // 展開が速くなった際の「爆速差し」ポテンシャル（上がり36.9s等の異次元末脚）
+    if (mBestL3f <= 37.0 && (horse.style === '中団' || horse.style === '後方' || horse.style === '追込')) {
+      potential += 25;
+      tags.push('🚀盛岡:爆速差し(異次元末脚ポテンシャル)');
+    }
   }
 
   // ---------------------------------------------------
