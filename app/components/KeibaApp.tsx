@@ -10,8 +10,9 @@ import ResultInput from "./ResultInput";
 import LearningPanel from "./LearningPanel";
 import Win5Panel from "./Win5Panel";
 import StatsPanel from "./StatsPanel";
+import KnowledgePanel from "./KnowledgePanel";
 
-type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats";
+type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge";
 
 export default function KeibaApp() {
   const [state, setState] = useState<AppState>(() => loadState());
@@ -85,6 +86,7 @@ export default function KeibaApp() {
           ["new_race", "➕", "新規レース登録"],
           ["win5", "🎯", "WIN5予想"],
           ["stats", "📈", "成績・統計"],
+          ["knowledge", "📚", "ナレッジ＆AI"],
         ] as [View, string, string][]).map(([v, icon, label]) => (
           <div key={v} className={`nav-item ${view === v ? "active" : ""}`} onClick={() => setView(v)}>
             <span className="nav-icon">{icon}</span>{label}
@@ -146,6 +148,9 @@ export default function KeibaApp() {
         )}
         {view === "stats" && (
           <StatsPanel state={state} />
+        )}
+        {view === "knowledge" && (
+          <KnowledgePanel />
         )}
         {view === "prediction" && !selectedRace && (
           <div className="empty-state">
