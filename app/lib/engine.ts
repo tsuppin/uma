@@ -410,21 +410,42 @@ export function calculateTsuchiyaScore(
         }
       }
     } else if (race.surface === 'ダート') {
-      if (bestLast3f <= 36.8) {
-        potential += 30;
-        tags.push(`💪ダート高速末脚エリート(上がり${bestLast3f.toFixed(1)}s)`);
+      // ダート：高速決着なら37-38秒台が必須。クラスが上がるほど要求値がシビアに。
+      if (bestLast3f <= 38.2) {
+        potential += 35;
+        tags.push(`💪ダート高速末脚(上がり${bestLast3f.toFixed(1)}s)`);
+        if (isUpperClass && bestLast3f <= 37.8) {
+          potential += 20;
+          tags.push('⚡上位ダート:必須スピード性能クリア');
+        }
+      }
+      
+      // 走破タイムが遅い（下級クラス）レースの特性：上がり最速よりもポジション（位置取り）を重視
+      if (!isUpperClass) {
+        if (horse.style === '逃げ' || horse.style === '先行') {
+          potential += 25;
+          tags.push('🛡️下級クラス:ポジション優位(時計不問・前残り期待)');
+        }
       }
     }
 
-    // ⑦ 全体タイムと上がりのバランス評価（総合能力）
-    const sameDistBalanced = horse.pastRaces.find(pr => 
-      pr.distance === race.distance && 
-      parseFloat(pr.last3fTime || '99.9') <= (race.surface === '芝' ? 34.2 : 37.5) &&
-      pr.result <= 3
-    );
-    if (sameDistBalanced) {
-      potential += 20;
-      tags.push('🛡️総合能力(タイム×上がり両立)');
+    // ⑦ 総合スピード能力（走破タイム×上がりの相関評価）
+    // 厳しいペース（高速走破）の中で速い上がりを両立できる馬を最高評価
+    const hasFastAndLate = horse.pastRaces.find(pr => {
+      const timeVal = parseFloat(pr.time || '999');
+      const l3fVal = parseFloat(pr.last3fTime || '99.9');
+      // 1400m基準: 1:32:0以下且つ上がり39.2s以下 (高速決着対応)
+      if (pr.distance === 1400 && timeVal <= 92.5 && l3fVal <= 39.2) return true;
+      // 1230m基準: 1:19:5以下且つ上がり38.5s以下 (スプリント能力)
+      if (pr.distance === 1230 && timeVal <= 79.5 && l3fVal <= 38.5) return true;
+      // 1700m基準: 1:53:0以下且つ上がり39.0s以下 (中距離スピード)
+      if (pr.distance === 1700 && timeVal <= 113.0 && l3fVal <= 39.0) return true;
+      return false;
+    });
+    
+    if (hasFastAndLate) {
+      potential += 30;
+      tags.push('🏆総合スピード能力(タイム×上がり相関)');
     }
     
     // 通過順位による展開利（川崎・門別・笠松等）
