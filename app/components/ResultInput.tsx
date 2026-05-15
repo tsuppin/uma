@@ -152,7 +152,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       return;
     }
 
-    let resultsData = parsed.length > 0 ? parsed : [1, 2, 3].map(r => ({ rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 }));
+    const resultsData = parsed.length > 0 ? parsed : [1, 2, 3].map(r => ({ rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 }));
     // 少なくとも3着までは入力欄を確保
     for (let r = 1; r <= 3; r++) {
       if (!resultsData.find(p => p.rank === r)) {

@@ -3,8 +3,7 @@ import { useState } from "react";
 import { Race, Formation } from "../types";
 import { generateFormation } from "../lib/engine";
 
-const FRAME_BG = ["","#e2e8f0","#1a1a1a","#e53e3e","#3182ce","#d69e2e","#2f855a","#d6bcfa","#fc8181"];
-const FRAME_COLOR = ["","#000","#fff","#fff","#fff","#000","#fff","#000","#000"];
+
 
 function FrameBadge({ frame }: { frame: number }) {
   const frameClass = frame >= 1 && frame <= 8 ? `frame-${frame}` : 'frame-other';

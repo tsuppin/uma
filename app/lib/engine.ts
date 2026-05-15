@@ -73,7 +73,6 @@ export function calculateTsuchiyaScore(
   const kinryo = horse.jockeyWeight || 55;
   const popularity = horse.popularity || 99;
   const jockey = horse.jockey || '';
-  const oddsSS = horse.oddsStandardScore || 50;
   const headCount = race.headCount || 10;
   
   let potential = 500;
@@ -211,7 +210,7 @@ export function calculateTsuchiyaScore(
   // ==========================================
   const frontRunnersCount = race.horses.filter(h => h.style === '逃げ' || h.style === '先行' || h.style === '好位').length;
   const isHighPaceSim = frontRunnersCount >= 6; // 先行馬が多い -> 激戦 -> 差し有利
-  const isSlowPaceSim = frontRunnersCount <= 2; // 先行馬が少ない -> 展開利 -> 逃げ有利
+  // const isSlowPaceSim = frontRunnersCount <= 2; // 先行馬が少ない -> 展開利 -> 逃げ有利
 
   // ==========================================
   // 【全場共通】鞍上（騎手）エリート補正
@@ -303,6 +302,27 @@ export function calculateTsuchiyaScore(
         potential -= 30;
         tags.push('⚠️過剰消耗懸念(危険な紐穴)');
       }
+    }
+  }
+  
+  // ==========================================
+  // 【刷新】レース・フェーズ別 年齢適性バイアス
+  // ==========================================
+  if (race.raceNumber <= 6) {
+    // 前半レース（若駒戦）：2〜3歳の若い馬が主役
+    if (age <= 3) {
+      potential += 30;
+      tags.push('🚀若駒フェーズ適合(2-3歳期待)');
+    } else {
+      potential -= 15;
+    }
+  } else if (race.raceNumber >= 7) {
+    // 後半レース（古馬戦）：4歳以上の経験豊富なベテランが台頭
+    if (age >= 4) {
+      potential += 25;
+      tags.push('🛡️古馬・ベテランフェーズ適合(実績重視)');
+    } else {
+      potential -= 10;
     }
   }
 
@@ -407,28 +427,36 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 【新設】レース・フェーズ別人気信頼度解析
+  // 【刷新】レース・フェーズ別 人気信頼度 & 波乱度解析
   // ==========================================
-  if (race.raceNumber <= 7) {
-    // 前半レース（3歳戦）：波乱含みだが、特に3番人気が1番人気に匹敵する勝率をマーク
+  if (race.raceNumber <= 6) {
+    // 前半レース：1番人気が極めて強力（勝率66%超）な「堅実」フェーズ
     if (popularity === 1) {
-      potential += 20; 
-      tags.push('🎯前半戦:1番人気(標準信頼)');
-    } else if (popularity === 3) {
-      potential += 25;
-      tags.push('🎲前半戦:激走の3番人気(有力穴候補)');
-    } else if (popularity >= 4 && popularity <= 5) {
-      potential += 10;
-      tags.push('🎲前半戦:波乱含みの伏兵(4-5番人気期待)');
+      potential += 45; 
+      tags.push('👑前半戦:鉄板の1番人気(高信頼度)');
+    } else if (popularity >= 2 && popularity <= 3) {
+      potential += 15;
+      tags.push('🎯前半戦:上位人気順当');
+    } else {
+      potential -= 20;
     }
-  } else if (race.raceNumber >= 8) {
-    // 後半レース（古馬戦）：1〜2番人気が全勝（勝率100%）という極めて堅実な傾向
-    if (popularity <= 2) {
-      potential += 45; // 盤石な上位人気を強力に評価
-      tags.push('🛡️後半戦:実力上位の盤石性(1-2番人気独占傾向)');
-    } else if (popularity >= 3) {
-      potential -= 25; // 3番人気以下は1着確率が極端に低下
-      tags.push('⚠️後半戦:上位人気壁厚(単勝期待値低下)');
+  } else if (race.raceNumber >= 7) {
+    // 後半レース：1番人気が崩れ、中穴（6-7番人気）が台頭する「波乱」フェーズ
+    if (popularity === 1) {
+      potential -= 15;
+      tags.push('⚠️後半戦:1番人気過信禁物(波乱含み)');
+    } else if (popularity >= 5 && popularity <= 8) {
+      potential += 25;
+      distortionBoost += 1.2; // 期待値の闇を大幅強化
+      tags.push('💎後半戦:激走の伏兵(6-7番人気評価)');
+    }
+
+    // 後半の波乱期における「減量騎手」の一発評価
+    const isWeightReduced = kinryo <= 53 || horse.prevJockey?.match(/[▲△☆]/);
+    if (isWeightReduced) {
+      potential += 30;
+      distortionBoost += 0.5;
+      tags.push('⚡後半戦:減量騎手の爆発力');
     }
   }
 
@@ -1723,7 +1751,7 @@ export function generateWin5Picks(races: Race[], allPredictions: Record<string, 
 }
 
 export function generateLearningPatch(race: Race, predictions: Prediction[], actualResult: { rank: number; horseNumber: number; }[], existingPatches: LearningPatch[]): LearningPatch | null {
-  const adjustments: any[] = [];
+  const adjustments: LearningPatch['adjustments'] = [];
   let learningTargetName = "";
 
   // 1〜3着馬をすべてチェックし、AIが低く評価していた馬から複合的に学習する

@@ -4,9 +4,15 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import knowledgeData from "../lib/knowledgeData.json";
 
+interface KnowledgeFile {
+  name: string;
+  path: string;
+  content: string;
+}
+
 export default function KnowledgePanel() {
   const [activeTab, setActiveTab] = useState<"markdowns" | "notebooks" | "python">("markdowns");
-  const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<KnowledgeFile | null>(null);
 
   const tabs = [
     { id: "markdowns", label: "📄 分析・ナレッジ" },
@@ -27,7 +33,7 @@ export default function KnowledgePanel() {
           <button
             type="button"
             key={tab.id}
-            onClick={() => { setActiveTab(tab.id as any); setSelectedFile(null); }}
+            onClick={() => { setActiveTab(tab.id as "markdowns" | "notebooks" | "python"); setSelectedFile(null); }}
             className={`btn ${activeTab === tab.id ? "btn-primary" : "btn-secondary"}`}
           >
             {tab.label}
@@ -37,7 +43,7 @@ export default function KnowledgePanel() {
 
       <div className="flex flex-1 gap-20 min-h-300">
         <div className="w-110 border-right pr-10 overflow-y-auto" style={{ width: "30%" }}>
-          {currentFiles.map((file: any, index: number) => (
+          {currentFiles.map((file: KnowledgeFile, index: number) => (
             <button
               type="button"
               key={index}

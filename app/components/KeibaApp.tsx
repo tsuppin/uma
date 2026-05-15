@@ -21,7 +21,9 @@ export default function KeibaApp() {
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState(loadState());
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoaded(true);
   }, []);
 

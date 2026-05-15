@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 const OWNER = 'tsuppin';
 const REPO = 'uma';
@@ -20,9 +23,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'GITHUB_TOKEN is not set in Vercel environment variables.' }, { status: 500 });
       }
       
-      const { execSync } = require('child_process');
-      const fs = require('fs');
-      const path = require('path');
+      // Imports moved to top
+
       
       const constantsPath = path.join(process.cwd(), 'app', 'lib', 'constants.ts');
       let content = fs.readFileSync(constantsPath, 'utf-8');
@@ -115,7 +117,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: 'GitHub API sync successful' });
 
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }
