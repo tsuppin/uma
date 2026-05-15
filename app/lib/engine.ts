@@ -237,20 +237,25 @@ export function calculateTsuchiyaScore(
   // ==========================================
   if (weightChange >= 10) {
     if (weightChange <= 16) {
-      potential += 25; 
-      tags.push('🚀馬体充実(成長加速)'); 
+      if (age <= 3) {
+        potential += 35; // 若い馬の大幅増は「成長・パワーアップ」のSランク評価
+        tags.push('🚀若駒成長・パワーアップ(S)');
+      } else {
+        potential += 20; 
+        tags.push('🚀馬体充実(成長加速)'); 
+      }
     } else {
-      potential -= 15; 
-      tags.push('⚠️太目残り・調整不足'); 
+      potential -= 25; 
+      tags.push('⚠️太目残り・調整不足(割引)'); 
     }
   } else if (weightChange <= -10) {
-    // 京都の実証分析に基づき、-24kgまでの絞り込みを「仕上げ」として再定義
+    // 絞り込み（-10kg〜-24kg）は「究極の仕上げ」として再定義
     if (weightChange >= -24) {
-      potential += 20; 
-      tags.push('🎯仕上げ確変(究極の絞り込み)');
+      potential += 25; 
+      tags.push('🎯究極の仕上げ(絞り込み激走サイン)');
     } else {
-      potential -= 30;
-      tags.push('⚠️過剰消耗(パワーダウン警戒)');
+      potential -= 40; // -25kg以上は「パワーダウン・疲弊」の明確な危険信号
+      tags.push('⚠️過剰消耗・パワーダウン(危険信号)');
     }
   } else if (-4 <= weightChange && weightChange <= 4) {
     potential += 10;
