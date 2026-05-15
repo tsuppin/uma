@@ -3,7 +3,7 @@ import { Race } from "../types";
 
 
 
-export default function RaceCard({ race, onClick }: { race: Race; onClick: () => void }) {
+export default function RaceCard({ race, onClick, onDelete }: { race: Race; onClick: () => void; onDelete?: () => void }) {
   const hasResult = !!race.result;
   const hasPrediction = (race.predictions?.length || 0) > 0;
 
@@ -45,7 +45,30 @@ export default function RaceCard({ race, onClick }: { race: Race; onClick: () =>
       {!hasPrediction && (
         <span className="tag" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>未予想</span>
       )}
-      <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>›</span>
+      {onDelete && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "var(--accent-red)",
+            cursor: "pointer",
+            fontSize: "1.2rem",
+            padding: "4px 8px",
+            marginLeft: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: 0.7,
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "0.7"}
+          title="レースを削除"
+        >
+          🗑️
+        </button>
+      )}
+      <span style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginLeft: "4px" }}>›</span>
     </div>
   );
 }

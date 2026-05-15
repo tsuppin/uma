@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AppState, Race, RaceResult } from "../types";
-import { loadState, addRace, updateRace, addResult, addLearningPatch } from "../lib/storage";
+import { loadState, addRace, updateRace, addResult, addLearningPatch, deleteRace } from "../lib/storage";
 import { calculateTsuchiyaScore, generateFormation, generateLearningPatch, sortPredictions } from "../lib/engine";
 import RaceForm from "./RaceForm";
 import RaceCard from "./RaceCard";
@@ -52,6 +52,13 @@ export default function KeibaApp() {
     }
     setState(newState);
     setView("dashboard");
+  };
+
+  const handleDeleteRace = (id: string) => {
+    if (confirm("本当にこのレースを削除しますか？")) {
+      setState(deleteRace(state, id));
+      if (selectedRaceId === id) setSelectedRaceId(null);
+    }
   };
 
   const stats = state.stats;
@@ -120,7 +127,7 @@ export default function KeibaApp() {
       {/* Main */}
       <main className="main-content">
         {view === "dashboard" && (
-          <Dashboard state={state} onSelectRace={(id) => { setSelectedRaceId(id); setView("prediction"); }} onNewRace={() => setView("new_race")} />
+          <Dashboard state={state} onSelectRace={(id) => { setSelectedRaceId(id); setView("prediction"); }} onNewRace={() => setView("new_race")} onDeleteRace={handleDeleteRace} />
         )}
         {view === "new_race" && (
           <RaceForm onSubmit={handleNewRace} onCancel={() => setView("dashboard")} />
@@ -163,7 +170,7 @@ export default function KeibaApp() {
   );
 }
 
-function Dashboard({ state, onSelectRace, onNewRace }: { state: AppState; onSelectRace: (id: string) => void; onNewRace: () => void }) {
+function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: AppState; onSelectRace: (id: string) => void; onNewRace: () => void; onDeleteRace: (id: string) => void }) {
   const { stats } = state;
   const pending = state.races.filter(r => !r.result);
   const completed = state.races.filter(r => r.result).slice(-10).reverse();
@@ -207,7 +214,7 @@ function Dashboard({ state, onSelectRace, onNewRace }: { state: AppState; onSele
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {pending.map(race => (
-              <RaceCard key={race.id} race={race} onClick={() => onSelectRace(race.id)} />
+              <RaceCard key={race.id} race={race} onClick={() => onSelectRace(race.id)} onDelete={() => onDeleteRace(race.id)} />
             ))}
           </div>
         </div>
