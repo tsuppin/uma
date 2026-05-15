@@ -74,6 +74,7 @@ export function calculateTsuchiyaScore(
   const kinryo = horse.jockeyWeight || 55;
   const popularity = horse.popularity || 99;
   const jockey = horse.jockey || '';
+  const oddsSS = horse.oddsStandardScore || 50;
   const headCount = race.headCount || 10;
   const tags: string[] = [];
 
@@ -830,7 +831,26 @@ export function calculateTsuchiyaScore(
     }
   }
 
-  const darkness = (potential / 100) * Math.pow(odds, 1.1);
+  // ==========================================
+  // 【新設】3連系特化型「闇の期待値 (Darkness)」解析
+  // ==========================================
+  // WIN5向け(potential)は物理・シナジー重視、3連系向け(darkness)はオッズの歪み・人気逆数を重視
+  let distortionBoost = 1.0;
+  
+  // オッズ偏差値による過小評価ブースト
+  const currentOddsSS = horse.oddsStandardScore || 50;
+  if (currentOddsSS <= 35) {
+    distortionBoost += 0.4;
+    tags.push('💎3連系:オッズ偏差値ブースト');
+  }
+  
+  // 人気の逆数的な設計：人気がないほどスコアが加速
+  if (popularity >= 10) {
+    distortionBoost += (popularity - 9) * 0.15;
+    tags.push('🌌人気逆数加速(爆穴補正)');
+  }
+
+  const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
 
   return {
     horseId: horse.id, horseName: horse.name, horseNumber: horse.number,
