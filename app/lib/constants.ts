@@ -2342,4 +2342,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778930580723",
+    version: "v93.1",
+    date: "2026-05-16T11:23:00.723Z",
+    description: "京都 - 好走馬(ヒルノハンブルク等)の特性学習",
+    track: "京都",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "松山 弘平",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
