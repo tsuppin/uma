@@ -2840,4 +2840,51 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778931229422",
+    version: "v105.1",
+    date: "2026-05-16T11:33:49.422Z",
+    description: "川崎 - 好走馬(ブラフキャッチ等)の特性学習",
+    track: "川崎",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "(-)",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モズアスコット",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "シュヴァルグラン",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "パイロ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
