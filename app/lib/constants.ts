@@ -2272,4 +2272,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778930463801",
+    version: "v91.1",
+    date: "2026-05-16T11:21:03.801Z",
+    description: "京都 - 好走馬(シホノスペランツァ等)の特性学習",
+    track: "京都",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "高田 潤",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ブラックタイド",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "大江原 圭",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ゴールドシップ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
