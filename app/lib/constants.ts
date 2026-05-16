@@ -1872,4 +1872,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778929925618",
+    version: "v83.1",
+    date: "2026-05-16T11:12:05.618Z",
+    description: "新潟 - 好走馬(バレエマスター等)の特性学習",
+    track: "新潟",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "菊沢 一樹",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "スピルバーグ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "F.ゴンサルベス",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ウインブライト",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
