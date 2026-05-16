@@ -2635,4 +2635,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778930936730",
+    version: "v100.1",
+    date: "2026-05-16T11:28:56.730Z",
+    description: "新潟 - 好走馬(アークドール等)の特性学習",
+    track: "新潟",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "武 豊",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "吉田 隼人",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
