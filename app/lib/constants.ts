@@ -2805,4 +2805,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778931177908",
+    version: "v104.1",
+    date: "2026-05-16T11:32:57.908Z",
+    description: "川崎 - 好走馬(ブエンディア等)の特性学習",
+    track: "川崎",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "(-)",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モーニン",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ホットロッドチャー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
