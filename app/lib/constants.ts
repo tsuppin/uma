@@ -2237,4 +2237,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778930393398",
+    version: "v90.1",
+    date: "2026-05-16T11:19:53.398Z",
+    description: "京都 - 好走馬(コルドンブルー等)の特性学習",
+    track: "京都",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "岩田 望来",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "坂井 瑠星",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "松若 風馬",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ミッキーグローリー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
