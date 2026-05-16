@@ -2202,4 +2202,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778930328681",
+    version: "v89.1",
+    date: "2026-05-16T11:18:48.681Z",
+    description: "京都 - 好走馬(ニホンピロカラット等)の特性学習",
+    track: "京都",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "田口 貫太",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サトノダイヤモンド",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "岩田 望来",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
