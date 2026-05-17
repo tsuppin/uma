@@ -4267,4 +4267,51 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991899938",
+    version: "v136.1",
+    date: "2026-05-17T04:24:59.938Z",
+    description: "佐賀 - 好走馬(チャンピオンヤマト等)の特性学習",
+    track: "佐賀",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "黒鹿毛",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "エイシンフラッシュ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "田中直",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ビッグアーサー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
