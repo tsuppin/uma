@@ -4173,4 +4173,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991807384",
+    version: "v134.1",
+    date: "2026-05-17T04:23:27.384Z",
+    description: "佐賀 - 好走馬(ロッソ等)の特性学習",
+    track: "佐賀",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "林悠翔",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "トーセンラー",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "中山蓮",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ジョーカプチーノ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
