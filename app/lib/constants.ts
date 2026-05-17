@@ -3868,4 +3868,51 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991478462",
+    version: "v127.1",
+    date: "2026-05-17T04:17:58.462Z",
+    description: "高知 - 好走馬(ビーム等)の特性学習",
+    track: "高知",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "赤岡修",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "グレーターロンドン",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "山崎雅",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サトノアラジン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
