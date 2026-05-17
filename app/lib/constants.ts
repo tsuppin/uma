@@ -3839,4 +3839,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991421565",
+    version: "v126.1",
+    date: "2026-05-17T04:17:01.565Z",
+    description: "高知 - 好走馬(バイユーラン等)の特性学習",
+    track: "高知",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "城野慈",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "シャンハイボビー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
