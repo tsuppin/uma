@@ -3980,4 +3980,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991615911",
+    version: "v129.1",
+    date: "2026-05-17T04:20:15.911Z",
+    description: "佐賀 - 好走馬(バージャンフォース等)の特性学習",
+    track: "佐賀",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "金山昇",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ロードカナロア",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
