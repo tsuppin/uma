@@ -3534,4 +3534,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991075982",
+    version: "v119.1",
+    date: "2026-05-17T04:11:15.982Z",
+    description: "高知 - 好走馬(ハードボイルド等)の特性学習",
+    track: "高知",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "近藤翔",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ディーマジェスティ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
