@@ -4015,4 +4015,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991666084",
+    version: "v130.1",
+    date: "2026-05-17T04:21:06.084Z",
+    description: "佐賀 - 好走馬(タイショウロマン等)の特性学習",
+    track: "佐賀",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "青海大",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ゴールドシップ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
