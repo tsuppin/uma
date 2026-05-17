@@ -3710,4 +3710,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991273018",
+    version: "v123.1",
+    date: "2026-05-17T04:14:33.018Z",
+    description: "高知 - 好走馬(クリノドラゴン等)の特性学習",
+    track: "高知",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "age",
+        "operator": ">=",
+        "value": 8,
+        "scoreAdjust": 20
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "岡遼太",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アスカクリチャン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
