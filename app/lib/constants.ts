@@ -3616,4 +3616,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778991166614",
+    version: "v121.1",
+    date: "2026-05-17T04:12:46.614Z",
+    description: "高知 - 好走馬(ジョウショーボビー等)の特性学習",
+    track: "高知",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "青鹿毛",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "シャンハイボビー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
