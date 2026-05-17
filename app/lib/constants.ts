@@ -3040,4 +3040,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1778985194125",
+    version: "v76.1",
+    date: "2026-05-17T02:33:14.125Z",
+    description: "東京 - 好走馬(アヴァランチ等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "三浦 皇成",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "マジェスティックウォリアー",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "原 優介",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
