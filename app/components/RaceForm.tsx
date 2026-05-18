@@ -102,10 +102,6 @@ export default function RaceForm({ onSubmit, onCancel }: {
       {!parsed && (
         <div className="card fade-in">
           <div className="card-header"><div className="card-title">📋 出馬表テキスト貼り付け</div></div>
-          <div className="alert alert-info">
-            💡 <strong>JRA・地方競馬（NAR）どちらも対応。</strong><br />
-            出馬表ページを<strong>Ctrl+A → Ctrl+C</strong>でコピーして貼り付けてください。
-          </div>
           <div className="form-group">
             <label className="form-label" htmlFor="paste-text">出馬表テキスト</label>
             <textarea
