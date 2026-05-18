@@ -300,15 +300,15 @@ export function calculateTsuchiyaScore(
   if (isKyoto) {
     tags.push("⛩️ 京都特化OMEGAエンジン適用中");
 
-    // 1. 馬体重のマイナス変動（究極の勝負気配）
+    // 1. 馬体重のマイナス変動（究極の勝負気配と夏負け・輸送減りリスクのバランス）
     if (weightChange < 0 && weightChange >= -8) {
-      potential += 15;
-      tags.push("🔥 京都絞り込み勝負仕上げ(マイナス体重差)");
+      potential += 8; // 的中率向上のため過剰加点を+15から+8へ抑制
+      tags.push("🔥 京都絞り込み仕上げ");
       
       // オッズ偏差値が高い（人気薄の穴馬）場合、さらなる期待値ブースト
       if (popularity >= 6 || odds >= 10.0) {
-        potential += 25;
-        tags.push("⚡ 勝負仕上げ穴馬ブースト");
+        potential += 10; // +25から+10へ適正化
+        tags.push("⚡ 京都仕上げ穴馬補正");
       }
     }
 
@@ -348,21 +348,28 @@ export function calculateTsuchiyaScore(
       tags.push("⚡ 京都特選:超大穴妙味期待値");
     }
 
-    // 4. ベースライン補正（特殊馬具・ブリンカー＆栗東所属ホームアドバンテージ）
+    // 4. ベースライン補正（特殊馬具・ブリンカー＆栗東所属ホームアドバンテージと「関東(美浦)エリート遠征馬」の再評価）
     // 特殊馬具（ブリンカー着用）激変期待値
     if (horse.useBlinkers) {
-      potential += 30;
-      tags.push("🎯 京都ブリンカー着用激変フラグ");
+      potential += 10; // 的中率向上のため+30から+10へ適正化（自滅リスク考慮）
+      tags.push("🎯 京都ブリンカー着用適正化");
     }
 
-    // 所属バイアス（栗東馬の圧倒的優位）
+    // 所属バイアス（栗東馬の圧倒的優位）と美浦エリート遠征馬のエッジ
     const isRittoKyoto = horse.stableLocation?.includes("栗東") || horse.trainer?.includes("栗東") || horse.trainer?.includes("美浦") === false;
+    const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
+
     if (isRittoKyoto) {
-      potential += 35;
+      potential += 20; // +35から+20へバランス調整
       tags.push("🏰 京都本家:栗東所属馬ホームエッジ");
     } else {
-      potential -= 15;
-      tags.push("⚠️ 美浦所属馬(遠征アウェイ劣勢)");
+      if (isGradeOrSpecial) {
+        potential += 15; // 特別・重賞に遠征してくる美浦の有力馬は逆にプラス評価（ルメール等の勝負遠征）
+        tags.push("✈️ 京都遠征美浦精鋭馬エッジ");
+      } else {
+        potential -= 5; // 的中率低下防止のためアウェイ減点を-15から-5へ大幅緩和
+        tags.push("⚠️ 美浦所属馬(京都アウェイ割引)");
+      }
     }
   }
 
