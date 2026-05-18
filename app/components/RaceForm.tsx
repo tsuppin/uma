@@ -29,6 +29,8 @@ export default function RaceForm({ onSubmit, onCancel }: {
   const [condition, setCondition] = useState<Race["condition"]>("良");
   const [isWin5, setIsWin5] = useState(false);
   const [windSpeed, setWindSpeed] = useState(0);
+  const [startTime, setStartTime] = useState("");
+  const [weather, setWeather] = useState("晴");
 
   const handleParse = () => {
     setParseError("");
@@ -56,6 +58,8 @@ export default function RaceForm({ onSubmit, onCancel }: {
     if ("surface" in result && result.surface) setSurface(result.surface);
     if ("condition" in result && result.condition) setCondition(result.condition);
     if ("raceName" in result && result.raceName) setRaceName(result.raceName);
+    if ("startTime" in result && result.startTime) setStartTime(result.startTime);
+    if ("weather" in result && result.weather) setWeather(result.weather);
   };
 
   const handleSubmit = () => {
@@ -68,6 +72,8 @@ export default function RaceForm({ onSubmit, onCancel }: {
       headCount: parsed.horses.length,
       isWin5, windSpeed,
       trackName: venue,
+      startTime: startTime || undefined,
+      weather: weather || undefined,
       horses: parsed.horses,
     });
   };
@@ -98,8 +104,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
           <div className="card-header"><div className="card-title">📋 出馬表テキスト貼り付け</div></div>
           <div className="alert alert-info">
             💡 <strong>JRA・地方競馬（NAR）どちらも対応。</strong><br />
-            出馬表ページを<strong>Ctrl+A → Ctrl+C</strong>でコピーして貼り付けてください。<br />
-            JRA: 「枠1白」が含まれる形式 ／ 地方: 「天候：」「馬場状態：」が含まれる形式
+            出馬表ページを<strong>Ctrl+A → Ctrl+C</strong>でコピーして貼り付けてください。
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="paste-text">出馬表テキスト</label>
@@ -172,6 +177,14 @@ export default function RaceForm({ onSubmit, onCancel }: {
                 </select>
               </div>
               <div className="form-group">
+                <label className="form-label" htmlFor="race-time">発走時刻</label>
+                <input id="race-time" className="form-input" placeholder="例: 20:15" value={startTime} onChange={e => setStartTime(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="race-weather">天候</label>
+                <input id="race-weather" className="form-input" placeholder="例: 晴" value={weather} onChange={e => setWeather(e.target.value)} />
+              </div>
+              <div className="form-group">
                 <label className="form-label" htmlFor="race-wind">風速(m/s)・WIN5</label>
                 <div className="flex gap-6">
                   <input id="race-wind" type="number" className="form-input" step={0.5} value={windSpeed}
@@ -198,9 +211,9 @@ export default function RaceForm({ onSubmit, onCancel }: {
               <table className="horse-table">
                 <thead>
                   <tr>
-                    <th>枠</th><th>馬番</th><th>馬名</th><th>性齢</th>
+                    <th>枠</th><th>馬番</th><th>馬名(所属)</th><th>性齢</th><th>毛色</th>
                     <th>騎手</th><th>斤量</th><th>体重</th><th>増減</th>
-                    <th>父</th><th>オッズ</th>
+                    <th>父</th><th>生産者</th><th>オッズ</th>
                     <th>前走</th><th>前々走</th><th>3走前</th>
                     <th></th>
                   </tr>
@@ -211,12 +224,20 @@ export default function RaceForm({ onSubmit, onCancel }: {
                       <td><span className={`frame-badge frame-${h.frame}`}>{h.frame}</span></td>
                       <td className="fw-700 text-gold">{h.number}</td>
                       <td>
-                        <input id={`h-name-${h.id}`} className="form-input w-110 p-4-8 fs-sm" aria-label={`${h.number}番 馬名`}
-                          value={h.name} onChange={e => updateHorse(i, "name", e.target.value)} />
+                        <div className="flex flex-col gap-2">
+                          <input id={`h-name-${h.id}`} className="form-input w-110 p-4-8 fs-sm" aria-label={`${h.number}番 馬名`}
+                            value={h.name} onChange={e => updateHorse(i, "name", e.target.value)} />
+                          {h.belonging && (
+                            <span className="text-secondary fs-xs">({h.belonging})</span>
+                          )}
+                        </div>
                         {h.isHelmetChange && <span className="tag tag-purple ml-6 fs-xs">B</span>}
                       </td>
                       <td className="fs-sm text-secondary nowrap">
                         {h.gender}{h.age}
+                      </td>
+                      <td className="fs-xs text-muted nowrap">
+                        {h.coatColor || "—"}
                       </td>
                       <td>
                         <input id={`h-jockey-${h.id}`} className="form-input w-80 p-4-8 fs-sm" aria-label={`${h.number}番 騎手`}
@@ -231,8 +252,11 @@ export default function RaceForm({ onSubmit, onCancel }: {
                       <input id={`h-weight-change-${h.id}`} type="number" className="form-input w-60 p-4-8 fs-sm" aria-label={`${h.number}番 馬体重増減`}
                         value={h.weightChange} onChange={e => updateHorse(i, "weightChange", +e.target.value)} />
                     </td>
-                    <td className="fs-xs text-muted ellipsis max-w-80">
+                    <td className="fs-xs text-muted ellipsis max-w-80" title={h.sire}>
                       {h.sire || "—"}
+                    </td>
+                    <td className="fs-xs text-muted ellipsis max-w-80" title={h.breeder}>
+                      {h.breeder || "—"}
                     </td>
                     <td>
                       <input id={`h-odds-${h.id}`} type="number" className="form-input w-60 p-4-8 fs-sm" step={0.1}
@@ -245,7 +269,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
                         <td key={pi} className="fs-xs nowrap">
                           {pr ? (
                             <span className={pr.result <= 3 ? "text-green" : "text-muted"}>
-                              {pr.venue} <strong>{pr.result}着</strong><br />
+                              {pr.venue} <strong>{pr.result}着</strong>{pr.direction && `(${pr.direction})`}<br />
                               {pr.surface}{pr.distance}m {pr.condition}
                             </span>
                           ) : "—"}

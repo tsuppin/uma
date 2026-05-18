@@ -243,6 +243,217 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【新設】地方競馬・超短距離（スプリント）＆回り（左右）適性解析
+  // ==========================================
+  if (dist <= 1000) {
+    // 1000m以下の超短距離（川崎900m、船橋1000mなど）
+    // 逃げ・先行脚質への圧倒的加点
+    if (horse.style === '逃げ') {
+      potential += 45;
+      tags.push('🚀超スプリント逃げ(絶対有利)');
+    } else if (horse.style === '先行') {
+      potential += 30;
+      tags.push('🚀超スプリント先行(展開利)');
+    } else if (horse.style === '差し' || horse.style === '追込') {
+      potential -= 25;
+      tags.push('⚠️超スプリント差し追込(届かず懸念)');
+    }
+
+    // 内枠有利（川崎900m等）
+    if (frame <= 3) {
+      potential += 20;
+      tags.push('🎯超スプリント内枠エッジ');
+    } else if (frame >= 7) {
+      potential -= 10;
+      tags.push('⚠️超スプリント外枠ロス懸念');
+    }
+  }
+
+  // 過去走から「回り（左右）」の適性を算出
+  if (horse.pastRaces && horse.pastRaces.length > 0) {
+    const leftTurnRaces = horse.pastRaces.filter(pr => pr.direction === '左');
+    const rightTurnRaces = horse.pastRaces.filter(pr => pr.direction === '右');
+
+    const leftVenues = ['川崎', '船橋', '浦和', '盛岡', '新潟', '東京', '中京'];
+    const isLeftTurnRace = leftVenues.some(v => trackName.includes(v));
+
+    if (isLeftTurnRace) {
+      const leftGoodRaces = leftTurnRaces.filter(pr => pr.result <= 3);
+      if (leftGoodRaces.length >= 2) {
+        potential += 25;
+        tags.push(`🔄サウスポー適性(左回り好走${leftGoodRaces.length}回)`);
+      }
+    } else {
+      const rightGoodRaces = rightTurnRaces.filter(pr => pr.result <= 3);
+      if (rightGoodRaces.length >= 2) {
+        potential += 20;
+        tags.push(`🔄右回り好走実績あり(${rightGoodRaces.length}回)`);
+      }
+    }
+  }
+
+  // 地元所属ボーナス（例：川崎開催で川崎所属）
+  if (horse.belonging && trackName.includes(horse.belonging)) {
+    potential += 20;
+    tags.push(`🏠地元自場アドバンテージ(${horse.belonging})`);
+  }
+
+  // ==========================================
+  // 【新設】JRA/NAR実績データ・出来事・ラップタイムを活用したAI予想
+  // ==========================================
+  
+  // 1. 不利・出来事履歴による補正 (Incident Analysis)
+  if (hm && hm.incidents && hm.incidents.length > 0) {
+    let hasSeriousDisadvantage = false;
+    let hasTimeLimitPenalty = false;
+
+    hm.incidents.forEach(inc => {
+      const note = inc.note;
+      if (note.includes('不利') || note.includes('斜行被害') || note.includes('審議') || note.includes('挟まれ') || note.includes('出遅れ')) {
+        hasSeriousDisadvantage = true;
+      }
+      if (note.includes('タイムオーバー') || note.includes('出走制限') || note.includes('鼻出血')) {
+        hasTimeLimitPenalty = true;
+      }
+    });
+
+    if (hasSeriousDisadvantage) {
+      // 不利による度外視。次走での巻き返し期待値激増
+      potential += 40;
+      distortionBoost += 0.5;
+      tags.push('🔥度外視:前走不利巻き返し期待');
+    }
+    if (hasTimeLimitPenalty) {
+      // 著しい能力減衰・出来事ペナルティ
+      potential -= 45;
+      tags.push('⚠️リスク:出来事ペナルティ(能力疑問)');
+    }
+  }
+
+  // 2. ラップタイム (ハロンタイム) 適合度スコアリング (Lap Pattern Fit)
+  if (masterData.laps) {
+    const lapKey = `${race.venue}_${race.distance}_${race.surface}`;
+    const historicalLaps = masterData.laps[lapKey];
+    if (historicalLaps && historicalLaps.length > 0) {
+      let frontPaceSum = 0;
+      let rearPaceSum = 0;
+      let calculatedCount = 0;
+
+      historicalLaps.forEach(hl => {
+        if (hl.laps.length >= 6) {
+          const l1 = parseFloat(hl.laps[0]) || 12;
+          const l2 = parseFloat(hl.laps[1]) || 11;
+          const l3 = parseFloat(hl.laps[2]) || 12;
+          const le = hl.laps[hl.laps.length - 1] ? parseFloat(hl.laps[hl.laps.length - 1]) : 12;
+          const le1 = hl.laps[hl.laps.length - 2] ? parseFloat(hl.laps[hl.laps.length - 2]) : 12;
+          const le2 = hl.laps[hl.laps.length - 3] ? parseFloat(hl.laps[hl.laps.length - 3]) : 12;
+          frontPaceSum += (l1 + l2 + l3);
+          rearPaceSum += (le + le1 + le2);
+          calculatedCount++;
+        }
+      });
+
+      if (calculatedCount > 0) {
+        const avgFront = frontPaceSum / calculatedCount;
+        const avgRear = rearPaceSum / calculatedCount;
+        const isHighPace = avgFront < avgRear; // 前半の方が速い = ハイペース前傾
+
+        if (isHighPace) {
+          if (horse.style === '差し' || horse.style === '追込') {
+            potential += 25;
+            tags.push('⚡前傾ハイペース適合(差し追込有利)');
+          } else if (horse.style === '逃げ') {
+            potential -= 15;
+            tags.push('⚠️前傾ハイペースリスク(逃げバテ注意)');
+          }
+        } else {
+          if (horse.style === '逃げ' || horse.style === '先行') {
+            potential += 30;
+            tags.push('🚀後傾スローペース適合(逃げ先行有利)');
+          } else if (horse.style === '追込') {
+            potential -= 20;
+            tags.push('⚠️後傾スローペースリスク(追込不発懸念)');
+          }
+        }
+      }
+    }
+  }
+
+  // 3. 血統・牧場（生産牧場）・馬主実績ボーナス (Synergy Bonus)
+  const sireName = horse.sire || '';
+  const breederName = horse.breeder || '';
+
+  if (race.surface === 'ダート') {
+    const dirtEliteSires = /(ドレフォン|シニスターミニスタ|ヘニーヒューズ|マジェスティックウォリアー|パイロ|ミッキーアイル)/;
+    if (sireName.match(dirtEliteSires)) {
+      potential += 25;
+      tags.push(`🧬ダート黄金血統(${sireName})`);
+    }
+
+    const eliteDirtBreeders = /(カタオカフアーム|ノーザンファーム|社台|グランド牧場|ヤナガワ牧場)/;
+    if (breederName.match(eliteDirtBreeders)) {
+      potential += 20;
+      tags.push(`🏡ダート優秀牧場(${breederName})`);
+    }
+  } else if (race.surface === '芝') {
+    const turfEliteSires = /(ディープインパクト|ロードカナロア|キタサンブラック|エピファネイア|モーリス|ハーツクライ)/;
+    if (sireName.match(turfEliteSires)) {
+      potential += 20;
+      tags.push(`🧬芝クラシック血統(${sireName})`);
+    }
+    if (breederName.match(/(ノーザンファーム|社台ファーム|追分ファーム)/)) {
+      potential += 25;
+      tags.push('🏡芝エリート生産牧場');
+    }
+  }
+
+  // ==========================================
+  // 【新設】地方競馬 (NAR) 特有の実績・遠征・小回りバイアス評価
+  // ==========================================
+  const isNarTrack = /(川崎|船橋|大井|浦和|門別|盛岡|水沢|金沢|笠松|名古屋|園田|姫路|高知|佐賀)/.test(trackName);
+  const horseBelonging = horse.belonging || (hm ? (hm as any).belonging : '') || '';
+
+  if (isNarTrack) {
+    // 1. 他地区所属・遠征エッジの判定 (Region Synergy)
+    if (horseBelonging) {
+      const isAway = !trackName.includes(horseBelonging);
+      if (isAway) {
+        if (horseBelonging === '大井' && (trackName.includes('川崎') || trackName.includes('浦和'))) {
+          potential += 20;
+          tags.push(`🏹南関他場遠征エッジ(${horseBelonging}→${trackName})`);
+        } else if (horseBelonging === '船橋' && trackName.includes('川崎')) {
+          potential += 15;
+          tags.push(`🏹遠征シナジー(${horseBelonging}→川崎)`);
+        }
+      }
+    }
+
+    // 2. 地方競馬の「先行脚質」と「内枠」の小回り適合エッジ
+    if (horse.style === '逃げ' || horse.style === '先行') {
+      if (horse.number >= 1 && horse.number <= 4) {
+        potential += 25;
+        tags.push('🎯地方内枠逃げ先行アドバンテージ');
+      }
+    }
+  }
+
+  // 3. 超短距離・スプリント（1000m以下、特に川崎900m）の実績評価
+  if (dist <= 1000) {
+    let hasSprintRecord = false;
+    if (hm && hm.results) {
+      hasSprintRecord = hm.results.some(r => r.distance <= 1000 && r.rank <= 3);
+    }
+    if (!hasSprintRecord && horse.pastRaces) {
+      hasSprintRecord = horse.pastRaces.some(pr => pr.distance <= 1000 && pr.result <= 3);
+    }
+
+    if (hasSprintRecord) {
+      potential += 30;
+      tags.push('⏱️超短距離スピード実績値あり');
+    }
+  }
+
+  // ==========================================
   // PMR (Physical Mass Ratio) 解析
   // ==========================================
   if (dist <= 1400) {

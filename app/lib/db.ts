@@ -70,23 +70,85 @@ export function updateMasterDataWithResult(masterData: MasterData, result: RaceR
   const newMasterData = { ...masterData };
   if (!newMasterData.horses) newMasterData.horses = {};
   if (!newMasterData.jockeys) newMasterData.jockeys = {};
+  if (!newMasterData.laps) newMasterData.laps = {};
+
+  // 1. ラップタイム (ハロンタイム) の蓄積
+  if (result.lapTimes && result.lapTimes.length > 0) {
+    const key = `${race.venue}_${race.distance}_${race.surface}`;
+    if (!newMasterData.laps[key]) {
+      newMasterData.laps[key] = [];
+    }
+    const alreadyExists = newMasterData.laps[key].some(l => l.date === race.date);
+    if (!alreadyExists) {
+      newMasterData.laps[key].push({
+        venue: race.venue,
+        distance: race.distance,
+        surface: race.surface,
+        laps: result.lapTimes,
+        date: race.date
+      });
+    }
+  }
+
+  // 2. 勝ち馬プロフィールの蓄積
+  if (result.winnerProfile) {
+    const wp = result.winnerProfile;
+    if (!newMasterData.horses[wp.horseName]) {
+      newMasterData.horses[wp.horseName] = { name: wp.horseName, results: [] };
+    }
+    const hm = newMasterData.horses[wp.horseName];
+    if (wp.sire) hm.sire = wp.sire;
+    if (wp.dam) hm.dam = wp.dam;
+    if (wp.owner) hm.owner = wp.owner;
+    if (wp.breeder) hm.breeder = wp.breeder;
+  }
+
+  // 3. 出来事 (incidents) の馬個別蓄積
+  if (result.incidents) {
+    const incidentText = result.incidents;
+    race.horses.forEach(h => {
+      // 出来事テキストに馬名が含まれているか確認
+      if (incidentText.includes(h.name)) {
+        if (!newMasterData.horses[h.name]) {
+          newMasterData.horses[h.name] = { name: h.name, results: [] };
+        }
+        const hm = newMasterData.horses[h.name];
+        if (!hm.incidents) hm.incidents = [];
+        const alreadyHas = hm.incidents.some(inc => inc.date === race.date);
+        if (!alreadyHas) {
+          hm.incidents.push({
+            date: race.date,
+            venue: race.venue,
+            note: incidentText
+          });
+        }
+      }
+    });
+  }
 
   result.result.forEach(r => {
-    // 1. 馬の結果を蓄積
-    if (newMasterData.horses[r.horseName]) {
-      const hm = newMasterData.horses[r.horseName];
-      // 重複チェック
-      if (!hm.results.some(old => old.date === race.date && old.venue === race.venue)) {
-        hm.results.push({
-          date: race.date,
-          rank: r.rank,
-          venue: race.venue,
-          distance: race.distance
-        });
-      }
+    // 4. 馬の結果を蓄積
+    if (!newMasterData.horses[r.horseName]) {
+      newMasterData.horses[r.horseName] = { name: r.horseName, results: [] };
+    }
+    const hm = newMasterData.horses[r.horseName];
+    
+    // 所属の永続化
+    if ((r as any).belonging) {
+      hm.belonging = (r as any).belonging;
     }
 
-    // 2. 騎手の成績を更新
+    // 重複チェック
+    if (!hm.results.some(old => old.date === race.date && old.venue === race.venue)) {
+      hm.results.push({
+        date: race.date,
+        rank: r.rank,
+        venue: race.venue,
+        distance: race.distance
+      });
+    }
+
+    // 5. 騎手の成績を更新
     const horse = race.horses.find(h => h.name === r.horseName);
     if (horse && newMasterData.jockeys[horse.jockey]) {
       const jm = newMasterData.jockeys[horse.jockey];

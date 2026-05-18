@@ -7,14 +7,17 @@ export interface Horse {
   number: number;  // 馬番
   frame: number;   // 枠番
   name: string;    // 馬名
+  belonging?: string; // 所属（地方競馬の「川崎」「浦和」等）
   age: number;     // 年齢
   gender: '牡' | '牝' | 'セン';  // 性別
+  coatColor?: string;   // 毛色
   weight: number;  // 馬体重
   weightChange: number;  // 馬体重増減
   jockey: string;  // 騎手
   jockeyWeight: number;  // 騎手体重（斤量）
   trainer: string; // 調教師
   owner: string;   // 馬主
+  breeder?: string; // 生産者名
   sire: string;    // 父（種牡馬）
   dam: string;     // 母
   bms: string;     // 母父（BMS）
@@ -51,9 +54,14 @@ export interface PastRace {
   raceName: string; // レース名
   raceClass: string; // クラス
   distance: number; // 距離
+  direction?: '右' | '左' | '直線' | ''; // 回り
   surface: 'ダート' | '芝'; // 馬場
   condition: '良' | '稍重' | '重' | '不良'; // 馬場状態
   result: number;   // 着順
+  headCount?: number;       // 出走頭数
+  frameNumber?: number;     // 枠番
+  popularity?: number;      // 単勝人気
+  jockeyWeight?: number;    // 騎手斤量（斤量）
   time: string;     // 走破タイム
   corner4Position: number; // 4角通過順
   cornerOuterCount: number; // コーナー外回し頭数
@@ -64,6 +72,7 @@ export interface PastRace {
   classBaseTime?: number; // クラス基準タイム
   otherVenueExp?: boolean; // 他場実績
   timeDiff?: number;       // 勝ち馬とのタイム差
+  winnerName?: string;     // 勝ち馬名（1着とのタイム差時の馬名）
   passingPositions?: string; // 通過順位（例：「1-1-2-2」）
   last3fTime?: string;     // 上がり3ハロン
 }
@@ -86,6 +95,8 @@ export interface Race {
   season?: 'winter' | 'summer'; // 季節
   isNight?: boolean; // 夜間
   isTwilight?: boolean; // 薄暮
+  startTime?: string;  // 発走時刻
+  weather?: string;    // 天候
   horses: Horse[];
   predictions?: Prediction[];
   result?: RaceResult;
@@ -125,7 +136,38 @@ export interface RaceResult {
     time: string;
     odds: number;
     prize: number;
+    popularity?: number;
+    weight?: number;
+    weightChange?: number;
+    jockey?: string;
+    jockeyWeight?: number;
+    trainer?: string;
+    last3f?: string;
+    margin?: string; // 着差
   }[];
+  lapTimes?: string[]; // ハロンタイム ["12.1", "11.3", ...]
+  last4fTime?: string; // 上がり4F
+  last3fTime?: string; // 上がり3F
+  cornerPassings?: string[]; // コーナー通過順 ["1角: (11,5)...", ...]
+  refunds?: {
+    win?: { horse: string; payout: number; popularity: number }[]; // 単勝
+    place?: { horse: string; payout: number; popularity: number }[]; // 複勝
+    bracketQuinella?: { bracket: string; payout: number; popularity: number }[]; // 枠連
+    quinella?: { combination: string; payout: number; popularity: number }[]; // 馬連
+    exacta?: { combination: string; payout: number; popularity: number }[]; // 馬単
+    wide?: { combination: string; payout: number; popularity: number }[]; // ワイド
+    trio?: { combination: string; payout: number; popularity: number }[]; // 3連複
+    trifecta?: { combination: string; payout: number; popularity: number }[]; // 3連単
+  };
+  winnerProfile?: {
+    horseName: string;
+    birthDate?: string;
+    sire?: string;
+    dam?: string;
+    owner?: string;
+    breeder?: string;
+  };
+  incidents?: string; // 競走中の出来事等
   hitTickets?: number[][];
   profit?: number;
   learningApplied?: boolean;
@@ -167,6 +209,7 @@ export interface AppState {
 export interface MasterData {
   horses: Record<string, HorseMaster>;
   jockeys: Record<string, JockeyMaster>;
+  laps?: Record<string, { venue: string; distance: number; surface: string; laps: string[]; date: string }[]>; // 蓄積されたラップ履歴
 }
 
 export interface HorseMaster {
@@ -175,6 +218,12 @@ export interface HorseMaster {
   lastWeightChange?: number;
   bestTime?: Record<string, string>; // { "venue_dist": "time" }
   results: { date: string; rank: number; venue: string; distance: number }[];
+  sire?: string;
+  dam?: string;
+  owner?: string;
+  breeder?: string;
+  belonging?: string; // 所属競馬場 (例: "大井", "川崎" 等)
+  incidents?: { date: string; venue: string; note: string }[]; // 出来事履歴
 }
 
 export interface JockeyMaster {

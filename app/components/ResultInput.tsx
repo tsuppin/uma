@@ -20,147 +20,403 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   );
   const [profit, setProfit] = useState(existing?.profit || 0);
 
+  // 詳細な追加データ状態
+  const [lapTimes, setLapTimes] = useState<string[]>(existing?.lapTimes || []);
+  const [last4fTime, setLast4fTime] = useState(existing?.last4fTime || "");
+  const [last3fTime, setLast3fTime] = useState(existing?.last3fTime || "");
+  const [cornerPassings, setCornerPassings] = useState<string[]>(existing?.cornerPassings || []);
+  const [incidents, setIncidents] = useState(existing?.incidents || "");
+  const [winnerProfile, setWinnerProfile] = useState<RaceResult["winnerProfile"] | undefined>(existing?.winnerProfile);
+  const [refunds, setRefunds] = useState<RaceResult["refunds"] | undefined>(existing?.refunds);
+
   // ==========================================
   // テキスト貼り付けパーサー
   // ==========================================
   const parsePasteText = () => {
     setParseError("");
     const lines = pasteText.split("\n").map(l => l.trim());
-    const parsedMap = new Map<number, ResultRow>();
+    const parsedMap = new Map<number, ResultRow & {
+      popularity?: number;
+      weight?: number;
+      weightChange?: number;
+      jockey?: string;
+      jockeyWeight?: number;
+      trainer?: string;
+      last3f?: string;
+      margin?: string;
+    }>();
 
+    // 1. レース推移・分析・基本データの抽出
+    // ハロンタイム
+    const lapMatch = pasteText.match(/(?:ハロンタイム|ラップ)\s*[:：]?\s*([0-9.\s\-]+)/);
+    if (lapMatch) {
+      const laps = lapMatch[1].split("-").map(s => s.trim()).filter(Boolean);
+      setLapTimes(laps);
+    }
+
+    // 上がりタイム
+    const up4m = pasteText.match(/4F\s*(\d{2}\.\d)/);
+    if (up4m) setLast4fTime(up4m[1]);
+    const up3m = pasteText.match(/3F\s*(\d{2}\.\d)/);
+    if (up3m) setLast3fTime(up3m[1]);
+
+    // コーナー通過順位
+    const cornerLines: string[] = [];
+    let inCornerSection = false;
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line) continue;
-
-      // セクション終了判定
-      if ((line === "払戻金" || line === "コーナー通過順位" || line.startsWith("タイム")) && parsedMap.size > 0) break;
-      if (line.startsWith("単勝") && line.includes("円") && parsedMap.size > 0) break;
-
-      // スキップ行
-      if (line.includes("着順") || line.includes("馬名(所属)") || line.includes("タイム(着差)")) continue;
-
-      let rank = 0, horseNumber = 0, horseName = "", time = "";
-
-      // --- パターン1: JRA タブ区切り "1\t3\t5\tクインズショコラ1番人気" ---
-      if (line.includes("\t")) {
-        const parts = line.split("\t");
-        const r = parseInt(parts[0]);
-        // parts[1]=枠, parts[2]=馬番
-        const n = parts.length >= 3 ? parseInt(parts[2]) : parseInt(parts[1]);
-        if (r >= 1 && r <= 20 && n >= 1 && n <= 28) {
-          rank = r;
-          horseNumber = n;
-          // 馬名は parts[3] か parts[2]
-          const rawName = parts.length >= 4 ? parts[3] : (parts[2] || "");
-          horseName = rawName
-            .replace(/\d+番人気$/, "")
-            .replace(/ブリンカー|マルチ|着用/g, "")
-            .trim();
-        }
+      if (lines[i].includes("コーナー通過順位")) {
+        inCornerSection = true;
+        continue;
       }
-
-      // --- パターン2: スペース区切り "1 3 5 クインズショコラ..." ---
-      if (rank === 0) {
-        const parts = line.split(/\s+/);
-        // 先頭3要素が全て数値 → JRA形式 (着, 枠, 馬番)
-        if (parts.length >= 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1]) && /^\d+$/.test(parts[2])) {
-          const r = parseInt(parts[0]);
-          const ku = parseInt(parts[1]);
-          const n = parseInt(parts[2]);
-          if (r >= 1 && r <= 20 && ku >= 1 && ku <= 8 && n >= 1 && n <= 28) {
-            rank = r;
-            horseNumber = n;
-            horseName = parts.slice(3).find(p => /[\u3040-\u9FFF\u30A0-\u30FF]/.test(p) || (p.length > 1 && !/^\d+$/.test(p))) || "";
-            horseName = horseName.replace(/\d+番人気$/, "").replace(/ブリンカー|マルチ|着用/g, "").trim();
-          }
-        }
-        // 先頭2要素が数値 → NAR形式 (着, 馬番)
-        else if (parts.length >= 2 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1])) {
-          const r = parseInt(parts[0]);
-          const n = parseInt(parts[1]);
-          if (r >= 1 && r <= 20 && n >= 1 && n <= 28) {
-            rank = r;
-            horseNumber = n;
-            horseName = parts.slice(2).find(p => p.length > 1 && !/^\d+$/.test(p)) || "";
-            horseName = horseName.replace(/\d+番人気$/, "").replace(/ブリンカー|マルチ|着用/g, "").trim();
-          }
-        }
-      }
-
-      // --- パターン3: NAR縦並び 着順のみの行 "1" "6" "9" "馬名" ---
-      if (rank === 0 && /^\d+$/.test(line)) {
-        const r = parseInt(line);
-        if (r >= 1 && r <= 20 && i + 3 < lines.length) {
-          const l1 = lines[i + 1], l2 = lines[i + 2], l3 = lines[i + 3];
-          if (/^\d+$/.test(l1) && /^\d+$/.test(l2) && !/^\d/.test(l3) && l3.length > 1) {
-            rank = r;
-            horseNumber = parseInt(l2);
-            horseName = l3.replace(/\(.+?\)$/, "").trim();
-          } else if (/^\d+$/.test(l1) && !/^\d/.test(l2) && l2.length > 1) {
-            rank = r;
-            horseNumber = parseInt(l1);
-            horseName = l2.replace(/\(.+?\)$/, "").trim();
-          }
-        }
-      }
-
-      // --- パターン4: "1着 3番 馬名" 形式 ---
-      if (rank === 0) {
-        const m = line.match(/^(\d+)[着位]\s*(?:枠\d+)?\s*(\d+)番?\s+([^\s\d][^\s]*)/);
-        if (m) {
-          rank = parseInt(m[1]);
-          horseNumber = parseInt(m[2]);
-          horseName = m[3].replace(/\d+番人気$/, "").trim();
-        }
-      }
-
-      // 馬名が取れていない場合、後続行の日本語行を探す
-      if (rank > 0 && !horseName) {
-        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
-          const nl = lines[j].trim();
-          if (!nl || /^\d/.test(nl) || nl.includes("/") || nl.length <= 1) continue;
-          if (nl === "払戻金" || nl === "コーナー通過順位") break;
-          if (/[\u3040-\u9FFF\u30A0-\u30FF]/.test(nl)) {
-            horseName = nl.replace(/\d+番人気$/, "").replace(/ブリンカー|マルチ|着用/g, "").trim();
-            break;
-          }
-        }
-      }
-
-      // タイム抽出（近隣6行から探す）
-      for (let j = i; j < Math.min(i + 6, lines.length); j++) {
-        const tm = lines[j].match(/(\d+:\d+\.\d+|\d+:\d+:\d+)/);
-        if (tm) {
-          time = tm[1].replace(/(\d+:\d+):(\d+)$/, "$1.$2");
+      if (inCornerSection) {
+        if (lines[i].includes("払戻金") || lines[i].includes("払戻金") || lines[i].startsWith("単勝")) {
           break;
         }
-      }
-
-      // 登録
-      if (rank >= 1 && rank <= 20 && (horseNumber > 0 || horseName) && !parsedMap.has(rank)) {
-        if (!horseName && horseNumber > 0) {
-          horseName = race.horses.find(h => h.number === horseNumber)?.name || "";
+        if (lines[i] && (lines[i].includes("コーナー") || /^[1-4]\s*コーナー/.test(lines[i]) || /^[1-4]コーナー/.test(lines[i]))) {
+          const cornerName = lines[i];
+          const nextL = lines[i + 1]?.trim() || "";
+          if (nextL && !nextL.includes("コーナー")) {
+            cornerLines.push(`${cornerName}: ${nextL}`);
+            i++;
+          }
         }
-        parsedMap.set(rank, { rank, horseNumber, horseName, time, odds: 0, prize: 0 });
+      }
+    }
+    if (cornerLines.length > 0) setCornerPassings(cornerLines);
+
+    // 競走中の出来事等
+    let incidentText = "";
+    let inIncident = false;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes("競走中の出来事等")) {
+        inIncident = true;
+        continue;
+      }
+      if (inIncident) {
+        if (lines[i].match(/^[0-9]R/) || lines[i] === "1R" || lines[i].includes("開催選択へ") || lines[i].includes("払戻金")) {
+          break;
+        }
+        if (lines[i]) {
+          incidentText += (incidentText ? " " : "") + lines[i];
+        }
+      }
+    }
+    if (incidentText) setIncidents(incidentText);
+
+    // 勝馬紹介
+    let winnerName = "";
+    let birthDate = "";
+    let sire = "";
+    let dam = "";
+    let owner = "";
+    let breeder = "";
+    let inWinner = false;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes("勝馬の紹介")) {
+        inWinner = true;
+        continue;
+      }
+      if (inWinner) {
+        if (lines[i].includes("出来事") || lines[i].includes("1R") || lines[i].includes("R")) {
+          // 他のセクションへ
+        }
+        const l = lines[i];
+        // テスティモーネ 2022年3月1日生牡4
+        const infoM = l.match(/^([^\s]+?)\s*(\d{4}年\d{1,2}月\d{1,2}日生)/);
+        if (infoM) {
+          winnerName = infoM[1];
+          birthDate = infoM[2];
+        }
+        if (l === "父：" || l === "父:") { sire = lines[i + 1] || ""; }
+        if (l === "母：" || l === "母:") { dam = lines[i + 1] || ""; }
+        if (l === "馬主：" || l === "馬主:") { owner = lines[i + 1] || ""; }
+        if (l === "生産牧場：" || l === "生産牧場:") { breeder = lines[i + 1] || ""; }
+      }
+    }
+    if (winnerName) {
+      setWinnerProfile({ horseName: winnerName, birthDate, sire, dam, owner, breeder });
+    }
+
+    // 払戻金
+    const parsedRefunds: RaceResult["refunds"] = {};
+    let inRefunds = false;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i] === "払戻金" || lines[i] === "払戻金データ") {
+        inRefunds = true;
+        continue;
+      }
+      if (inRefunds) {
+        if (lines[i].includes("出来事") || lines[i].includes("紹介")) {
+          // セクション終了
+        }
+        const l = lines[i];
+        const rp = l.split(/[\t\s]+/);
+        if (rp.length >= 4) {
+          const type = rp[0];
+          const comb = rp[1];
+          const val = parseInt(rp[2].replace(/,/g, "").replace("円", "")) || 0;
+          const pop = parseInt(rp[3].replace("番人気", "")) || 0;
+
+          if (type.includes("単勝")) {
+            parsedRefunds.win = [{ horse: comb, payout: val, popularity: pop }];
+          } else if (type.includes("複勝")) {
+            if (!parsedRefunds.place) parsedRefunds.place = [];
+            parsedRefunds.place.push({ horse: comb, payout: val, popularity: pop });
+          } else if (type.includes("枠連")) {
+            parsedRefunds.bracketQuinella = [{ bracket: comb, payout: val, popularity: pop }];
+          } else if (type.includes("馬連")) {
+            parsedRefunds.quinella = [{ combination: comb, payout: val, popularity: pop }];
+          } else if (type.includes("馬単")) {
+            parsedRefunds.exacta = [{ combination: comb, payout: val, popularity: pop }];
+          } else if (type.includes("ワイド")) {
+            if (!parsedRefunds.wide) parsedRefunds.wide = [];
+            parsedRefunds.wide.push({ combination: comb, payout: val, popularity: pop });
+          } else if (type.includes("3連複") || type.includes("三連複")) {
+            parsedRefunds.trio = [{ combination: comb, payout: val, popularity: pop }];
+          } else if (type.includes("3連単") || type.includes("三連単")) {
+            parsedRefunds.trifecta = [{ combination: comb, payout: val, popularity: pop }];
+          }
+        }
+      }
+    }
+    if (Object.keys(parsedRefunds).length > 0) setRefunds(parsedRefunds);
+
+    // 2. 入線結果データの複数行ステートパース
+    const isNarResult = pasteText.includes("NAR") || pasteText.includes("馬名(所属)") || pasteText.includes("Copyright");
+
+    if (isNarResult) {
+      // --- 地方競馬 (NAR) 専用パーサー ---
+      let rankCounter = 1;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line) continue;
+
+        const parts1 = line.split("\t");
+        const potentialRank = parseInt(parts1[0]);
+
+        if (potentialRank === rankCounter && potentialRank >= 1 && potentialRank <= 20) {
+          const rank = potentialRank;
+          const frame = parts1.length >= 2 ? parseInt(parts1[1]) : 0;
+
+          // i + 1: 馬番
+          const line2 = lines[i + 1]?.trim() || "";
+          const parts2 = line2.split("\t");
+          const num = parseInt(parts2[0]) || 0;
+
+          // i + 2: 馬名(所属)
+          const line3 = lines[i + 2]?.trim() || "";
+          let name = line3;
+          let belonging = "";
+          const belongM = line3.match(/^([^\(]+?)[\(（](.+?)[\)）]/);
+          if (belongM) {
+            name = belongM[1].trim();
+            belonging = belongM[2].trim();
+          }
+
+          // i + 3: 騎手(負担重量)\t調教師
+          const line4 = lines[i + 3]?.trim() || "";
+          const parts4 = line4.split("\t");
+          let jockey = "";
+          let jockeyWeight = 54;
+          let trainer = parts4[1] || "";
+          
+          const jm = parts4[0]?.match(/^([^\(]+?)\((\d+\.?\d*)\)/) || parts4[0]?.match(/^([^\(]+?)[\(（](.+?)[\)）]/);
+          if (jm) {
+            jockey = jm[1].trim().replace(/^[▲△☆◇]/, "");
+            jockeyWeight = parseFloat(jm[2]) || 54;
+          } else {
+            jockey = parts4[0]?.trim() || "";
+          }
+
+          // i + 4: タイム(着差)\t推定上り
+          const line5 = lines[i + 4]?.trim() || "";
+          const parts5 = line5.split("\t");
+          let time = "";
+          let margin = "";
+          let last3f = parts5[1]?.trim() || "";
+
+          const timeM = parts5[0]?.match(/^([\d:]+)/);
+          if (timeM) {
+            // "52:9" を "52.9", "1:16:2" を "1:16.2" に変換
+            time = timeM[1].replace(/:(\d)$/, ".$1");
+          }
+          const marginM = parts5[0]?.match(/[\(（](.+?)[\)）]/);
+          if (marginM) {
+            margin = marginM[1];
+          }
+
+          // i + 5: 単勝人気
+          const line6 = lines[i + 5]?.trim() || "";
+          const pop = parseInt(line6) || 0;
+
+          const cleanName = name.replace(/^ブリンカー\s*/, "").replace(/^マルガイ\s*/, "").replace(/^マルチ\s*/, "").trim();
+
+          parsedMap.set(rank, {
+            rank,
+            horseNumber: num,
+            horseName: cleanName,
+            time,
+            odds: 0,
+            prize: 0,
+            popularity: pop,
+            weight: 0, // 出馬表からあとで補填される
+            weightChange: 0,
+            jockey,
+            jockeyWeight,
+            trainer,
+            last3f,
+            margin,
+            belonging // 所属先をオブジェクトに追加
+          } as any);
+
+          rankCounter++;
+          i += 5; // ブロック分読み進める
+        }
+      }
+    } else {
+      // --- 中央競馬 (JRA) 専用パーサー ---
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line) continue;
+
+        if ((line === "払戻金" || line === "コーナー通過順位" || line.startsWith("タイム") || line.startsWith("勝馬の紹介")) && parsedMap.size > 3) break;
+
+        const rp1 = line.split(/[\t]/);
+        let isRow1 = false;
+        let rank = 0, frame = 0, num = 0, name = "", pop = 0;
+
+        if (rp1.length >= 4 && /^\d+$/.test(rp1[0]) && /^\d+$/.test(rp1[2])) {
+          rank = parseInt(rp1[0]);
+          frame = parseInt(rp1[1]);
+          num = parseInt(rp1[2]);
+          const namePart = rp1[3].trim();
+          const popM = namePart.match(/(.+?)(\d+)番人気/);
+          name = popM ? popM[1].trim() : namePart;
+          pop = popM ? parseInt(popM[2]) : 0;
+          isRow1 = true;
+        } else {
+          const spParts = line.split(/\s+/);
+          if (spParts.length >= 4 && /^\d+$/.test(spParts[0]) && /^\d+$/.test(spParts[1]) && /^\d+$/.test(spParts[2])) {
+            rank = parseInt(spParts[0]);
+            frame = parseInt(spParts[1]);
+            num = parseInt(spParts[2]);
+            const namePart = spParts.slice(3).join(" ");
+            const popM = namePart.match(/(.+?)(\d+)番人気/);
+            name = popM ? popM[1].trim() : namePart;
+            pop = popM ? parseInt(popM[2]) : 0;
+            isRow1 = true;
+          }
+        }
+
+        if (isRow1 && rank >= 1 && rank <= 20) {
+          const line2 = lines[i + 1]?.trim() || "";
+          let genderAge = "";
+          let weight = 480, weightChange = 0;
+          if (line2.includes("/")) {
+            const lp = line2.split("/");
+            genderAge = lp[0].trim();
+            const wPart = lp[1]?.trim() || "";
+            const wm = wPart.match(/(\d+)kg/);
+            if (wm) weight = parseInt(wm[1]);
+            const wcm = wPart.match(/\(([+-]?\d+)\)/) || wPart.match(/\((初出走)\)/) || wPart.match(/\(±?(\d+)\)/);
+            if (wcm) {
+              weightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]) || 0;
+            }
+          }
+
+          const line3 = lines[i + 2]?.trim() || "";
+          let jockey = "", jockeyWeight = 54, trainer = "";
+          if (line3.includes("(")) {
+            const jm = line3.match(/^([^\(]+?)\((\d+\.?\d*)\)/);
+            if (jm) {
+              jockey = jm[1].trim().replace(/^[▲△☆◇]/, "");
+              jockeyWeight = parseFloat(jm[2]);
+            }
+            const trM = line3.match(/\)\s+([^\s\(]+?[\(（][栗美][東浦][\)）])/);
+            if (trM) trainer = trM[1].trim();
+            else {
+              const parts = line3.split(/\s+/);
+              trainer = parts[parts.length - 1] || "";
+            }
+          }
+
+          const line4 = lines[i + 3]?.trim() || "";
+          let time = "", margin = "", last3f = "";
+          if (line4.includes("/")) {
+            const lp4 = line4.split("/");
+            const timePart = lp4[0].trim();
+            const lastPart = lp4[1]?.trim() || "";
+
+            const tm = timePart.match(/(\d+:\d+\.\d+|\d+\.\d+)/);
+            if (tm) time = tm[1];
+            const mm = timePart.match(/\((.+?)\)/);
+            if (mm) margin = mm[1];
+
+            const lm = lastPart.match(/(\d{2}\.\d)/);
+            if (lm) last3f = lm[1];
+          }
+
+          const cleanName = name.replace(/^ブリンカー\s*/, "").replace(/^マルガイ\s*/, "").replace(/^マルチ\s*/, "").trim();
+
+          parsedMap.set(rank, {
+            rank,
+            horseNumber: num,
+            horseName: cleanName,
+            time,
+            odds: 0,
+            prize: 0,
+            popularity: pop,
+            weight,
+            weightChange,
+            jockey,
+            jockeyWeight,
+            trainer,
+            last3f,
+            margin
+          });
+
+          i += 3;
+        }
+      }
+    }
+
+    // 古いフォールバックパーサーも、もし上記で1頭も取れなかった場合に発動
+    if (parsedMap.size === 0) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line) continue;
+        const parts = line.split(/[\t\s]+/);
+        if (parts.length >= 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[2])) {
+          const r = parseInt(parts[0]);
+          const num = parseInt(parts[2]);
+          const hName = parts[3]?.replace(/\d+番人気$/, "") || "";
+          if (r >= 1 && r <= 20) {
+            parsedMap.set(r, { rank: r, horseNumber: num, horseName: hName, time: "", odds: 0, prize: 0 });
+          }
+        }
       }
     }
 
     const parsed = Array.from(parsedMap.values()).sort((a, b) => a.rank - b.rank);
 
     if (parsed.length === 0) {
-      setParseError("着順を解析できませんでした。形式を確認してください。");
+      setParseError("着順を解析できませんでした。テキストデータのフォーマットを確認してください。");
       return;
     }
 
-    const resultsData = parsed.length > 0 ? parsed : [1, 2, 3].map(r => ({ rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 }));
-    // 少なくとも3着までは入力欄を確保
-    for (let r = 1; r <= 3; r++) {
-      if (!resultsData.find(p => p.rank === r)) {
-        resultsData.push({ rank: r, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
-      }
-    }
-    resultsData.sort((a, b) => a.rank - b.rank);
-    setResults(resultsData);
+    // 賞金設定ロジック
+    const calculated = parsed.map(p => {
+      // 本賞金(万円):2200、880、550、330、220 を自動マッピング
+      let pr = 0;
+      if (p.rank === 1) pr = 2200;
+      else if (p.rank === 2) pr = 880;
+      else if (p.rank === 3) pr = 550;
+      else if (p.rank === 4) pr = 330;
+      else if (p.rank === 5) pr = 220;
+      return { ...p, prize: pr };
+    });
+
+    setResults(calculated);
   };
 
   const updateResult = (idx: number, field: string, value: unknown) => {
@@ -196,6 +452,13 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     onSubmit({
       raceId: race.id,
       result: results.filter(r => r.horseNumber > 0),
+      lapTimes: lapTimes.length > 0 ? lapTimes : undefined,
+      last4fTime: last4fTime || undefined,
+      last3fTime: last3fTime || undefined,
+      cornerPassings: cornerPassings.length > 0 ? cornerPassings : undefined,
+      refunds: refunds || undefined,
+      winnerProfile: winnerProfile || undefined,
+      incidents: incidents || undefined,
       hitTickets,
       profit,
       learningApplied: false,
@@ -332,6 +595,9 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                   </td>
                   <td className={r.horseName ? "fw-600" : ""}>
                     {r.horseName || (r.horseNumber ? race.horses.find(h => h.number === r.horseNumber)?.name || "—" : "—")}
+                    {(r as any).belonging && (
+                      <span className="fs-xs text-muted block">({(r as any).belonging})</span>
+                    )}
                   </td>
                   <td>
                     <input className="form-input w-100" value={r.time}
@@ -356,6 +622,81 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             ＋ 着順追加
           </button>
         </div>
+
+      {/* 📊 レース分析・詳細情報プレビュー */}
+      {(lapTimes.length > 0 || last3fTime || cornerPassings.length > 0 || incidents || winnerProfile) && (
+        <div className="card fade-in mt-16">
+          <div className="card-header">
+            <div className="card-title">📊 解析されたレース分析・詳細情報</div>
+          </div>
+          <div className="p-16 flex flex-col gap-16">
+            
+            {/* ラップタイム & 上がり */}
+            {lapTimes.length > 0 && (
+              <div className="border-b pb-12">
+                <div className="fw-600 fs-sm mb-6 text-gold">⏱️ ハロンタイム（ラップ）</div>
+                <div className="flex gap-6 items-center flex-wrap">
+                  {lapTimes.map((lap, idx) => (
+                    <div key={idx} className="flex items-center gap-4">
+                      {idx > 0 && <span className="text-muted">→</span>}
+                      <span className="bg-surface border p-4-8 rounded-4 fs-xs mono fw-600">
+                        {lap}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {(last4fTime || last3fTime) && (
+                  <div className="flex gap-12 mt-8 fs-xs text-muted">
+                    {last4fTime && <span>上がり4F: <strong className="text-secondary">{last4fTime}秒</strong></span>}
+                    {last3fTime && <span>上がり3F: <strong className="text-green">{last3fTime}秒</strong></span>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* コーナー通過順位 */}
+            {cornerPassings.length > 0 && (
+              <div className="border-b pb-12">
+                <div className="fw-600 fs-sm mb-6 text-gold">🔄 コーナー通過順位</div>
+                <div className="flex flex-col gap-4 text-sm mono">
+                  {cornerPassings.map((cp, idx) => (
+                    <div key={idx} className="bg-surface p-6-10 rounded-4 border-l-4 border-gold">
+                      {cp}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 勝馬紹介 */}
+            {winnerProfile && (
+              <div className="border-b pb-12">
+                <div className="fw-600 fs-sm mb-6 text-gold">🏆 勝ち馬プロフィール</div>
+                <div className="bg-surface p-12 rounded-8 border grid-2 gap-12 text-sm">
+                  <div><strong>馬名:</strong> {winnerProfile.horseName} ({winnerProfile.birthDate})</div>
+                  <div><strong>父:</strong> {winnerProfile.sire || "—"}</div>
+                  <div><strong>母:</strong> {winnerProfile.dam || "—"}</div>
+                  <div><strong>馬主:</strong> {winnerProfile.owner || "—"}</div>
+                  <div><strong>生産者:</strong> {winnerProfile.breeder || "—"}</div>
+                </div>
+              </div>
+            )}
+
+            {/* 競走中の出来事等 */}
+            {incidents && (
+              <div className="bg-purple-muted p-12 rounded-8 border border-purple-40 text-sm">
+                <div className="fw-600 fs-sm mb-6 text-purple-light flex items-center gap-4">
+                  ⚠️ 競走中の出来事（審議・タイムオーバー等）
+                </div>
+                <div className="text-secondary mono fs-xs leading-relaxed">
+                  {incidents}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
 
       {/* 的中確認 */}
       {formation && resultNums.length >= 3 && (
