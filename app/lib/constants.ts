@@ -5377,4 +5377,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779076347458",
+    version: "v160.1",
+    date: "2026-05-18T03:52:27.458Z",
+    description: "佐賀 - 好走馬(キッサキ等)の特性学習",
+    track: "佐賀",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "出水拓",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ニシケンモノノフ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
