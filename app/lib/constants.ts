@@ -7059,4 +7059,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779104459889",
+    version: "v194.1",
+    date: "2026-05-18T11:40:59.889Z",
+    description: "高知 - 好走馬(シュマンドロワ等)の特性学習",
+    track: "高知",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "山田貴",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モーリス",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
