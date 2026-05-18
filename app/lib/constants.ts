@@ -6312,4 +6312,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779103245712",
+    version: "v179.1",
+    date: "2026-05-18T11:20:45.712Z",
+    description: "盛岡 - 好走馬(モンルネ等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "鈴木祐",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モーニン",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "山本紀",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "トーセンラー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
