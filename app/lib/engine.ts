@@ -993,6 +993,8 @@ export function calculateTsuchiyaScore(
     }
   }
 
+
+
   // ==========================================
   // 【川崎競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
@@ -1108,12 +1110,20 @@ export function calculateTsuchiyaScore(
       tags.push("⚠️ 園田4番人気以下アタマ割引");
     }
 
-    // 2. レースクラス別の「脚質・上がり」動的切り替え
+    // 2. レースクラス別 ＆ 「魔の3〜4コーナー超急カーブ物理」
+    if (horse.style === "逃げ" || horse.style === "先行") {
+      potential += 35;
+      tags.push("🏃 園田超急カーブ物理:前残り先行絶対有利");
+    } else if (horse.style === "追込") {
+      potential -= 25;
+      tags.push("⚠️ 園田超急カーブ物理:大外膨らみロス割引");
+    }
+
     if (race.raceNumber <= 6) {
       // 前半レース（1R〜6R）：先行力（前残り）最重視
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 30;
-        tags.push("🏃 園田前半戦:先行・前残りアドバンテージ");
+        potential += 15; // 先行絶対有利をさらに上乗せ
+        tags.push("📐 園田前半戦:先行・前残りアドバンテージ");
       }
     } else {
       // 後半レース（7R〜12R）：上がり3ハロン（極上末脚）最重視
@@ -1131,7 +1141,13 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 3. 枠順バイアス（有利枠と不利枠）
+    // 3. 枠順バイアス（有利枠・不利枠 ＆ 泥馬場イン高速伸び）
+    const isHeavyMud = condition === '重' || condition === '不良';
+    if (isHeavyMud && frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
+      potential += 30;
+      tags.push("☔ 園田道悪物理:イン砂流出・超高速イン逃げアドバンテージ");
+    }
+
     if (frame === 3 || frame === 4) {
       potential += 25;
       tags.push("📐 園田安定の3・4枠バイアス");
@@ -1154,26 +1170,29 @@ export function calculateTsuchiyaScore(
       potential -= 40; // 極度の細化・体調不良リスク排除
       tags.push("❌ 園田馬体重二桁急減ペナルティ");
     } else if (weightChange >= 10) {
-      // 大幅増は実績馬であれば評価を下げず、むしろ成長・リフレッシュ加点
       if (potential >= 520) {
         potential += 10;
         tags.push("⚡ 園田実績馬の馬体成長・リフレッシュボーナス");
       }
     }
 
-    // 5. ヒューマンファクター（騎手・調教師スコアの固め打ち連鎖）
-    // トップ騎手の1着固定フラグ
-    const isEliteSonodaJ = jockey.includes("吉村智") || jockey.includes("下原") || jockey.includes("杉浦") || jockey.includes("佐々世") || jockey.includes("佐々木世");
-    if (isEliteSonodaJ) {
-      potential += 40;
-      tags.push("👑 園田リーディングトップジョッキーバイアス");
-    }
-    // ベテラン騎手の連下・複勝フラグ
-    const isVeteranSonodaJ = jockey.includes("小牧太") || jockey.includes("川原");
-    if (isVeteranSonodaJ) {
+    // 5. ヒューマンファクター（吉村智洋の勝負ヤリ ＆ リーディングトップ連鎖）
+    if (jockey.includes("吉村智")) {
+      if (popularity <= 2) {
+        potential += 50;
+        tags.push("👑 園田の絶対王者:吉村智洋(勝負ヤリ1着固定)");
+      } else {
+        potential += 30;
+        tags.push("👑 園田の絶対王者:吉村智洋(無比の進路取り)");
+      }
+    } else if (jockey.match(/(下原|廣瀬|田中学|大山真)/)) {
+      potential += 20;
+      tags.push("🌟 園田トップエリート騎手(1着バイアス)");
+    } else if (jockey.includes("小牧太") || jockey.includes("川原")) {
       potential += 25;
       tags.push("🌟 園田ベテランジョッキー複勝バイアス");
     }
+    
     // 好調厩舎（調教師）
     const isEliteTrainerS = ["山口浩", "永島", "盛本", "長倉"].some(t => horse.trainer?.includes(t));
     if (isEliteTrainerS) {
@@ -1181,7 +1200,20 @@ export function calculateTsuchiyaScore(
       tags.push("🏰 園田名門・好調厩舎固め打ちバイアス");
     }
 
-    // 6. 交流重賞の「所属バイアス」フラグ（全国交流・他地区遠征馬ヤリ）
+    // 6. 「西脇所属馬」の広大トレーニングセンター仕上げエッジ
+    const isNishiwaki = horse.stableLocation?.includes("西脇") || horse.trainer?.includes("西脇");
+    if (isNishiwaki) {
+      const isGradeOrSpecial = race.raceName?.match(/(特別|重賞|選抜|ステークス|カップ)/);
+      if (dist >= 1400 || isGradeOrSpecial) {
+        potential += 25;
+        tags.push("🏰 西脇エッジ:広大トレセン仕上げ(長距離/上級条件強襲)");
+      } else {
+        potential += 15;
+        tags.push("🏰 西脇所属馬(スタミナ十分)");
+      }
+    }
+
+    // 7. 交流重賞の「所属バイアス」
     const isKyomeiS = race.raceName?.match(/(のじぎく賞|交流|重賞|特別|兵庫)/);
     if (isKyomeiS) {
       const trainerName = horse.trainer || "";
@@ -1189,10 +1221,10 @@ export function calculateTsuchiyaScore(
       const isHyogo = stableName.includes("園田") || stableName.includes("西脇") || trainerName.includes("園田") || trainerName.includes("西脇");
       
       if (!isHyogo && (stableName.match(/(大井|川崎|船橋|浦和|門別|北海道|南関)/) || trainerName.match(/(大井|川崎|船橋|浦和|門別|北海道|南関)/))) {
-        potential += 50; // 他地区の圧倒的エリート遠征馬
+        potential += 50;
         tags.push("✈️ 交流重賞:他地区エリート遠征馬エッジ");
       } else {
-        potential -= 25; // 地元兵庫勢の実力差劣勢
+        potential -= 25;
         tags.push("⚠️ 交流重賞:地元兵庫所属馬ディスカウント");
       }
     }
