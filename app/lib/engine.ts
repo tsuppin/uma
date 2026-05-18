@@ -91,7 +91,7 @@ export function calculateTsuchiyaScore(
     if (race.surface === "芝") {
       // 芝レースにおける1番人気の過大評価（被りすぎ）減点
       if (popularity === 1 || odds <= 2.5) {
-        potential -= 25;
+        potential -= 8; // 中京・中山芝での的中率向上のため-25から-8へ緩和
         tags.push("⚠️ 芝1番人気被り警戒(オッズ歪み補正)");
       }
       // 芝の牡牝混合戦における牝馬への加点（オッズの甘さ・期待値エッジ）
@@ -227,7 +227,7 @@ export function calculateTsuchiyaScore(
     // 3. オッズ偏差値と過剰人気の検知
     // 1番人気の過剰人気（低期待値）の割り引き
     if (popularity === 1 && odds <= 2.2) {
-      potential -= 30;
+      potential -= 10; // 中京・中山芝での的中率向上のため-30から-10へ緩和
       tags.push("⚠️ 京都1番人気過剰被り割引(期待値補正)");
     }
     // スコア上位かつオッズ偏差値乖離（大衆軽視の極上大穴）の検知
@@ -344,13 +344,13 @@ export function calculateTsuchiyaScore(
     // 5. 券種別チューニングと「オッズ偏差値」の先鋭化
     // 1番人気の過剰人気（低期待値）の割り引き
     if (popularity === 1 && odds <= 2.0) {
-      potential -= 35;
+      potential -= 10; // 中京・中山芝での的中率向上のため-35から-10へ緩和
       tags.push("⚠️ 東京1番人気過剰被り割引(期待値補正)");
     }
 
     // 期待値最大の大穴（単勝50倍〜100倍超）あぶり出し（人気に対する逆数・動的期待値ブースト）
     if (potential >= 520 && odds >= 30.0) {
-      const dynamicBoost = Math.min(50, Math.floor(odds / 2));
+      const dynamicBoost = Math.min(15, Math.floor(odds / 4)); // 大穴過剰評価を防ぐため最大15点に制限
       potential += dynamicBoost;
       tags.push(`⚡ 東京特選:オッズ逆数期待値ブースト(+${dynamicBoost})`);
     }
@@ -974,6 +974,40 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ==========================================
+  // 【新設】枠順バイアス解析（金沢競馬・統計的期待値）
+  // JRAでの誤適用を防ぐため、金沢競馬場でのみ適用するようガードを追加
+  // ==========================================
+  const isKanazawa = race.venue?.includes("金沢") || race.trackName?.includes("金沢") || race.raceName?.includes("金沢");
+  if (isKanazawa) {
+    if (frame === 1) {
+      // 1枠：スコア1位(1.08) 複勝率50%の最強軸
+      potential += 40;
+      tags.push('🏹1枠:黄金期待値(軸信頼度1位)');
+    } else if (frame === 7) {
+      // 7枠：スコア2位(0.93) 勝率26.7%の勝ち切りバイアス
+      potential += 35;
+      tags.push('🚀7枠:勝負の突き抜け(勝率1位)');
+    } else if (frame === 4) {
+      // 4枠：スコア3位(0.75) 複勝率58.3%のヒモ穴バイアス
+      potential += 10;
+      distortionBoost += 0.6; // 2-3着への食い込みやすさを強化
+      tags.push('💎4枠:激走の紐穴(複勝率1位)');
+    } else if (frame === 8) {
+      // 8枠：スコア4位(0.70) 標準以上の期待値
+      potential += 15;
+      tags.push('🛡️8枠:外枠の安定感');
+    } else if (frame === 2) {
+      // 2枠：スコア最下位(0.25) 明確な死角
+      potential -= 35;
+      tags.push('⚠️2枠:枠順死角(期待値最下位)');
+    } else if (frame === 3 || frame === 5 || frame === 6) {
+      // 中間・死角枠：スコア0.46〜0.54の低迷帯
+      potential -= 15;
+      tags.push('🎐中間枠:バイアス劣勢');
+    }
+  }
+
   // 過去走から「回り（左右）」の適性を算出
   if (horse.pastRaces && horse.pastRaces.length > 0) {
     const leftTurnRaces = horse.pastRaces.filter(pr => pr.direction === '左');
@@ -1359,7 +1393,7 @@ export function calculateTsuchiyaScore(
   } else if (race.raceNumber >= 7) {
     // 後半レース：1番人気が崩れ、中穴（6-7番人気）が台頭する「波乱」フェーズ
     if (popularity === 1) {
-      potential -= 15;
+      potential -= 5; // 的中率向上のため-15から-5へ緩和
       tags.push('⚠️後半戦:1番人気過信禁物(波乱含み)');
     } else if (popularity >= 5 && popularity <= 8) {
       potential += 25;
