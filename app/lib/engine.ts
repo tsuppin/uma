@@ -357,6 +357,101 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【門別競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isMombetsu = race.venue?.includes("門別") || race.trackName?.includes("門別") || race.raceName?.includes("門別");
+
+  if (isMombetsu) {
+    tags.push("🌾 門別特化OMEGAエンジン適用中");
+
+    // 1. 空間・展開バイアスの学習（外枠＆先行力重視）
+    // 外枠（特に8枠）特注加点
+    if (frame >= 5) {
+      potential += 25;
+      tags.push("🌾 門別外枠アドバンテージ");
+      if (frame === 8) {
+        potential += 15;
+        tags.push("⚡ 門別大外8枠・大爆撃エッジ");
+      }
+    }
+
+    // 先行力（前走の4角通過順位）の最大重視（上がりタイムより先行力）
+    const isFrontRunner = horse.style === "逃げ" || horse.style === "先行";
+    if (isFrontRunner) {
+      potential += 30;
+      tags.push("🏃 門別前残り・極限先行アドバンテージ");
+    }
+    // 前走4角位置の補正
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const pr = horse.pastRaces[0];
+      const passing = pr.passingPositions || "";
+      const lastPos = parseInt(passing.split("-").pop() || "0");
+      if (lastPos > 0 && lastPos <= 4) {
+        potential += 20;
+        tags.push(`⚡ 門別特選:前走4角4番手以内キープ(4角:${lastPos}番手)`);
+      }
+    }
+
+    // 2. 人間系シナジー「トップジョッキー × 有力厩舎」コンビフラグ
+    const trainerName = horse.trainer || "";
+    const eliteJockeysM = ["桑村", "落合", "阿部", "小野", "岩橋", "石川", "服部"];
+    const isEliteJockeyM = eliteJockeysM.some(ej => jockey.includes(ej));
+    const eliteTrainersM = ["角川", "佐々木", "佐々国", "田中淳", "黒川", "小国", "田中正"];
+    const isEliteTrainerM = eliteTrainersM.some(et => trainerName.includes(et));
+
+    if (isEliteJockeyM && isEliteTrainerM) {
+      potential += 35;
+      tags.push("🌟 門別黄金コンビ:トップジョッキー×有力厩舎");
+    }
+
+    // 3. 馬券種マルチタスク学習（仕上がり安定とヒモ大穴激走）
+    // 仕上がり安定馬
+    if (Math.abs(weightChange) <= 8) {
+      potential += 20;
+      tags.push("📈 門別仕上がり安定(馬体重増減なし・微小)");
+    }
+    // 牝馬ボーナス
+    if (gender === "牝") {
+      potential += 20;
+      tags.push("🐎 門別牝馬エッジ");
+    }
+
+    // 2着・3着（ヒモ穴）モデルの期待値（大幅体重増減・減量騎手）
+    const absWeightChange = Math.abs(weightChange);
+    if (absWeightChange >= 10) {
+      if (popularity >= 6 || odds >= 12.0) {
+        potential += 25;
+        tags.push("⚡ 門別特選:大幅馬体重変則仕上げ妙味");
+      }
+    }
+    // 減量騎手フラグ
+    const isApprentice = jockey.match(/^[▲△☆◇]/) || jockey.includes("減量") || jockey.includes("▲") || jockey.includes("△");
+    if (isApprentice) {
+      potential += 30;
+      tags.push("🏃 門別若手・減量ジョッキー起爆剤");
+    }
+
+    // 4. レース条件（前半・後半）による堅実/波乱モデル切り替え
+    if (race.raceNumber <= 6) {
+      // 前半レース（1R〜6R）: 若馬・下級戦の堅実モード（1番人気高信頼度）
+      if (popularity === 1) {
+        potential += 35;
+        tags.push("📐 門別前半戦:実力・人気堅実モード");
+      }
+    } else {
+      // 後半レース（7R〜12R）: 古馬混合戦 of 波乱モード
+      if (popularity === 1) {
+        potential -= 25;
+        tags.push("⚠️ 門別後半戦:1番人気過剰被り割引");
+      } else if (popularity >= 6 && odds >= 15.0) {
+        // 下位人気の激走
+        potential += 35;
+        tags.push("⚡ 門別後半戦:波乱モード期待値エッジ");
+      }
+    }
+  }
+
+  // ==========================================
   // 【新設】データベース（MasterData）連携
   // ==========================================
   const hm = masterData.horses?.[horse.name];
