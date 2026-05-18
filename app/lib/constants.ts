@@ -5541,4 +5541,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779088509658",
+    version: "v133.1",
+    date: "2026-05-18T07:15:09.658Z",
+    description: "京都 - 好走馬(ヴィスマール等)の特性学習",
+    track: "京都",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "西村 淳也",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ブリックスアンドモルタル",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "岩田 望来",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サートゥルナーリア",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
