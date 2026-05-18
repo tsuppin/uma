@@ -184,7 +184,7 @@ export default function KeibaApp() {
 function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: AppState; onSelectRace: (id: string) => void; onNewRace: () => void; onDeleteRace: (id: string) => void }) {
   const { stats } = state;
   const pending = state.races.filter(r => !r.result);
-  const completed = state.races.filter(r => r.result).slice(-10).reverse();
+  const completed = state.races.filter(r => r.result).slice(-24).reverse();
 
   return (
     <div className="fade-in">
@@ -205,12 +205,6 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
         <div className="stat-card">
           <div className="stat-card-value">{(stats.hitRate * 100).toFixed(1)}%</div>
           <div className="stat-card-label">的中率</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-value" style={{ color: stats.roi >= 0 ? "var(--accent-green)" : "var(--accent-red)" }}>
-            {(stats.roi * 100).toFixed(1)}%
-          </div>
-          <div className="stat-card-label">ROI</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value">{state.learningPatches.filter(p => p.active).length}</div>
@@ -234,7 +228,7 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
       {completed.length > 0 && (
         <div className="card">
           <div className="card-header">
-            <div className="card-title">✅ 確定済みレース（直近10件）</div>
+            <div className="card-title">✅ 確定済みレース（直近24レース）</div>
           </div>
           <div className="flex flex-col gap-8">
             {completed.map(race => (
