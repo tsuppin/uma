@@ -80,6 +80,107 @@ export function calculateTsuchiyaScore(
   const tags: string[] = [];
 
   // ==========================================
+  // 【新潟競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isNiigata = race.venue?.includes("新潟") || race.trackName?.includes("新潟") || race.raceName?.includes("新潟");
+
+  if (isNiigata) {
+    tags.push("🌾 新潟特化OMEGAエンジン適用中");
+
+    // 1. 市場評価・オッズパラメータ（オッズの歪みと過小評価の検知）
+    if (race.surface === "芝") {
+      // 芝レースにおける1番人気の過大評価（被りすぎ）減点
+      if (popularity === 1 || odds <= 2.5) {
+        potential -= 25;
+        tags.push("⚠️ 芝1番人気被り警戒(オッズ歪み補正)");
+      }
+      // 芝の牡牝混合戦における牝馬への加点（オッズの甘さ・期待値エッジ）
+      const isMixed = !race.raceName?.includes("牝");
+      if (isMixed && gender === "牝") {
+        potential += 20;
+        tags.push("🎯 混合戦の牝馬(期待値エッジ)");
+      }
+    }
+    
+    // 重賞における高齢馬（7歳以上）の復活期待値加点（不当な過小評価の検知）
+    const isGradeRace = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
+    if (isGradeRace && age >= 7) {
+      potential += 25;
+      tags.push("🔥 高齢実績馬の不当軽視補正");
+    }
+
+    // 新潟直線1000m（千直）における内枠（1枠〜3枠）の不当低評価の期待値補正
+    if (dist === 1000 && race.surface === "芝" && frame <= 3) {
+      potential += 30;
+      tags.push("⚡ 千直内枠の不当低評価・逆張り妙味");
+    }
+
+    // 2. 空間物理・馬体パラメータ（ダイナミックな枠順バイアスと性齢）
+    if (race.surface === "芝") {
+      // ダイナミックな枠順バイアス（前半レースと後半レースの差別化）
+      if (race.raceNumber <= 6) {
+        // 前半レース：内枠有利
+        if (frame <= 3) {
+          potential += 15;
+          tags.push("📐 前半芝レースの内枠優位");
+        }
+      } else {
+        // 後半レース：外枠有利
+        if (frame >= 6) {
+          potential += 25;
+          tags.push("📈 後半荒れ馬場の外枠バイアス");
+        }
+      }
+
+      // 芝1400m以下の混合戦における牝馬ボーナス（性齢）
+      const isMixedShort = dist <= 1400 && !race.raceName?.includes("牝");
+      if (isMixedShort && gender === "牝") {
+        potential += 25;
+        tags.push("🐎 短距離混合戦の牝馬ボーナス");
+      }
+    }
+
+    // 3. 時系列パフォーマンスパラメータ（時間帯による脚質の有利不利）
+    if (race.raceNumber <= 5) {
+      // 前半レース（1R〜5R）: 先行馬（前残り）絶対有利加点
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 30;
+        tags.push("🏃 前半戦の先行・前残りアドバンテージ");
+      }
+    } else {
+      // 後半レース（6R〜12R、特に特別戦・重賞）: 差し・追込馬有利加点
+      if (horse.style === "差し" || horse.style === "追込") {
+        potential += 35;
+        tags.push("🏹 後半戦の外差し・末脚特注");
+      }
+    }
+
+    // 4. 人間系シナジー・陣営パラメータ（特注騎手と勝負所の陣営評価）
+    // 減量特注騎手「舟山瑠泉」騎手への特注シナジー補正（大幅加点）
+    if (jockey.includes("舟山") || jockey.includes("瑠泉")) {
+      potential += 40;
+      tags.push("🌟 新潟特注ジョッキー:舟山瑠泉");
+    }
+
+    // 格が上がる後半戦（9R〜12R of 特別戦・重賞）におけるトップジョッキー＆関西馬（栗東）優位の補正
+    if (race.raceNumber >= 9) {
+      // 栗東（関西馬）所属
+      const isRitto = horse.stableLocation?.includes("栗東") || horse.trainer?.includes("栗東") || horse.trainer?.includes("美浦") === false;
+      if (isRitto) {
+        potential += 25;
+        tags.push("✈️ メイン戦遠征関西馬(栗東)エッジ");
+      }
+      // エリート騎手
+      const eliteJockeys = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ"];
+      const isElite = eliteJockeys.some(ej => jockey.includes(ej));
+      if (isElite) {
+        potential += 30;
+        tags.push("👑 メイン戦トップジョッキーバイアス");
+      }
+    }
+  }
+
+  // ==========================================
   // 【新設】データベース（MasterData）連携
   // ==========================================
   const hm = masterData.horses?.[horse.name];
