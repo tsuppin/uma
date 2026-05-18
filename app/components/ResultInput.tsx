@@ -484,13 +484,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         <div className="card-header">
           <div className="card-title">📋 レース結果テキスト貼り付け（自動入力）</div>
         </div>
-        <div className="alert alert-info">
-            💡 レース結果をそのまま貼り付けると自動解析します。JRA・地方競馬どちらにも対応。
-            <br />
-            <code className="fs-xs block mt-4 text-secondary">
-              対応形式: JRAタブ区切り / スペース区切り / 地方競馬縦並び形式
-            </code>
-        </div>
 
         <div className="form-group">
           <label className="form-label" htmlFor="result-paste">結果テキスト（5000文字まで）</label>
