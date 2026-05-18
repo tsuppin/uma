@@ -7977,4 +7977,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779133986329",
+    version: "v212.1",
+    date: "2026-05-18T19:53:06.329Z",
+    description: "大井 - 好走馬(エムティキング等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "谷内貫",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アドマイヤマーズ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "杉山海",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サンダースノー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
