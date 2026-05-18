@@ -29,6 +29,22 @@ function estimateStyle(pastRaces: PastRace[]): Horse["style"] {
   return "中団";
 }
 
+const ALL_TRACKS = [
+  // 中央
+  "東京", "中山", "京都", "阪神", "中京", "新潟", "福島", "小倉", "函館", "札幌",
+  // 地方
+  "大井", "川崎", "船橋", "浦和", "門別", "盛岡", "水沢", "金沢", "笠松", "名古屋", "園田", "姫路", "高知", "佐賀", "帯広"
+];
+
+export function extractVenue(text: string): string | null {
+  for (const track of ALL_TRACKS) {
+    if (text.includes(track)) {
+      return track;
+    }
+  }
+  return null;
+}
+
 // ==========================================
 // NAR出馬表パーサー（地方競馬）- フルデータ対応版
 // ==========================================
@@ -41,7 +57,8 @@ export function parseNARText(rawText: string): {
   const lines = rawText.split("\n").map(l => l.trim());
 
   let date = new Date().toISOString().slice(0, 10);
-  let venue = "川崎", raceNumber = 1, distance = 1200, headCount = 0, raceName = "";
+  let venue = extractVenue(rawText) || "川崎";
+  let raceNumber = 1, distance = 1200, headCount = 0, raceName = "";
   const surface: Race["surface"] = "ダート";
   let condition: Race["condition"] = "良";
   let startTime = "";
@@ -384,7 +401,7 @@ export function parseJRAText(rawText: string): {
 
   // ヘッダー解析: "3回京都6日 11R"
   const headerMatch = rawText.match(/(\d+)回(.+?)(\d+)日\s*(\d+)R/);
-  const venue = headerMatch?.[2]?.trim() || "";
+  const venue = headerMatch?.[2]?.trim() || extractVenue(rawText) || "";
   const raceNumber = headerMatch ? parseInt(headerMatch[4]) : 1;
 
   // レース名・距離・馬場・条件

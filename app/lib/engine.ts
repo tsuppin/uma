@@ -80,6 +80,118 @@ export function calculateTsuchiyaScore(
   const tags: string[] = [];
 
   // ==========================================
+  // 【高知競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isKochi = race.venue?.includes("高知") || race.trackName?.includes("高知") || race.raceName?.includes("高知");
+  if (isKochi) {
+    tags.push("🌴 高知特化OMEGAエンジン適用中");
+
+    // 1. 枠順バイアス（イン荒れ・外枠外伸び）
+    if (frame >= 7) {
+      potential += 30;
+      tags.push("📈 高知外枠アドバンテージ(砂厚・イン避け)");
+    } else if (frame <= 2) {
+      potential -= 25;
+      tags.push("⚠️ 高知内枠ペナルティ(内砂深くロス懸念)");
+    }
+
+    // 2. 一発逆転ファイナルレース（最終レース）の波乱・穴馬補正
+    const isFinalRace = race.raceNumber >= 11;
+    if (isFinalRace) {
+      tags.push("🔥 一発逆転ファイナルレース・波乱モード");
+      if (popularity >= 6 || odds >= 15.0) {
+        potential += 35;
+        tags.push("⚡ ファイナル激走穴馬エッジ");
+      } else if (popularity === 1) {
+        potential -= 20; // 最終レースの1番人気信頼度低下
+        tags.push("⚠️ ファイナル1番人気被り割引");
+      }
+    }
+
+    // 3. 高知リーディングジョッキーバイアス（赤岡、宮川、多田羅）
+    const isKochiEliteJ = ["赤岡", "宮川", "多田羅"].some(j => jockey.includes(j));
+    if (isKochiEliteJ) {
+      potential += 35;
+      tags.push("👑 高知トップジョッキー補正");
+    }
+  }
+
+  // ==========================================
+  // 【大井競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isOhi = race.venue?.includes("大井") || race.trackName?.includes("大井") || race.raceName?.includes("大井");
+  if (isOhi) {
+    tags.push("🗼 大井特化OMEGAエンジン適用中");
+
+    // 1. 大型パワー馬加点（タフなオーストラリア産白砂対応）
+    if (weight >= 500) {
+      potential += 25;
+      tags.push("💪 大井白砂パワー適合(500kg以上)");
+    }
+
+    // 2. 距離別の脚質適性（大井の長い直線）
+    if (dist >= 1600) {
+      if (horse.style === "差し" || horse.style === "追込") {
+        potential += 25;
+        tags.push("🏹 外回り長距離・末脚特注");
+      }
+    } else {
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 20;
+        tags.push("🏃 短距離・前残り優位");
+      }
+    }
+
+    // 3. 大井エリートジョッキー（御神本、矢野、笹川、森泰）
+    const isOhiEliteJ = ["御神本", "矢野", "笹川", "森泰"].some(j => jockey.includes(j));
+    if (isOhiEliteJ) {
+      potential += 30;
+      tags.push("👑 大井リーディングジョッキーエッジ");
+    }
+  }
+
+  // ==========================================
+  // 【浦和競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isUrawa = race.venue?.includes("浦和") || race.trackName?.includes("浦和") || race.raceName?.includes("浦和");
+  if (isUrawa) {
+    tags.push("📐 浦和特化OMEGAエンジン適用中");
+
+    // 1. 極端な内枠先行絶対有利
+    if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
+      potential += 40;
+      tags.push("🚀 浦和極小回り・内枠先行絶対有利");
+    } else if (horse.style === "追込") {
+      potential -= 30;
+      tags.push("❌ 浦和小回り追込困難割引");
+    }
+  }
+
+  // ==========================================
+  // 【帯広ばんえい競馬 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isObihiro = race.venue?.includes("帯広") || race.trackName?.includes("帯広") || race.raceName?.includes("帯広");
+  if (isObihiro) {
+    tags.push("🏇 帯広ばんえい特化OMEGAエンジン適用中");
+
+    // 1. 大型馬絶対優位（ソリを引く圧倒的パワー）
+    if (weight >= 900) {
+      potential += 35;
+      tags.push("💪 ばんえい規格外パワー馬(900kg以上)");
+    } else if (weight < 850) {
+      potential -= 20;
+      tags.push("⚠️ ばんえい小柄馬パワー不足割引");
+    }
+
+    // 2. ばんえいリーディング騎手（西将太、鈴木恵、阿部など）
+    const isBaneiEliteJ = ["西将", "鈴木恵", "阿部"].some(j => jockey.includes(j));
+    if (isBaneiEliteJ) {
+      potential += 30;
+      tags.push("👑 ばんえいエリートジョッキー補正");
+    }
+  }
+
+  // ==========================================
   // 【新潟競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isNiigata = race.venue?.includes("新潟") || race.trackName?.includes("新潟") || race.raceName?.includes("新潟");
