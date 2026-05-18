@@ -255,6 +255,108 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【東京競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isTokyo = race.venue?.includes("東京") || race.trackName?.includes("東京") || race.raceName?.includes("東京");
+
+  if (isTokyo) {
+    tags.push("🗼 東京特化OMEGAエンジン適用中");
+
+    // 1. 人間系シナジーと陣営の意図
+    // 馬具ブースト（ブリンカー着用）の特大評価
+    if (horse.useBlinkers) {
+      potential += 45;
+      tags.push("🔥 東京特注ブリンカー超絶勝負仕上げ");
+    }
+
+    // 「西高東低」の排除と美浦バイアスの強化（美浦所属ホームエッジ）
+    const isMihoTokyo = horse.stableLocation?.includes("美浦") || horse.trainer?.includes("美浦") || horse.trainer?.includes("栗東") === false;
+    if (isMihoTokyo) {
+      potential += 30;
+      tags.push("🏰 東京本陣:美浦所属馬ホームバイアス");
+    } else {
+      potential -= 10; // 関西馬の過大評価を排除するための微減点
+      tags.push("⚠️ 栗東所属馬(東京アウェイバイアス)");
+    }
+
+    // 2. レースフェーズ（条件）と戦績データの連動評価
+    if (race.raceNumber <= 5) {
+      // 前半レース（下級条件）：前残り（逃げ・先行）有利
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 25;
+        tags.push("📐 前半戦の先行・前残りアドバンテージ");
+      }
+    } else {
+      // 後半レース（上級条件）：差し・追込（極上末脚）有利
+      if (horse.style === "差し" || horse.style === "追込") {
+        potential += 35;
+        tags.push("🏹 後半戦の極上外差し・末脚特注");
+      }
+      // 推定上がり3Fの補正（前走で速い上がりを繰り出した馬の加点）
+      if (horse.pastRaces && horse.pastRaces[0]) {
+        const last3fNum = parseFloat(horse.pastRaces[0].last3fTime || "36.0");
+        if (last3fNum > 0 && last3fNum <= 34.5) {
+          potential += 20;
+          tags.push(`⚡ 前走極上の末脚を計測(3F:${last3fNum}秒)`);
+        }
+      }
+    }
+
+    // 3. 空間物理解析（枠順バイアス）の動的調整
+    // 前半戦（1R〜6R）：内枠ロスのない経済コース優位
+    if (race.raceNumber <= 6) {
+      if (frame <= 3) {
+        potential += 15;
+        tags.push("📐 前半戦の内枠バイアス");
+      }
+    } else {
+      // 後半戦（7R〜12R）：馬場荒れに伴う外伸び外枠バイアス
+      if (frame >= 6) {
+        potential += 25;
+        tags.push("📈 後半戦の馬場外伸び・外枠バイアス");
+      }
+    }
+
+    // 過去の東京好走実績
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const tokyoTop3 = horse.pastRaces.filter(pr => pr.venue?.includes("東京") && pr.result <= 3).length;
+      if (tokyoTop3 > 0) {
+        potential += 15;
+        tags.push(`🐎 東京実績馬リピートエッジ(${tokyoTop3}回)`);
+      }
+    }
+
+    // 4. 馬体重変動の「トレンド」読み取り
+    const absWeightChange = Math.abs(weightChange);
+    if (absWeightChange >= 10) {
+      potential += 20;
+      tags.push("🔥 東京究極の大幅増減勝負仕上げ");
+      if (popularity >= 6 || odds >= 12.0) {
+        potential += 15;
+        tags.push("⚡ 大幅増減・妙味穴馬補正");
+      }
+    } else if (absWeightChange <= 2) {
+      // 小幅変動（状態の現状維持）による安定感評価
+      potential += 15;
+      tags.push("📈 東京馬体重安定トレンド");
+    }
+
+    // 5. 券種別チューニングと「オッズ偏差値」の先鋭化
+    // 1番人気の過剰人気（低期待値）の割り引き
+    if (popularity === 1 && odds <= 2.0) {
+      potential -= 35;
+      tags.push("⚠️ 東京1番人気過剰被り割引(期待値補正)");
+    }
+
+    // 期待値最大の大穴（単勝50倍〜100倍超）あぶり出し（人気に対する逆数・動的期待値ブースト）
+    if (potential >= 520 && odds >= 30.0) {
+      const dynamicBoost = Math.min(50, Math.floor(odds / 2));
+      potential += dynamicBoost;
+      tags.push(`⚡ 東京特選:オッズ逆数期待値ブースト(+${dynamicBoost})`);
+    }
+  }
+
+  // ==========================================
   // 【新設】データベース（MasterData）連携
   // ==========================================
   const hm = masterData.horses?.[horse.name];
