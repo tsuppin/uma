@@ -3270,7 +3270,7 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
 
   let col1 = axisNos;
   let col2 = axisNos;
-  let col3 = [...new Set([...axisNos, ...darkNos])].sort((a, b) => a - b);
+  let col3: number[] | undefined = [...new Set([...axisNos, ...darkNos])].sort((a, b) => a - b);
 
   let tickets: number[][] = [];
   if (raceType === 'trifecta_exact') {
