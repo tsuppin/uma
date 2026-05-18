@@ -5207,4 +5207,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779076130984",
+    version: "v156.1",
+    date: "2026-05-18T03:48:50.984Z",
+    description: "帯広ば - 好走馬(ホクセイロイヤル等)の特性学習",
+    track: "帯広ば",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weightChange",
+        "operator": ">=",
+        "value": 10,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "フジダイビクトリー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
