@@ -6224,4 +6224,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779103129828",
+    version: "v177.1",
+    date: "2026-05-18T11:18:49.828Z",
+    description: "盛岡 - 好走馬(タカマキナイン等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "佐々志",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ミスチヴィアスアレ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
