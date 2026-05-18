@@ -3268,16 +3268,32 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
   const dark4 = sortedByDarkness.slice(0, 4);
   const darkNos = dark4.map(p => p.horseNumber);
 
-  const col1 = axisNos;
-  const col2 = axisNos;
-  const col3 = [...new Set([...axisNos, ...darkNos])].sort((a, b) => a - b);
+  let col1 = axisNos;
+  let col2 = axisNos;
+  let col3 = [...new Set([...axisNos, ...darkNos])].sort((a, b) => a - b);
 
   let tickets: number[][] = [];
   if (raceType === 'trifecta_exact') {
-    for (const first of col1) {
-      for (const second of col2) {
+    // 評価順にソートされた上位6頭を抽出（A, B, C, D, E, F）
+    const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
+    const horses6 = sorted.slice(0, 6).map(p => p.horseNumber);
+    
+    // 2-4-6 フォーメーション
+    // 1着: A, B (2頭)
+    // 2着: A, B, [C, D] (4頭)
+    // 3着: A, B, C, D, [E, F] (6頭)
+    const t1 = horses6.slice(0, 2);
+    const t2 = horses6.slice(0, 4);
+    const t3 = horses6.slice(0, 6);
+
+    col1 = t1;
+    col2 = t2;
+    col3 = t3;
+
+    for (const first of t1) {
+      for (const second of t2) {
         if (first === second) continue;
-        for (const third of col3) {
+        for (const third of t3) {
           if (first === third || second === third) continue;
           tickets.push([first, second, third]);
         }
