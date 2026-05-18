@@ -1,6 +1,21 @@
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 
 // ==========================================
+// タイム文字列（コロン・ドット形式 "1:28.4" 等）を秒数（88.4）に安全変換するヘルパー
+// ==========================================
+function parseTimeToSeconds(timeStr: string | undefined): number {
+  if (!timeStr) return 0;
+  const str = timeStr.toString().trim();
+  const parts = str.split(':');
+  if (parts.length === 2) {
+    const mins = parseFloat(parts[0]) || 0;
+    const secs = parseFloat(parts[1]) || 0;
+    return mins * 60 + secs;
+  }
+  return parseFloat(str) || 0;
+}
+
+// ==========================================
 // Yatomi Physics Logic (弥富・名古屋競馬)
 // ==========================================
 export function calculateYatomiPhysics(
@@ -13,41 +28,46 @@ export function calculateYatomiPhysics(
 ): number {
   if (!pastRace) return 0;
   
-  let adjTime = pastRace.time ? parseFloat(pastRace.time.replace(':', '').replace('.', '')) : 0;
+  // 文字列置換によるスケール誤差を解消し、物理計算を秒数ベースで正しく行う
+  let adjTime = parseTimeToSeconds(pastRace.time);
+  if (adjTime === 0) return 0;
 
-  // 1. WIND_VECTOR 補正
+  // 1. WIND_VECTOR 補正（秒数ベースで0.3秒、0.2秒の風速補正が本来のスケールで機能）
   if (isHeadwind && windSpeed >= 4.0) {
     if (pastRace.corner4Position <= 4) {
-      adjTime += 0.3; // 先行馬：空気抵抗増大
+      adjTime += 0.3; // 先行馬：空気抵抗増大（0.3秒遅延）
     } else {
-      adjTime -= 0.2; // スリップストリーム効果
+      adjTime -= 0.2; // スリップストリーム効果（0.2秒短縮）
     }
   }
 
   // 2. TRACK_WIDTH_LOSS 補正
   const nPosition = pastRace.cornerOuterCount || 1;
   if (nPosition > 1) {
-    adjTime -= (nPosition - 1) * 0.15;
+    adjTime -= (nPosition - 1) * 0.15; // 外を回った頭数に応じた距離ロス補正
   }
 
   // 3. POWER_STRIDE_DYNAMICS 補正
   const weight = horse.weight;
   if (trackCondition === '良') {
     if (weight < 480) {
-      adjTime += 0.2;
+      adjTime += 0.2; // パワー負け
     } else if (weight >= 500 && pastRace.otherVenueExp) {
-      adjTime -= 0.3;
+      adjTime -= 0.3; // 大型馬パワーアドバンテージ
     }
   }
 
   // 4. DYNAMIC_BIAS_DETECTOR
   if (isInBiasActive) {
     if (horse.frame <= 3 && pastRace.cornerOuterCount === 1) {
-      adjTime -= 0.4;
+      adjTime -= 0.4; // イン伸びバイアス
     }
   }
 
-  const classBaseTime = pastRace.classBaseTime || adjTime + 0.5;
+  // 基準タイムも秒数にパースして比較
+  const baseTimeStr = pastRace.classBaseTime?.toString() || '';
+  const classBaseTime = baseTimeStr ? parseTimeToSeconds(baseTimeStr) : adjTime + 0.5;
+
   return adjTime <= classBaseTime ? 1 : 0; // 物理的狙い馬タグ
 }
 
@@ -3187,7 +3207,8 @@ export function calculateTsuchiyaScore(
   }
 
   // 斤量比率（14%超）によるヒモ穴ブースト
-  if (jockWeightRatio >= 14.0) {
+  const currentWeightRatio = weight > 0 ? (kinryo / weight) * 100 : 0;
+  if (currentWeightRatio >= 14.0) {
     distortionBoost += 0.6;
     tags.push('💎3連系:高負荷激走ブースト');
   }
