@@ -452,6 +452,134 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【笠松競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isKasamatsu = race.venue?.includes("笠松") || race.trackName?.includes("笠松") || race.raceName?.includes("笠松");
+
+  if (isKasamatsu) {
+    tags.push("🌾 笠松特化OMEGAエンジン適用中");
+
+    // 1. レース条件・展開特徴量（前半差し・後半先行）
+    if (race.raceNumber <= 5) {
+      // 前半レース（1R〜5R／下位条件）：差し・追込（末脚）有利
+      if (horse.style === "差し" || horse.style === "追込") {
+        potential += 25;
+        tags.push("📐 前半戦の上がり末脚特化バイアス");
+      }
+    } else {
+      // 後半レース（6R〜10R／上位クラス）：前残り（逃げ・先行）絶対有利
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 30;
+        tags.push("🏃 後半戦の先行・前残りアドバンテージ");
+      }
+    }
+
+    // 2. 馬の基本属性・状態特徴量
+    // 牝馬および4歳馬の圧倒的勝率
+    if (gender === "牝") {
+      potential += 20;
+      tags.push("🐎 笠松牝馬エッジ");
+    }
+    if (age === 4) {
+      potential += 20;
+      tags.push("📈 笠松4歳馬成長エッジ");
+    }
+    // 馬体重マイナス変動（絞り仕上げ肯定）
+    if (weightChange < 0) {
+      potential += 15;
+      tags.push("🔥 笠松絞り込み勝負仕上げ(マイナス体重差)");
+    }
+
+    // 3. 斤量と馬格（斤量比率）の相関特徴量
+    const weightVal = weight || 450;
+    const loadRatio = (kinryo / weightVal) * 100;
+    
+    // 1着（本命）候補
+    if (kinryo === 55) {
+      potential += 25;
+      tags.push("🎯 笠松黄金斤量55kg(勝率トップ)");
+    }
+    if (loadRatio >= 10.0 && loadRatio <= 12.5) {
+      potential += 20;
+      tags.push(`📐 黄金斤量比率クリア(比率:${loadRatio.toFixed(1)}%)`);
+    }
+    if (kinryo === 57 && race.raceNumber >= 6) {
+      potential += 20;
+      tags.push("💪 上級戦57kg実績馬アドバンテージ");
+    }
+    // 2・3着（ヒモ穴）候補
+    if (kinryo <= 54) {
+      potential += 20;
+      tags.push("⚡ 門前軽量斤量(複勝率バイアス)");
+    }
+    if (loadRatio >= 13.5 && loadRatio <= 15.5) {
+      potential += 25;
+      tags.push(`⚡ 軽量小柄馬・2/3着激走フラグ(比率:${loadRatio.toFixed(1)}%)`);
+    }
+
+    // 4. 過去実績・能力特徴量
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const pr = horse.pastRaces[0];
+      
+      // アタマ候補の条件
+      if (pr.result > 0 && pr.result <= 3) {
+        potential += 25;
+        tags.push("🏆 前走3着以内・堅実能力値");
+      }
+      // タイム差1.0秒未満
+      if (pr.timeDiff !== undefined && pr.timeDiff < 1.0) {
+        potential += 20;
+        tags.push("📐 前走僅差仕上げ期待値");
+      }
+
+      // 他地区・JRAからの転入馬補正（大敗の無効化と転入ボーナス）
+      const hasAwayRace = horse.pastRaces.some(p => p.venue?.match(/(JRA|東京|中山|京都|阪神|新潟|中京|小倉|福島|函館|札幌|大井|川崎|船橋|浦和|門別)/));
+      if (hasAwayRace) {
+        potential += 30;
+        tags.push("🏹 中央・他地区からの転入ボーナス");
+      }
+
+      // 近走大敗からの巻き返しヒモ穴候補（過去5走以内に連対実績あり）
+      const isRecentBad = pr.result >= 6;
+      const hasTop2Past = horse.pastRaces.slice(0, 5).some(p => p.result > 0 && p.result <= 2);
+      if (isRecentBad && hasTop2Past) {
+        potential += 20;
+        tags.push("⚡ 過去5走内好走馬の巻き返し激走期待値");
+      }
+    }
+
+    // 5. 騎手・枠順のバイアス特徴量（1着と2・3着の分離）
+    // 1着勝率バイアス
+    if (jockey.includes("渡邊竜") || jockey.includes("渡辺竜") || jockey.includes("渡邊")) {
+      potential += 40;
+      tags.push("👑 笠松リーディング:渡邊竜也(1着固定特注)");
+    } else if (jockey.includes("塚本征")) {
+      potential += 25;
+      tags.push("🌟 笠松好調騎手:塚本征吾(1着バイアス)");
+    }
+    if (frame === 5) {
+      potential += 20;
+      tags.push("📐 笠松勝率No.1の5枠");
+    } else if (frame === 6) {
+      potential += 15;
+      tags.push("📐 万能枠順の6枠");
+    }
+
+    // 2・3着複勝率バイアス
+    if (jockey.includes("松本一") || jockey.includes("筒井") || jockey.includes("望月")) {
+      potential += 20;
+      tags.push("⚡ 笠松ヒモ穴特注騎手(2・3着激走)");
+    }
+    if (frame === 1) {
+      potential += 20;
+      tags.push("📐 最内枠ロス軽減イン差し枠");
+    } else if (frame === 8) {
+      potential += 15;
+      tags.push("📐 大外8枠・2着確保バイアス");
+    }
+  }
+
+  // ==========================================
   // 【新設】データベース（MasterData）連携
   // ==========================================
   const hm = masterData.horses?.[horse.name];
