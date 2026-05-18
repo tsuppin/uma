@@ -285,61 +285,58 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       }
     } else {
       // --- 中央競馬 (JRA) 専用パーサー ---
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line) continue;
+      let i = 0;
+      while (i < lines.length) {
+        const line = lines[i]?.trim();
+        if (!line) { i++; continue; }
 
         if ((line === "払戻金" || line === "コーナー通過順位" || line.startsWith("タイム") || line.startsWith("勝馬の紹介")) && parsedMap.size > 3) break;
 
-        let isRow1 = false;
+        let isMatch = false;
         let rank = 0, frame = 0, num = 0, name = "", pop = 0;
+        let linesConsumed = 1;
 
-        // 1. 正規表現による頑健な一発キャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" またはスペース混在)
-        const row1Match = line.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)[\t\s]+(.+)/);
-        if (row1Match) {
-          rank = parseInt(row1Match[1]);
-          frame = parseInt(row1Match[2]);
-          num = parseInt(row1Match[3]);
-          const namePart = row1Match[4].trim();
+        // 1. 完全行のキャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" またはスペース混在)
+        const fullMatch = line.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)[\t\s]+(.+)/);
+        // 2. 改行分割行のキャプチャ (例: "1\t8\t16")
+        const splitMatch = line.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)$/);
+
+        if (fullMatch) {
+          rank = parseInt(fullMatch[1]);
+          frame = parseInt(fullMatch[2]);
+          num = parseInt(fullMatch[3]);
+          const namePart = fullMatch[4].trim();
           const popM = namePart.match(/(.+?)(\d+)番人気/);
           name = popM ? popM[1].trim() : namePart;
           pop = popM ? parseInt(popM[2]) : 0;
-          isRow1 = true;
-        } else {
-          // 2. タブによるフォールバック
-          const rp1 = line.split(/[\t]/);
-          if (rp1.length >= 4 && /^\d+$/.test(rp1[0]) && /^\d+$/.test(rp1[2])) {
-            rank = parseInt(rp1[0]);
-            frame = parseInt(rp1[1]);
-            num = parseInt(rp1[2]);
-            const namePart = rp1[3].trim();
-            const popM = namePart.match(/(.+?)(\d+)番人気/);
-            name = popM ? popM[1].trim() : namePart;
-            pop = popM ? parseInt(popM[2]) : 0;
-            isRow1 = true;
-          } else {
-            // 3. スペースによるフォールバック
-            const spParts = line.split(/\s+/);
-            if (spParts.length >= 4 && /^\d+$/.test(spParts[0]) && /^\d+$/.test(spParts[1]) && /^\d+$/.test(spParts[2])) {
-              rank = parseInt(spParts[0]);
-              frame = parseInt(spParts[1]);
-              num = parseInt(spParts[2]);
-              const namePart = spParts.slice(3).join(" ");
-              const popM = namePart.match(/(.+?)(\d+)番人気/);
-              name = popM ? popM[1].trim() : namePart;
-              pop = popM ? parseInt(popM[2]) : 0;
-              isRow1 = true;
-            }
-          }
+          isMatch = true;
+        } else if (splitMatch) {
+          rank = parseInt(splitMatch[1]);
+          frame = parseInt(splitMatch[2]);
+          num = parseInt(splitMatch[3]);
+
+          // 次の行にブリンカー等の符号や馬名がある
+          let nextIdx = i + 1;
+          const nextLine = lines[nextIdx]?.trim() || "";
+          
+          // "ブリンカー\tシュラフ6番人気" のような符号を消去し、馬名と人気を取り出す
+          const cleanNext = nextLine.replace(/^(ブリンカー|マルチ|マルガイ)[\t\s]*/, "").trim();
+          const popM = cleanNext.match(/(.+?)(\d+)番人気/);
+          name = popM ? popM[1].trim() : cleanNext;
+          pop = popM ? parseInt(popM[2]) : 0;
+
+          isMatch = true;
+          linesConsumed = 2; // 馬名行まで消費
         }
 
-        if (isRow1 && rank >= 1 && rank <= 20) {
-          const line2 = lines[i + 1]?.trim() || "";
-          let genderAge = "";
+        if (isMatch && rank >= 1 && rank <= 20) {
+          let baseIdx = i + linesConsumed;
+
+          // line2: 性齢 / 馬体重 (例: "牝4 / 444kg(+2)")
+          const line2 = lines[baseIdx]?.trim() || "";
           let weight = 480, weightChange = 0;
           if (line2.includes("/")) {
             const lp = line2.split("/");
-            genderAge = lp[0].trim();
             const wPart = lp[1]?.trim() || "";
             const wm = wPart.match(/(\d+)kg/);
             if (wm) weight = parseInt(wm[1]);
@@ -347,9 +344,11 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             if (wcm) {
               weightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]) || 0;
             }
+            baseIdx++;
           }
 
-          const line3 = lines[i + 2]?.trim() || "";
+          // line3: 騎手(負担重量)  調教師 (例: "嶋田純次(56.0)  佐藤吉勝(美浦)")
+          const line3 = lines[baseIdx]?.trim() || "";
           let jockey = "", jockeyWeight = 54, trainer = "";
           if (line3.includes("(")) {
             const jm = line3.match(/^([^\(]+?)\((\d+\.?\d*)\)/);
@@ -363,9 +362,11 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               const parts = line3.split(/\s+/);
               trainer = parts[parts.length - 1] || "";
             }
+            baseIdx++;
           }
 
-          const line4 = lines[i + 3]?.trim() || "";
+          // line4: タイム(着差) / 推定上り (例: "0:56.7 / 33.3" または "0:56.7 (クビ) / 33.8")
+          const line4 = lines[baseIdx]?.trim() || "";
           let time = "", margin = "", last3f = "";
           if (line4.includes("/")) {
             const lp4 = line4.split("/");
@@ -379,6 +380,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
             const lm = lastPart.match(/(\d{2}\.\d)/);
             if (lm) last3f = lm[1];
+            baseIdx++;
           }
 
           const cleanName = name.replace(/^ブリンカー\s*/, "").replace(/^マルガイ\s*/, "").replace(/^マルチ\s*/, "").trim();
@@ -411,8 +413,11 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             margin
           });
 
-          i += 3;
+          // 消費した情報行のインデックス分進める
+          i = baseIdx - 1;
         }
+
+        i++;
       }
     }
 
