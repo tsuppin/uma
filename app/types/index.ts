@@ -172,6 +172,18 @@ export interface RaceResult {
   profit?: number;
   learningApplied?: boolean;
   learningNotes?: string;
+  hits?: {
+    trio: boolean;
+    trifecta: boolean;
+    quinella: boolean;
+    exacta: boolean;
+  };
+  hitTicketsMap?: {
+    trio?: number[][];
+    trifecta?: number[][];
+    quinella?: number[][];
+    exacta?: number[][];
+  };
 }
 
 export interface LearningPatch {

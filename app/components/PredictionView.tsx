@@ -187,12 +187,38 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
             </tbody>
           </table>
 
-          {race.result && (
-            <div className="alert alert-success mt-16">
-              ✅ 確定済み — 1着: {race.result.result[0]?.horseName} ({race.result.result[0]?.horseNumber}番)
-              {race.result.hitTickets && race.result.hitTickets.length > 0 && ` 🎉 的中！`}
-            </div>
-          )}
+          {race.result && (() => {
+            const hasHit = race.result.hits 
+              ? Object.values(race.result.hits).some(Boolean)
+              : (race.result.hitTickets && race.result.hitTickets.length > 0);
+            
+            const hitLabels: string[] = [];
+            if (race.result.hits) {
+              if (race.result.hits.trio) hitLabels.push("三連複");
+              if (race.result.hits.trifecta) hitLabels.push("三連単");
+              if (race.result.hits.quinella) hitLabels.push("馬連");
+              if (race.result.hits.exacta) hitLabels.push("馬単");
+            } else if (race.result.hitTickets && race.result.hitTickets.length > 0) {
+              hitLabels.push("三連複");
+            }
+
+            return (
+              <div className="alert alert-success mt-16 flex flex-col gap-6">
+                <div>
+                  ✅ 確定済み — 1着: {race.result.result[0]?.horseName} ({race.result.result[0]?.horseNumber}番)
+                </div>
+                {hasHit ? (
+                  <div className="fw-700 text-green flex items-center gap-6">
+                    🎉 的中！ ({hitLabels.join(", ")})
+                  </div>
+                ) : (
+                  <div className="text-muted">
+                    😞 不的中（次回に向け自動学習完了）
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -219,7 +245,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
               {[
                 ["1列目（軸）", formation.col1, "text-gold", "bg-gold-muted", "border-gold-50"],
                 ["2列目（軸）", formation.col2 || [], "text-gold", "bg-gold-muted", "border-gold-50"],
-                ["3列目（相手）", formation.col3 || [], "text-blue", "bg-blue-muted", "border-blue-50"],
+                ...(formation.col3 ? [["3列目（相手）", formation.col3, "text-blue", "bg-blue-muted", "border-blue-50"]] : []),
               ].map(([title, horses, textClass, bgClass, borderClass]) => (
                 <div className="formation-col" key={title as string}>
                   <div className="formation-col-title">{title as string}</div>
@@ -258,9 +284,36 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
             </div>
             <div className="ticket-list">
               {formation.tickets.map((ticket, i) => {
-                const isHit = race.result?.hitTickets?.some(h =>
-                  h.length === ticket.length && h.every((n, j) => n === ticket[j])
-                );
+                let isHit = false;
+                if (race.result) {
+                  if (race.result.hitTicketsMap) {
+                    const activeType = formationType === 'trifecta' ? 'trio' : formationType;
+                    const hitMapList = race.result.hitTicketsMap[activeType as keyof typeof race.result.hitTicketsMap] || [];
+                    isHit = hitMapList.some(h =>
+                      h.length === ticket.length && h.every((n, j) => n === ticket[j])
+                    );
+                  } else {
+                    const r1 = race.result.result[0]?.horseNumber || 0;
+                    const r2 = race.result.result[1]?.horseNumber || 0;
+                    const r3 = race.result.result[2]?.horseNumber || 0;
+
+                    if (formationType === 'trifecta') {
+                      const resTrio = [r1, r2, r3].filter(Boolean).sort((a,b)=>a-b);
+                      const sortedT = [...ticket].sort((a,b)=>a-b);
+                      isHit = sortedT.length === 3 && sortedT.every((n, j) => n === resTrio[j]);
+                    } else if (formationType === 'trifecta_exact') {
+                      const resTrifecta = [r1, r2, r3].filter(Boolean);
+                      isHit = ticket.length === 3 && ticket.every((n, j) => n === resTrifecta[j]);
+                    } else if (formationType === 'quinella') {
+                      const resQuinella = [r1, r2].filter(Boolean).sort((a,b)=>a-b);
+                      const sortedT = [...ticket].sort((a,b)=>a-b);
+                      isHit = sortedT.length === 2 && sortedT.every((n, j) => n === resQuinella[j]);
+                    } else if (formationType === 'exacta') {
+                      const resExacta = [r1, r2].filter(Boolean);
+                      isHit = ticket.length === 2 && ticket.every((n, j) => n === resExacta[j]);
+                    }
+                  }
+                }
                 return (
                   <div key={i} className={`ticket-item ${isHit ? "hit" : ""}`}>
                     <span className="fs-xs text-muted w-20">{String(i + 1).padStart(2, "0")}</span>

@@ -2652,6 +2652,18 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
         }
       }
     }
+  } else if (raceType === 'quinella') {
+    const ticketSet = new Set<string>();
+    combinations(axisNos, 2).forEach(c => ticketSet.add(c.sort((a,b)=>a-b).join('-')));
+    axisNos.forEach(a => darkNos.forEach(d => ticketSet.add([a, d].sort((a,b)=>a-b).join('-'))));
+    tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
+  } else if (raceType === 'exacta') {
+    for (const first of axisNos) {
+      for (const second of [...new Set([...axisNos, ...darkNos])]) {
+        if (first === second) continue;
+        tickets.push([first, second]);
+      }
+    }
   } else {
     const ticketSet = new Set<string>();
     combinations(axisNos, 3).forEach(c => ticketSet.add(c.sort((a,b)=>a-b).join('-')));
@@ -2659,7 +2671,7 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
     tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
   }
 
-  return { type: raceType, col1, col2, col3, tickets, totalPoints: tickets.length, axisHorses: axisNos, darkHorses: darkNos };
+  return { type: raceType, col1, col2, col3: ['quinella', 'exacta'].includes(raceType) ? undefined : col3, tickets, totalPoints: tickets.length, axisHorses: axisNos, darkHorses: darkNos };
 }
 
 export function generateWin5Picks(races: Race[], allPredictions: Record<string, Prediction[]>): { raceId: string; picks: number[]; }[] {

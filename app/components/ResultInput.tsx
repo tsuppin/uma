@@ -471,24 +471,50 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     });
 
     // 的中払戻金の自動計算（初期betAmount = 100円ベース）
-    if (race.predictions && calculated.length >= 3) {
-      const formation = generateFormation(race.predictions);
-      const resultNums = calculated.slice(0, 3).map(r => r.horseNumber).filter(Boolean).sort((a, b) => a - b);
-      
-      const hitTickets = formation ? formation.tickets.filter(ticket => {
-        const sorted = [...ticket].sort((a, b) => a - b);
-        return sorted.length === 3 && sorted.every((n, i) => n === resultNums[i]);
-      }) : [];
+    if (race.predictions && calculated.length >= 2) {
+      const r1 = calculated[0]?.horseNumber || 0;
+      const r2 = calculated[1]?.horseNumber || 0;
+      const r3 = calculated[2]?.horseNumber || 0;
 
-      if (hitTickets.length > 0) {
-        const trioPayout = parsedRefunds.trio?.[0]?.payout || 0;
-        if (trioPayout > 0) {
-          const calculatedProfit = hitTickets.length * (trioPayout * (betAmount / 100));
-          setProfit(calculatedProfit);
-        }
-      } else {
-        setProfit(0);
+      const predictions = race.predictions;
+      const formTrio = generateFormation(predictions, 'trifecta');
+      const formTrifecta = generateFormation(predictions, 'trifecta_exact');
+      const formQuinella = generateFormation(predictions, 'quinella');
+      const formExacta = generateFormation(predictions, 'exacta');
+
+      const resTrio = [r1, r2, r3].filter(Boolean).sort((a,b)=>a-b);
+      const hitTrio = resTrio.length === 3 ? formTrio.tickets.filter(t => [...t].sort((a,b)=>a-b).every((n,i)=>n===resTrio[i])) : [];
+
+      const resTrifecta = [r1, r2, r3].filter(Boolean);
+      const hitTrifecta = resTrifecta.length === 3 ? formTrifecta.tickets.filter(t => t.every((n,i)=>n===resTrifecta[i])) : [];
+
+      const resQuinella = [r1, r2].filter(Boolean).sort((a,b)=>a-b);
+      const hitQuinella = resQuinella.length === 2 ? formQuinella.tickets.filter(t => [...t].sort((a,b)=>a-b).every((n,i)=>n===resQuinella[i])) : [];
+
+      const resExacta = [r1, r2].filter(Boolean);
+      const hitExacta = resExacta.length === 2 ? formExacta.tickets.filter(t => t.every((n,i)=>n===resExacta[i])) : [];
+
+      let totalProfit = 0;
+      const betMultiplier = betAmount / 100;
+
+      if (hitTrio.length > 0) {
+        const payout = parsedRefunds.trio?.[0]?.payout || 0;
+        totalProfit += hitTrio.length * payout * betMultiplier;
       }
+      if (hitTrifecta.length > 0) {
+        const payout = parsedRefunds.trifecta?.[0]?.payout || 0;
+        totalProfit += hitTrifecta.length * payout * betMultiplier;
+      }
+      if (hitQuinella.length > 0) {
+        const payout = parsedRefunds.quinella?.[0]?.payout || 0;
+        totalProfit += hitQuinella.length * payout * betMultiplier;
+      }
+      if (hitExacta.length > 0) {
+        const payout = parsedRefunds.exacta?.[0]?.payout || 0;
+        totalProfit += hitExacta.length * payout * betMultiplier;
+      }
+
+      setProfit(totalProfit);
     }
 
     setResults(calculated);
@@ -514,13 +540,44 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     setResults(prev => prev.filter((_, i) => i !== idx).map((r, i) => ({ ...r, rank: i + 1 })));
   };
 
-  // 的中判定
-  const formation = race.predictions ? generateFormation(race.predictions) : null;
-  const resultNums = results.slice(0, 3).map(r => r.horseNumber).filter(Boolean).sort((a, b) => a - b);
-  const hitTickets = formation ? formation.tickets.filter(ticket => {
-    const sorted = [...ticket].sort((a, b) => a - b);
-    return sorted.length === 3 && sorted.every((n, i) => n === resultNums[i]);
-  }) : [];
+  // 各券種の的中判定
+  const predictions = race.predictions || [];
+  const formTrio = predictions.length > 0 ? generateFormation(predictions, 'trifecta') : null;
+  const formTrifecta = predictions.length > 0 ? generateFormation(predictions, 'trifecta_exact') : null;
+  const formQuinella = predictions.length > 0 ? generateFormation(predictions, 'quinella') : null;
+  const formExacta = predictions.length > 0 ? generateFormation(predictions, 'exacta') : null;
+
+  const r1 = results[0]?.horseNumber || 0;
+  const r2 = results[1]?.horseNumber || 0;
+  const r3 = results[2]?.horseNumber || 0;
+
+  const resTrio = [r1, r2, r3].filter(Boolean).sort((a,b)=>a-b);
+  const hitTrio = formTrio && resTrio.length === 3 ? formTrio.tickets.filter(t => [...t].sort((a,b)=>a-b).every((n,i)=>n===resTrio[i])) : [];
+
+  const resTrifecta = [r1, r2, r3].filter(Boolean);
+  const hitTrifecta = formTrifecta && resTrifecta.length === 3 ? formTrifecta.tickets.filter(t => t.every((n,i)=>n===resTrifecta[i])) : [];
+
+  const resQuinella = [r1, r2].filter(Boolean).sort((a,b)=>a-b);
+  const hitQuinella = formQuinella && resQuinella.length === 2 ? formQuinella.tickets.filter(t => [...t].sort((a,b)=>a-b).every((n,i)=>n===resQuinella[i])) : [];
+
+  const resExacta = [r1, r2].filter(Boolean);
+  const hitExacta = formExacta && resExacta.length === 2 ? formExacta.tickets.filter(t => t.every((n,i)=>n===resExacta[i])) : [];
+
+  const hits = {
+    trio: hitTrio.length > 0,
+    trifecta: hitTrifecta.length > 0,
+    quinella: hitQuinella.length > 0,
+    exacta: hitExacta.length > 0,
+  };
+
+  const hitTicketsMap = {
+    trio: hitTrio,
+    trifecta: hitTrifecta,
+    quinella: hitQuinella,
+    exacta: hitExacta,
+  };
+
+  const hitTickets = hitTrio; // 後方互換用
 
   const handleSubmit = () => {
     if (results[0]?.horseNumber === 0) { alert("1着馬番を入力してください"); return; }
@@ -535,6 +592,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       winnerProfile: winnerProfile || undefined,
       incidents: incidents || undefined,
       hitTickets,
+      hits,
+      hitTicketsMap,
       profit,
       learningApplied: false,
     });
@@ -767,60 +826,81 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       )}
 
       {/* 的中確認 */}
-      {formation && resultNums.length >= 3 && (
-        <div className="card">
+      {predictions.length > 0 && r1 > 0 && r2 > 0 && (
+        <div className="card mt-16">
           <div className="card-header">
-            <div className="card-title">🎯 的中判定 & 払戻金自動計算</div>
-            <div className="fs-sm text-muted">
-              3連複 {resultNums.join("-")} で判定中
-            </div>
+            <div className="card-title">🎯 券種別的中判定 & 払戻金自動計算</div>
           </div>
-          {hitTickets.length > 0 ? (
-            <div className="alert alert-success">
-              🎉 的中！ 買い目 {hitTickets.map(t => t.join("-")).join(", ")} が的中しました
-            </div>
-          ) : (
-            <div className="alert alert-warning mt-12">
-              😞 今回は不的中でした。AIが自動学習して次回に活かします。
-            </div>
-          )}
 
-          {hitTickets.length > 0 && refunds && (
-            <div className="bg-gold-muted p-12 rounded-8 border border-gold-40 text-sm mt-12 flex flex-col gap-8">
-              <div className="fw-600 text-gold flex items-center gap-4">💴 払戻金自動シミュレーター</div>
-              <div className="flex gap-8 items-center flex-wrap">
-                <span className="text-muted">1点につき:</span>
-                <input
-                  type="number"
-                  className="form-input w-90"
-                  step={100}
-                  min={100}
-                  value={betAmount}
-                  aria-label="1点あたりの賭け金"
-                  onChange={e => {
-                    const amt = Math.max(0, +e.target.value);
-                    setBetAmount(amt);
-                    const trioPayout = refunds.trio?.[0]?.payout || 0;
-                    if (trioPayout > 0) {
-                      setProfit(hitTickets.length * (trioPayout * (amt / 100)));
-                    }
-                  }}
-                />
-                <span className="fs-sm">円</span>
-                <span className="text-muted ml-8">パース配当額:</span>
-                <strong className="text-gold">
-                  {(refunds.trio?.[0]?.payout || 0).toLocaleString()}円
-                </strong>
-                <span className="text-muted">× 的中数:</span>
-                <strong>{hitTickets.length}点</strong>
-              </div>
-              <div className="fs-xs text-muted">
-                ※ 1点あたり購入額を変更すると、下の「払戻金額」に自動で掛け算して反映されます。
-              </div>
+          <div className="p-16 flex flex-col gap-12">
+            <div className="grid-2 gap-12" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+              {[
+                { label: "三連複", isHit: hits.trio, comb: resTrio.join("-"), tickets: hitTrio },
+                { label: "三連単", isHit: hits.trifecta, comb: resTrifecta.join("→"), tickets: hitTrifecta },
+                { label: "馬連", isHit: hits.quinella, comb: resQuinella.join("-"), tickets: hitQuinella },
+                { label: "馬単", isHit: hits.exacta, comb: resExacta.join("→"), tickets: hitExacta },
+              ].map(item => (
+                <div key={item.label} className={`p-12 rounded-8 border ${item.isHit ? 'bg-green-muted border-green-40' : 'bg-elevated border-muted'}`}>
+                  <div className="flex justify-between items-center mb-6">
+                    <strong className="fs-sm">{item.label}</strong>
+                    <span className={`tag ${item.isHit ? 'tag-green' : 'tag-gray'}`}>
+                      {item.isHit ? '🎉 的中' : '不的中'}
+                    </span>
+                  </div>
+                  <div className="fs-xs text-muted mb-4">結果: {item.comb || "—"}</div>
+                  {item.isHit && (
+                    <div className="fs-xs text-green fw-600">
+                      的中目: {item.tickets.map(t => t.join(['三連単', '馬単'].includes(item.label) ? '→' : '-')).join(', ')}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
 
-          <div className="form-group mt-12">
+            {/* シミュレータ部分 */}
+            {Object.values(hits).some(Boolean) && refunds && (
+              <div className="bg-gold-muted p-12 rounded-8 border border-gold-40 text-sm mt-12 flex flex-col gap-8">
+                <div className="fw-600 text-gold flex items-center gap-4">💴 払戻金自動シミュレーター</div>
+                <div className="flex gap-8 items-center flex-wrap">
+                  <span className="text-muted">1点につき:</span>
+                  <input
+                    type="number"
+                    className="form-input w-90"
+                    step={100}
+                    min={100}
+                    value={betAmount}
+                    aria-label="1点あたりの賭け金"
+                    onChange={e => {
+                      const amt = Math.max(0, +e.target.value);
+                      setBetAmount(amt);
+                      
+                      let totalP = 0;
+                      const mult = amt / 100;
+                      if (hitTrio.length > 0) totalP += hitTrio.length * (refunds.trio?.[0]?.payout || 0) * mult;
+                      if (hitTrifecta.length > 0) totalP += hitTrifecta.length * (refunds.trifecta?.[0]?.payout || 0) * mult;
+                      if (hitQuinella.length > 0) totalP += hitQuinella.length * (refunds.quinella?.[0]?.payout || 0) * mult;
+                      if (hitExacta.length > 0) totalP += hitExacta.length * (refunds.exacta?.[0]?.payout || 0) * mult;
+                      
+                      setProfit(totalP);
+                    }}
+                  />
+                  <span className="fs-sm">円</span>
+                  <span className="text-muted ml-8">検出配当総額:</span>
+                  <strong className="text-gold">
+                    {((hitTrio.length > 0 ? (refunds.trio?.[0]?.payout || 0) : 0) +
+                      (hitTrifecta.length > 0 ? (refunds.trifecta?.[0]?.payout || 0) : 0) +
+                      (hitQuinella.length > 0 ? (refunds.quinella?.[0]?.payout || 0) : 0) +
+                      (hitExacta.length > 0 ? (refunds.exacta?.[0]?.payout || 0) : 0)).toLocaleString()}円
+                  </strong>
+                </div>
+                <div className="fs-xs text-muted">
+                  ※ 1点あたり購入額を変更すると、下の「払戻金額」に自動で掛け算して反映されます。
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="form-group mt-12 p-16">
             <label className="form-label" htmlFor="result-profit">払戻金額（円）</label>
             <input id="result-profit" type="number" className="form-input" value={profit || ""}
               onChange={e => setProfit(+e.target.value)} placeholder="的中した場合の払戻金額を入力" />

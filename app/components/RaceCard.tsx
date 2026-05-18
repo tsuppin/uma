@@ -25,9 +25,32 @@ export default function RaceCard({ race, onClick, onDelete }: { race: Race; onCl
           {race.isWin5 && <span className="tag tag-purple">WIN5</span>}
         </div>
       </div>
-      {hasResult && race.result?.hitTickets && race.result.hitTickets.length > 0 && (
-        <span className="tag tag-green">的中</span>
-      )}
+      {hasResult && (() => {
+        const r = race.result;
+        if (!r) return null;
+        
+        const hasHit = r.hits 
+          ? Object.values(r.hits).some(Boolean)
+          : (r.hitTickets && r.hitTickets.length > 0);
+          
+        if (hasHit) {
+          const hitTypes: string[] = [];
+          if (r.hits) {
+            if (r.hits.trio) hitTypes.push("三複");
+            if (r.hits.trifecta) hitTypes.push("三単");
+            if (r.hits.quinella) hitTypes.push("馬連");
+            if (r.hits.exacta) hitTypes.push("馬単");
+          } else {
+            hitTypes.push("三複");
+          }
+          return (
+            <span className="tag tag-green" title={hitTypes.join(", ")}>
+              的中 ({hitTypes.join("/")})
+            </span>
+          );
+        }
+        return <span className="tag tag-muted">不的中</span>;
+      })()}
       {!hasResult && hasPrediction && (
         <span className="tag tag-blue">予想済み</span>
       )}
