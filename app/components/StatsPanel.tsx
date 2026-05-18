@@ -69,22 +69,17 @@ export default function StatsPanel({ state }: { state: AppState }) {
           <div className="card-header"><div className="card-title">🏟️ 競馬場別成績</div></div>
           <table className="horse-table">
             <thead>
-              <tr><th>競馬場</th><th>レース数</th><th>的中数</th><th>的中率</th><th>収支</th></tr>
+              <tr><th>競馬場</th><th>レース数</th><th>的中数</th><th>的中率</th></tr>
             </thead>
             <tbody>
               {Object.entries(venueStats).map(([venue, s]) => {
                 const hitRate = s.total > 0 ? s.hit / s.total : 0;
-                const invested = s.total * 1300;
-                const profit = s.profit - invested;
                 return (
                   <tr key={venue}>
                     <td className="fw-600">{venue}</td>
                     <td>{s.total}</td>
                     <td className="text-green fw-700">{s.hit}</td>
                     <td>{(hitRate * 100).toFixed(1)}%</td>
-                    <td className={`fw-700 ${profit >= 0 ? "text-green" : "text-red"}`}>
-                      {profit >= 0 ? "+" : ""}{profit.toLocaleString()}円
-                    </td>
                   </tr>
                 );
               })}
