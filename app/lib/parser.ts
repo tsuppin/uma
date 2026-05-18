@@ -164,7 +164,7 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   let kinryoIdx = -1;
   for (let i = 1; i < profileEndIdx; i++) {
     const l = lines[i].trim();
-    if (l.match(/^\(\d{2}(?:\.\d)?\)$/)) {
+    if (l.match(/^\(\d{2,3}(?:\.\d)?\)$/)) {
       kinryoIdx = i;
       break;
     }
@@ -198,7 +198,7 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   }
 
   if (kinryoIdx !== -1) {
-    const kMatch = lines[kinryoIdx].trim().match(/^\((\d{2}(?:\.\d)?)\)$/);
+    const kMatch = lines[kinryoIdx].trim().match(/^\((\d{2,3}(?:\.\d)?)\)$/);
     if (kMatch) kinryo = parseFloat(kMatch[1]);
 
     if (kinryoIdx - 1 >= 0) jockey = lines[kinryoIdx - 1].trim();
