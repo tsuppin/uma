@@ -21,15 +21,14 @@ export default function StatsPanel({ state }: { state: AppState }) {
 
       <div className="stats-grid">
         {[
-          ["総レース数", stats.totalRaces, "🏇", "text-primary"],
-          ["的中数", stats.hitCount, "✅", "text-green"],
-          ["的中率", `${(stats.hitRate * 100).toFixed(1)}%`, "🎯", "text-gold"],
-          ["総投資", `¥${stats.totalInvested.toLocaleString()}`, "💴", "text-secondary"],
-          ["総払戻", `¥${stats.totalReturn.toLocaleString()}`, "💰", "text-gold"],
-          ["ROI", `${(stats.roi * 100).toFixed(1)}%`, "📊", stats.roi >= 1.0 ? "text-green" : "text-red"],
-        ].map(([label, value, icon, colorClass]) => (
+          ["総レース数", stats.totalRaces, "text-primary"],
+          ["的中数", stats.hitCount, "text-green"],
+          ["的中率", `${(stats.hitRate * 100).toFixed(1)}%`, "text-gold"],
+          ["総投資", `¥${stats.totalInvested.toLocaleString()}`, "text-secondary"],
+          ["総払戻", `¥${stats.totalReturn.toLocaleString()}`, "text-gold"],
+          ["ROI", `${(stats.roi * 100).toFixed(1)}%`, stats.roi >= 1.0 ? "text-green" : "text-red"],
+        ].map(([label, value, colorClass]) => (
           <div className="stat-card" key={label as string}>
-            <div className="fs-2xl mb-4">{icon}</div>
             <div className={`stat-card-value fs-2xl ${colorClass}`}>{value}</div>
             <div className="stat-card-label">{label}</div>
           </div>
