@@ -23,7 +23,6 @@ export default function StatsPanel({ state }: { state: AppState }) {
         {[
           ["総レース数", stats.totalRaces, "text-primary"],
           ["的中数", stats.hitCount, "text-green"],
-          ["的中率", `${(stats.hitRate * 100).toFixed(1)}%`, "text-gold"],
         ].map(([label, value, colorClass]) => (
           <div className="stat-card" key={label as string}>
             <div className={`stat-card-value fs-2xl ${colorClass}`}>{value}</div>
