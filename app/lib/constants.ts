@@ -4584,4 +4584,57 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779070351703",
+    version: "v112.1",
+    date: "2026-05-18T02:12:31.703Z",
+    description: "京都 - 好走馬(コンジェスタス等)の特性学習",
+    track: "京都",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "西村 淳也",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "コントレイル",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weightChange",
+        "operator": "<=",
+        "value": -10,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "池添 謙一",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サトノアラジン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
