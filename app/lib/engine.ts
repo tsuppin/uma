@@ -583,6 +583,49 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // ==========================================
+    // 【新設】東京的中率極限先鋭化ファクター (Tokyo Advanced Edge)
+    // ==========================================
+    // ① Dコース（仮柵移動）時の「物理的内枠先行優遇」と「大外回し距離ロス」
+    const isDStage = race.raceName?.includes("Dコース") || race.trackName?.includes("Dコース") || race.raceName?.includes("D枠");
+    if (isDStage) {
+      if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位")) {
+        potential += 30;
+        tags.push("📐 東京Dコース物理:極小インラチ沿い最短経路アドバンテージ");
+      } else if (frame >= 7 && (horse.style === "差し" || horse.style === "追込")) {
+        potential -= 25;
+        tags.push("⚠️ 東京Dコース物理:大外回し物理的距離ロス懸念(割引)");
+      }
+    }
+
+    // ② 前走「小回り競馬場での大外回しロス」からの「広大な東京替わり」一変巻き返し
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const prevRace = horse.pastRaces[0];
+      const isShortTrack = /(中山|福島|小倉|函館|札幌|金沢|笠松|浦和|川崎)/.test(prevRace.venue || "");
+      const isPrevBad = prevRace.result >= 6 && (prevRace.timeDiff !== undefined && prevRace.timeDiff >= 1.0);
+      
+      if (isShortTrack && isPrevBad) {
+        potential += 25;
+        tags.push("🚀 コース替わり一変:小回り大外ロス → 広大な東京の直線解放期待");
+      }
+    }
+
+    // ③ 「東京マイスター」騎手 × 脚質・枠の黄金シナジー
+    if (isTurf) {
+      if (jockey.includes("ルメー") && (horse.style === "差し" || horse.style === "追込")) {
+        potential += 20;
+        tags.push("👑 東京マイスター:ルメール極上末脚エッジ(仕掛けタイミング最適)");
+      } else if (jockey.match(/(戸崎|菅原明|横山武)/) && (horse.style === "先行" || horse.style === "好位")) {
+        potential += 15;
+        tags.push("🎯 東京マイスター:好位イン差し抜け出しエッジ");
+      }
+    } else if (isDirt) {
+      if (jockey.match(/(川田|坂井)/) && (horse.style === "逃げ" || horse.style === "先行")) {
+        potential += 20;
+        tags.push("⚡ 東京ダートマイスター:先行押し切りエッジ(前残り加速)");
+      }
+    }
+
     // 4. 馬体重変動の「トレンド」読み取り（勝ち切り安定と紐穴の分離）
     const absWeightChange = Math.abs(weightChange);
     if (weightChange >= 0 && weightChange <= 6) {
