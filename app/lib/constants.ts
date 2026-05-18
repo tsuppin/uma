@@ -4314,4 +4314,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779066100909",
+    version: "v106.1",
+    date: "2026-05-18T01:01:40.909Z",
+    description: "笠松 - 好走馬(オレンタノ等)の特性学習",
+    track: "笠松",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "筒井勇",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ケープブランコ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
