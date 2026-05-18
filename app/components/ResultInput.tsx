@@ -237,7 +237,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
           const timeM = parts5[0]?.match(/^([\d:]+)/);
           if (timeM) {
-            // "52:9" を "52.9", "1:16:2" を "1:16.2" に変換
             time = timeM[1].replace(/:(\d)$/, ".$1");
           }
           const marginM = parts5[0]?.match(/[\(（](.+?)[\)）]/);
@@ -251,22 +250,33 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
           const cleanName = name.replace(/^ブリンカー\s*/, "").replace(/^マルガイ\s*/, "").replace(/^マルチ\s*/, "").trim();
 
+          // 馬名あいまいマッチングによる馬番補填
+          let finalNum = num;
+          const matchedHorse = race.horses.find(h => 
+            h.name.replace(/\s+/g, "") === cleanName.replace(/\s+/g, "") ||
+            h.name.includes(cleanName) ||
+            cleanName.includes(h.name)
+          );
+          if (matchedHorse) {
+            finalNum = matchedHorse.number;
+          }
+
           parsedMap.set(rank, {
             rank,
-            horseNumber: num,
+            horseNumber: finalNum,
             horseName: cleanName,
             time,
             odds: 0,
             prize: 0,
             popularity: pop,
-            weight: 0, // 出馬表からあとで補填される
+            weight: 0,
             weightChange: 0,
             jockey,
             jockeyWeight,
             trainer,
             last3f,
             margin,
-            belonging // 所属先をオブジェクトに追加
+            belonging
           } as any);
 
           rankCounter++;
@@ -281,30 +291,45 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
         if ((line === "払戻金" || line === "コーナー通過順位" || line.startsWith("タイム") || line.startsWith("勝馬の紹介")) && parsedMap.size > 3) break;
 
-        const rp1 = line.split(/[\t]/);
         let isRow1 = false;
         let rank = 0, frame = 0, num = 0, name = "", pop = 0;
 
-        if (rp1.length >= 4 && /^\d+$/.test(rp1[0]) && /^\d+$/.test(rp1[2])) {
-          rank = parseInt(rp1[0]);
-          frame = parseInt(rp1[1]);
-          num = parseInt(rp1[2]);
-          const namePart = rp1[3].trim();
+        // 1. 正規表現による頑健な一発キャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" またはスペース混在)
+        const row1Match = line.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)[\t\s]+(.+)/);
+        if (row1Match) {
+          rank = parseInt(row1Match[1]);
+          frame = parseInt(row1Match[2]);
+          num = parseInt(row1Match[3]);
+          const namePart = row1Match[4].trim();
           const popM = namePart.match(/(.+?)(\d+)番人気/);
           name = popM ? popM[1].trim() : namePart;
           pop = popM ? parseInt(popM[2]) : 0;
           isRow1 = true;
         } else {
-          const spParts = line.split(/\s+/);
-          if (spParts.length >= 4 && /^\d+$/.test(spParts[0]) && /^\d+$/.test(spParts[1]) && /^\d+$/.test(spParts[2])) {
-            rank = parseInt(spParts[0]);
-            frame = parseInt(spParts[1]);
-            num = parseInt(spParts[2]);
-            const namePart = spParts.slice(3).join(" ");
+          // 2. タブによるフォールバック
+          const rp1 = line.split(/[\t]/);
+          if (rp1.length >= 4 && /^\d+$/.test(rp1[0]) && /^\d+$/.test(rp1[2])) {
+            rank = parseInt(rp1[0]);
+            frame = parseInt(rp1[1]);
+            num = parseInt(rp1[2]);
+            const namePart = rp1[3].trim();
             const popM = namePart.match(/(.+?)(\d+)番人気/);
             name = popM ? popM[1].trim() : namePart;
             pop = popM ? parseInt(popM[2]) : 0;
             isRow1 = true;
+          } else {
+            // 3. スペースによるフォールバック
+            const spParts = line.split(/\s+/);
+            if (spParts.length >= 4 && /^\d+$/.test(spParts[0]) && /^\d+$/.test(spParts[1]) && /^\d+$/.test(spParts[2])) {
+              rank = parseInt(spParts[0]);
+              frame = parseInt(spParts[1]);
+              num = parseInt(spParts[2]);
+              const namePart = spParts.slice(3).join(" ");
+              const popM = namePart.match(/(.+?)(\d+)番人気/);
+              name = popM ? popM[1].trim() : namePart;
+              pop = popM ? parseInt(popM[2]) : 0;
+              isRow1 = true;
+            }
           }
         }
 
@@ -358,9 +383,20 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
           const cleanName = name.replace(/^ブリンカー\s*/, "").replace(/^マルガイ\s*/, "").replace(/^マルチ\s*/, "").trim();
 
+          // 馬名あいまいマッチングによる馬番補填
+          let finalNum = num;
+          const matchedHorse = race.horses.find(h => 
+            h.name.replace(/\s+/g, "") === cleanName.replace(/\s+/g, "") ||
+            h.name.includes(cleanName) ||
+            cleanName.includes(h.name)
+          );
+          if (matchedHorse) {
+            finalNum = matchedHorse.number;
+          }
+
           parsedMap.set(rank, {
             rank,
-            horseNumber: num,
+            horseNumber: finalNum,
             horseName: cleanName,
             time,
             odds: 0,
