@@ -402,7 +402,10 @@ export function parseJRAText(rawText: string): {
 
   const blockStarts: number[] = [];
   for (let i = 0; i < lines.length; i++) {
-    if (/^枠\d/.test(lines[i])) blockStarts.push(i);
+    // 枠番の検出を大幅に強化 (行頭のスペース、枠と数値の間のスペース/タブ/全角スペースの揺れに完全対応)
+    if (/^[\s\t　]*枠[\s\t　]*\d/.test(lines[i])) {
+      blockStarts.push(i);
+    }
   }
 
   const horses: Horse[] = [];
@@ -419,7 +422,7 @@ export function parseJRAText(rawText: string): {
 function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   if (!lines[0]) return null;
 
-  const frameMatch = lines[0].match(/枠(\d)/);
+  const frameMatch = lines[0].match(/枠[\s\t　]*(\d)/);
   const frame = frameMatch ? parseInt(frameMatch[1]) : 1;
   const tabParts = lines[0].split(/\t/);
   let number = tabParts[1] ? parseInt(tabParts[1].trim()) : 0;
