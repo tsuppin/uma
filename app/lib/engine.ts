@@ -580,6 +580,99 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【川崎競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isKawasaki = race.venue?.includes("川崎") || race.trackName?.includes("川崎") || race.raceName?.includes("川崎");
+
+  if (isKawasaki) {
+    tags.push("🐎 川崎特化OMEGAエンジン適用中");
+
+    // 1. 環境データと重視すべき馬の基本属性
+    // 馬体重（良馬場ダートの大型パワー指標）
+    if (weight >= 500) {
+      potential += 25;
+      tags.push("💪 川崎タフ良馬場・大型パワー馬アドバンテージ");
+    }
+    // 年齢（鮮度指標：4歳以下優位）
+    if (age <= 4) {
+      potential += 20;
+      tags.push("📈 川崎ヤングジェネレーションエッジ");
+    }
+    // 性別（牝馬割引の無効化と加点）
+    if (gender === "牝") {
+      potential += 15;
+      tags.push("🐎 川崎牝馬アドバンテージ(ダート割引無効化)");
+    }
+    
+    // 血統（種牡馬適性）
+    const isSpecialSire = bloodline.includes("ミスターメロディ") || bloodline.includes("エスポワールシチー");
+    const isRecommendedSire = bloodline.includes("パイロ") || bloodline.includes("ホッコータルマエ") || bloodline.includes("ダノンレジェンド") || bloodline.includes("ゴールドドリーム");
+    if (isSpecialSire) {
+      potential += 30;
+      tags.push("🧬 川崎特注ダート血統(勝負気配)");
+    } else if (isRecommendedSire) {
+      potential += 20;
+      tags.push("🧬 川崎ダート実績血統補正");
+    }
+
+    // 2. コース・展開特徴量（距離・枠順バイアス）
+    // 枠順バイアス（中枠4,5枠優遇）
+    if (frame === 4 || frame === 5) {
+      potential += 25;
+      tags.push("📐 川崎勝率No.1 of 4・5中枠");
+    }
+    // 後半戦（6R〜12R）の内枠（1,2枠）インラチ復活バイアス
+    if (race.raceNumber >= 6 && (frame === 1 || frame === 2)) {
+      potential += 20;
+      tags.push("📐 川崎後半戦のイン復活ロスなし補正");
+    }
+    // 外枠（8枠）のアタマ割引・ヒモ残し
+    if (frame === 8) {
+      potential -= 10;
+      tags.push("⚠️ 川崎8枠:1着率低下割引");
+      if (popularity >= 6 || odds >= 12.0) {
+        potential += 20; // ヒモ穴としての期待値
+        tags.push("⚡ 大外8枠・複勝ヒモ穴エッジ");
+      }
+    }
+
+    // 距離別ペース予想
+    if (dist <= 900) {
+      // 900m戦: スピード絶対の逃げ・先行
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 35;
+        tags.push("🏃 川崎900m電撃スプリント補正");
+      }
+    } else if (dist >= 1400) {
+      // 1400m以上: タフなスタミナ持久力戦
+      if (horse.style === "差し" || horse.style === "追込") {
+        potential += 20;
+        tags.push("💪 川崎1400m以上タフな持久戦補正");
+      }
+    }
+
+    // 3. 騎手パラメータ（ジョッキーファクター）
+    // トップジョッキー×上位人気高信頼度
+    const isEliteKawasakiJ = ["野畑", "笹川", "矢野", "町田", "御神本", "新原"].some(j => jockey.includes(j));
+    if (isEliteKawasakiJ && popularity <= 2) {
+      potential += 35;
+      tags.push("👑 川崎エリートジョッキー×上位人気高信頼度");
+    }
+    // 穴メーカー（古岡、藤江、藤本）×下位人気爆発トリガー
+    const isDarkJ = ["古岡", "藤江", "藤本"].some(j => jockey.includes(j));
+    if (isDarkJ && (popularity >= 6 || odds >= 12.0)) {
+      potential += 30;
+      tags.push("⚡ 川崎大穴メーカー騎手特注フラグ");
+    }
+    // 遠征・スポット（特別補正）
+    const isVisitorJ = jockey.match(/(ルメール|川田|武豊|レーン|モレイラ|シャペル|デムーロ)/);
+    if (isVisitorJ) {
+      potential += 35;
+      tags.push("✈️ 川崎スポット・JRA遠征エリート補正");
+    }
+  }
+
+  // ==========================================
   // 【新設】データベース（MasterData）連携
   // ==========================================
   const hm = masterData.horses?.[horse.name];
