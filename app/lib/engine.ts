@@ -181,6 +181,80 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【京都競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isKyoto = race.venue?.includes("京都") || race.trackName?.includes("京都") || race.raceName?.includes("京都");
+
+  if (isKyoto) {
+    tags.push("⛩️ 京都特化OMEGAエンジン適用中");
+
+    // 1. 馬体重のマイナス変動（究極の勝負気配）
+    if (weightChange < 0 && weightChange >= -8) {
+      potential += 15;
+      tags.push("🔥 京都絞り込み勝負仕上げ(マイナス体重差)");
+      
+      // オッズ偏差値が高い（人気薄の穴馬）場合、さらなる期待値ブースト
+      if (popularity >= 6 || odds >= 10.0) {
+        potential += 25;
+        tags.push("⚡ 勝負仕上げ穴馬ブースト");
+      }
+    }
+
+    // 2. 枠順バイアスの自動更新（トラックバイアスの激変適応）
+    // 前半戦（1R〜6R）：内枠復活バイアス
+    if (race.raceNumber <= 6) {
+      if (frame <= 3) {
+        potential += 20;
+        tags.push("📐 京都前半戦の内枠復活バイアス");
+      }
+    } else {
+      // 後半戦（7R〜12R）：荒れ馬場外差し外枠バイアス
+      if (frame >= 6) {
+        potential += 20;
+        tags.push("📈 京都後半戦の外枠・イン避けバイアス");
+      }
+    }
+
+    // 過去の京都好走実績によるコース相性補正
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const kyotoTop3 = horse.pastRaces.filter(pr => pr.venue?.includes("京都") && pr.result <= 3).length;
+      if (kyotoTop3 > 0) {
+        potential += 15;
+        tags.push(`🐎 京都実績馬リピートエッジ(${kyotoTop3}回)`);
+      }
+    }
+
+    // 3. オッズ偏差値と過剰人気の検知
+    // 1番人気の過剰人気（低期待値）の割り引き
+    if (popularity === 1 && odds <= 2.2) {
+      potential -= 30;
+      tags.push("⚠️ 京都1番人気過剰被り割引(期待値補正)");
+    }
+    // スコア上位かつオッズ偏差値乖離（大衆軽視の極上大穴）の検知
+    if (potential >= 530 && odds >= 25.0) {
+      potential += 40;
+      tags.push("⚡ 京都特選:超大穴妙味期待値");
+    }
+
+    // 4. ベースライン補正（特殊馬具・ブリンカー＆栗東所属ホームアドバンテージ）
+    // 特殊馬具（ブリンカー着用）激変期待値
+    if (horse.useBlinkers) {
+      potential += 30;
+      tags.push("🎯 京都ブリンカー着用激変フラグ");
+    }
+
+    // 所属バイアス（栗東馬の圧倒的優位）
+    const isRittoKyoto = horse.stableLocation?.includes("栗東") || horse.trainer?.includes("栗東") || horse.trainer?.includes("美浦") === false;
+    if (isRittoKyoto) {
+      potential += 35;
+      tags.push("🏰 京都本家:栗東所属馬ホームエッジ");
+    } else {
+      potential -= 15;
+      tags.push("⚠️ 美浦所属馬(遠征アウェイ劣勢)");
+    }
+  }
+
+  // ==========================================
   // 【新設】データベース（MasterData）連携
   // ==========================================
   const hm = masterData.horses?.[horse.name];
