@@ -6,12 +6,44 @@ export default function StatsPanel({ state }: { state: AppState }) {
   const completed = state.races.filter(r => r.result);
 
   const venueStats = completed.reduce((acc, race) => {
-    if (!acc[race.venue]) acc[race.venue] = { total: 0, hit: 0, profit: 0 };
+    if (!acc[race.venue]) {
+      acc[race.venue] = { 
+        total: 0, 
+        hit: 0, 
+        profit: 0,
+        trio: 0,
+        trifecta: 0,
+        quinella: 0,
+        exacta: 0
+      };
+    }
     acc[race.venue].total++;
     if (race.result?.hitTickets?.length) acc[race.venue].hit++;
     acc[race.venue].profit += race.result?.profit || 0;
+
+    if (race.result) {
+      const r = race.result;
+      const isTrioHit = r.hits?.trio || (r.hitTickets && r.hitTickets.length > 0);
+      const isTrifectaHit = r.hits?.trifecta;
+      const isQuinellaHit = r.hits?.quinella;
+      const isExactaHit = r.hits?.exacta;
+
+      if (isTrioHit) acc[race.venue].trio++;
+      if (isTrifectaHit) acc[race.venue].trifecta++;
+      if (isQuinellaHit) acc[race.venue].quinella++;
+      if (isExactaHit) acc[race.venue].exacta++;
+    }
+
     return acc;
-  }, {} as Record<string, { total: number; hit: number; profit: number; }>);
+  }, {} as Record<string, { 
+    total: number; 
+    hit: number; 
+    profit: number;
+    trio: number;
+    trifecta: number;
+    quinella: number;
+    exacta: number;
+  }>);
 
   return (
     <div className="fade-in">
@@ -69,17 +101,34 @@ export default function StatsPanel({ state }: { state: AppState }) {
           <div className="card-header"><div className="card-title">🏟️ 競馬場別成績</div></div>
           <table className="horse-table">
             <thead>
-              <tr><th>競馬場</th><th>レース数</th><th>的中数</th><th>的中率</th></tr>
+              <tr>
+                <th>競馬場</th>
+                <th>レース数</th>
+                <th>的中数</th>
+                <th>的中率</th>
+                <th>三連複</th>
+                <th>三連単</th>
+                <th>馬連</th>
+                <th>馬単</th>
+              </tr>
             </thead>
             <tbody>
               {Object.entries(venueStats).map(([venue, s]) => {
                 const hitRate = s.total > 0 ? s.hit / s.total : 0;
+                const trioRate = s.total > 0 ? s.trio / s.total : 0;
+                const trifectaRate = s.total > 0 ? s.trifecta / s.total : 0;
+                const quinellaRate = s.total > 0 ? s.quinella / s.total : 0;
+                const exactaRate = s.total > 0 ? s.exacta / s.total : 0;
                 return (
                   <tr key={venue}>
                     <td className="fw-600">{venue}</td>
                     <td>{s.total}</td>
                     <td className="text-green fw-700">{s.hit}</td>
                     <td>{(hitRate * 100).toFixed(1)}%</td>
+                    <td>{(trioRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trio})</span></td>
+                    <td>{(trifectaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trifecta})</span></td>
+                    <td>{(quinellaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.quinella})</span></td>
+                    <td>{(exactaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.exacta})</span></td>
                   </tr>
                 );
               })}
