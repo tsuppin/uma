@@ -482,7 +482,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       {/* 📋 テキスト貼り付け・解析エリア */}
       <div className="card fade-in">
         <div className="card-header">
-          <div className="card-title">📋 レース結果テキスト貼り付け（自動入力）</div>
+          <div className="card-title">📋 レース結果テキスト貼り付け</div>
         </div>
 
         <div className="form-group">
