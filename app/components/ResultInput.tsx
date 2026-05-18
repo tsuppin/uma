@@ -19,6 +19,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     }))
   );
   const [profit, setProfit] = useState(existing?.profit || 0);
+  const [betAmount, setBetAmount] = useState(100);
 
   // 詳細な追加データ状態
   const [lapTimes, setLapTimes] = useState<string[]>(existing?.lapTimes || []);
@@ -457,6 +458,27 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       return { ...p, prize: pr };
     });
 
+    // 的中払戻金の自動計算（初期betAmount = 100円ベース）
+    if (race.predictions && calculated.length >= 3) {
+      const formation = generateFormation(race.predictions);
+      const resultNums = calculated.slice(0, 3).map(r => r.horseNumber).filter(Boolean).sort((a, b) => a - b);
+      
+      const hitTickets = formation ? formation.tickets.filter(ticket => {
+        const sorted = [...ticket].sort((a, b) => a - b);
+        return sorted.length === 3 && sorted.every((n, i) => n === resultNums[i]);
+      }) : [];
+
+      if (hitTickets.length > 0) {
+        const trioPayout = parsedRefunds.trio?.[0]?.payout || 0;
+        if (trioPayout > 0) {
+          const calculatedProfit = hitTickets.length * (trioPayout * (betAmount / 100));
+          setProfit(calculatedProfit);
+        }
+      } else {
+        setProfit(0);
+      }
+    }
+
     setResults(calculated);
   };
 
@@ -736,7 +758,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       {formation && resultNums.length >= 3 && (
         <div className="card">
           <div className="card-header">
-            <div className="card-title">🎯 的中確認</div>
+            <div className="card-title">🎯 的中判定 & 払戻金自動計算</div>
             <div className="fs-sm text-muted">
               3連複 {resultNums.join("-")} で判定中
             </div>
@@ -750,6 +772,42 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               😞 今回は不的中でした。AIが自動学習して次回に活かします。
             </div>
           )}
+
+          {hitTickets.length > 0 && refunds && (
+            <div className="bg-gold-muted p-12 rounded-8 border border-gold-40 text-sm mt-12 flex flex-col gap-8">
+              <div className="fw-600 text-gold flex items-center gap-4">💴 払戻金自動シミュレーター</div>
+              <div className="flex gap-8 items-center flex-wrap">
+                <span className="text-muted">1点につき:</span>
+                <input
+                  type="number"
+                  className="form-input w-90"
+                  step={100}
+                  min={100}
+                  value={betAmount}
+                  aria-label="1点あたりの賭け金"
+                  onChange={e => {
+                    const amt = Math.max(0, +e.target.value);
+                    setBetAmount(amt);
+                    const trioPayout = refunds.trio?.[0]?.payout || 0;
+                    if (trioPayout > 0) {
+                      setProfit(hitTickets.length * (trioPayout * (amt / 100)));
+                    }
+                  }}
+                />
+                <span className="fs-sm">円</span>
+                <span className="text-muted ml-8">パース配当額:</span>
+                <strong className="text-gold">
+                  {(refunds.trio?.[0]?.payout || 0).toLocaleString()}円
+                </strong>
+                <span className="text-muted">× 的中数:</span>
+                <strong>{hitTickets.length}点</strong>
+              </div>
+              <div className="fs-xs text-muted">
+                ※ 1点あたり購入額を変更すると、下の「払戻金額」に自動で掛け算して反映されます。
+              </div>
+            </div>
+          )}
+
           <div className="form-group mt-12">
             <label className="form-label" htmlFor="result-profit">払戻金額（円）</label>
             <input id="result-profit" type="number" className="form-input" value={profit || ""}
