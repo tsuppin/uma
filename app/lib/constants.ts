@@ -5236,4 +5236,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779076211603",
+    version: "v157.1",
+    date: "2026-05-18T03:50:11.603Z",
+    description: "盛岡 - 好走馬(ジーティービート等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "小林凌",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サトノアラジン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
