@@ -5930,4 +5930,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779102319303",
+    version: "v171.1",
+    date: "2026-05-18T11:05:19.303Z",
+    description: "帯広ば - 好走馬(キョウエイハンター等)の特性学習",
+    track: "帯広ば",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weightChange",
+        "operator": ">=",
+        "value": 10,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "今井千",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "カネサテンリュウ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
