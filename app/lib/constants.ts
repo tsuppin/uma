@@ -5271,4 +5271,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779076255937",
+    version: "v158.1",
+    date: "2026-05-18T03:50:55.937Z",
+    description: "金沢 - 好走馬(ブレイブゼウス等)の特性学習",
+    track: "金沢",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "青柳正",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サクラゼウス",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "加藤翔",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "エスケンデレヤ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
