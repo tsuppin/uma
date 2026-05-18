@@ -227,7 +227,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
         <div className="fade-in">
           <div className="card">
             <div className="card-header">
-              <div className="card-title">🎯 精密フォーメーション（{formation.totalPoints}点）</div>
+              <div className="card-title">🎯 買い目</div>
               <select
                 className="form-select w-auto fs-sm"
                 value={formationType}
