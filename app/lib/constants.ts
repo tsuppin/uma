@@ -4825,4 +4825,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779075357561",
+    version: "v148.1",
+    date: "2026-05-18T03:35:57.561Z",
+    description: "新潟 - 好走馬(ラヴェンデル等)の特性学習",
+    track: "新潟",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "斎藤 新",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "キンシャサノキセキ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "長浜 鴻緒",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "シルバーステート",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
