@@ -8018,4 +8018,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779135062128",
+    version: "v213.1",
+    date: "2026-05-18T20:11:02.128Z",
+    description: "東京 - 好走馬(ワイズギャング等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "長岡 禎仁",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ミスチヴィアスアレックス",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
