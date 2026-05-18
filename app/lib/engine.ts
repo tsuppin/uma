@@ -673,6 +673,118 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【園田・姫路競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isSonoda = race.venue?.includes("園田") || race.trackName?.includes("園田") || race.raceName?.includes("園田") || 
+                   race.venue?.includes("姫路") || race.trackName?.includes("姫路") || race.raceName?.includes("姫路");
+
+  if (isSonoda) {
+    tags.push("🌾 園田特化OMEGAエンジン適用中");
+
+    // 1. 単勝人気ファクター（本命・対抗超重視モデル）
+    if (popularity <= 3) {
+      potential += 35;
+      tags.push("🎯 園田本命・対抗信頼度エッジ");
+      if (popularity === 1) {
+        potential += 40;
+        tags.push("👑 園田1番人気絶対軸補正");
+      }
+    } else {
+      potential -= 20; // 4番人気以下の1着率の大幅低下に伴う減点
+      tags.push("⚠️ 園田4番人気以下アタマ割引");
+    }
+
+    // 2. レースクラス別の「脚質・上がり」動的切り替え
+    if (race.raceNumber <= 6) {
+      // 前半レース（1R〜6R）：先行力（前残り）最重視
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 30;
+        tags.push("🏃 園田前半戦:先行・前残りアドバンテージ");
+      }
+    } else {
+      // 後半レース（7R〜12R）：上がり3ハロン（極上末脚）最重視
+      if (horse.style === "差し" || horse.style === "追込") {
+        potential += 30;
+        tags.push("🏹 園田後半戦:極上末脚特化バイアス");
+      }
+      // 上がりタイムの実績補正
+      if (horse.pastRaces && horse.pastRaces[0]) {
+        const last3fNum = parseFloat(horse.pastRaces[0].last3fTime || "40.0");
+        if (last3fNum > 0 && last3fNum <= 37.5) {
+          potential += 20;
+          tags.push(`⚡ 園田後半戦:前走好末脚を計測(3F:${last3fNum}秒)`);
+        }
+      }
+    }
+
+    // 3. 枠順バイアス（有利枠と不利枠）
+    if (frame === 3 || frame === 4) {
+      potential += 25;
+      tags.push("📐 園田安定の3・4枠バイアス");
+    } else if (frame === 8) {
+      potential += 30;
+      tags.push("📈 園田勝率・複勝率トップの8枠");
+    } else if (frame === 1) {
+      potential -= 30; // 最内枠極度不振ペナルティ（買い目排除）
+      tags.push("❌ 園田1枠ペナルティ(不振枠割引)");
+    }
+
+    // 4. 馬体重変動ファクター
+    if (weightChange < 0 && weightChange >= -9) {
+      potential += 20;
+      tags.push("🔥 園田馬体重絞り勝負仕上げ");
+    } else if (weightChange === 0) {
+      potential += 15;
+      tags.push("📈 園田馬体重維持・安定トレンド");
+    } else if (weightChange <= -10) {
+      potential -= 40; // 極度の細化・体調不良リスク排除
+      tags.push("❌ 園田馬体重二桁急減ペナルティ");
+    } else if (weightChange >= 10) {
+      // 大幅増は実績馬であれば評価を下げず、むしろ成長・リフレッシュ加点
+      if (potential >= 520) {
+        potential += 10;
+        tags.push("⚡ 園田実績馬の馬体成長・リフレッシュボーナス");
+      }
+    }
+
+    // 5. ヒューマンファクター（騎手・調教師スコアの固め打ち連鎖）
+    // トップ騎手の1着固定フラグ
+    const isEliteSonodaJ = jockey.includes("吉村智") || jockey.includes("下原") || jockey.includes("杉浦") || jockey.includes("佐々世") || jockey.includes("佐々木世");
+    if (isEliteSonodaJ) {
+      potential += 40;
+      tags.push("👑 園田リーディングトップジョッキーバイアス");
+    }
+    // ベテラン騎手の連下・複勝フラグ
+    const isVeteranSonodaJ = jockey.includes("小牧太") || jockey.includes("川原");
+    if (isVeteranSonodaJ) {
+      potential += 25;
+      tags.push("🌟 園田ベテランジョッキー複勝バイアス");
+    }
+    // 好調厩舎（調教師）
+    const isEliteTrainerS = ["山口浩", "永島", "盛本", "長倉"].some(t => horse.trainer?.includes(t));
+    if (isEliteTrainerS) {
+      potential += 25;
+      tags.push("🏰 園田名門・好調厩舎固め打ちバイアス");
+    }
+
+    // 6. 交流重賞の「所属バイアス」フラグ（全国交流・他地区遠征馬ヤリ）
+    const isKyomeiS = race.raceName?.match(/(のじぎく賞|交流|重賞|特別|兵庫)/);
+    if (isKyomeiS) {
+      const trainerName = horse.trainer || "";
+      const stableName = horse.stableLocation || "";
+      const isHyogo = stableName.includes("園田") || stableName.includes("西脇") || trainerName.includes("園田") || trainerName.includes("西脇");
+      
+      if (!isHyogo && (stableName.match(/(大井|川崎|船橋|浦和|門別|北海道|南関)/) || trainerName.match(/(大井|川崎|船橋|浦和|門別|北海道|南関)/))) {
+        potential += 50; // 他地区の圧倒的エリート遠征馬
+        tags.push("✈️ 交流重賞:他地区エリート遠征馬エッジ");
+      } else {
+        potential -= 25; // 地元兵庫勢の実力差劣勢
+        tags.push("⚠️ 交流重賞:地元兵庫所属馬ディスカウント");
+      }
+    }
+  }
+
+  // ==========================================
   // 【新設】データベース（MasterData）連携
   // ==========================================
   const hm = masterData.horses?.[horse.name];
