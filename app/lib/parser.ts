@@ -425,13 +425,29 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   let number = tabParts[1] ? parseInt(tabParts[1].trim()) : 0;
   let idx = 1;
 
-  if (!number && lines[idx] && /^\d+$/.test(lines[idx])) { number = parseInt(lines[idx]); idx++; }
+  // 馬番のパースを極限まで頑健化 (前後のスペース・タブのトリム、ブリンカーや空行の自動スキップに対応)
+  if (!number) {
+    while (idx < lines.length) {
+      const cleanLine = (lines[idx] || "").trim();
+      if (/^\d+$/.test(cleanLine)) {
+        number = parseInt(cleanLine);
+        idx++;
+        break;
+      }
+      if (cleanLine === "" || cleanLine === "ブリンカー" || cleanLine === "勝負服の画像") {
+        idx++;
+      } else {
+        break;
+      }
+    }
+  }
 
   let hasBlinker = false;
   if ((lines[idx] || "").includes("ブリンカー")) { hasBlinker = true; idx++; }
 
-  const name = (lines[idx] || "").replace(/^(マルガイ|マルチ)/, "").trim(); idx++;
-  while (idx < lines.length && (lines[idx] === "" || /^\d+$/.test(lines[idx]))) idx++;
+  // カタカナの「マルガイ」「マルチ」の誤削除を廃止し、正式な馬名そのまま登録する
+  const name = (lines[idx] || "").trim(); idx++;
+  while (idx < lines.length && (lines[idx] === "" || /^\d+$/.test(lines[idx].trim()))) idx++;
 
   const owner = lines[idx] || ""; idx++;
   while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;

@@ -249,15 +249,21 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           const line6 = lines[i + 5]?.trim() || "";
           const pop = parseInt(line6) || 0;
 
-          const cleanName = name.replace(/^ブリンカー\s*/, "").replace(/^マルガイ\s*/, "").replace(/^マルチ\s*/, "").trim();
+          const cleanName = name.replace(/^ブリンカー\s*/, "").trim();
 
           // 馬名あいまいマッチングによる馬番補填
           let finalNum = num;
-          const matchedHorse = race.horses.find(h => 
-            h.name.replace(/\s+/g, "") === cleanName.replace(/\s+/g, "") ||
-            h.name.includes(cleanName) ||
-            cleanName.includes(h.name)
-          );
+          const matchedHorse = race.horses.find(h => {
+            const normalize = (s: string) => s
+              .replace(/\s+/g, "")
+              .replace(/[\[\(\)\]（）]/g, "")
+              .replace(/マルガイ|マルチ|ブリンカー/g, "")
+              .replace(/[外地]/g, "");
+            
+            const n1 = normalize(h.name);
+            const n2 = normalize(cleanName);
+            return n1 === n2 || n1.includes(n2) || n2.includes(n1);
+          });
           if (matchedHorse) {
             finalNum = matchedHorse.number;
           }
@@ -321,7 +327,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           const nextLine = lines[nextIdx]?.trim() || "";
           
           // "ブリンカー\tシュラフ6番人気" のような符号を消去し、馬名と人気を取り出す
-          const cleanNext = nextLine.replace(/^(ブリンカー|マルチ|マルガイ)[\t\s]*/, "").trim();
+          const cleanNext = nextLine.replace(/^(ブリンカー)[\t\s]*/, "").trim();
           const popM = cleanNext.match(/(.+?)(\d+)番人気/);
           name = popM ? popM[1].trim() : cleanNext;
           pop = popM ? parseInt(popM[2]) : 0;
@@ -384,15 +390,21 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             baseIdx++;
           }
 
-          const cleanName = name.replace(/^ブリンカー\s*/, "").replace(/^マルガイ\s*/, "").replace(/^マルチ\s*/, "").trim();
+          const cleanName = name.replace(/^ブリンカー\s*/, "").trim();
 
           // 馬名あいまいマッチングによる馬番補填
           let finalNum = num;
-          const matchedHorse = race.horses.find(h => 
-            h.name.replace(/\s+/g, "") === cleanName.replace(/\s+/g, "") ||
-            h.name.includes(cleanName) ||
-            cleanName.includes(h.name)
-          );
+          const matchedHorse = race.horses.find(h => {
+            const normalize = (s: string) => s
+              .replace(/\s+/g, "")
+              .replace(/[\[\(\)\]（）]/g, "")
+              .replace(/マルガイ|マルチ|ブリンカー/g, "")
+              .replace(/[外地]/g, "");
+            
+            const n1 = normalize(h.name);
+            const n2 = normalize(cleanName);
+            return n1 === n2 || n1.includes(n2) || n2.includes(n1);
+          });
           if (matchedHorse) {
             finalNum = matchedHorse.number;
           }
