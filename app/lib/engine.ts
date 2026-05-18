@@ -879,6 +879,53 @@ export function calculateTsuchiyaScore(
       potential += 15;
       tags.push("📐 大外8枠・2着確保バイアス");
     }
+
+    // ==========================================
+    // 【新設】笠松的中率極限先鋭化ファクター (Kasamatsu Advanced Edge)
+    // ==========================================
+    // ① 800m戦（電撃スプリント）における全天候外枠絶対優位と内枠自滅リスク
+    if (dist === 800) {
+      if (frame >= 7) {
+        potential += (condition === '重' || condition === '不良') ? 40 : 25;
+        tags.push("🚀 笠松800m:外枠スムーズ加速アドバンテージ(砂被りなし)");
+      } else if (frame === 1) {
+        potential -= (condition === '重' || condition === '不良') ? 45 : 30;
+        tags.push("❌ 笠松800m:最内1枠の包まれ砂被り自滅リスク排除");
+      }
+    }
+
+    // ② 雨・重・不良馬場（泥馬場）時の「砂流出イン高速伸び」バイアス
+    if (condition === '重' || condition === '不良') {
+      if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
+        potential += 25;
+        tags.push("☔ 笠松道悪物理:内ラチ沿い砂流出による高速イン伸びアドバンテージ");
+      }
+    }
+
+    // ③ JRA未勝利交流戦における圧倒的レベル差の実力非対称補正
+    const isExchange = race.raceName?.match(/(交流|中央|JRA)/);
+    if (isExchange) {
+      const isJRA = horse.transferFrom === 'JRA' || horse.stableLocation?.match(/(栗東|美浦)/) || horse.trainer?.match(/(栗東|美浦)/);
+      if (isJRA) {
+        potential += 50;
+        tags.push("🚀 笠松交流戦:JRA所属の圧倒的レベル差優位(確勝気配)");
+      } else if (horse.belonging?.includes("笠松") || horse.trainer?.includes("笠松")) {
+        potential -= 25;
+        tags.push("⚠️ 笠松交流戦:地元笠松所属馬の実力レベル差割引");
+      }
+    }
+
+    // ④ 「笹野博司厩舎 × 渡邊竜也騎手」の連対率60%超黄金勝負ヤリライン
+    const trainerName = horse.trainer || '';
+    if (trainerName.includes("笹野") && (jockey.includes("渡邊") || jockey.includes("渡辺"))) {
+      if (popularity <= 2) {
+        potential += 45;
+        tags.push("👑 笠松最強黄金タッグ:笹野×渡邊(勝負ヤリ1着固定)");
+      } else {
+        potential += 25;
+        tags.push("👑 笠松最強黄金タッグ:笹野×渡邊(実力信頼)");
+      }
+    }
   }
 
   // ==========================================
