@@ -6818,4 +6818,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779104082319",
+    version: "v189.1",
+    date: "2026-05-18T11:34:42.319Z",
+    description: "金沢 - 好走馬(ニューレトロ等)の特性学習",
+    track: "金沢",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "松戸政",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ベルシャザール",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "中島龍",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ハーツクライ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
