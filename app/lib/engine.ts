@@ -929,6 +929,71 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【金沢競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isKanazawa = race.venue?.includes("金沢") || race.trackName?.includes("金沢") || race.raceName?.includes("金沢");
+
+  if (isKanazawa) {
+    tags.push("🌾 金沢特化OMEGAエンジン適用中");
+
+    // 1. 金沢名物「イン砂地獄（内ラチ底なし沼）」の徹底物理シミュレーション
+    const isHeavyMud = condition === '重' || condition === '不良';
+    if (!isHeavyMud) {
+      // 良馬場・稍重：内ラチ沿いの砂が極端に深く、最内1枠は底なし沼を走らされるため大幅割引
+      if (frame === 1) {
+        potential -= 30;
+        tags.push("⚠️ 金沢名物:イン砂地獄(底なし沼)1枠リスク割引");
+      } else if (frame >= 6) {
+        // クリーンな外目を通れる外枠を優遇
+        potential += 20;
+        tags.push("📈 金沢特有:クリーン馬場追走外枠アドバンテージ");
+      }
+    } else {
+      // 重・不良：逆にインラチ沿いの砂が固まり、一時的に高速イン伸び化
+      if (frame <= 2 && (horse.style === "逃げ" || horse.style === "先行")) {
+        potential += 25;
+        tags.push("☔ 金沢道悪物理:泥馬場イン締まり高速イン逃げエッジ");
+      }
+    }
+
+    // 2. 「金沢の絶対神」吉原寛人騎手 ＆ リーディングトップ勢の圧倒的支配力
+    if (jockey.includes("吉原")) {
+      if (popularity <= 2) {
+        potential += 50;
+        tags.push("👑 金沢の絶対神:吉原寛人(勝負ヤリ1着固定)");
+      } else {
+        potential += 30;
+        tags.push("👑 金沢の絶対神:吉原寛人(異次元技術バフ)");
+      }
+    } else if (jockey.match(/(青柳|中島龍|栗原)/)) {
+      potential += 20;
+      tags.push("🌟 金沢リーディング上位騎手(1着バイアス)");
+    }
+
+    // 3. 逃げ・先行圧倒的有利のワンターン超小回りバイアス
+    if (horse.style === "逃げ" || horse.style === "先行") {
+      potential += 35;
+      tags.push("🏃 金沢超小回り:前残り先行絶対有利");
+    } else if (horse.style === "追込") {
+      potential -= 25;
+      tags.push("⚠️ 金沢超小回り:直線極短・差し届かずリスク割引");
+    }
+
+    // 4. 他地区・JRAからの転入格上＆超有力厩舎勝負仕上げ
+    const trainerName = horse.trainer || '';
+    if (trainerName.match(/(中川雅|金田一)/)) {
+      potential += 25;
+      tags.push("🏰 金沢超エリート厩舎:勝負メイチ仕上げ");
+    }
+
+    const hasAwayExp = horse.pastRaces && horse.pastRaces.some(p => p.venue?.match(/(JRA|大井|川崎|船橋|浦和|門別)/));
+    if (hasAwayExp && horse.pastRaces && horse.pastRaces[0] && (horse.pastRaces[0].venue?.includes("金沢") === false)) {
+      potential += 30;
+      tags.push("🚀 転入エッジ:他地区・中央からの格上スピード能力差");
+    }
+  }
+
+  // ==========================================
   // 【川崎競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isKawasaki = race.venue?.includes("川崎") || race.trackName?.includes("川崎") || race.raceName?.includes("川崎");
@@ -1323,39 +1388,7 @@ export function calculateTsuchiyaScore(
     }
   }
 
-  // ==========================================
-  // 【新設】枠順バイアス解析（金沢競馬・統計的期待値）
-  // JRAでの誤適用を防ぐため、金沢競馬場でのみ適用するようガードを追加
-  // ==========================================
-  const isKanazawa = race.venue?.includes("金沢") || race.trackName?.includes("金沢") || race.raceName?.includes("金沢");
-  if (isKanazawa) {
-    if (frame === 1) {
-      // 1枠：スコア1位(1.08) 複勝率50%の最強軸
-      potential += 40;
-      tags.push('🏹1枠:黄金期待値(軸信頼度1位)');
-    } else if (frame === 7) {
-      // 7枠：スコア2位(0.93) 勝率26.7%の勝ち切りバイアス
-      potential += 35;
-      tags.push('🚀7枠:勝負の突き抜け(勝率1位)');
-    } else if (frame === 4) {
-      // 4枠：スコア3位(0.75) 複勝率58.3%のヒモ穴バイアス
-      potential += 10;
-      distortionBoost += 0.6; // 2-3着への食い込みやすさを強化
-      tags.push('💎4枠:激走の紐穴(複勝率1位)');
-    } else if (frame === 8) {
-      // 8枠：スコア4位(0.70) 標準以上の期待値
-      potential += 15;
-      tags.push('🛡️8枠:外枠の安定感');
-    } else if (frame === 2) {
-      // 2枠：スコア最下位(0.25) 明確な死角
-      potential -= 35;
-      tags.push('⚠️2枠:枠順死角(期待値最下位)');
-    } else if (frame === 3 || frame === 5 || frame === 6) {
-      // 中間・死角枠：スコア0.46〜0.54の低迷帯
-      potential -= 15;
-      tags.push('🎐中間枠:バイアス劣勢');
-    }
-  }
+
 
   // 過去走から「回り（左右）」の適性を算出
   if (horse.pastRaces && horse.pastRaces.length > 0) {
