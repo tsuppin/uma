@@ -15,14 +15,17 @@ import KnowledgePanel from "./KnowledgePanel";
 type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge";
 
 export default function KeibaApp() {
-  const [state, setState] = useState<AppState>(defaultState);
+  const [state, setState] = useState<AppState>(() => {
+    if (typeof window !== "undefined") {
+      return loadState();
+    }
+    return defaultState;
+  });
   const [isLoaded, setIsLoaded] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setState(loadState());
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoaded(true);
   }, []);

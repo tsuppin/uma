@@ -144,6 +144,7 @@ export interface RaceResult {
     trainer?: string;
     last3f?: string;
     margin?: string; // 着差
+    belonging?: string; // 所属
   }[];
   lapTimes?: string[]; // ハロンタイム ["12.1", "11.3", ...]
   last4fTime?: string; // 上がり4F

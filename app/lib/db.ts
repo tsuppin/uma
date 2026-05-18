@@ -134,8 +134,9 @@ export function updateMasterDataWithResult(masterData: MasterData, result: RaceR
     const hm = newMasterData.horses[r.horseName];
     
     // 所属の永続化
-    if ((r as any).belonging) {
-      hm.belonging = (r as any).belonging;
+    const rWithBelonging = r as { belonging?: string };
+    if (rWithBelonging.belonging) {
+      hm.belonging = rWithBelonging.belonging;
     }
 
     // 重複チェック

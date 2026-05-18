@@ -1262,7 +1262,7 @@ export function calculateTsuchiyaScore(
   // 【新設】地方競馬 (NAR) 特有の実績・遠征・小回りバイアス評価
   // ==========================================
   const isNarTrack = /(川崎|船橋|大井|浦和|門別|盛岡|水沢|金沢|笠松|名古屋|園田|姫路|高知|佐賀)/.test(trackName);
-  const horseBelonging = horse.belonging || (hm ? (hm as any).belonging : '') || '';
+  const horseBelonging = horse.belonging || (hm ? (hm as { belonging?: string }).belonging : '') || '';
 
   if (isNarTrack) {
     // 1. 他地区所属・遠征エッジの判定 (Region Synergy)

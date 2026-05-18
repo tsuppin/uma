@@ -106,7 +106,6 @@ export default function StatsPanel({ state }: { state: AppState }) {
             </thead>
             <tbody>
               {completed.slice().reverse().map(race => {
-                const isHit = (race.result?.hitTickets?.length || 0) > 0;
                 const invested = 1300;
                 const profit = (race.result?.profit || 0) - invested;
                 return (

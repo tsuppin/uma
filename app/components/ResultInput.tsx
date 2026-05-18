@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Race, RaceResult } from "../types";
 import { generateFormation } from "../lib/engine";
 
-type ResultRow = { rank: number; horseNumber: number; horseName: string; time: string; odds: number; prize: number; };
+type ResultRow = { rank: number; horseNumber: number; horseName: string; time: string; odds: number; prize: number; belonging?: string; };
 
 export default function ResultInput({ race, onSubmit, onCancel }: {
   race: Race;
@@ -197,7 +197,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
         if (potentialRank === rankCounter && potentialRank >= 1 && potentialRank <= 20) {
           const rank = potentialRank;
-          const frame = parts1.length >= 2 ? parseInt(parts1[1]) : 0;
 
           // i + 1: 馬番
           const line2 = lines[i + 1]?.trim() || "";
@@ -219,7 +218,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           const parts4 = line4.split("\t");
           let jockey = "";
           let jockeyWeight = 54;
-          let trainer = parts4[1] || "";
+          const trainer = parts4[1] || "";
           
           const jm = parts4[0]?.match(/^([^\(]+?)\((\d+\.?\d*)\)/) || parts4[0]?.match(/^([^\(]+?)[\(（](.+?)[\)）]/);
           if (jm) {
@@ -234,7 +233,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           const parts5 = line5.split("\t");
           let time = "";
           let margin = "";
-          let last3f = parts5[1]?.trim() || "";
+          const last3f = parts5[1]?.trim() || "";
 
           const timeM = parts5[0]?.match(/^([\d:]+)/);
           if (timeM) {
@@ -284,7 +283,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             last3f,
             margin,
             belonging
-          } as any);
+          } as RaceResult["result"][number]);
 
           rankCounter++;
           i += 5; // ブロック分読み進める
@@ -300,7 +299,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         if ((line === "払戻金" || line === "コーナー通過順位" || line.startsWith("タイム") || line.startsWith("勝馬の紹介")) && parsedMap.size > 3) break;
 
         let isMatch = false;
-        let rank = 0, frame = 0, num = 0, name = "", pop = 0;
+        let rank = 0, num = 0, name = "", pop = 0;
         let linesConsumed = 1;
 
         // 1. 完全行のキャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" またはスペース混在)
@@ -310,7 +309,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
         if (fullMatch) {
           rank = parseInt(fullMatch[1]);
-          frame = parseInt(fullMatch[2]);
           num = parseInt(fullMatch[3]);
           const namePart = fullMatch[4].trim();
           const popM = namePart.match(/(.+?)(\d+)番人気/);
@@ -319,11 +317,10 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           isMatch = true;
         } else if (splitMatch) {
           rank = parseInt(splitMatch[1]);
-          frame = parseInt(splitMatch[2]);
           num = parseInt(splitMatch[3]);
 
           // 次の行にブリンカー等の符号や馬名がある
-          let nextIdx = i + 1;
+          const nextIdx = i + 1;
           const nextLine = lines[nextIdx]?.trim() || "";
           
           // "ブリンカー\tシュラフ6番人気" のような符号を消去し、馬名と人気を取り出す
@@ -722,8 +719,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                   </td>
                   <td className={r.horseName ? "fw-600" : ""}>
                     {r.horseName || (r.horseNumber ? race.horses.find(h => h.number === r.horseNumber)?.name || "—" : "—")}
-                    {(r as any).belonging && (
-                      <span className="fs-xs text-muted block">({(r as any).belonging})</span>
+                    {r.belonging && (
+                      <span className="fs-xs text-muted block">({r.belonging})</span>
                     )}
                   </td>
                   <td>
