@@ -206,25 +206,30 @@ export function calculateTsuchiyaScore(
         potential -= 8; // 中京・中山芝での的中率向上のため-25から-8へ緩和
         tags.push("⚠️ 芝1番人気被り警戒(オッズ歪み補正)");
       }
-      // 芝の牡牝混合戦における牝馬への加点（オッズの甘さ・期待値エッジ）
+      // 芝の牡牝混合戦における牝馬への加点（オッズの甘さ・期待値エッジの適正化）
       const isMixed = !race.raceName?.includes("牝");
       if (isMixed && gender === "牝") {
-        potential += 20;
+        potential += 10;
         tags.push("🎯 混合戦の牝馬(期待値エッジ)");
       }
     }
     
-    // 重賞における高齢馬（7歳以上）の復活期待値加点（不当な過小評価の検知）
+    // 重賞における高齢馬（7歳以上）の復活期待値加点（不当な過小評価の検知・的中率重視で抑制）
     const isGradeRace = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
     if (isGradeRace && age >= 7) {
-      potential += 25;
-      tags.push("🔥 高齢実績馬の不当軽視補正");
+      potential += 8;
+      tags.push("🔥 高齢実績馬の補正");
     }
 
-    // 新潟直線1000m（千直）における内枠（1枠〜3枠）の不当低評価の期待値補正
-    if (dist === 1000 && race.surface === "芝" && frame <= 3) {
-      potential += 30;
-      tags.push("⚡ 千直内枠の不当低評価・逆張り妙味");
+    // 新潟直線1000m（千直）における圧倒的有利な「外枠（6枠〜8枠）」の物理エッジ（内枠加点からの転換）
+    if (dist === 1000 && race.surface === "芝") {
+      if (frame >= 6) {
+        potential += 25;
+        tags.push("⚡ 千直外枠の圧倒的物理アドバンテージ");
+      } else if (frame <= 2) {
+        potential -= 20;
+        tags.push("⚠️ 千直内枠の物理的絶望バイアス(馬場荒れ)");
+      }
     }
 
     // 2. 空間物理・馬体パラメータ（ダイナミックな枠順バイアスと性齢）
@@ -244,10 +249,10 @@ export function calculateTsuchiyaScore(
         }
       }
 
-      // 芝1400m以下の混合戦における牝馬ボーナス（性齢）
+      // 芝1400m以下の混合戦における牝馬ボーナス（性齢・過剰ダブル加算の抑制）
       const isMixedShort = dist <= 1400 && !race.raceName?.includes("牝");
       if (isMixedShort && gender === "牝") {
-        potential += 25;
+        potential += 10;
         tags.push("🐎 短距離混合戦の牝馬ボーナス");
       }
     }
@@ -268,10 +273,10 @@ export function calculateTsuchiyaScore(
     }
 
     // 4. 人間系シナジー・陣営パラメータ（特注騎手と勝負所の陣営評価）
-    // 減量特注騎手「舟山瑠泉」騎手への特注シナジー補正（大幅加点）
+    // 減量特注騎手「舟山瑠泉」騎手への適正な斤量恩恵補正
     if (jockey.includes("舟山") || jockey.includes("瑠泉")) {
-      potential += 40;
-      tags.push("🌟 新潟特注ジョッキー:舟山瑠泉");
+      potential += 15;
+      tags.push("🌟 新潟減量ジョッキー:舟山瑠泉");
     }
 
     // 格が上がる後半戦（9R〜12R of 特別戦・重賞）におけるトップジョッキー＆関西馬（栗東）優位の補正
