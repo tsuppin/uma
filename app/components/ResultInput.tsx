@@ -897,11 +897,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             )}
           </div>
 
-          <div className="form-group mt-12 p-16">
-            <label className="form-label" htmlFor="result-profit">払戻金額（円）</label>
-            <input id="result-profit" type="number" className="form-input" value={profit || ""}
-              onChange={e => setProfit(+e.target.value)} placeholder="的中した場合の払戻金額を入力" />
-          </div>
+
         </div>
       )}
 
