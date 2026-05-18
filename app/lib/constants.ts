@@ -6853,4 +6853,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779104111855",
+    version: "v190.1",
+    date: "2026-05-18T11:35:11.855Z",
+    description: "金沢 - 好走馬(スカイリスト等)の特性学習",
+    track: "金沢",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "吉原寛",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ノヴェリスト",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
