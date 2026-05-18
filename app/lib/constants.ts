@@ -7276,4 +7276,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779106129700",
+    version: "v199.1",
+    date: "2026-05-18T12:08:49.700Z",
+    description: "高知 - 好走馬(コノヨルヲトメテヨ等)の特性学習",
+    track: "高知",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "岡村卓",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "バンブーエール",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
