@@ -486,7 +486,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         </div>
 
         <div className="form-group">
-          <label className="form-label" htmlFor="result-paste">結果テキスト（5000文字まで）</label>
+          <label className="form-label" htmlFor="result-paste">結果テキスト</label>
           <textarea
             id="result-paste"
             className="form-textarea min-h-180 mono fs-sm"
