@@ -5166,4 +5166,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779076085418",
+    version: "v155.1",
+    date: "2026-05-18T03:48:05.418Z",
+    description: "帯広ば - 好走馬(イワキハルヒメ等)の特性学習",
+    track: "帯広ば",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weightChange",
+        "operator": ">=",
+        "value": 10,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アサヒリュウセイ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "フナノクン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
