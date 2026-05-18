@@ -106,7 +106,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
             <label className="form-label" htmlFor="paste-text">出馬表テキスト</label>
             <textarea
               id="paste-text"
-              className="form-textarea min-h-300 mono fs-sm"
+              className="form-textarea min-h-200 mono fs-sm"
               value={pasteText}
               onChange={e => { setPasteText(e.target.value); setParseError(""); }}
               placeholder={"JRA形式:\n2回東京2日 12R\n枠1白\t1\nスナッピードレッサ\n...\n\n地方競馬形式:\n2026/4/29\n大井 2R\nＣ３二三\n1200m    13頭...\n天候：曇 馬場状態：稍重\n1\t1\tダーカザンブラック(大井)\n　父　サートゥルナーリア\n..."}
