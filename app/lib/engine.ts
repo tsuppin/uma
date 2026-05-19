@@ -2496,6 +2496,22 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // 【新設】期待値の歪み（前走上位人気裏切りによる過小評価）の判定
+    if (lastRace.popularity !== undefined || lastRace.odds !== undefined) {
+      const wasFavored = (lastRace.popularity !== undefined && lastRace.popularity <= 2) || 
+                         (lastRace.odds !== undefined && lastRace.odds <= 3.5);
+      
+      const didUnderperform = lastRace.result >= 4;
+      
+      const isUnderValued = (popularity >= 5) || (odds >= 8.0);
+
+      if (wasFavored && didUnderperform && isUnderValued) {
+        potential += 35;
+        distortionBoost += 1.5; // 期待値バイアスを大幅に強化
+        tags.push("💎 期待値の闇: 前走上位人気裏切りによる過小評価(妙味爆発)");
+      }
+    }
+
     // ④ タイム・上がり性能解析（クラス別スイートスポット）
     const isLowerClass = horse.raceClass?.match(/(未勝利|1勝クラス|新馬)/);
     const isUpperClass = horse.raceClass?.match(/(2勝クラス|3勝クラス|オープン|重賞|リステッド|G[123])/);
