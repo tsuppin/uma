@@ -10270,4 +10270,51 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779187174959",
+    version: "v265.1",
+    date: "2026-05-19T10:39:34.959Z",
+    description: "東京 - 好走馬(マルガイエラルディーク等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "横山 武史",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "Sottsass",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "佐々木 大輔",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サングレーザー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
