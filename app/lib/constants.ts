@@ -8923,4 +8923,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779161196910",
+    version: "v231.1",
+    date: "2026-05-19T03:26:36.910Z",
+    description: "盛岡 - 好走馬(ナムラボス等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": ">=",
+        "value": 8,
+        "scoreAdjust": 20
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "鈴木祐",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "トゥザグローリー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
