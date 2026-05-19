@@ -1150,27 +1150,68 @@ export function calculateTsuchiyaScore(
   if (isKanazawa) {
     tags.push("🌾 金沢特化OMEGAエンジン適用中");
 
-    // 1. 金沢名物「イン砂地獄（内ラチ底なし沼）」の徹底物理シミュレーション
+    const hStyle = horse.style || '中団';
+
+    // 1. 馬体重・成長バイアス（フィジカルパラメータ）
+    if (weightChange <= -10 && weightChange >= -20) {
+      potential += 30;
+      tags.push('金沢:極限の仕上げ(激走フラグ)');
+    } else if (weightChange > 16) {
+      potential -= 25;
+      tags.push('⚠️金沢:過剰な馬体増(割引)');
+    } else if (age <= 3 && weightChange >= 10 && weightChange <= 14) {
+      potential += 30;
+      tags.push('金沢:若駒成長シナジー(大幅増)');
+    }
+
+    if (gender === "牝") {
+      potential += 20;
+      tags.push("🐎 金沢牝馬エッジ");
+    }
+
+    // 2. 空間物理・砂地獄・脚質シナジー（枠順バイアスの一元化）
     const isHeavyMud = condition === '重' || condition === '不良';
     if (!isHeavyMud) {
       // 良馬場・稍重：内ラチ沿いの砂が極端に深く、最内1枠は底なし沼を走らされるため大幅割引
       if (frame === 1) {
         potential -= 30;
         tags.push("⚠️ 金沢名物:イン砂地獄(底なし沼)1枠リスク割引");
-      } else if (frame >= 6) {
-        // クリーンな外目を通れる外枠を優遇
+      } else if (frame === 2) {
+        potential -= 25;
+        tags.push("⚠️ 金沢:2枠イン砂深割引");
+      } else if (frame === 8) {
+        potential += 35;
+        tags.push("📈 金沢特有:大外8枠スムーズ外伸びアドバンテージ");
+      } else if (frame === 7) {
+        potential += 30;
+        tags.push("📈 金沢:7枠外伸びエッジ");
+      } else if (frame === 5 || frame === 6) {
         potential += 20;
-        tags.push("📈 金沢特有:クリーン馬場追走外枠アドバンテージ");
+        tags.push("📈 金沢:中外枠アドバンテージ");
+      } else if (frame === 4) {
+        potential -= 15;
+        tags.push("⚠️ 金沢:4枠包まれ懸念");
       }
     } else {
       // 重・不良：逆にインラチ沿いの砂が固まり、一時的に高速イン伸び化
-      if (frame <= 2 && (horse.style === "逃げ" || horse.style === "先行")) {
+      if (frame <= 2 && (hStyle === "逃げ" || hStyle === "先行")) {
         potential += 25;
         tags.push("☔ 金沢道悪物理:泥馬場イン締まり高速イン逃げエッジ");
       }
     }
 
-    // 2. 「金沢の絶対神」吉原寛人騎手 ＆ リーディングトップ勢の圧倒的支配力
+    // 脚質×枠順シナジー
+    if ((hStyle === '逃げ' || hStyle === '先行') && (frame === 1 || frame === 2)) {
+      if (popularity <= 3) {
+        potential -= 20;
+        tags.push('⚠️危険な人気馬(内枠×先行 of 罠)');
+      }
+    } else if ((hStyle === '中団' || hStyle === '後方') && (frame >= 5 && frame <= 7)) {
+      potential += 25;
+      tags.push('🚀金沢シナジー(外枠×差し)');
+    }
+
+    // 3. 「金沢の絶対神」吉原寛人騎手 ＆ リーディングトップ勢 of 圧倒的支配力
     if (jockey.includes("吉原")) {
       if (popularity <= 2) {
         potential += 50;
@@ -1184,16 +1225,16 @@ export function calculateTsuchiyaScore(
       tags.push("🌟 金沢リーディング上位騎手(1着バイアス)");
     }
 
-    // 3. 逃げ・先行圧倒的有利のワンターン超小回りバイアス
-    if (horse.style === "逃げ" || horse.style === "先行") {
+    // 4. 逃げ・先行圧倒的有利のワンターン超小回りバイアス
+    if (hStyle === "逃げ" || hStyle === "先行") {
       potential += 35;
       tags.push("🏃 金沢超小回り:前残り先行絶対有利");
-    } else if (horse.style === "追込") {
+    } else if (hStyle === "追込") {
       potential -= 25;
       tags.push("⚠️ 金沢超小回り:直線極短・差し届かずリスク割引");
     }
 
-    // 4. 他地区・JRAからの転入格上＆超有力厩舎勝負仕上げ
+    // 5. 他地区・JRAからの転入格上＆超有力厩舎勝負仕上げ
     const trainerName = horse.trainer || '';
     if (trainerName.match(/(中川雅|金田一)/)) {
       potential += 25;
@@ -1217,23 +1258,39 @@ export function calculateTsuchiyaScore(
   if (isKawasaki) {
     tags.push("🐎 川崎特化OMEGAエンジン適用中");
 
-    // 1. 環境データと重視すべき馬の基本属性
-    // 馬体重（良馬場ダートの大型パワー指標）
+    const hStyle = horse.style || '中団';
+    const trainerName = horse.trainer || '';
+
+    // 1. 馬体重・成長バイアス・馬格（フィジカルパラメータ）
+    if (weightChange <= -10 && weightChange >= -20) {
+      potential += 30;
+      tags.push('川崎:極限の仕上げ(激走フラグ)');
+    } else if (weightChange <= -25) {
+      potential -= 25;
+      tags.push('❌川崎:過剰な馬体減(消耗懸念)');
+    } else if (age <= 3 && weightChange >= 10 && weightChange <= 14) {
+      potential += 30;
+      tags.push('川崎:若駒成長シナジー(大幅増)');
+    } else if (weightChange > 16) {
+      potential -= 25;
+      tags.push('⚠️川崎:過剰な馬体増(割引)');
+    }
+
     if (weight >= 500) {
       potential += 25;
       tags.push("💪 川崎タフ良馬場・大型パワー馬アドバンテージ");
     }
-    // 年齢（鮮度指標：4歳以下優位）
+
+    // 2. 基本属性
+    if (gender === "牝") {
+      potential += 20;
+      tags.push("🐎 川崎牝馬アドバンテージ(ダート割引無効化)");
+    }
     if (age <= 4) {
       potential += 20;
       tags.push("📈 川崎ヤングジェネレーションエッジ");
     }
-    // 性別（牝馬割引の無効化と加点）
-    if (gender === "牝") {
-      potential += 15;
-      tags.push("🐎 川崎牝馬アドバンテージ(ダート割引無効化)");
-    }
-    
+
     // 血統（種牡馬適性）
     const isSpecialSire = bloodline.includes("ミスターメロディ") || bloodline.includes("エスポワールシチー");
     const isRecommendedSire = bloodline.includes("パイロ") || bloodline.includes("ホッコータルマエ") || bloodline.includes("ダノンレジェンド") || bloodline.includes("ゴールドドリーム");
@@ -1245,56 +1302,84 @@ export function calculateTsuchiyaScore(
       tags.push("🧬 川崎ダート実績血統補正");
     }
 
-    // 2. コース・展開特徴量（距離・枠順バイアス）
-    // 枠順バイアス（中枠4,5枠優遇）
-    if (frame === 4 || frame === 5) {
-      potential += 25;
-      tags.push("📐 川崎勝率No.1 of 4・5中枠");
-    }
-    // 後半戦（6R〜12R）の内枠（1,2枠）インラチ復活バイアス
-    if (race.raceNumber >= 6 && (frame === 1 || frame === 2)) {
-      potential += 20;
-      tags.push("📐 川崎後半戦のイン復活ロスなし補正");
-    }
-    // 外枠（8枠）のアタマ割引・ヒモ残し
+    // 3. 空間物理と脚質シナジー（枠順バイアスの一元化）
+    // 枠順バイアス
     if (frame === 8) {
-      potential -= 10;
-      tags.push("⚠️ 川崎8枠:1着率低下割引");
+      potential += 35;
+      tags.push("⚠️ 川崎8枠:外目スムーズ加速エッジ");
       if (popularity >= 6 || odds >= 12.0) {
-        potential += 20; // ヒモ穴としての期待値
+        potential += 20;
         tags.push("⚡ 大外8枠・複勝ヒモ穴エッジ");
       }
+    } else if (frame === 7) {
+      potential += 30;
+      tags.push("📐 川崎7枠:好走バイアス");
+    } else if (frame === 4 || frame === 5 || frame === 6) {
+      potential += 25;
+      tags.push("📐 川崎勝率No.1 of 中枠エッジ");
+    } else if (frame === 2) {
+      potential -= 25;
+      tags.push("⚠️ 川崎2枠:窮屈・割引");
+    } else if (frame === 1) {
+      potential -= 15;
+      tags.push("⚠️ 川崎1枠:包まれ砂被りリスク");
+    }
+
+    // 脚質×枠順シナジー
+    if ((hStyle === '逃げ' || hStyle === '先行') && (frame === 1 || frame === 2)) {
+      if (popularity <= 3) {
+        potential -= 20;
+        tags.push('⚠️危険な人気馬(内枠×先行 of 罠)');
+      }
+    } else if ((hStyle === '中団' || hStyle === '後方') && (frame >= 5 && frame <= 7)) {
+      potential += 25;
+      tags.push('🚀川崎シナジー(外枠×差し)');
+    }
+
+    // 後半戦（6R〜12R）の内枠（1,2枠）インラチ復活バイアス
+    if (race.raceNumber >= 6 && (frame === 1 || frame === 2) && !tags.some(t => t.includes("割引") || t.includes("リスク"))) {
+      potential += 20;
+      tags.push("📐 川崎後半戦 of イン復活ロスなし補正");
     }
 
     // 距離別ペース予想
     if (dist <= 900) {
-      // 900m戦: スピード絶対の逃げ・先行
-      if (horse.style === "逃げ" || horse.style === "先行") {
+      if (hStyle === "逃げ" || hStyle === "先行") {
         potential += 35;
         tags.push("🏃 川崎900m電撃スプリント補正");
       }
     } else if (dist >= 1400) {
-      // 1400m以上: タフなスタミナ持久力戦
-      if (horse.style === "差し" || horse.style === "追込") {
+      if (hStyle === "差し" || hStyle === "追込") {
         potential += 20;
         tags.push("💪 川崎1400m以上タフな持久戦補正");
       }
     }
 
-    // 3. 騎手パラメータ（ジョッキーファクター）
-    // トップジョッキー×上位人気高信頼度
+    // 4. 所属エリア・厩舎（勝負仕上げバイアス）
+    const isKawasakiHome = horse.stableLocation?.includes("川崎") || trainerName.includes("川崎") || (!horse.stableLocation && horse.belonging?.includes("川崎"));
+    if (isKawasakiHome) {
+      potential += 40;
+      tags.push("🏠 川崎ホーム所属(圧倒的ホームエッジ)");
+      if (trainerName.match(/(内田勝義|高月賢一|林隆之|山崎尋美|佐藤博紀|八木正喜)/)) {
+        potential += 25;
+        tags.push("🏰 川崎エリート厩舎:勝負メイチ仕上げ");
+      }
+    } else {
+      potential -= 15;
+      tags.push("⚠️ 川崎アウェイ遠征馬(割引)");
+    }
+
+    // 5. 騎手パラメータ（ジョッキーファクター）
     const isEliteKawasakiJ = ["野畑", "笹川", "矢野", "町田", "御神本", "新原"].some(j => jockey.includes(j));
     if (isEliteKawasakiJ && popularity <= 2) {
       potential += 35;
       tags.push("👑 川崎エリートジョッキー×上位人気高信頼度");
     }
-    // 穴メーカー（古岡、藤江、藤本）×下位人気爆発トリガー
     const isDarkJ = ["古岡", "藤江", "藤本"].some(j => jockey.includes(j));
     if (isDarkJ && (popularity >= 6 || odds >= 12.0)) {
       potential += 30;
       tags.push("⚡ 川崎大穴メーカー騎手特注フラグ");
     }
-    // 遠征・スポット（特別補正）
     const isVisitorJ = jockey.match(/(ルメール|川田|武豊|レーン|モレイラ|シャペル|デムーロ)/);
     if (isVisitorJ) {
       potential += 35;
@@ -1441,6 +1526,102 @@ export function calculateTsuchiyaScore(
         potential -= 25;
         tags.push("⚠️ 交流重賞:地元兵庫所属馬ディスカウント");
       }
+    }
+  }
+
+  // ==========================================
+  // 【盛岡競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isMorioka = race.venue?.includes("盛岡") || race.trackName?.includes("盛岡") || race.raceName?.includes("盛岡") ||
+                    race.venue?.includes("水沢") || race.trackName?.includes("水沢") || race.raceName?.includes("水沢");
+
+  if (isMorioka) {
+    tags.push("🌾 盛岡・水沢特化OMEGAエンジン適用中");
+
+    const hStyle = horse.style || '中団';
+    const trainerName = horse.trainer || '';
+
+    // 1. 馬体重・成長バイアス（フィジカルパラメータ）
+    if (Math.abs(weightChange) <= 3) {
+      potential += 30;
+      tags.push('🏹岩手:馬体安定(状態キープ)');
+    } else if (weightChange <= -4) {
+      potential -= 35;
+      tags.push('⚠️岩手:馬体減少リスク(消耗・ストレス懸念)');
+    } else if (weightChange >= 7 && popularity <= 3) {
+      potential += 25;
+      tags.push('🚀岩手:成長・立て直し(実力馬 of 馬体増)');
+    }
+
+    // 2. 空間物理と脚質シナジー（枠順バイアスの一元化）
+    // 枠順バイアス
+    if (frame >= 7) {
+      potential += 35;
+      tags.push("盛岡:外枠絶対優位(砂被りなし)");
+    } else if (frame === 1) {
+      potential += 20;
+      tags.push("盛岡:最内枠健闘");
+    } else if (frame === 2 || frame === 4) {
+      potential -= 25;
+      tags.push("⚠️盛岡:死滅枠(2/4枠)懸念");
+    }
+
+    // 脚質×枠順シナジー
+    if ((hStyle === '逃げ' || hStyle === '先行') && (frame === 1 || frame === 2)) {
+      if (popularity <= 3) {
+        potential -= 20;
+        tags.push('⚠️危険な人気馬(内枠×先行 of 罠)');
+      }
+    } else if ((hStyle === '中団' || hStyle === '後方') && (frame >= 5 && frame <= 7)) {
+      potential += 25;
+      tags.push('🚀盛岡シナジー(外枠×差し)');
+    }
+
+    // 後半戦（6R〜12R）の極端枠バイアス
+    if (race.raceNumber >= 6) {
+      if (frame === 1 || (frame >= 6 && frame <= 8)) {
+        potential += 20;
+        tags.push("🌃盛岡後半:内外極端枠有利");
+      }
+    }
+
+    // 3. 騎手・厩舎（ヒューマンファクター）
+    if (jockey.includes('高松') || jockey.includes('高橋悠') || jockey.includes('山本聡')) {
+      potential += 30;
+      tags.push('盛岡:特効上位騎手(頭候補)');
+    } else if (jockey.includes('塚本涼') || jockey.includes('坂井瑛') || /[☆△▲◇]/.test(jockey)) {
+      potential += 15;
+      tags.push('盛岡:ヒモ穴警戒(減量/若手)');
+    }
+
+    if (trainerName.match(/(佐藤雅彦|板垣吉則|菅原右吉)/)) {
+      potential += 30;
+      tags.push('🔥岩手好調厩舎:勝利量産フェーズ');
+    } else if (trainerName.match(/(小林俊彦|及川良春|佐々木由則)/)) {
+      potential += 15;
+      tags.push('🛡️岩手安定厩舎:馬券圏内（ヒモ）軸');
+    }
+
+    if (race.raceNumber >= 11 && trainerName.includes('佐藤浩')) {
+      potential += 25;
+      tags.push('🎯岩手勝負厩舎:メイン競走特化');
+    }
+  }
+
+  // ==========================================
+  // 【名古屋・弥富競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isNagoya = race.venue?.includes("名古屋") || race.trackName?.includes("名古屋") || race.raceName?.includes("名古屋") ||
+                   race.venue?.includes("弥富") || race.trackName?.includes("弥富") || race.raceName?.includes("弥富");
+
+  if (isNagoya) {
+    tags.push("🌾 名古屋・弥富特化OMEGAエンジン適用中");
+
+    // 1. 鞍上強化（リーディング上位騎手エッジ）
+    const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
+    if (topJockeys.some(j => jockey.includes(j))) {
+      potential += 25;
+      tags.push('名古屋:鞍上強化・リーディングエリート');
     }
   }
 
@@ -2097,6 +2278,117 @@ export function calculateTsuchiyaScore(
       tags.push('💎隠れた実力馬(過去5走以内好走)');
     }
 
+    // 【新設】昇級・降級ローテ判定
+    const getRaceClassLevel = (classStr: string | undefined): number => {
+      if (!classStr) return 0;
+      const str = classStr.toString();
+      if (str.match(/GⅠ|G1/i)) return 10;
+      if (str.match(/GⅡ|G2/i)) return 9;
+      if (str.match(/GⅢ|G3/i)) return 8;
+      if (str.match(/(オープン|OP|L|リステッド|重賞)/i)) return 7;
+      if (str.match(/(3勝クラス|1600万下)/)) return 6;
+      if (str.match(/(2勝クラス|1000万下)/)) return 5;
+      if (str.match(/(1勝クラス|500万下)/)) return 4;
+      if (str.match(/(未勝利|新馬)/)) return 3;
+      if (str.match(/A1/)) return 7;
+      if (str.match(/A2/)) return 6.5;
+      if (str.match(/A3|A/)) return 6;
+      if (str.match(/B1/)) return 5.5;
+      if (str.match(/B2/)) return 5;
+      if (str.match(/B3|B/)) return 4.5;
+      if (str.match(/C1/)) return 4;
+      if (str.match(/C2/)) return 3.5;
+      if (str.match(/C3|C/)) return 3;
+      return 0;
+    };
+
+    const currentLevel = getRaceClassLevel(horse.raceClass);
+    const prevLevel = getRaceClassLevel(lastRace.raceClass);
+
+    if (currentLevel > 0 && prevLevel > 0) {
+      if (prevLevel > currentLevel) {
+        // 降級ローテ（前走よりクラスが下がった）
+        potential += 30;
+        tags.push(`📉 降級ローテ: 前走格上クラス(${lastRace.raceClass})から今回(${horse.raceClass})で実力優位`);
+        
+        // 前走で僅差好走または上位着順であればさらに勝負ヤリ
+        if (lastRace.result <= 5 || tDiff <= 1.0) {
+          potential += 15;
+          tags.push('⚡ 降級メイチ: 前走格上で掲示板内・僅差の巻き返し期待');
+        }
+      } else if (prevLevel < currentLevel) {
+        // 昇級ローテ（前走よりクラスが上がった）
+        potential -= 10;
+        tags.push(`📈 昇級ローテ: 今回クラス昇級初戦(${lastRace.raceClass}→${horse.raceClass})による壁警戒`);
+        
+        // 前走勝ち上がり（1着）または前走圧勝なら昇級の壁を突破する余地あり
+        if (lastRace.result === 1 || tDiff < 0) {
+          potential += 20; // 差し引き +10
+          tags.push('⚡ 昇級即通用: 前走勝ち上がりの勢いあり');
+        }
+      }
+    }
+
+    // 【新設】馬体重の推移トレンド分析 (前走馬体重 lastRace.weight と 今回馬体重 weight の比較)
+    if (lastRace.weight > 0 && weight > 0) {
+      // 1. 実データベースの体重差チェック (入力ミスやデータずれに備えて実測値で補正)
+      const actualDiff = weight - lastRace.weight;
+
+      // 2. 継続的消耗（連続馬体減）の検知
+      const prev2Race = horse.pastRaces[1];
+      if (prev2Race && prev2Race.weight > 0 && lastRace.weight > 0) {
+        const prevDiff = lastRace.weight - prev2Race.weight;
+        
+        // 2走連続で馬体重が減少している場合 (例: 前回 -6kg、今回 -8kg など)
+        if (prevDiff < 0 && actualDiff < 0) {
+          const totalLoss = Math.abs(prevDiff + actualDiff);
+          if (totalLoss >= 12) {
+            potential -= 25; // 連続の大幅減少は消耗・細化のリスクが極めて高い
+            tags.push(`❌ 連続馬体減: 2走連続で減少(計-${totalLoss}kg)による疲労・細化懸念`);
+          } else {
+            potential -= 10;
+            tags.push(`⚠️ 連続馬体減: 緩やかな消耗トレンド(計-${totalLoss}kg)`);
+          }
+        }
+        
+        // 若駒の順調なビルドアップ（成長期トレンド）
+        if (age <= 3 && prevDiff >= 2 && actualDiff >= 2 && actualDiff <= 12) {
+          potential += 25;
+          tags.push('🚀 成長期トレンド: 若駒の順調なビルドアップ・好調キープ');
+        }
+      }
+
+      // 3. 馬体ふっくら・復調（リバウンド）トレンド
+      // 前々走から前走で大幅に減らして大敗したが、今回しっかり戻してきた（復調）パターン
+      if (prev2Race && prev2Race.weight > 0) {
+        const prevDiff = lastRace.weight - prev2Race.weight;
+        // 前走で10kg以上減らしており、今回8kg以上戻した場合
+        if (prevDiff <= -10 && actualDiff >= 8) {
+          if (actualDiff >= 20) {
+            potential -= 15; // 急激な戻しすぎは太目残り（リバウンド失敗）
+            tags.push(`⚠️ 急激な馬体増: 短期間での過剰増(+${actualDiff}kg)による太目残り懸念`);
+          } else {
+            potential += 20; // 適切な回復
+            tags.push(`📈 馬体ふっくら: 大幅減からの回復・前走大敗からの復調気配`);
+          }
+        }
+      }
+
+      // 4. 過去の好走体重（ベスト体重）適合判定
+      // 過去5走以内で3着以内に入ったレースの馬体重データを抽出
+      const goodRaces = horse.pastRaces.slice(0, 5).filter(pr => pr.result <= 3 && pr.weight > 0);
+      if (goodRaces.length > 0) {
+        const bestWeights = goodRaces.map(pr => pr.weight);
+        const avgBestWeight = bestWeights.reduce((a, b) => a + b, 0) / bestWeights.length;
+        
+        // 今回の馬体重が、過去好走時の平均体重と±6kg以内である場合
+        if (Math.abs(weight - avgBestWeight) <= 6) {
+          potential += 20;
+          tags.push(`🏆 ベスト体重適合: 過去好走時の平均馬体重(${Math.round(avgBestWeight)}kg)に合致`);
+        }
+      }
+    }
+
     // ④ タイム・上がり性能解析（クラス別スイートスポット）
     const isLowerClass = horse.raceClass?.match(/(未勝利|1勝クラス|新馬)/);
     const isUpperClass = horse.raceClass?.match(/(2勝クラス|3勝クラス|オープン|重賞|リステッド|G[123])/);
@@ -2434,634 +2726,6 @@ export function calculateTsuchiyaScore(
     if (dist === 1600 && bloodline.includes('ヘニーヒューズ')) { potential += 45; tags.push('大井1600特注ヘニーヒューズ'); }
     const goldenCombos: Record<string, number> = { '佐々木洋一 × 矢野貴之': 40, '林正人 × 町田直希': 40, '荒山勝徳 × 笹川翼': 30 };
     if (goldenCombos[`${horse.trainer} × ${jockey}`]) { potential += goldenCombos[`${horse.trainer} × ${jockey}`]; tags.push('黄金コンビ'); }
-  } else if (trackName === '川崎') {
-    // 川崎実証分析：中枠（4枠・5枠）の圧倒的優位性
-    if (frame === 4 || frame === 5) {
-      potential += 30;
-      tags.push('川崎:中枠無双(1着候補)');
-    }
-    // 川崎実証分析：極端な内枠・外枠の勝ちきれなさ
-    if (frame === 1 || frame === 8) {
-      potential -= 15;
-      tags.push('川崎:1・8枠(頭は危険)');
-    }
-
-    // 川崎実証分析：騎手傾向（トップジョッキーと穴メーカー）
-    const kawasakiElite = ['矢野貴', '笹川翼'];
-    const kawasakiLeaders = ['町田直', '新原周', '野畑凌', '伊藤裕'];
-    const kawasakiUpsets = ['古岡勇', '藤江渉'];
-
-    if (kawasakiElite.some(j => jockey.includes(j))) {
-      potential += 25;
-      tags.push('川崎:トップジョッキー(軸信頼)');
-    } else if (kawasakiLeaders.some(j => jockey.includes(j))) {
-      potential += 15;
-      tags.push('川崎:主力ジョッキー(好調)');
-    }
-
-    if (kawasakiUpsets.some(j => jockey.includes(j))) {
-      potential += 20;
-      tags.push('川崎:穴メーカー(一発警戒)');
-    }
-
-    // 川崎実証分析：特別・交流戦の遠征騎手（ルメール、御神本など）
-    if (race.raceName?.match(/(交流|重賞|杯|記念|チャレンジ)/)) {
-      if (jockey.match(/(ルメー|御神訓|川田|武豊|モレイラ|田山旺)/)) {
-        potential += 30;
-        tags.push('川崎:特別戦エリート騎手');
-      }
-    }
-
-    // 川崎実証分析：馬の属性（血統・馬格・年齢）
-    if (bloodline.includes('ミスターメロディ')) {
-      potential += 35;
-      tags.push('川崎:特注ミスターメロディ産駒');
-    }
-    if (weight >= 500) {
-      potential += 20;
-      tags.push('川崎:大型馬パワー');
-    }
-    if (gender === '牝') {
-      potential += 10;
-      tags.push('川崎:牝馬健闘傾向');
-    }
-    if (horse.age === 3 || horse.age === 4) {
-      potential += 15;
-      tags.push('川崎:3-4歳若駒エッジ');
-    }
-
-    // 川崎実証分析：展開・時間帯・距離バイアス
-    if (race.raceNumber <= 6) {
-      // 前半：スタミナ持久力勝負 ＆ 上位人気の堅実性
-      if (popularity <= 2) {
-        potential += 20;
-        tags.push('川崎前半:上位人気信頼');
-      }
-      if (horse.style === '先行' || horse.style === '逃げ') {
-        potential += 15;
-        tags.push('川崎前半:先行押し切り期待');
-      }
-    } else {
-      // 後半：鋭い末脚の要求 ＆ 伏兵の台頭
-      if (horse.pastRaces && horse.pastRaces.some(pr => pr.result <= 3)) {
-        potential += 15;
-        tags.push('川崎後半:末脚キレ要求');
-      }
-      if (popularity >= 4 && popularity <= 7) {
-        potential += 15;
-        tags.push('川崎後半:中穴警戒');
-      }
-    }
-
-    // 距離別展開ロジック
-    if (dist <= 900) {
-      potential += 25;
-      tags.push('川崎900m:超スピード決着適性');
-    } else if (dist >= 2000) {
-      potential += 20;
-      tags.push('川崎長距離:スタミナ・道中待機');
-    }
-  } else if (trackName === '門別') {
-    const powerSires = ['パイロ', 'ホッコータルマエ', 'ルヴァンスレーヴ'];
-    if (powerSires.some(s => bloodline.includes(s))) { potential += 35; tags.push('門別パワー血統'); }
-    if (weightChange >= 5) { potential += 30; tags.push('成長曲線EVA'); }
-    
-    // 門別実証分析：牝馬の活躍傾向（上位独占事例あり）
-    if (gender === '牝') {
-      potential += 15;
-      tags.push('門別:牝馬優勢');
-    }
-    
-    // 門別実証分析：若い3歳馬による古馬撃破
-    if (race.raceName?.includes('3歳以上') && horse.age === 3) {
-      potential += 20;
-      tags.push('門別:3歳馬古馬撃破');
-    }
-    
-    // 門別実証分析：後半レースのベテラン・せん馬の底力
-    if (race.raceNumber >= 8) {
-      if (horse.age >= 6) {
-        potential += 15;
-        tags.push('門別後半:ベテラン底力');
-      }
-      if (gender === 'セン') {
-        potential += 20;
-        tags.push('門別後半:せん馬激走警戒');
-      }
-    }
-    
-    // 門別実証分析：先行力重視（上がり最速よりポジション）
-    if (horse.style === '逃げ' || horse.style === '先行') {
-      potential += 20;
-      tags.push('門別:先行力優位');
-    }
-    
-    // 門別実証分析：騎手傾向（固め打ちと安定感）
-    const monbetsuElite = ['小野楓', '阿部龍', '落合玄', '桑村真'];
-    const monbetsuStable = ['服部茂', '岩橋勇'];
-    
-    if (monbetsuElite.some(j => jockey.includes(j))) {
-      potential += 25;
-      tags.push('門別:トップジョッキー(頭候補)');
-    } else if (monbetsuStable.some(j => jockey.includes(j))) {
-      potential += 15;
-      tags.push('門別:安定ジョッキー(ヒモ候補)');
-    }
-    
-    // 減量騎手（▲△など）による波乱と好走
-    if (/[▲△☆★◇]/.test(jockey)) {
-      potential += 20;
-      tags.push('門別:減量騎手(波乱警戒)');
-    }
-    
-    // 門別実証分析：枠順バイアス（中〜外枠優勢、4枠苦戦）
-    if (frame === 6 || frame === 7) {
-      potential += 25;
-      tags.push('門別:6-7枠(1着有力)');
-    } else if (frame === 5) {
-      potential += 20;
-      tags.push('門別:5枠(2着期待)');
-    } else if (frame === 8) {
-      potential += 20;
-      tags.push('門別:8枠(ヒモ席巻)');
-    } else if (frame === 4) {
-      potential -= 20;
-      tags.push('門別:4枠(最苦戦傾向)');
-    }
-  }
-
-  // ==========================================
-  // 【新設】京都競馬場 馬体重変動・成長バイアス解析
-  // ==========================================
-  if (trackName === '京都' || race.venue === '京都') {
-    // ① 極限の絞り込み（-10kg〜-24kg）：勝負気配MAX
-    if (weightChange <= -10 && weightChange >= -24) {
-      potential += 35; // 一般の絞り込み加算に加え、京都専用の特大ブースト
-      tags.push('京都:極限の仕上げ(激走フラグ)');
-    } else if (weightChange < -25) {
-      potential -= 25;
-      tags.push('⚠️京都:過剰な馬体減(消耗懸念)');
-    }
-
-    // ② 成長と立て直し（3歳以下 +10kg〜+14kg）
-    if (age <= 3 && weightChange >= 10 && weightChange <= 14) {
-      potential += 30;
-      tags.push('京都:若駒成長シナジー(大幅増)');
-    } else if (weightChange > 16) {
-      potential -= 25;
-      tags.push('⚠️京都:過剰な馬体増(調整不足)');
-    }
-
-    // ③ 特殊馬具（ブリンカー）：京都一変トリガー
-    if (horse.useBlinkers) {
-      potential += 25;
-      tags.push('京都:ブリンカー着用(一変トリガー)');
-    }
-
-    // ④ 血統バイアス（種牡馬適性）
-    const sire = horse.sire || '';
-    if (race.surface === 'ダート') {
-      if (sire.includes('ルヴァンスレーヴ')) {
-        potential += 40;
-        tags.push('京都ダート:ルヴァンスレーヴ産駒(特注)');
-      } else if (sire.includes('ドレフォン') || sire.includes('シニスターミニスター')) {
-        potential += 30;
-        tags.push('京都ダート:パワー血統(爆発期待)');
-      }
-    } else if (race.surface === '芝') {
-      if (sire.includes('エピファネイア')) {
-        potential -= 15; // 1着候補としては割り引き
-        tags.push('京都芝:エピファネイア(ヒモ特化)');
-      } else if (sire.includes('ゴールドシップ') && race.distance >= 2000) {
-        potential += 25;
-        tags.push('京都芝長距離:スタミナ血統(Gシップ)');
-      }
-    }
-    if (sire.includes('コントレイル') || sire.includes('キズナ')) {
-      potential += 25;
-      tags.push('京都:万能・勝負強さ(上位血統)');
-    }
-
-    // ⑤ 厩舎・所属バイアス（栗東ホームアドバンテージ）
-    const trainer = horse.trainer || '';
-    if (horse.stableLocation === '栗東') {
-      potential += 20;
-      tags.push('🏰京都ホーム:栗東所属馬');
-      
-      // 京都特注エリート厩舎（ホットハンド実績）
-      if (trainer.match(/(高野友和|田中克典|斉藤崇史|佐藤悠太)/)) {
-        potential += 25;
-        tags.push('🔥京都エリート厩舎(勝負気配)');
-      }
-    } else if (horse.stableLocation === '美浦') {
-      potential -= 15;
-      tags.push('⚠️京都アウェイ:美浦所属馬(割引)');
-      if (popularity <= 3) {
-        potential -= 15; // 危険な関東馬
-        tags.push('⚠️危険な人気馬(アウェイ美浦)');
-      }
-    }
-
-    // ⑥ 枠順バイアス（中〜外枠優勢）
-    if (frame === 6) {
-      potential += 35;
-      tags.push('京都:6枠(1着最多・最強枠)');
-    } else if (frame === 5) {
-      potential += 30;
-      tags.push('京都:5枠(安定感抜群・軸推奨)');
-    } else if (frame === 3 || frame === 7) {
-      potential += 20;
-      tags.push('京都:3-7枠(上位進出期待)');
-    } else if (frame === 2) {
-      potential -= 25;
-      tags.push('⚠️京都:2枠(最弱・割引対象)');
-    } else if (frame === 1 || frame === 4) {
-      potential -= 15;
-      tags.push('⚠️京都:1-4枠(包まれ懸念)');
-    }
-    
-    // 脚質×枠順シナジー（交差特徴量）
-    const hStyle = horse.style || '中団';
-    if ((hStyle === '逃げ' || hStyle === '先行') && (frame === 1 || frame === 2)) {
-      if (popularity <= 3) {
-        potential -= 20;
-        tags.push('⚠️危険な人気馬(内枠×先行の罠)');
-      }
-    } else if ((hStyle === '中団' || hStyle === '後方') && (frame >= 5 && frame <= 7)) {
-      potential += 25;
-      tags.push('🚀京都シナジー(外枠×差し)');
-    }
-  } else if (trackName === '名古屋' || trackName === '弥富') {
-    const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
-    if (topJockeys.includes(jockey)) { potential += 15; tags.push('鞍上強化'); }
-  } else if (trackName === '金沢') {
-    // 1. JRA移籍・交流馬エッジ
-    if (horse.transferFrom === 'JRA' || (horse.ownerType === 'JRA')) {
-      potential += 30; tags.push('金沢:中央勢エッジ');
-    }
-    // 2. クラス・年齢別の馬格（馬体重）バイアス
-    if (age <= 3) {
-      if (weight <= 400) { potential += 10; tags.push('金沢3歳:小柄牝馬許容'); }
-    } else {
-      // 古馬戦（後半）は500kg超のパワー必須
-      if (weight >= 500) { potential += 25; tags.push('金沢古馬:大型馬パワー優位'); }
-      else if (weight <= 440) { potential -= 20; tags.push('金沢古馬:パワー不足懸念'); }
-    }
-    // 3. 後半レース（上級クラス）の末脚持続力
-    if (race.raceNumber >= 9) {
-      // 過去に速い上がり（ここでは実績で代用）がある馬を評価
-      if (horse.pastRaces && horse.pastRaces.some(r => r.result <= 3)) {
-        potential += 15; tags.push('金沢後半:末脚持続期待');
-      }
-    }
-  } else if (trackName === '東京') {
-    // 東京実証分析：物理・馬体パラメータ（フィジカル特徴量）
-    // 1. 大幅な馬体重増減（±10kg以上）の明暗
-    if (weightChange >= 10) {
-      potential += 25;
-      tags.push('東京:大幅プラス体重(成長ヤリ)');
-    } else if (weightChange <= -10) {
-      potential -= 30;
-      tags.push('東京:大幅マイナス体重(消耗懸念)');
-    }
-    
-    // 2. 馬格（500kg以上の大型馬）の物理的優位
-    if (weight >= 500) {
-      potential += 20;
-      tags.push('東京:大型馬パワー優位');
-    }
-    // 3. 空間物理：枠順バイアス（WIN5/1着予測の最重要ファクター）
-    // 東京の広大なコースでは、外枠によるスムーズな進路確保が物理的に有利に働く
-    if (frame >= 6) {
-      potential += 45; // WIN5/単勝向けに比重を強化
-      tags.push('🛡️空間物理:外枠(クリーン進路・加速空間確保)');
-      
-      // 大型馬×外枠の物理的シナジー
-      if (weight >= 500) {
-        potential += 20;
-        tags.push('🛡️物理シナジー:大型馬×外枠(パワー全開)');
-      }
-    } else if (frame <= 3) {
-      potential -= 35;
-      tags.push('⚠️空間物理:内枠(密集・キックバックリスク)');
-      
-      // 先行馬が内枠を引いた場合、包まれる物理的リスクを重く評価
-      if (horse.style === '逃げ' || horse.style === '先行') {
-        potential -= 15;
-        tags.push('⚠️物理リスク:内枠×先行(包まれ・砂被り)');
-      }
-    }
-
-    // 4. 性別・馬格バイアス：牡馬優勢と大型牝馬限定の活躍
-    if (gender === '牝') {
-      if (weight < 500) {
-        potential -= 25;
-        tags.push('東京:牝馬(パワー不足懸念)');
-      } else {
-        potential += 20;
-        tags.push('東京:大型牝馬(物理的優位)');
-      }
-    } else {
-      potential += 15;
-      tags.push('東京:牡・セン(絶対的優位)');
-    }
-
-    // 5. 年齢・世代バイアス：4-5歳充実期と高齢馬のヒモ穴
-    if (age === 4 || age === 5) {
-      potential += 25;
-      tags.push('東京:4-5歳充実期(頭候補)');
-    } else if (age >= 6) {
-      potential -= 10;
-      tags.push('東京:高齢馬(3着ヒモ穴警戒)');
-    }
-
-    // 6. 騎手シナジー補正：役割別の特性評価
-    if (jockey.includes('ルメー')) {
-      potential += 45; // 勝ち切るシナジー最大（WIN5/単勝向け）
-      tags.push('東京:ルメール(1着勝負強さ特大)');
-    } else if (jockey.includes('戸崎')) {
-      potential += 35; // 馬券圏内安定度最大（3連系軸向け）
-      tags.push('東京:戸崎(2-3着安定感エリート)');
-    } else if (jockey.match(/(岩田康|三浦|横山和)/)) {
-      if (popularity >= 6) {
-        potential += 30; // 穴馬激走シナジー（ヒモ穴向け）
-        tags.push('東京:爆発力ジョッキー(穴警戒)');
-      } else {
-        potential += 15;
-        tags.push('東京:爆発力ジョッキー');
-      }
-    }
-
-    // 7. 厩舎・所属エリア補正：ホーム（美浦）の圧倒的無双
-    const trainerName = horse.trainer || '';
-    if (horse.stableLocation === '美浦') {
-      potential += 40; // 地の利を最大化評価
-      tags.push('🏰東京ホーム:美浦所属(圧倒的優位)');
-      
-      // 東京エリート厩舎（固め打ち実績・勝負仕上げ）
-      if (trainerName.match(/(木村哲也|上原博之|高木登|辻哲英|鹿戸雄一|宮田敬介|栗田徹)/)) {
-        potential += 30;
-        tags.push('🔥東京エリート厩舎(勝負気配MAX)');
-      }
-    } else if (horse.stableLocation === '栗東') {
-      // 通常の西高東低を覆す東京開催バイアス（栗東馬の割引）
-      potential -= 20;
-      tags.push('⚠️東京アウェイ:栗東所属馬(割引)');
-      
-      // メイン・重賞クラスのみ、遠征の意図と能力を考慮
-      if (race.raceNumber >= 10 || race.raceName?.match(/(重賞|カップ|記念|オープン|リステッド|G[123])/)) {
-        potential += 25;
-        tags.push('🏹アウェイ栗東馬:実力による逆襲期待');
-      }
-    }
-
-    // 8. 東京特注血統補正：コース性質に合致する血統ブースト
-    const sire = horse.sire || '';
-    if (race.surface === 'ダート') {
-      // 米国系パワー型（東京ダート無双）
-      if (sire.match(/(ヘニーヒューズ|ダノンレジェンド|シニスターミニスター|マインドユアビスケッツ|Into Mischief)/)) {
-        potential += 40;
-        tags.push('東京ダート:米国系パワー特注血統');
-      }
-    } else {
-      // 王道瞬発力型（東京芝の直線勝負）
-      if (sire.match(/(サートゥルナーリア|キタサンブラック|レイデオロ|キズナ)/)) {
-        potential += 35;
-        tags.push('東京芝:王道瞬発力血統');
-      }
-    }
-    
-    // 芝ダート不問・二刀流爆弾（穴の急先鋒）
-    if (sire.includes('モズアスコット')) {
-      potential += 35;
-      tags.push('🔥二刀流爆弾(モズアスコット産駒)');
-    }
-
-    // 9. 市場心理・オッズ歪み補正：東京開催特有の人気バランス
-    if (popularity === 1 && odds >= 1.7 && odds <= 2.9) {
-      potential += 20;
-      tags.push('東京:信頼の1番人気(期待値適合)');
-    }
-
-    // ⑩ レースフェーズの波乱傾向：前半（先行）vs 後半（差し）
-    if (race.raceNumber <= 6) {
-      // 前半レース（主に未勝利・1勝クラス）：先行・前残り有利
-      if (hStyle === '逃げ' || hStyle === '先行' || hStyle === '好位') {
-        potential += 25;
-        tags.push('東京前半:先行・前残り期待');
-      }
-    } else {
-      // 後半レース（上級条件・重賞）：差し・追込の爆発有利
-      if (hStyle === '中団' || hStyle === '後方') {
-        potential += 35;
-        tags.push('東京後半:差し・追込の爆発期待');
-        // 芝の上級条件ならさらにブースト
-        if (race.surface === '芝' && (race.raceName?.match(/(重賞|カップ|記念|オープン|リステッド|G[123])/) || race.raceNumber >= 10)) {
-          potential += 20;
-          tags.push('🔥東京メイン:極限の末脚狙い');
-        }
-      }
-    }
-    
-    // ② 中穴の勝ちきり（4〜6番人気、10〜30倍）
-    if (popularity >= 4 && popularity <= 6 && odds >= 10 && odds <= 30) {
-      potential += 30; // 期待値の妙味を高く評価
-      tags.push('東京:中穴勝ちきり警戒(妙味あり)');
-    }
-    
-    // ③ 大穴の激走（10番人気以下、50倍以上）
-    if (popularity >= 10 && odds >= 50) {
-      potential += 45; // 爆穴ポテンシャルをさらに強化
-      tags.push('東京:オッズ偏差値特大(爆穴候補)');
-    }
-
-    // 10. 前走着差バイアス：二極化解析（王道 vs 一変）
-    if (horse.pastRaces && horse.pastRaces.length > 0) {
-      const lastRace = horse.pastRaces[0];
-      const tDiff = lastRace.timeDiff ?? 9.9;
-      
-      // ① 王道の信頼：上位人気且つ前走1秒未満の惜敗
-      if (popularity <= 3 && tDiff < 1.0) {
-        potential += 25;
-        tags.push('東京:王道パターン(前走僅差)');
-      }
-      
-      // ② 一変の爆発：前走1秒以上の大敗 ＋ 変わり身のトリガー
-      if (tDiff >= 1.0 && (horse.useBlinkers || frame >= 6 || weightChange >= 10)) {
-        potential += 30;
-        tags.push('東京:一変パターン(前走大敗×トリガー)');
-      }
-
-      // 11. 条件変更・隠れた適性の開花（一変の急先鋒）
-      // ① 芝⇔ダート替わり
-      if (lastRace.surface !== race.surface) {
-        potential += 45;
-        tags.push('🚀東京:二刀流替わり(一変警戒)');
-      }
-      // ② 距離変更（大幅な距離短縮・延長）
-      if (Math.abs(lastRace.distance - race.distance) >= 200) {
-        potential += 25;
-        tags.push('🚀東京:距離変更(追走負荷一変)');
-      }
-      // ③ 東京直線：末脚性能の再評価（上がり3F）
-      if (lastRace.last3fTime) {
-        const l3f = parseFloat(lastRace.last3fTime);
-        if (l3f <= 34.5 && race.surface === '芝') {
-          potential += 25;
-          tags.push('東京芝:高速末脚実績あり');
-        } else if (l3f <= 36.5 && race.surface === 'ダート') {
-          potential += 25;
-          tags.push('東京ダート:鋭い末脚実績');
-        }
-      }
-    }
-
-    // 12. 馬場状態適応力（良馬場スペシャリスト）
-    if (condition === '良') {
-      const ryoResults = horse.pastRaces?.filter(pr => pr.condition === '良' && pr.result <= 3).length || 0;
-      if (ryoResults >= 2) {
-        potential += 20;
-        tags.push('☀️良馬場実績(高速決着適応)');
-      }
-    }
-
-    // 13. 東京展開・脚質バイアス：芝の差し vs ダートの先行
-    if (race.surface === '芝') {
-      if (horse.style === '中団' || horse.style === '後方' || horse.style === '追込') {
-        potential += 30;
-        tags.push('東京芝:差し・追込優位(直線末脚)');
-        // 後半レース（上級条件）ではさらに差しが強調
-        if (race.raceNumber >= 7) {
-          potential += 15;
-          tags.push('東京後半芝:差し加速バイアス');
-        }
-      } else if (horse.style === '逃げ') {
-        potential -= 25;
-        tags.push('東京芝:逃げ馬(標的・失速リスク)');
-      }
-    } else {
-      // ダート：先行〜中団のパワー押し切り
-      if (horse.style === '先行' || horse.style === '好位' || horse.style === '中団') {
-        potential += 25;
-        tags.push('東京ダート:好位〜中団(パワー押し切り)');
-      }
-      // 前半のダート戦のみ前残り警戒
-      if (race.raceNumber <= 6 && horse.style === '逃げ') {
-        potential += 20;
-        tags.push('東京前半ダート:前残り・先行警戒');
-      }
-    }
-  }
-
-  // ==========================================
-  // 【新設】盛岡開催：馬体重・物理的適応バイアス
-  // ==========================================
-  if (trackName === '盛岡' || trackName === '水沢') {
-    // ① 状態の安定性（±3kg以内）を最重視
-    if (Math.abs(weightChange) <= 3) {
-      potential += 25;
-      tags.push('🏹岩手:馬体安定(状態キープ)');
-    }
-    // ② 馬体減少のリスク（-4kg以上は勝ち切りゼロの実績に基づく）
-    if (weightChange <= -4) {
-      potential -= 35;
-      tags.push('⚠️岩手:馬体減少リスク(消耗・ストレス懸念)');
-    }
-    // ③ 大幅なプラス（成長・休養明けの立て直し）は上位人気なら許容・加点
-    if (weightChange >= 7 && popularity <= 3) {
-      potential += 20;
-      tags.push('🚀岩手:成長・立て直し(実力馬の馬体増)');
-    }
-
-    // ④ スピード性能・上がりタイム解析（盛岡高速馬場への適応）
-    // 良馬場でも時計が出るスピード馬場であるため、絶対的なスピードと上がりの鋭さを重視
-    const mBestL3f = Math.min(...horse.pastRaces.map(pr => parseFloat(pr.last3fTime || '99.9')));
-    if (race.distance === 1200) {
-      // 1200m: 1分12秒台以下、上がり37秒台前半が勝ち切りライン
-      if (mBestL3f <= 37.2) {
-        potential += 35;
-        tags.push(`⚡盛岡1200:高速末脚実績(上がり${mBestL3f.toFixed(1)}s)`);
-      }
-    } else if (race.distance === 1400) {
-      // 1400m: 1分26秒台、上がり37秒台前半が優秀
-      if (mBestL3f <= 37.5) {
-        potential += 30;
-        tags.push(`⚡盛岡1400:スピード持続力(上がり${mBestL3f.toFixed(1)}s)`);
-      }
-    }
-
-    // ⑤ 展開・脚質バイアス：逃げ先行の物理的優位 vs 爆速差しの強襲
-    // 盛岡の基本は逃げ・先行による「前残り」が正義（7/12勝が先行実績馬）
-    const isMoriokaFront = horse.pastRaces.slice(0, 2).some(pr => {
-      if (!pr.passingPositions) return false;
-      const pos = pr.passingPositions.split('-').map(Number);
-      return pos[0] <= 2; // 安定して1-2番手を取れる脚
-    });
-
-    if (isMoriokaFront) {
-      potential += 30;
-      tags.push('🛡️盛岡:前残り優位(先行・逃げ実績)');
-    }
-
-    // 展開が速くなった際の「爆速差し」ポテンシャル（上がり36.9s等の異次元末脚）
-    if (mBestL3f <= 37.0 && (horse.style === '中団' || horse.style === '後方' || horse.style === '追込')) {
-      potential += 25;
-      tags.push('🚀盛岡:爆速差し(異次元末脚ポテンシャル)');
-    }
-
-    // ⑥ レースフェーズ解析（盛岡特有の時系列バイアスシフト）
-    if (race.raceNumber <= 6) {
-      // 前半：堅実・安定・中枠・馬体重キープが絶対条件
-      if (popularity === 1) {
-        potential += 25; 
-        tags.push('🌅盛岡前半:1番人気鉄板傾向');
-      }
-      if (frame >= 2 && frame <= 5) {
-        potential += 15; 
-        tags.push('🌅盛岡前半:中枠優位性');
-      }
-      if (Math.abs(weightChange) > 3) {
-        potential -= 20; // 前半は微増減すら許容しない極端な安定志向
-        tags.push('⚠️盛岡前半:馬体変動リスク割引');
-      }
-    } else {
-      // 後半：波乱・外枠・特定の固め打ち騎手・パワー（馬体増）重視
-      const mHotJockeys = /(高松亮|高橋悠|山本聡)/;
-      if (jockey.match(mHotJockeys)) {
-        potential += 30;
-        tags.push('🌃盛岡後半:固め打ち・勝負騎手エッジ');
-      }
-      // 内外極端枠の台頭（特に外枠4勝の実績）
-      if (frame === 1 || (frame >= 6 && frame <= 8)) {
-        potential += 20;
-        tags.push('🌃盛岡後半:内外極端枠有利');
-      }
-      // 下位人気による高配当決着への警戒
-      if (popularity >= 4) {
-        distortionBoost += 0.5;
-        tags.push('🌌盛岡後半:波乱激走ポテンシャル');
-      }
-    }
-
-    // ⑦ 岩手・好調厩舎バイアス（固め打ち＆連対特化）
-    const trainer = horse.trainer || '';
-    const mHotStables = /(佐藤雅彦|板垣吉則|菅原右吉)/;
-    const mPlacingStables = /(小林俊彦|及川良春|佐々木由則)/;
-    
-    if (trainer.match(mHotStables)) {
-      potential += 30;
-      tags.push('🔥岩手好調厩舎:勝利量産フェーズ');
-    } else if (trainer.match(mPlacingStables)) {
-      potential += 15;
-      distortionBoost += 0.3; // 相手・ヒモとしての優秀さを評価
-      tags.push('🛡️岩手安定厩舎:馬券圏内（ヒモ）軸');
-    }
-    
-    // 勝負所（11R以降）の佐藤浩厩舎
-    if (race.raceNumber >= 11 && trainer.includes('佐藤浩')) {
-      potential += 25;
-      tags.push('🎯岩手勝負厩舎:メイン競走特化');
-    }
   }
 
   // ==========================================

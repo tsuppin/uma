@@ -227,7 +227,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
                             <span className="text-secondary fs-xs">({h.belonging})</span>
                           )}
                         </div>
-                        {h.isHelmetChange && <span className="tag tag-purple ml-6 fs-xs">B</span>}
+                        {h.useBlinkers && <span className="tag tag-purple ml-6 fs-xs">B</span>}
                       </td>
                       <td className="fs-sm text-secondary nowrap">
                         {h.gender}{h.age}

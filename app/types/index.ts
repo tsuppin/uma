@@ -30,17 +30,13 @@ export interface Horse {
   // 追加情報
   transferFrom?: string; // 転入元
   isTransferFirstRace?: boolean; // 転入初戦
-  isAuction?: boolean;  // オークション馬
   isAfterRest?: boolean; // 休み明け
-  isHelmetChange?: boolean; // ヘルメット変更
   ownerType?: string;  // 馬主タイプ
   jraEarnings?: number; // JRA本賞金
   raceClass?: string;  // 今回クラス
   cornerPositionVariance?: number; // コーナー通過順変動
   leftTurnExperience?: number; // 左回り実績
-  horseType?: string;  // 馬体特性
   prevJockey?: string; // 前走騎手
-  prizeCloseFlag?: boolean; // 賞金上限接近フラグ
   rotation?: string;   // ローテ
   prevInnerLoadExp?: boolean; // 前走内負荷経験
   useBlinkers?: boolean;     // 特殊馬具（ブリンカー）
