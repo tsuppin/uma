@@ -11718,4 +11718,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779223579730",
+    version: "v298.1",
+    date: "2026-05-19T20:46:19.730Z",
+    description: "大井 - 好走馬(ハクアイソレイユ等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "野畑凌",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "オルフェーヴル",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "鷹見陸",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "カレンブラックヒル",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
