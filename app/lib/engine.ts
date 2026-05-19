@@ -2534,6 +2534,17 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // 【新設】揉まれ弱さ（前走少頭数好走 → 今回多頭数内枠）のストレス判定
+    if (lastRace.headCount !== undefined && lastRace.headCount <= 10 && lastRace.result <= 3) {
+      const isMultiHorseRace = race.headCount !== undefined && race.headCount >= 14;
+      const isInnerFrame = frame <= 2; // 1枠〜2枠
+
+      if (isMultiHorseRace && isInnerFrame) {
+        potential -= 20; // 揉まれ合いや砂被りによる戦意喪失リスクを考慮して大幅割引
+        tags.push("⚠️ 少頭数好走→多頭数内枠: 揉まれ合い・砂被りによる惨敗リスク警戒(割引)");
+      }
+    }
+
     // ④ タイム・上がり性能解析（クラス別スイートスポット）
     const isLowerClass = horse.raceClass?.match(/(未勝利|1勝クラス|新馬)/);
     const isUpperClass = horse.raceClass?.match(/(2勝クラス|3勝クラス|オープン|重賞|リステッド|G[123])/);
