@@ -11185,4 +11185,63 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779222613422",
+    version: "v285.1",
+    date: "2026-05-19T20:30:13.422Z",
+    description: "名古屋 - 好走馬(ノーブルトレジャー等)の特性学習",
+    track: "名古屋",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "塚本征",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ダノンスマッシュ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weightChange",
+        "operator": ">=",
+        "value": 10,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "丹羽克",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ベンバトル",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
