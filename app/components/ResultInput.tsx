@@ -908,21 +908,24 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           <div className="flex gap-8 flex-wrap">
             {race.predictions.slice(0, 7).map((p, i) => {
               const hitResult = results.find(r => r.horseNumber === p.horseNumber);
-              const isHit = !!hitResult;
-              const cardBg = isHit ? "bg-green-muted" : "bg-surface";
-              const cardBorder = isHit ? "border-green-40" : "border";
+              const actualRank = hitResult ? hitResult.rank : null;
+              const isRankHit = actualRank === (i + 1);
+              
+              const textColor = isRankHit ? "text-green" : "text-red";
+              const statusText = isRankHit ? "的中 ✓" : "不的中 ✗";
+              const cardBg = isRankHit ? "bg-green-muted" : "bg-surface";
+              const cardBorder = isRankHit ? "border-green-40" : "border";
+              
               return (
-                <div key={p.horseId} className={`p-10-14 text-center rounded-8 ${cardBg} ${cardBorder}`}>
-                  <div className="fs-xs text-muted">予想{i + 1}位</div>
-                  <div className={`fw-700 ${isHit ? "text-green" : ""}`}>
+                <div key={p.horseId} className={`p-10-14 text-center rounded-8 ${cardBg} ${cardBorder}`} style={{ flex: '1 1 calc(50% - 8px)', minWidth: '120px' }}>
+                  <div className="fs-xs text-muted mb-4">予想{i + 1}位</div>
+                  <div className={`fs-lg fw-700 ${textColor} mb-4`}>
                     {p.horseNumber}番
                   </div>
-                  <div className="fs-sm">{p.horseName}</div>
-                  {isHit && (
-                    <div className="fs-xs fw-700 text-green">
-                      {hitResult.rank}着 ✓
-                    </div>
-                  )}
+                  <div className="fs-sm mb-4">{p.horseName}</div>
+                  <div className={`fs-lg fw-700 ${textColor}`}>
+                    {actualRank ? `${actualRank}着` : "—"} ({statusText})
+                  </div>
                 </div>
               );
             })}
