@@ -9889,4 +9889,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779178984701",
+    version: "v256.1",
+    date: "2026-05-19T08:23:04.701Z",
+    description: "名古屋 - 好走馬(ムギガクダン等)の特性学習",
+    track: "名古屋",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "丸野勝",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "フィエールマン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
