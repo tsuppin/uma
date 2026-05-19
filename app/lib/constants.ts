@@ -8518,4 +8518,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779160747551",
+    version: "v222.1",
+    date: "2026-05-19T03:19:07.551Z",
+    description: "盛岡 - 好走馬(ラミアヴィータ等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "小林凌",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "マツリダゴッホ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
