@@ -11595,4 +11595,51 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779223370871",
+    version: "v295.1",
+    date: "2026-05-19T20:42:50.871Z",
+    description: "大井 - 好走馬(コトブキエース等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "西優哉",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "メイショウボーラー",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "age",
+        "operator": ">=",
+        "value": 8,
+        "scoreAdjust": 20
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "高橋優",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ヴァンセンヌ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
