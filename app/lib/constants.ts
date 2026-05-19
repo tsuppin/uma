@@ -9057,4 +9057,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779161529060",
+    version: "v235.1",
+    date: "2026-05-19T03:32:09.060Z",
+    description: "大井 - 好走馬(ニシノコヌカアメ等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "杉山海",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サンダースノー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
