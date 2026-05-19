@@ -325,17 +325,46 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 新潟芝外回り（1600m〜2000m）における特注激走条件
-    const isOuterTurf = isTurf && [1600, 1800, 2000].includes(dist);
-    if (isOuterTurf) {
-      // ① 開催最終週（重賞）における内枠イン突き逆張りエッジ
+    // 【新設】新潟芝における「内回り」と「外回り」の厳密な区別と脚質適合
+    const isInnerTrack = race.trackName?.includes("内") || race.raceName?.includes("内回り") || race.trackName?.includes("内回り");
+    
+    // 内回り：1200m、1400m、および明示的な2000m内回りなど
+    const isNiigataInnerTurf = isTurf && (
+      [1200, 1400].includes(dist) || 
+      (dist === 2000 && isInnerTrack)
+    );
+    
+    // 外回り：1600m、1800m、および明示的・暗黙の2000m外回り、それ以上の外回りなど
+    const isNiigataOuterTurf = isTurf && (
+      [1600, 1800].includes(dist) || 
+      (dist === 2000 && !isInnerTrack) ||
+      (dist > 2000 && !isInnerTrack)
+    );
+
+    // ① 新潟芝・内回り（直線353m）の小回り先行バイアス
+    if (isNiigataInnerTurf) {
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 25;
+        tags.push("📐 新潟内回りエッジ: 小回り先行の展開アドバンテージ");
+      }
+    }
+
+    // ② 新潟芝・外回り（直線658.7m）の末脚・キレ味バイアスと特注激走条件
+    if (isNiigataOuterTurf) {
+      // 芝外回り直線658.7mにおける「差し・追込・中団」の極限瞬発力ブースト
+      if (horse.style === "差し" || horse.style === "追込" || horse.style === "中団") {
+        potential += 20;
+        tags.push("🚀 新潟外回りエッジ: 直線658mの極限瞬発力ブースト");
+      }
+
+      // 開催最終週（重賞）における内枠イン突き逆張りエッジ
       const isFinalWeekStakes = isGradeOrSpecial && race.raceName?.match(/(新潟記念|新潟２歳)/);
       if (isFinalWeekStakes && frame <= 3) {
         potential += 25;
         tags.push("📐 新潟最終週外回り：イン強襲内枠逆張りバイアス適合");
       }
 
-      // ② 芝外回り（直線658.7m）における「人気薄の逃げ馬」の過小評価補正
+      // 芝外回りにおける「人気薄の逃げ馬」の過小評価補正
       if (horse.style === "逃げ" && (popularity >= 6 || odds >= 12.0)) {
         potential += 20;
         tags.push("🏃 新潟芝外回り：人気薄逃げ馬スロー逃げ粘りエッジ");
