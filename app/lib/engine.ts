@@ -389,7 +389,23 @@ export function calculateTsuchiyaScore(
   if (isKyoto) {
     tags.push("⛩️ 京都特化OMEGAエンジン適用中");
 
-    // 1. 馬体重のマイナス変動（究極の勝負気配と夏負け・輸送減りリスクのバランス）
+    const isTurf = race.surface === "芝";
+    const isDirt = race.surface === "ダート";
+
+    // 1. 人間系シナジーと特定の乗り替わり・騎乗適正
+    // 岩田康誠騎手 × 内枠（イン突き極大期待値）
+    if (jockey.includes("岩田康") && frame <= 4) {
+      potential += 25;
+      tags.push("👑 岩田康誠×京都内枠：必殺イン突きバイアス適合");
+    }
+
+    // 川田将雅騎手 × 芝2200m（外回り先行最適化）
+    if (jockey.includes("川田") && isTurf && dist === 2200) {
+      potential += 25;
+      tags.push("👑 川田将雅×京都芝2200m：先行持続・淀の坂下り最適化");
+    }
+
+    // 2. 馬体重のマイナス変動（究極の勝負気配と夏負け・輸送減りリスクのバランス）
     if (weightChange < 0 && weightChange >= -8) {
       potential += 8; // 的中率向上のため過剰加点を+15から+8へ抑制
       tags.push("🔥 京都絞り込み仕上げ");
@@ -401,7 +417,13 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 2. 枠順バイアスの自動更新（トラックバイアスの激変適応）
+    // 馬体重減少（-4kg以上）× 内枠（1〜4枠）の登坂＆小回り複合エッジ
+    if (weightChange <= -4 && frame <= 4) {
+      potential += 20;
+      tags.push("📈 京都登坂物理:馬体絞り(-4kg以上)×内枠アドバンテージ");
+    }
+
+    // 3. 枠順バイアスの自動更新（トラックバイアスの激変適応）
     // 前半戦（1R〜6R）：内枠復活バイアス
     if (race.raceNumber <= 6) {
       if (frame <= 3) {
@@ -425,7 +447,41 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 3. オッズ偏差値と過剰人気の検知
+    // 京都適合血統（種牡馬）ブースト
+    const sireUpper = horse.sire?.toUpperCase() || "";
+    if (sireUpper.includes("キタサンブラック") && isTurf && dist === 1400) {
+      potential += 20;
+      tags.push("🧬 京都芝1400m適性：キタサンブラック産駒スタミナエッジ");
+    } else if ((sireUpper.includes("サンダースノー") || sireUpper.includes("キズナ")) && isDirt && dist === 1800) {
+      potential += 25;
+      tags.push("🧬 京都ダ1800m適性：改修後タフダート適合血統(サンダースノー/キズナ)");
+    }
+
+    // 芝2400mハンデ戦における軽量馬（55kg以下）の優遇、および重ハンデ馬（57kg以上）の割引
+    const isHandicap = race.raceName?.includes("ハンデ");
+    if (isHandicap && isTurf && dist === 2400) {
+      if (kinryo <= 55) {
+        potential += 20;
+        tags.push("⚖️ 京都芝2400mハンデ戦：軽量馬(55kg以下)絶対優位");
+      } else if (kinryo >= 57) {
+        potential -= 20;
+        tags.push("⚠️ 京都芝2400mハンデ戦：実績不足重斤量(57kg以上)割引");
+      }
+    }
+
+    // 芝外回りコースにおけるスリングショット効果（好位差し適合）と大外一気（追込届かず）の判定
+    const isOuterTrack = isTurf && [1600, 1800, 2200, 2400, 3000, 3200].includes(dist);
+    if (isOuterTrack) {
+      if (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位" || horse.style === "差し") {
+        potential += 15;
+        tags.push("📐 京都外回り物理:スリングショット効果好位差し適合");
+      } else if (horse.style === "追込") {
+        potential -= 25;
+        tags.push("❌ 京都外回り物理:極端な追込届かず絶望バイアス割引");
+      }
+    }
+
+    // 4. オッズ偏差値と過剰人気の検知
     // 1番人気の過剰人気（低期待値）の割り引き
     if (popularity === 1 && odds <= 2.2) {
       potential -= 10; // 中京・中山芝での的中率向上のため-30から-10へ緩和
@@ -437,7 +493,7 @@ export function calculateTsuchiyaScore(
       tags.push("⚡ 京都特選:超大穴妙味期待値");
     }
 
-    // 4. ベースライン補正（特殊馬具・ブリンカー＆栗東所属ホームアドバンテージと「関東(美浦)エリート遠征馬」の再評価）
+    // 5. ベースライン補正（特殊馬具・ブリンカー＆栗東所属ホームアドバンテージと「関東(美浦)エリート遠征馬」の再評価）
     // 特殊馬具（ブリンカー着用）激変期待値
     if (horse.useBlinkers) {
       potential += 10; // 的中率向上のため+30から+10へ適正化（自滅リスク考慮）
