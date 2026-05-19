@@ -219,6 +219,35 @@ export function calculateTsuchiyaScore(
   if (isNiigata) {
     tags.push("🌾 新潟特化OMEGAエンジン適用中");
 
+    // 【新設】新潟コース実績＆千直マイスター判定
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const isTurf = race.surface === "芝";
+      
+      // ① 新潟直線1000m（千直）専用実績
+      if (dist === 1000 && isTurf) {
+        const hasChokuGood = horse.pastRaces.some(pr => 
+          (pr.venue?.includes("新潟") || pr.direction === "直線") && 
+          pr.distance === 1000 && 
+          pr.result <= 3
+        );
+        if (hasChokuGood) {
+          potential += 35;
+          tags.push("👑 千直マイスター: 新潟直線1000mでの好走実績あり(適性抜群)");
+        }
+      } 
+      // ② 新潟コース一般リピーター実績（千直以外）
+      else {
+        const niigataTop3Count = horse.pastRaces.filter(pr => 
+          pr.venue?.includes("新潟") && 
+          pr.result <= 3
+        ).length;
+        if (niigataTop3Count > 0) {
+          potential += 20;
+          tags.push(`🐎 新潟リピーターエッジ: 過去に新潟での好走実績あり(${niigataTop3Count}回)`);
+        }
+      }
+    }
+
     // 1. 市場評価・オッズパラメータ（オッズの歪みと過小評価の検知）
     const isTurf = race.surface === "芝";
     const isDirt = race.surface === "ダート";
