@@ -9273,4 +9273,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779161846928",
+    version: "v241.1",
+    date: "2026-05-19T03:37:26.928Z",
+    description: "大井 - 好走馬(セキトバシューズ等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "藤田凌",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "キタサンブラック",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
