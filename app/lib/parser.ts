@@ -166,6 +166,7 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   let breeder = "";
   let transferFrom = "";
   let jraEarnings = 0;
+  let stableLocation = "";
 
   let pastRaceStartIdx = -1;
   for (let i = 1; i < lines.length; i++) {
@@ -227,7 +228,15 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     if (kMatch) kinryo = parseFloat(kMatch[1]);
 
     if (kinryoIdx - 1 >= 0) jockey = lines[kinryoIdx - 1].trim();
-    if (kinryoIdx + 1 < profileEndIdx) trainer = lines[kinryoIdx + 1].trim();
+    if (kinryoIdx + 1 < profileEndIdx) {
+      const rawTrainer = lines[kinryoIdx + 1].trim();
+      trainer = rawTrainer;
+      const trainerBelongingM = rawTrainer.match(/^(.+?)\((.+?)\)$/) || rawTrainer.match(/^(.+?)（(.+?)）$/);
+      if (trainerBelongingM) {
+        trainer = trainerBelongingM[1].trim();
+        stableLocation = trainerBelongingM[2].trim();
+      }
+    }
     if (kinryoIdx + 2 < profileEndIdx) owner = lines[kinryoIdx + 2].trim();
     if (kinryoIdx + 3 < profileEndIdx) breeder = lines[kinryoIdx + 3].trim();
   }
@@ -418,7 +427,7 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     odds: 0,
     popularity: 0,
     pastRaces,
-    stableLocation: "地方",
+    stableLocation: stableLocation || belonging || "地方",
     transferFrom: detectedTransfer || undefined,
     jraEarnings: detectedJRAEarnings || undefined
   };

@@ -40,7 +40,7 @@ export interface Horse {
   rotation?: string;   // ローテ
   prevInnerLoadExp?: boolean; // 前走内負荷経験
   useBlinkers?: boolean;     // 特殊馬具（ブリンカー）
-  stableLocation?: '栗東' | '美浦' | '地方' | ''; // 厩舎・所属エリア
+  stableLocation?: string; // 厩舎・所属エリア
   oddsStandardScore?: number; // オッズ偏差値
 }
 
