@@ -8653,4 +8653,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779160938526",
+    version: "v225.1",
+    date: "2026-05-19T03:22:18.526Z",
+    description: "盛岡 - 好走馬(メダツヤツ等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "南郷家",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "クリエイター２",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
