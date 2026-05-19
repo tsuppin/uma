@@ -97,6 +97,7 @@ export function calculateTsuchiyaScore(
   
   let potential = 500;
   let distortionBoost = 1.0;
+  let isTargetYatomi = false;
   const tags: string[] = [];
 
   // ==========================================
@@ -1730,6 +1731,23 @@ export function calculateTsuchiyaScore(
       potential += 25;
       tags.push('名古屋:鞍上強化・リーディングエリート');
     }
+
+    // 2. Yatomi Physics (弥富物理補正) の統合・適用
+    const prevRace = horse.pastRaces && horse.pastRaces[0];
+    const physicsResult = calculateYatomiPhysics(
+      horse,
+      prevRace,
+      race.windSpeed || 0,
+      race.isHeadwind || false,
+      race.condition,
+      race.isInBiasActive || false
+    );
+
+    if (physicsResult === 1) {
+      potential += 45; // 物理的アドバンテージを持つ狙い馬として加点
+      isTargetYatomi = true;
+      tags.push("⚡ 弥富物理エッジ適合馬(風速・外回し・馬格パワー・インバイアス総合判定)");
+    }
   }
 
   // ==========================================
@@ -3276,6 +3294,7 @@ export function calculateTsuchiyaScore(
     darkness: Math.round(darkness * 100) / 100,
     evIndex: potential,
     aptitudeTags: tags,
+    targetTag: isTargetYatomi || undefined,
     rank: 0,
   };
 }

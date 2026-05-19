@@ -164,6 +164,8 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   let trainer = "";
   let owner = "";
   let breeder = "";
+  let transferFrom = "";
+  let jraEarnings = 0;
 
   let pastRaceStartIdx = -1;
   for (let i = 1; i < lines.length; i++) {
@@ -210,6 +212,12 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
       if (wcm) {
         const val = wcm[1].replace("±", "");
         weightChange = val === "初出走" ? 0 : parseInt(val) || 0;
+      }
+    } else if (l.includes("本賞金") || l.includes("収得賞金") || l.includes("賞金")) {
+      const prizeM = l.match(/(?:本賞金|収得賞金|賞金)[：:]?\s*([\d,]+)/);
+      if (prizeM) {
+        const rawPrize = parseInt(prizeM[1].replace(/,/g, ""));
+        jraEarnings = rawPrize < 100000 ? rawPrize : Math.round(rawPrize / 10000);
       }
     }
   }
@@ -361,7 +369,31 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   }
 
   const calculatedStyle = estimateStyle(pastRaces);
-
+ 
+  // JRAからの転入自動検知
+  let detectedTransfer = transferFrom;
+  let detectedJRAEarnings = jraEarnings;
+ 
+  if (belonging === "中央" || belonging === "ＪＲＡ" || belonging === "JRA") {
+    detectedTransfer = "JRA";
+  }
+ 
+  const jraVenues = ["東京", "中山", "京都", "阪神", "中京", "新潟", "福島", "小倉", "函館", "札幌"];
+  const hasJRAPastRace = pastRaces.some(pr => jraVenues.includes(pr.venue));
+  if (hasJRAPastRace) {
+    detectedTransfer = "JRA";
+    if (detectedJRAEarnings === 0) {
+      // 過去走の賞金からJRA収得賞金を概算 (万単位)
+      const totalPrize = pastRaces.reduce((sum, pr) => {
+        if (jraVenues.includes(pr.venue)) {
+          return sum + (pr.prize || 0);
+        }
+        return sum;
+      }, 0);
+      detectedJRAEarnings = totalPrize;
+    }
+  }
+ 
   return {
     id: generateId(),
     number,
@@ -386,7 +418,9 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     odds: 0,
     popularity: 0,
     pastRaces,
-    stableLocation: "地方"
+    stableLocation: "地方",
+    transferFrom: detectedTransfer || undefined,
+    jraEarnings: detectedJRAEarnings || undefined
   };
 }
 

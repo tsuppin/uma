@@ -29,6 +29,8 @@ export default function RaceForm({ onSubmit, onCancel }: {
   const [condition, setCondition] = useState<Race["condition"]>("良");
   const [isWin5, setIsWin5] = useState(false);
   const [windSpeed, setWindSpeed] = useState(0);
+  const [isHeadwind, setIsHeadwind] = useState(false);
+  const [isInBiasActive, setIsInBiasActive] = useState(false);
   const [startTime, setStartTime] = useState("");
   const [weather, setWeather] = useState("晴");
 
@@ -70,7 +72,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
       raceName: raceName || `${raceNumber}R`,
       distance, surface, condition,
       headCount: parsed.horses.length,
-      isWin5, windSpeed,
+      isWin5, windSpeed, isHeadwind, isInBiasActive,
       trackName: venue,
       startTime: startTime || undefined,
       weather: weather || undefined,
@@ -192,6 +194,19 @@ export default function RaceForm({ onSubmit, onCancel }: {
                   </select>
                 </div>
               </div>
+              <div className="form-group flex flex-col justify-center">
+                <span className="form-label mb-6">名古屋・弥富物理オプション</span>
+                <div className="flex gap-12 mt-4">
+                  <label className="flex items-center gap-4 fs-xs text-muted cursor-pointer">
+                    <input type="checkbox" checked={isHeadwind} onChange={e => setIsHeadwind(e.target.checked)} />
+                    向かい風 (風速4m以上で有効)
+                  </label>
+                  <label className="flex items-center gap-4 fs-xs text-muted cursor-pointer">
+                    <input type="checkbox" checked={isInBiasActive} onChange={e => setIsInBiasActive(e.target.checked)} />
+                    イン伸びバイアス
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -207,9 +222,9 @@ export default function RaceForm({ onSubmit, onCancel }: {
               <table className="horse-table">
                 <thead>
                   <tr>
-                    <th>枠</th><th>馬番</th><th>馬名(所属)</th><th>性齢</th><th>毛色</th>
+                    <th>枠</th><th>馬番</th><th>馬名(所属)</th><th>性齢</th>
                     <th>騎手</th><th>斤量</th><th>体重</th><th>増減</th>
-                    <th>父</th><th>生産者</th><th>オッズ</th>
+                    <th>転入</th><th>JRA賞金</th><th>父</th><th>オッズ</th>
                     <th>前走</th><th>前々走</th><th>3走前</th>
                     <th></th>
                   </tr>
@@ -232,9 +247,6 @@ export default function RaceForm({ onSubmit, onCancel }: {
                       <td className="fs-sm text-secondary nowrap">
                         {h.gender}{h.age}
                       </td>
-                      <td className="fs-xs text-muted nowrap">
-                        {h.coatColor || "—"}
-                      </td>
                       <td>
                         <input id={`h-jockey-${h.id}`} className="form-input w-80 p-4-8 fs-sm" aria-label={`${h.number}番 騎手`}
                           value={h.jockey} onChange={e => updateHorse(i, "jockey", e.target.value)} />
@@ -248,11 +260,18 @@ export default function RaceForm({ onSubmit, onCancel }: {
                       <input id={`h-weight-change-${h.id}`} type="number" className="form-input w-60 p-4-8 fs-sm" aria-label={`${h.number}番 馬体重増減`}
                         value={h.weightChange} onChange={e => updateHorse(i, "weightChange", +e.target.value)} />
                     </td>
+                    <td>
+                      <input id={`h-transfer-${h.id}`} className="form-input w-60 p-4-8 fs-sm"
+                        value={h.transferFrom || ""} onChange={e => updateHorse(i, "transferFrom", e.target.value)}
+                        placeholder="JRA等" aria-label={`${h.number}番 転入元`} />
+                    </td>
+                    <td>
+                      <input id={`h-jra-earnings-${h.id}`} type="number" className="form-input w-65 p-4-8 fs-sm"
+                        value={h.jraEarnings || ""} onChange={e => updateHorse(i, "jraEarnings", e.target.value ? +e.target.value : undefined)}
+                        placeholder="万" aria-label={`${h.number}番 JRA本賞金`} />
+                    </td>
                     <td className="fs-xs text-muted ellipsis max-w-80" title={h.sire}>
                       {h.sire || "—"}
-                    </td>
-                    <td className="fs-xs text-muted ellipsis max-w-80" title={h.breeder}>
-                      {h.breeder || "—"}
                     </td>
                     <td>
                       <input id={`h-odds-${h.id}`} type="number" className="form-input w-60 p-4-8 fs-sm" step={0.1}
