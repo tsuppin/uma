@@ -9115,4 +9115,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779161719807",
+    version: "v237.1",
+    date: "2026-05-19T03:35:19.807Z",
+    description: "大井 - 好走馬(フィライングレース等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "鷹見陸",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ダンカーク",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
