@@ -261,8 +261,44 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 1. 市場評価・オッズパラメータ（オッズの歪みと過小評価の検知）
     const isTurf = race.surface === "芝";
+
+    // 【新設】新潟芝における「超高速馬場への高速時計適性」の判定
+    if (isTurf && (race.condition === "良" || race.condition === "稍重") && horse.pastRaces && horse.pastRaces.length > 0) {
+      const parseTimeToSeconds = (timeStr: string | undefined): number => {
+        if (!timeStr) return 999;
+        const cleanStr = timeStr.toString().trim();
+        if (cleanStr.includes(":")) {
+          const parts = cleanStr.split(":");
+          const minutes = parseFloat(parts[0] || "0");
+          const seconds = parseFloat(parts[1] || "0");
+          return minutes * 60 + seconds;
+        }
+        return parseFloat(cleanStr) || 999;
+      };
+
+      const hasFastTimeRecord = horse.pastRaces.some(pr => {
+        if (pr.distance !== dist || !pr.time || pr.result > 5) return false;
+        
+        const seconds = parseTimeToSeconds(pr.time);
+        
+        if (dist === 1000 && seconds <= 55.5) return true;
+        if (dist === 1200 && seconds <= 68.2) return true;
+        if (dist === 1400 && seconds <= 80.8) return true;
+        if (dist === 1600 && seconds <= 93.2) return true;
+        if (dist === 1800 && seconds <= 105.8) return true;
+        if (dist === 2000 && seconds <= 118.8) return true;
+        if (dist === 2400 && seconds <= 144.5) return true;
+        return false;
+      });
+
+      if (hasFastTimeRecord) {
+        potential += 30;
+        tags.push("⚡ 高速時計エッジ: 新潟高速芝に適した持ち時計実績あり(スピード証明)");
+      }
+    }
+
+    // 1. 市場評価・オッズパラメータ（オッズの歪みと過小評価の検知）
     const isDirt = race.surface === "ダート";
     const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
     const isStrongHeadwind = race.isHeadwind && (race.windSpeed !== undefined && race.windSpeed >= 3.0);
