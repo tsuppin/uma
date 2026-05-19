@@ -490,6 +490,12 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // C.ルメール騎手 × 8枠（大外）の黄金エッジ
+    if (jockey.includes("ルメー") && frame === 8) {
+      potential += 20;
+      tags.push("👑 東京ルメール×8枠大外：抜群のコース取りエッジ");
+    }
+
     // 「西高東低」の適正化（アウェイ栗東馬の過少評価排除と特別・重賞でのエッジ評価）
     const isMiho = horse.stableLocation?.includes("美浦") || horse.trainer?.includes("美浦");
     const isRitto = horse.stableLocation?.includes("栗東") || horse.trainer?.includes("栗東") || (!isMiho && horse.stableLocation === "栗東");
@@ -500,6 +506,16 @@ export function calculateTsuchiyaScore(
     } else if (isRitto && (race.raceNumber >= 9 || isGradeOrSpecial)) {
       potential += 25;
       tags.push("✈️ メイン戦遠征関西馬(栗東)エッジ");
+    }
+
+    // 東京適合血統（種牡馬）ブースト
+    const sireUpper = horse.sire?.toUpperCase() || "";
+    if (sireUpper.includes("キタサンブラック")) {
+      potential += 15;
+      tags.push("🧬 東京適性：キタサンブラック産駒エッジ");
+    } else if (sireUpper.includes("パイロ") || sireUpper.includes("ジャスタウェイ")) {
+      potential += 10;
+      tags.push(`🧬 東京適性：${horse.sire}産駒穴期待`);
     }
 
     // 2. レースフェーズ（条件）と戦績データ・物理環境の連動評価
@@ -548,16 +564,37 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // 前走「芝レース」からの替わり（芝スタートでのスピードアドバンテージ）
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const prevRace = horse.pastRaces[0];
+      if (prevRace.surface === "芝") {
+        potential += 15;
+        tags.push("🚀 東京ダート替わり：芝スタート芝ダッシュ期待馬");
+      }
+    }
+
+    // 距離短縮ローテによるスタミナ優位性
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const prevRace = horse.pastRaces[0];
+      if (prevRace.distance > dist) {
+        potential += 12;
+        tags.push("📈 距離短縮ローテ：タフな流れへのスタミナ適合");
+      }
+    }
+
     // 3. 空間物理解析（枠順バイアス）の動的調整
     if (isTurf) {
       if (dist === 2000) {
-        // 東京芝2000mの罠（内枠過剰人気と揉まれリスクの回避）
+        // 東京芝2000mの罠（内枠過剰人気と外枠の物理的絶望）
         if (frame >= 4 && frame <= 6) {
           potential += 20;
           tags.push("🎯 東京芝2000m：客観的期待値の中枠エッジ");
         } else if (frame <= 2) {
           potential -= 5;
           tags.push("⚠️ 東京芝2000m：内枠過剰人気・包まれ懸念割引");
+        } else if (frame >= 7 && headCount >= 10) {
+          potential -= 25;
+          tags.push("❌ 東京芝2000m：多頭数外枠の物理的絶望ペナルティ");
         }
       } else {
         if (race.raceNumber <= 6) {
@@ -578,6 +615,11 @@ export function calculateTsuchiyaScore(
         if (frame >= 6) {
           potential += 25;
           tags.push("⚡ 東ダ1600m：芝スタート外枠ダッシュエッジ");
+          // 外枠かつ「逃げ・先行」脚質への超強力シナジー補正
+          if (frame >= 7 && (horse.style === "逃げ" || horse.style === "先行")) {
+            potential += 20;
+            tags.push("⚡ 東ダ1600m：芝スタート外枠×逃げ先行の黄金エッジ");
+          }
         } else if (frame <= 2) {
           potential -= 15;
           tags.push("⚠️ 東ダ1600m：内枠芝スタート距離短不利");
@@ -591,6 +633,30 @@ export function calculateTsuchiyaScore(
           potential -= 10;
           tags.push("⚠️ ダート戦：砂被り・揉まれ内枠割引");
         }
+      }
+
+      // ダート馬場状態（砂の物理特性）に応じた適性補正
+      if (condition === "良" || condition === "稍重") {
+        // 乾燥馬場：キック力が吸い取られるため、パワーのある大型馬を優遇
+        if (weight >= 490) {
+          potential += 15;
+          tags.push("💪 乾燥東京ダート：大型パワー馬スタミナエッジ");
+        }
+      } else if (condition === "重" || condition === "不良") {
+        // 水分を含んだ高速馬場：スピードタイプの軽量馬・快速馬を優遇
+        if (weight > 0 && weight < 460) {
+          potential += 12;
+          tags.push("⚡ 湿潤東京ダート：脚抜き良高速適性(軽量快速馬)");
+        }
+      }
+    }
+
+    // Bコース替わり週の内伸び回帰バイアス
+    const isBCourse = race.raceName?.includes("Bコース") || race.trackName?.includes("Bコース") || race.raceName?.includes("B枠");
+    if (isBCourse && isTurf) {
+      if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位")) {
+        potential += 20;
+        tags.push("📐 Bコース物理：急激な内伸び回帰バイアス適合");
       }
     }
 
