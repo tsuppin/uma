@@ -10411,4 +10411,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779187285180",
+    version: "v268.1",
+    date: "2026-05-19T10:41:25.180Z",
+    description: "東京 - 好走馬(コッレヴェッキオ等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "北村 宏司",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モーリス",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
