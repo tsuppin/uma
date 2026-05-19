@@ -11835,4 +11835,63 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779223672737",
+    version: "v301.1",
+    date: "2026-05-19T20:47:52.737Z",
+    description: "大井 - 好走馬(ピースフィールド等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "達城龍",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "インカンテーション",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "本田重",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "グレーターロンドン",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "千田洋",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ケープブランコ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
