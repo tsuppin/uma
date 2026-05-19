@@ -234,6 +234,19 @@ export function calculateTsuchiyaScore(
           potential += 35;
           tags.push("👑 千直マイスター: 新潟直線1000mでの好走実績あり(適性抜群)");
         }
+
+        // 【新設】新潟千直におけるテンの「ダッシュ力」判定
+        // 過去3走以内で最初のコーナー通過順位が3番手以内（1番手〜3番手）の先行実績があるか判定
+        const hasFastDash = horse.pastRaces.slice(0, 3).some(pr => {
+          if (!pr.passingPositions) return false;
+          const firstPos = parseInt(pr.passingPositions.split('-')[0] || '99', 10);
+          return firstPos > 0 && firstPos <= 3;
+        });
+
+        if (hasFastDash) {
+          potential += 25;
+          tags.push("⚡ 千直ダッシュ力: 過去走でテン3番手以内の先行力あり(スピード優位)");
+        }
       } 
       // ② 新潟コース一般リピーター実績（千直以外）
       else {
