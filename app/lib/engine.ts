@@ -2062,6 +2062,28 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // 【新設】母の父（BMS）によるダート適性・雨天道悪適性判定
+  const bmsName = horse.bms || '';
+  if (bmsName) {
+    // ① ダート適性に優れたBMS血統エッジ
+    if (race.surface === 'ダート') {
+      const dirtEliteBMS = /(クロフネ|フレンチデピュティ|ゴールドアリュール|ブライアンズタイム|シンボリクリスエス|ワイルドラッシュ|エンドスウィープ)/;
+      if (bmsName.match(dirtEliteBMS)) {
+        potential += 20;
+        tags.push(`💪 砂のスタミナ(母父): ダート適性に優れたBMS血統エッジ(${bmsName})`);
+      }
+    }
+
+    // ② 雨天・道悪（重・不良馬場）に適したBMS適性
+    if (race.condition === '重' || race.condition === '不良') {
+      const mudEliteBMS = /(クロフネ|フレンチデピュティ|キングカメハメハ|シンボリクリスエス|メジロマックイーン|スペシャルウィーク|アグネスタキオン)/;
+      if (bmsName.match(mudEliteBMS)) {
+        potential += 25;
+        tags.push(`🌧️ 道悪の鬼(母父): 雨天馬場に適したBMS適性(${bmsName})`);
+      }
+    }
+  }
+
   // ==========================================
   // 【新設】地方競馬 (NAR) 特有の実績・遠征・小回りバイアス評価
   // ==========================================
