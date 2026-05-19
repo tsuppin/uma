@@ -11414,4 +11414,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779222878030",
+    version: "v290.1",
+    date: "2026-05-19T20:34:38.030Z",
+    description: "名古屋 - 好走馬(エーオ等)の特性学習",
+    track: "名古屋",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "加藤聡",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "デクラレーションオ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
