@@ -224,6 +224,7 @@ export function calculateTsuchiyaScore(
     const isDirt = race.surface === "ダート";
     const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
     const isStrongHeadwind = race.isHeadwind && (race.windSpeed !== undefined && race.windSpeed >= 3.0);
+    const prevRace = horse.pastRaces && horse.pastRaces[0];
 
     if (isTurf) {
       // 芝レースにおける1番人気の過大評価（被りすぎ）減点
@@ -250,14 +251,52 @@ export function calculateTsuchiyaScore(
       tags.push("🔥 高齢実績馬の補正");
     }
 
-    // 新潟直線1000m（千直）における圧倒的有利な「外枠（6枠〜8枠）」の物理エッジ
+    // 新潟直線1000m（千直）における圧倒的有利な「外枠（6枠〜8枠）」の物理エッジと激走条件
     if (dist === 1000 && isTurf) {
       if (frame >= 6) {
         potential += 25;
         tags.push("⚡ 千直外枠の圧倒的物理アドバンテージ");
+        
+        // 【激走】「前走ダート」×「7・8枠」の芝スタートスピード恩恵
+        if (prevRace && prevRace.surface === "ダート" && frame >= 7) {
+          potential += 20;
+          tags.push("⚡ 千直適性：前走ダートダッシュ力×外枠黄金シナジー");
+        }
       } else if (frame <= 2) {
-        potential -= 20;
-        tags.push("⚠️ 千直内枠の物理的絶望バイアス(馬場荒れ)");
+        // 【激走】「1〜2枠」×「追込馬」: 意図的に下げてから外へ出す戦術トレンド
+        if (horse.style === "追込") {
+          potential += 15;
+          tags.push("🎯 千直内枠追込：大外ラチ沿いトラバース急襲エッジ");
+        } else {
+          potential -= 20;
+          tags.push("⚠️ 千直内枠の物理的絶望バイアス(馬場荒れ)");
+        }
+      }
+
+      // 【激走】芝・大幅距離短縮ローテ×斤量減
+      if (prevRace && prevRace.distance >= 1500) {
+        const prevJockeyWeight = prevRace.jockeyWeight || 55;
+        if (kinryo < prevJockeyWeight) {
+          potential += 25;
+          tags.push("⚡ 千直激変：大幅距離短縮ローテ×斤量減エッジ");
+        }
+      }
+    }
+
+    // 新潟芝外回り（1600m〜2000m）における特注激走条件
+    const isOuterTurf = isTurf && [1600, 1800, 2000].includes(dist);
+    if (isOuterTurf) {
+      // ① 開催最終週（重賞）における内枠イン突き逆張りエッジ
+      const isFinalWeekStakes = isGradeOrSpecial && race.raceName?.match(/(新潟記念|新潟２歳)/);
+      if (isFinalWeekStakes && frame <= 3) {
+        potential += 25;
+        tags.push("📐 新潟最終週外回り：イン強襲内枠逆張りバイアス適合");
+      }
+
+      // ② 芝外回り（直線658.7m）における「人気薄の逃げ馬」の過小評価補正
+      if (horse.style === "逃げ" && (popularity >= 6 || odds >= 12.0)) {
+        potential += 20;
+        tags.push("🏃 新潟芝外回り：人気薄逃げ馬スロー逃げ粘りエッジ");
       }
     }
 
@@ -289,8 +328,29 @@ export function calculateTsuchiyaScore(
           potential -= 15;
           tags.push("⚠️ 新潟ダ1200m：内枠芝スタート距離短不利");
         }
-      } else {
+
+        // 【激走】新潟ダ1200m「牝馬の逃げ」（超平坦直線恩恵）
+        if (gender === "牝" && horse.style === "逃げ") {
+          potential += 25;
+          tags.push("⚡ 新潟ダ1200m牝馬逃げ：超平坦路盤スピード持続エッジ");
+        }
+      } else if (dist === 1800) {
         // 一般ダート：外枠のキックバック回避優位
+        if (frame >= 6) {
+          potential += 15;
+          tags.push("📈 ダート戦：砂被り回避の外枠優位");
+        } else if (frame <= 2) {
+          potential -= 10;
+          tags.push("⚠️ ダート戦：砂被り・揉まれ内枠割引");
+        }
+
+        // 【激走】新潟ダ1800m「距離延長×外枠」（ストレスフリー追走）
+        if (prevRace && prevRace.distance < 1800 && frame >= 6) {
+          potential += 20;
+          tags.push("📈 新潟ダ1800m：砂被り回避外枠×距離延長エッジ");
+        }
+      } else {
+        // その他のダート
         if (frame >= 6) {
           potential += 15;
           tags.push("📈 ダート戦：砂被り回避の外枠優位");
@@ -301,7 +361,7 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 3. 時系列パフォーマンスパラメータ（時間帯および風による脚質の有利不利）
+    // 3. 時系列パフォーマンスパラメータ（時間帯および風・水分量による脚質の有利不利）
     if (isTurf) {
       if (race.raceNumber <= 5) {
         // 前半レース（1R〜5R）: 先行馬（前残り）絶対有利加点
@@ -329,13 +389,25 @@ export function calculateTsuchiyaScore(
         }
       }
     } else if (isDirt) {
-      // ダート戦は一貫して先行力を最重視（後半の芝用差しバイアスの混同を防ぐ）
-      if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 30;
-        tags.push("🏃 新潟ダート：前残り先行アドバンテージ");
-      } else if (horse.style === "差し" || horse.style === "追込") {
-        potential += 5;
-        tags.push("⚠️ 新潟ダート：差し届かずリスク割引");
+      // 新潟ダート：含水率（馬場状態）に応じた脚質の動的調整
+      if (condition === "稍重" || condition === "重") {
+        // 湿潤時（脚抜きの良い高速馬場）：スピードを活かした差し馬の成績向上
+        if (horse.style === "逃げ" || horse.style === "先行") {
+          potential += 20;
+          tags.push("🏃 新潟ダート：前残り先行アドバンテージ");
+        } else if (horse.style === "差し" || horse.style === "追込") {
+          potential += 15;
+          tags.push("⚡ 湿潤新潟ダート：脚抜き良高速適性(差し追込バフ)");
+        }
+      } else {
+        // 乾燥時（良）または泥濘時（不良）：粘り気や摩擦が激しく「パワー型前残り」が極端化
+        if (horse.style === "逃げ" || horse.style === "先行") {
+          potential += 35;
+          tags.push("💪 新潟ダート粘性馬場：パワー型前残り先行エッジ強化");
+        } else if (horse.style === "差し" || horse.style === "追込") {
+          potential -= 10;
+          tags.push("❌ 新潟ダート粘性馬場：過酷なキックバック差し割引");
+        }
       }
     }
 
