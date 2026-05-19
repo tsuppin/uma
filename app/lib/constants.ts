@@ -8594,4 +8594,63 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779160905526",
+    version: "v224.1",
+    date: "2026-05-19T03:21:45.526Z",
+    description: "盛岡 - 好走馬(バードハズフロウン等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": ">=",
+        "value": 8,
+        "scoreAdjust": 20
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "佐々志",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ベーカバド",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "鈴木祐",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "トゥザワールド",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "高橋悠",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "レガーロ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
