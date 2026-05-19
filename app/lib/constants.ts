@@ -8794,4 +8794,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779161107447",
+    version: "v228.1",
+    date: "2026-05-19T03:25:07.447Z",
+    description: "盛岡 - 好走馬(スターキー等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "山本聡",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "メイショウボーラー",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "小林凌",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ファインニードル",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
