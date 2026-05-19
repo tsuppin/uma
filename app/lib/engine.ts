@@ -2545,6 +2545,16 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // 【新設】相手関係大幅緩和（前走高賞金ハイレベル戦惜敗 → 今回一般平場戦）の判定
+    if (lastRace.prize !== undefined && lastRace.prize >= 300) {
+      const isGeneralRace = !race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ|OP|オープン)/i);
+      
+      if (isGeneralRace && lastRace.result <= 8) {
+        potential += 30;
+        tags.push(`👑 相手関係大幅緩和: 前走高賞金特別戦(${lastRace.prize}万)惜敗から今回平場一般戦で格上優位`);
+      }
+    }
+
     // ④ タイム・上がり性能解析（クラス別スイートスポット）
     const isLowerClass = horse.raceClass?.match(/(未勝利|1勝クラス|新馬)/);
     const isUpperClass = horse.raceClass?.match(/(2勝クラス|3勝クラス|オープン|重賞|リステッド|G[123])/);
