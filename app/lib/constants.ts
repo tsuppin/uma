@@ -9034,4 +9034,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779161445862",
+    version: "v234.1",
+    date: "2026-05-19T03:30:45.862Z",
+    description: "大井 - 好走馬(グレーヌドスタール等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "西啓太",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ステルヴィオ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
