@@ -10440,4 +10440,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779187358644",
+    version: "v234.1",
+    date: "2026-05-19T10:42:38.644Z",
+    description: "盛岡 - 好走馬(ニューイヤーズデイ等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
