@@ -11689,4 +11689,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779223550370",
+    version: "v297.1",
+    date: "2026-05-19T20:45:50.370Z",
+    description: "大井 - 好走馬(アバンギャルド等)の特性学習",
+    track: "大井",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "矢野貴",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モーニン",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
