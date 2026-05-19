@@ -8894,4 +8894,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779161164756",
+    version: "v230.1",
+    date: "2026-05-19T03:26:04.756Z",
+    description: "盛岡 - 好走馬(テルテ等)の特性学習",
+    track: "盛岡",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "関本玲",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ハーツクライ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
