@@ -9513,4 +9513,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779162100053",
+    version: "v247.1",
+    date: "2026-05-19T03:41:40.053Z",
+    description: "東京 - 好走馬(レヴェランジェ等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "佐々木 大輔",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サングレーザー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
