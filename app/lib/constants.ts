@@ -11490,4 +11490,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779222941789",
+    version: "v292.1",
+    date: "2026-05-19T20:35:41.789Z",
+    description: "名古屋 - 好走馬(ワイルドハンター等)の特性学習",
+    track: "名古屋",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "今井貴",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "マクフィ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
