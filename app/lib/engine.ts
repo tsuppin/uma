@@ -3932,6 +3932,130 @@ export function calculateTsuchiyaScore(
         tags.push("⚡ 過去走人気トレンドからの巻き返し急襲穴馬");
       }
     }
+
+    // ---------------------------------------------------
+    // ④ 【新要因1】勾配物理とラップ局所ロス（坂の慣性エネルギー）の判定
+    // ---------------------------------------------------
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const hasHillClimber = horse.pastRaces.some(pr => {
+        const isHillVenue = /(中山|阪神)/.test(pr.venue || '');
+        if (!isHillVenue || pr.result > 3 || !pr.last3fTime) return false;
+        
+        const last3f = parseFloat(pr.last3fTime);
+        if (isNaN(last3f)) return false;
+        
+        if (pr.surface === '芝') {
+          return last3f <= 34.5;
+        } else if (pr.surface === 'ダート') {
+          return last3f <= 37.0;
+        }
+        return false;
+      });
+      if (hasHillClimber) {
+        potential += 15;
+        tags.push("⛰️ 勾配物理:急坂負荷クリアの坂適性裏付け");
+      }
+    }
+
+    // ---------------------------------------------------
+    // ⑤ 【新要因2】極限クッション値と芝の超高速化スケーリングバイアス
+    // ---------------------------------------------------
+    if (race.surface === '芝' && race.cushionValue !== undefined && horse.pastRaces) {
+      if (race.cushionValue >= 9.5) {
+        const hasFastCushion = horse.pastRaces.some(pr => {
+          return pr.surface === '芝' && 
+                 pr.cushionValue !== undefined && 
+                 pr.cushionValue >= 9.5 && 
+                 pr.result <= 3 && 
+                 pr.timeDiff !== undefined && 
+                 pr.timeDiff <= 0.3;
+        });
+        if (hasFastCushion) {
+          potential += 20;
+          tags.push("⚡ 超高速物理:極限クッション値スピード適合");
+        }
+      } else if (race.cushionValue <= 7.5) {
+        const hasSoftCushion = horse.pastRaces.some(pr => {
+          return pr.surface === '芝' && 
+                 pr.cushionValue !== undefined && 
+                 pr.cushionValue <= 7.5 && 
+                 pr.result <= 3 && 
+                 pr.timeDiff !== undefined && 
+                 pr.timeDiff <= 0.3;
+        });
+        if (hasSoftCushion) {
+          potential += 20;
+          tags.push("⛰️ 重厚物理:低クッション値クッションタフネス適合");
+        }
+      }
+    }
+
+    // ---------------------------------------------------
+    // ⑥ 【新要因3】走行軌跡（直線外回し距離ロス・進路カット）の定量的補正
+    // ---------------------------------------------------
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      // 進路カット救済
+      const prevRace = horse.pastRaces[0];
+      if (prevRace.incidents && prevRace.result >= 5) {
+        const hasPathBlock = /(直線進路なし|前が壁|追い出せず)/.test(prevRace.incidents);
+        if (hasPathBlock) {
+          potential += 25;
+          tags.push("⚠️ 不利度外視:前走直線進路カットによる不可抗力惨敗");
+        }
+      }
+      
+      // 外回し距離ロス補正
+      const hasOuterLoss = horse.pastRaces.some(pr => {
+        return pr.cornerOuterCount !== undefined && 
+               pr.cornerOuterCount >= 3 && 
+               pr.result >= 5 && 
+               pr.timeDiff !== undefined && 
+               pr.timeDiff <= 0.5;
+      });
+      if (hasOuterLoss) {
+        potential += 20;
+        tags.push("📐 走行軌跡:過去走大外回し極大距離ロス補正");
+      }
+    }
+
+    // ---------------------------------------------------
+    // ⑦ 【新要因4】芝「仮柵ステージ（A〜Dコース）移動」に伴う馬場バイアス
+    // ---------------------------------------------------
+    if (race.surface === '芝' && race.temporaryFencePosition) {
+      const fencePos = race.temporaryFencePosition.toUpperCase();
+      if (/(B|C|D)/.test(fencePos)) {
+        if (frame <= 3 && /(逃げ|先行|好位)/.test(hStyle || '')) {
+          potential += 20;
+          tags.push("📐 仮柵幾何学:内移動グリーンベルト・イン突き適合");
+        }
+      } else if (fencePos === 'A') {
+        if (frame >= 6 && /(差し|中団|後方|追込)/.test(hStyle || '')) {
+          potential += 15;
+          tags.push("📐 仮柵幾何学:仮柵Aステージ荒れ内馬場回避エッジ");
+        }
+      }
+    }
+
+    // ---------------------------------------------------
+    // ⑧ 【新要因5】時計の「馬場ゲタ」剥ぎ取り不全による過剰人気と期待値の歪み（オッズの闇）
+    // ---------------------------------------------------
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const prevRace = horse.pastRaces[0];
+      if (prevRace.time && prevRace.classBaseTime !== undefined && prevRace.result === 1) {
+        const prTimeSec = parseTimeToSeconds(prevRace.time);
+        const prBaseSec = prevRace.classBaseTime;
+        if (prTimeSec > 0 && prBaseSec > 0 && prTimeSec <= prBaseSec - 1.2) {
+          if (odds <= 2.0) {
+            potential -= 25;
+            tags.push("⚠️ 時計の罠:前走超高速馬場恩恵による過剰人気割引");
+          } else if (odds >= 8.0) {
+            potential += 30;
+            distortionBoost *= 1.3;
+            tags.push("🌀 期待値の闇:高速時計実績に対する過小評価オッズ歪み適合");
+          }
+        }
+      }
+    }
   }
 
   // ===================================================

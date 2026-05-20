@@ -1825,5 +1825,399 @@ extraNarTestCases.forEach(({ horse, race, mData, desc }) => {
   prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
 });
 
+// ============================================
+// === 中央競馬結果情報 5大未活用新要因テスト ===
+// ============================================
+console.log("\n============================================");
+console.log("=== 中央結果情報 5大新要因検証テスト開始 ===");
+console.log("============================================");
+
+// テスト用ベースレース定義
+const jraTurfNormal: Race = {
+  id: "jra-turf-normal",
+  date: "2026-05-20",
+  venue: "東京",
+  raceNumber: 11,
+  raceName: "オークス",
+  distance: 2400,
+  surface: "芝",
+  condition: "良",
+  headCount: 18,
+  trackName: "東京",
+  temporaryFencePosition: "B",
+  cushionValue: 10.0,
+  horses: []
+};
+
+// 1. 勾配物理テスト馬
+const horseJraHillClimber: Horse = {
+  id: "jra-h1",
+  number: 1,
+  frame: 1,
+  name: "コウバイフィジクス",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "ルメール",
+  jockeyWeight: 57,
+  trainer: "手塚貴久（美浦）",
+  owner: "勾配オーナー",
+  sire: "ディープインパクト",
+  dam: "コウバイレディ",
+  bms: "Bering",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 3.5,
+  popularity: 2,
+  pastRaces: [
+    {
+      date: "2026-04-12",
+      venue: "中山",
+      raceName: "皐月賞",
+      raceClass: "G1",
+      distance: 2000,
+      surface: "芝",
+      condition: "良",
+      result: 2,
+      time: "1:58.5",
+      corner4Position: 5,
+      cornerOuterCount: 1,
+      weight: 480,
+      jockey: "ルメール",
+      odds: 3.0,
+      prize: 3000,
+      last3fTime: "34.2" // 優秀な上がり3F (芝 <= 34.5)
+    }
+  ]
+};
+
+// 2. 極限クッション値（スピード・タフネス）テスト馬
+const horseJraFastCushion: Horse = {
+  id: "jra-h2",
+  number: 2,
+  frame: 1,
+  name: "マックスクッション",
+  age: 4,
+  gender: "牡",
+  weight: 490,
+  weightChange: 0,
+  jockey: "川田将雅",
+  jockeyWeight: 57,
+  trainer: "中内田充（栗東）",
+  owner: "クッションオーナー",
+  sire: "ロードカナロア",
+  dam: "スピードレディ",
+  bms: "Bering",
+  bloodline: "キングマンボ系",
+  style: "先行",
+  odds: 4.0,
+  popularity: 2,
+  pastRaces: [
+    {
+      date: "2026-04-20",
+      venue: "東京",
+      raceName: "一般戦",
+      raceClass: "OP",
+      distance: 1600,
+      surface: "芝",
+      condition: "良",
+      result: 2,
+      time: "1:32.0",
+      corner4Position: 2,
+      cornerOuterCount: 1,
+      weight: 490,
+      jockey: "川田将雅",
+      odds: 2.5,
+      prize: 1000,
+      cushionValue: 9.8, // 過去走クッション値 >= 9.5
+      timeDiff: 0.1 // 僅差 <= 0.3
+    }
+  ]
+};
+
+const horseJraSoftCushion: Horse = {
+  id: "jra-h3",
+  number: 3,
+  frame: 2,
+  name: "タフクッション",
+  age: 4,
+  gender: "牡",
+  weight: 500,
+  weightChange: 0,
+  jockey: "戸崎圭太",
+  jockeyWeight: 57,
+  trainer: "手塚貴久（美浦）",
+  owner: "タフネスオーナー",
+  sire: "キズナ",
+  dam: "タフネスレディ",
+  bms: "Bering",
+  bloodline: "サンデーサイレンス系",
+  style: "先行",
+  odds: 5.5,
+  popularity: 3,
+  pastRaces: [
+    {
+      date: "2026-04-25",
+      venue: "京都",
+      raceName: "一般戦",
+      raceClass: "OP",
+      distance: 2000,
+      surface: "芝",
+      condition: "重",
+      result: 3,
+      time: "2:02.5",
+      corner4Position: 3,
+      cornerOuterCount: 1,
+      weight: 500,
+      jockey: "戸崎圭太",
+      odds: 4.5,
+      prize: 500,
+      cushionValue: 7.0, // 過去走クッション値 <= 7.5
+      timeDiff: 0.2 // 僅差 <= 0.3
+    }
+  ]
+};
+
+// 3. 走行軌跡大外回し＆直線進路カット度外視テスト馬
+const horseJraIncidentRescue: Horse = {
+  id: "jra-h4",
+  number: 4,
+  frame: 2,
+  name: "カットレスキュー",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "武豊",
+  jockeyWeight: 57,
+  trainer: "国枝栄（美浦）",
+  owner: "不利オーナー",
+  sire: "ドゥラメンテ",
+  dam: "不利レディ",
+  bms: "サンデーサイレンス",
+  bloodline: "キングカメハメハ系",
+  style: "差し",
+  odds: 6.0,
+  popularity: 4,
+  pastRaces: [
+    {
+      date: "2026-05-01",
+      venue: "東京",
+      raceName: "一般戦",
+      raceClass: "3勝",
+      distance: 1800,
+      surface: "芝",
+      condition: "良",
+      result: 7, // 5着以下惨敗
+      time: "1:46.5",
+      corner4Position: 8,
+      cornerOuterCount: 1,
+      weight: 480,
+      jockey: "武豊",
+      odds: 3.5,
+      prize: 0,
+      incidents: "直線前が壁になり追えず" // 不利事故あり
+    }
+  ]
+};
+
+const horseJraOuterLoss: Horse = {
+  id: "jra-h5",
+  number: 5,
+  frame: 3,
+  name: "オオソトディスタンス",
+  age: 4,
+  gender: "牡",
+  weight: 470,
+  weightChange: 0,
+  jockey: "横山武史",
+  jockeyWeight: 57,
+  trainer: "鹿戸雄一（美浦）",
+  owner: "外回しオーナー",
+  sire: "ハーツクライ",
+  dam: "外回しレディ",
+  bms: "サンデーサイレンス",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 8.5,
+  popularity: 5,
+  pastRaces: [
+    {
+      date: "2026-04-20",
+      venue: "中山",
+      raceName: "一般戦",
+      raceClass: "3勝",
+      distance: 2000,
+      surface: "芝",
+      condition: "良",
+      result: 6, // 5着以下惨敗
+      time: "2:00.5",
+      corner4Position: 6,
+      cornerOuterCount: 4, // 4角外回し4頭
+      weight: 470,
+      jockey: "横山武史",
+      odds: 6.5,
+      prize: 0,
+      timeDiff: 0.3 // 僅差 <= 0.5
+    }
+  ]
+};
+
+// 4. 仮柵ステージバイアステスト馬
+const horseJraInnerFence: Horse = {
+  id: "jra-h6",
+  number: 2,
+  frame: 1, // 内枠 (<= 3)
+  name: "インゲキグリーン",
+  age: 4,
+  gender: "牡",
+  weight: 485,
+  weightChange: 0,
+  jockey: "坂井瑠星",
+  jockeyWeight: 57,
+  trainer: "矢作芳人（栗東）",
+  owner: "仮柵オーナー",
+  sire: "ロードカナロア",
+  dam: "インゲキレディ",
+  bms: "サンデーサイレンス",
+  bloodline: "キングマンボ系",
+  style: "先行", // 先行
+  odds: 3.0,
+  popularity: 1,
+  pastRaces: []
+};
+
+const horseJraOuterFence: Horse = {
+  id: "jra-h7",
+  number: 15,
+  frame: 7, // 外枠 (>= 6)
+  name: "ソトサシアラシ",
+  age: 4,
+  gender: "牡",
+  weight: 490,
+  weightChange: 0,
+  jockey: "デムーロ",
+  jockeyWeight: 57,
+  trainer: "堀宣行（美浦）",
+  owner: "外差しオーナー",
+  sire: "ハーツクライ",
+  dam: "外差しレディ",
+  bms: "サンデーサイレンス",
+  bloodline: "サンデーサイレンス系",
+  style: "差し", // 差し
+  odds: 4.5,
+  popularity: 3,
+  pastRaces: []
+};
+
+// 5. 時計の罠・期待値の歪みテスト馬
+const horseJraTimeTrap: Horse = {
+  id: "jra-h8",
+  number: 3,
+  frame: 2,
+  name: "タイムトラップ",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "ルメール",
+  jockeyWeight: 57,
+  trainer: "木村哲也（美浦）",
+  owner: "時計罠オーナー",
+  sire: "キタサンブラック",
+  dam: "トラップレディ",
+  bms: "Bering",
+  bloodline: "サンデーサイレンス系",
+  style: "先行",
+  odds: 1.5, // 過剰人気 (<= 2.0)
+  popularity: 1,
+  pastRaces: [
+    {
+      date: "2026-04-20",
+      venue: "東京",
+      raceName: "一般戦",
+      raceClass: "OP",
+      distance: 1600,
+      surface: "芝",
+      condition: "良",
+      result: 1, // 前走1着（大勝）
+      time: "1:31.0", // 91.0秒
+      classBaseTime: 92.5, // 基準タイム 92.5秒 (91.0 <= 92.5 - 1.2、つまり1.5秒速い)
+      corner4Position: 2,
+      cornerOuterCount: 1,
+      weight: 480,
+      jockey: "ルメール",
+      odds: 1.8,
+      prize: 2000
+    }
+  ]
+};
+
+const horseJraOddsDistortion: Horse = {
+  id: "jra-h9",
+  number: 12,
+  frame: 6,
+  name: "オッズディストーションヤミ",
+  age: 4,
+  gender: "牡",
+  weight: 475,
+  weightChange: 0,
+  jockey: "岩田康誠",
+  jockeyWeight: 57,
+  trainer: "友道康夫（栗東）",
+  owner: "歪みオーナー",
+  sire: "ドゥラメンテ",
+  dam: "ディストーションレディ",
+  bms: "サンデーサイレンス",
+  bloodline: "キングカメハメハ系",
+  style: "差し",
+  odds: 10.5, // 人気薄 (>= 8.0)
+  popularity: 5,
+  pastRaces: [
+    {
+      date: "2026-04-20",
+      venue: "東京",
+      raceName: "一般戦",
+      raceClass: "OP",
+      distance: 1600,
+      surface: "芝",
+      condition: "良",
+      result: 1, // 前走1着（大勝）
+      time: "1:31.0", // 91.0秒
+      classBaseTime: 92.5, // 基準タイム 92.5秒 (91.0 <= 92.5 - 1.2、つまり1.5秒速い)
+      corner4Position: 5,
+      cornerOuterCount: 1,
+      weight: 475,
+      jockey: "デムーロ",
+      odds: 5.5,
+      prize: 2000
+    }
+  ]
+};
+
+const extraJraTestCases = [
+  { horse: horseJraHillClimber, race: jraTurfNormal, desc: "① 勾配物理テスト（中山好走坂の鬼+15加点）" },
+  { horse: horseJraFastCushion, race: jraTurfNormal, desc: "②-A 極限クッション値（超高速スピード適合+20加点）" },
+  { horse: horseJraSoftCushion, race: { ...jraTurfNormal, cushionValue: 7.2 }, desc: "②-B 極限クッション値（重厚タフネス適合+20加点）" },
+  { horse: horseJraIncidentRescue, race: jraTurfNormal, desc: "③-A 直線進路カット（不利度外視救済+25加点）" },
+  { horse: horseJraOuterLoss, race: jraTurfNormal, desc: "③-B 走行軌跡（大外回し極大距離ロス補正+20加点）" },
+  { horse: horseJraInnerFence, race: jraTurfNormal, desc: "④-A 仮柵ステージ（内移動Bコース・イン突き適合+20加点）" },
+  { horse: horseJraOuterFence, race: { ...jraTurfNormal, temporaryFencePosition: "A" }, desc: "④-B 仮柵ステージ（仮柵Aステージ荒れ内馬場回避エッジ+15加点）" },
+  { horse: horseJraTimeTrap, race: jraTurfNormal, desc: "⑤-A 時計の罠（前走超高速馬場恩恵による過剰人気割引-25減点）" },
+  { horse: horseJraOddsDistortion, race: jraTurfNormal, desc: "⑤-B 期待値の歪み（高速時計実績に対する過小評価オッズ歪み適合+30加点 & distortionBoost*1.3）" }
+];
+
+extraJraTestCases.forEach(({ horse, race, desc }) => {
+  console.log(`\n--------------------------------------------`);
+  console.log(`テストケース: ${desc}`);
+  console.log(`馬名: ${horse.name} (オッズ: ${horse.odds}, 枠: ${horse.frame})`);
+  const prediction = calculateTsuchiyaScore(horse, race, [], { horses: {}, jockeys: {} });
+  console.log(`ポテンシャルスコア: ${prediction.potential}`);
+  console.log(`期待値の闇 (darkness): ${prediction.darkness}`);
+  console.log(`付与された適性タグ (aptitudeTags):`);
+  prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
+});
+
 console.log("\n=== 全テスト完了 ===");
 

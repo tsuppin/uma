@@ -76,6 +76,9 @@ export interface PastRace {
   isStumbled?: boolean;    // 出遅れフラグ
   halonPace?: string;      // ペース（例: "34.5-35.2"）
   incidents?: string;      // 競走中の不利・アクシデント詳細（例: "前が壁", "他馬の斜行でブレーキ"）
+  cushionValue?: number;    // 前走クッション値
+  moistureContent?: number; // 前走含水率
+  courseStage?: string;     // 前走仮柵コース（"A", "B", "C", "D"など）
 }
 
 export interface Race {
