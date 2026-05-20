@@ -12628,4 +12628,51 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779248071285",
+    version: "v319.1",
+    date: "2026-05-20T03:34:31.285Z",
+    description: "新潟 - 好走馬(サンタアニタ等)の特性学習",
+    track: "新潟",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "斎藤 新",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ナダル",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weightChange",
+        "operator": ">=",
+        "value": 10,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "C.ルメール",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サートゥルナーリア",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
