@@ -73,6 +73,8 @@ export interface PastRace {
   winnerName?: string;     // 勝ち馬名（1着とのタイム差時の馬名）
   passingPositions?: string; // 通過順位（例：「1-1-2-2」）
   last3fTime?: string;     // 上がり3ハロン
+  isStumbled?: boolean;    // 出遅れフラグ
+  halonPace?: string;      // ペース（例: "34.5-35.2"）
 }
 
 export interface Race {
@@ -95,6 +97,9 @@ export interface Race {
   isTwilight?: boolean; // 薄暮
   startTime?: string;  // 発走時刻
   weather?: string;    // 天候
+  cushionValue?: number; // クッション値
+  moistureContent?: number; // 含水率 (%)
+  temporaryFencePosition?: string; // 仮柵位置（例: "A", "B", "C"）
   horses: Horse[];
   predictions?: Prediction[];
   result?: RaceResult;

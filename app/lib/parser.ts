@@ -463,6 +463,7 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
 export function parseJRAText(rawText: string): {
   horses: Horse[]; venue: string; raceNumber: number;
   date?: string; raceName?: string; distance?: number; surface?: Race["surface"]; condition?: Race["condition"]; headCount?: number;
+  cushionValue?: number; moistureContent?: number; temporaryFencePosition?: string;
 } {
   const lines = rawText.split("\n").map(l => l.trim());
 
@@ -484,6 +485,20 @@ export function parseJRAText(rawText: string): {
     if (l.match(/(S|G)[Ⅰ-Ⅲ]|リステッド|特別|勝クラス|OP|オープン/) && !raceName) raceName = l;
   }
 
+  // クッション値、含水率、仮柵位置の自動抽出
+  let cushionValue: number | undefined;
+  let moistureContent: number | undefined;
+  let temporaryFencePosition: string | undefined;
+
+  const fenceM = rawText.match(/([A-D])コース/);
+  if (fenceM) temporaryFencePosition = fenceM[1];
+
+  const cushionM = rawText.match(/クッション値[：:\s]*(\d+\.?\d*)/);
+  if (cushionM) cushionValue = parseFloat(cushionM[1]);
+
+  const moistureM = rawText.match(/含水率[：:\s]*(?:芝)?(\d+\.?\d*)/) || rawText.match(/含水率[：:\s]*(\d+\.?\d*)%/);
+  if (moistureM) moistureContent = parseFloat(moistureM[1]);
+
   const blockStarts: number[] = [];
   for (let i = 0; i < lines.length; i++) {
     // 枠番の検出を大幅に強化 (行頭のスペース、枠と数値の間のスペース/タブ/全角スペースの揺れに完全対応)
@@ -500,7 +515,10 @@ export function parseJRAText(rawText: string): {
     if (h?.name) horses.push(h as Horse);
   }
 
-  return { horses, venue, raceNumber, raceName, distance: distance || undefined, surface, condition, headCount: horses.length };
+  return { 
+    horses, venue, raceNumber, raceName, distance: distance || undefined, surface, condition, headCount: horses.length,
+    cushionValue, moistureContent, temporaryFencePosition
+  };
 }
 
 function parseJRAHorse(lines: string[]): Partial<Horse> | null {
@@ -571,12 +589,30 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   else if (lines[idx]) { trainer = lines[idx]; idx++; }
 
   let sire = "", dam = "", bms = "";
-  while (idx < lines.length && (lines[idx] === "" || lines[idx].includes("："))) {
-    const l = lines[idx];
-    if (l === "父：") { idx++; sire = lines[idx] || ""; idx++; }
-    else if (l === "母：") { idx++; dam = lines[idx] || ""; idx++; }
-    else if (l.startsWith("(母の父：")) { bms = l.replace(/^\(母の父：/, "").replace(/\)$/, "").trim(); idx++; }
-    else idx++;
+  while (idx < lines.length) {
+    const l = (lines[idx] || "").trim();
+    if (l.startsWith("父：") || l.startsWith("父:")) {
+      sire = l.replace(/^父[：:]/, "").trim();
+      if (!sire && idx + 1 < lines.length) {
+        sire = lines[idx + 1].trim();
+        idx++;
+      }
+      idx++;
+    } else if (l.startsWith("母：") || l.startsWith("母:")) {
+      dam = l.replace(/^母[：:]/, "").trim();
+      if (!dam && idx + 1 < lines.length) {
+        dam = lines[idx + 1].trim();
+        idx++;
+      }
+      idx++;
+    } else if (l.includes("母の父")) {
+      bms = l.replace(/^.*?母の父[：:]?/, "").replace(/[\(\)（）]/g, "").trim();
+      idx++;
+    } else if (l === "" || l.includes("：") || l.includes(":")) {
+      idx++;
+    } else {
+      break;
+    }
   }
 
   let odds = 0, popularity = 0;
@@ -698,15 +734,47 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
 
     let winnerName = "";
     let timeDiff: number | undefined;
-    const wn = lines[idx] || "";
-    const wnm = wn.match(/^(.+?)\((\d+\.?\d*)\)$/);
-    if (wnm && /[\u3040-\u9FFF\u30A0-\u30FF]/.test(wnm[1])) {
-      winnerName = wnm[1].trim();
-      timeDiff = parseFloat(wnm[2]);
-      idx++;
+    
+    let tempIdx = idx;
+    while (tempIdx < lines.length && tempIdx < idx + 3) {
+      const wn = (lines[tempIdx] || "").trim();
+      if (!wn) { tempIdx++; continue; }
+      const wnm = wn.match(/^(.+?)\(([-+]?\d+\.?\d*)\)$/) || wn.match(/^(.+?)\(([-+]?\d+)\)$/);
+      if (wnm && /[\u3040-\u9FFF\u30A0-\u30FF\uFF00-\uFFEF]/.test(wnm[1])) {
+        winnerName = wnm[1].trim();
+        timeDiff = parseFloat(wnm[2]);
+        idx = tempIdx + 1;
+        break;
+      }
+      tempIdx++;
     }
 
     while (idx < lines.length && lines[idx] === "") idx++;
+
+    // 出遅れフラグとペース表記の事前スキャン
+    let isStumbled = false;
+    let halonPace = "";
+    
+    let scanEnd = idx;
+    while (scanEnd < lines.length) {
+      const nextLine = lines[scanEnd] || "";
+      if (scanEnd > idx && (nextLine.match(/\d{4}年\d{1,2}月\d{1,2}日/) || nextLine.startsWith("枠") || nextLine.includes("調教評価") || nextLine.includes("追切評価"))) {
+        break;
+      }
+      scanEnd++;
+    }
+
+    for (let k = idx - 10; k < scanEnd; k++) {
+      if (k < 0) continue;
+      const scanLine = (lines[k] || "").trim();
+      if (scanLine.includes("出遅") || scanLine.includes("ゲート不善")) {
+        isStumbled = true;
+      }
+      const paceM = scanLine.match(/(\d{2}\.\d\s*-\s*\d{2}\.\d)/);
+      if (paceM) {
+        halonPace = paceM[1].replace(/\s+/g, "");
+      }
+    }
 
     if (prDate && prResult) {
       const corner4pos = passingPositions
@@ -730,6 +798,8 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
         winnerName: winnerName || undefined,
         timeDiff,
         odds: 0, prize: 0,
+        isStumbled: isStumbled || undefined,
+        halonPace: halonPace || undefined
       });
     }
   }

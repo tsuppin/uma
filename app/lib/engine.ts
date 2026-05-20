@@ -232,6 +232,153 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【新設】J-① トラックバイアス物理判定（クッション値・含水率・仮柵位置）
+  // ==========================================
+  const temporaryFence = race.temporaryFencePosition || '';
+  const cushion = race.cushionValue;
+  const moisture = race.moistureContent;
+
+  if (temporaryFence === 'C' || temporaryFence === 'D') {
+    if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行' || horse.style === '好位')) {
+      potential += 25;
+      tags.push("🧬 仮柵移動バイアス適合(内有利)");
+    }
+  }
+
+  if (race.surface === '芝') {
+    if (cushion !== undefined && cushion < 8.0) {
+      const softBlood = ['キズナ', 'エピファネイア', 'ハービンジャー', 'オルフェーヴル', 'ゴールドシップ', 'モーリス'];
+      const hasSoftBlood = softBlood.some(sb => bloodline.includes(sb));
+      if (hasSoftBlood) {
+        potential += 15;
+        tags.push(`☔ クッション値低馬場適合(${bloodline.split(' / ')[0]})`);
+      }
+    }
+  } else if (race.surface === 'ダート') {
+    if (moisture !== undefined && moisture >= 12.0) {
+      if (horse.style === '逃げ' || horse.style === '先行') {
+        potential += 20;
+        tags.push("☔ 高含水率ダート: 前残りスピードバイアス適合");
+      }
+    }
+  }
+
+  // ==========================================
+  // 【新設】J-② 前走物理的ロス（外回し・出遅れ）克服判定
+  // ==========================================
+  if (prevRace) {
+    const wasOuterRun = prevRace.cornerOuterCount >= 4;
+    const isCloseMatch = prevRace.timeDiff !== undefined && prevRace.timeDiff <= 0.5;
+    
+    if (wasOuterRun && isCloseMatch) {
+      if (frame <= 4) {
+        potential += 25;
+        tags.push("📐 前走外回しロス克服(好枠替わり)");
+      }
+    }
+
+    const didStumble = prevRace.isStumbled;
+    const isFastest3f = prevRace.last3fTime !== undefined && parseFloat(prevRace.last3fTime) <= 34.0;
+    const isReasonableDiff = prevRace.timeDiff !== undefined && prevRace.timeDiff <= 0.6;
+
+    if (didStumble && isFastest3f && isReasonableDiff) {
+      potential += 20;
+      tags.push("🚀 前走出遅れ度外視(末脚極上)");
+    }
+  }
+
+  // ==========================================
+  // 【新設】J-③ クラス基準タイム精度向上（前走ペース・馬場補正）
+  // ==========================================
+  if (prevRace && prevRace.halonPace) {
+    const paceParts = prevRace.halonPace.split('-');
+    if (paceParts.length === 2) {
+      const front3f = parseFloat(paceParts[0]);
+      const back3f = parseFloat(paceParts[1]);
+      
+      if (!isNaN(front3f) && !isNaN(back3f)) {
+        const isHighPace = front3f < back3f - 1.0;
+        const isSlowPace = front3f > back3f + 1.0;
+
+        if (isHighPace && (horse.style === '逃げ' || horse.style === '先行')) {
+          potential += 15;
+          tags.push("⏱️ 緩ペース替わりで持続力発揮");
+        } else if (isSlowPace && dist < prevRace.distance) {
+          potential += 15;
+          tags.push("⏱️ 持続力勝負への条件好転");
+        }
+      }
+    }
+  }
+
+  // ==========================================
+  // 【新設】J-④ 厩舎別「勝負調教パターン」解析
+  // ==========================================
+  if (horse.trainer && horse.trainingTime) {
+    const trainerName = horse.trainer;
+    const timeStr = horse.trainingTime;
+    const timeNumbers = timeStr
+      .replace(/[\[\]\(\)（）]/g, ' ')
+      .split(/[\s\- \t]/)
+      .map(part => parseFloat(part.trim()))
+      .filter(num => !isNaN(num) && num > 0 && num < 100);
+
+    const isSlope = timeStr.includes("坂路") || timeStr.includes("坂");
+    const isWood = timeStr.includes("ウッド") || timeStr.includes("南W") || timeStr.includes("Ｗ");
+
+    if (timeNumbers.length >= 2) {
+      const overall = timeNumbers[0];
+      const last1f = timeNumbers[timeNumbers.length - 1];
+
+      if (trainerName.includes("中内田")) {
+        if (isSlope && last1f <= 11.8) {
+          potential += 30;
+          tags.push("🎯 中内田×勝負坂路仕上げ");
+        }
+      } else if (trainerName.includes("矢作")) {
+        if (isWood && overall <= 64.5 && last1f <= 11.2) {
+          potential += 30;
+          tags.push("🎯 矢作×極限ウッド仕上げ");
+        }
+      } else if (trainerName.includes("友道")) {
+        if (isWood && overall <= 65.5 && last1f <= 11.5) {
+          potential += 25;
+          tags.push("🎯 友道×本気ウッド仕上げ");
+        }
+      } else if (trainerName.includes("木村") || trainerName.includes("国枝")) {
+        if (isWood && overall <= 65.0 && last1f <= 11.3) {
+          potential += 25;
+          tags.push("🎯 関東エリート×本気ウッド仕上げ");
+        }
+      }
+    }
+  }
+
+  // ==========================================
+  // 【新設】J-⑤ 初芝・初ダート路線変更変心予測
+  // ==========================================
+  if (horse.pastRaces && horse.pastRaces.length > 0) {
+    const hasOnlyRunGrass = horse.pastRaces.every(pr => pr.surface === '芝');
+    const hasOnlyRunDirt = horse.pastRaces.every(pr => pr.surface === 'ダート');
+
+    if (race.surface === 'ダート' && hasOnlyRunGrass) {
+      const dirtSires = ['ヘニーヒューズ', 'シニスターミニスター', 'ホッコータルマエ', 'パイロ', 'ドレフォン', 'マジェスティックウォリアー', 'キズナ', 'ルーラーシップ', 'ロードカナロア'];
+      const isDirtSire = dirtSires.some(ds => bloodline.includes(ds));
+      if (isDirtSire) {
+        potential += 35;
+        tags.push("🌀 砂替わり変心警戒(ダート強力血統)");
+      }
+    } else if (race.surface === '芝' && hasOnlyRunDirt) {
+      const grassSires = ['ディープインパクト', 'ハーツクライ', 'ロードカナロア', 'エピファネイア', 'モーリス', 'キタサンブラック', 'ドゥラメンテ', 'ハービンジャー'];
+      const isGrassSire = grassSires.some(gs => bloodline.includes(gs));
+      if (isGrassSire) {
+        potential += 20;
+        tags.push("🌱 芝替わり変心警戒(芝エリート血統)");
+      }
+    }
+  }
+
+  // ==========================================
   // 【高知競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isKochi = race.venue?.includes("高知") || race.trackName?.includes("高知") || race.raceName?.includes("高知");
