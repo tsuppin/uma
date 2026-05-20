@@ -42,6 +42,8 @@ export interface Horse {
   useBlinkers?: boolean;     // 特殊馬具（ブリンカー）
   stableLocation?: string; // 厩舎・所属エリア
   oddsStandardScore?: number; // オッズ偏差値
+  trainingTime?: string;      // 調教タイム（例: "南W 良 67.5-51.2-37.1-11.5"）
+  trainingRating?: string;    // 調教評価（例: "S", "A", "B+", "B" など）
 }
 
 export interface PastRace {

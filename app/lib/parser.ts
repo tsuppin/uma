@@ -140,6 +140,28 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
   const hp = lines[0].trim().split(/[\t\s]+/);
   if (hp.length < 3) return null;
 
+  // 調教情報の抽出
+  let trainingTime = "";
+  let trainingRating = "";
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const hasCourse = trimmed.includes("坂路") || trimmed.includes("南W") || trimmed.includes("ウッド") || 
+                      trimmed.includes("Ｗ") || trimmed.includes("坂") || trimmed.includes("芝") || 
+                      trimmed.includes("ポリ") || trimmed.includes("ダート") || trimmed.includes("ＤＰ");
+    const hasTimePattern = /\d{2}\.\d[ \t\-\s]*\d{2}\.\d/g.test(trimmed) || 
+                           /\d{2}\.\d[ \t\-\s]*-\d{2}\.\d/g.test(trimmed) || 
+                           trimmed.includes("馬なり") || trimmed.includes("強め") || trimmed.includes("一杯");
+    if (hasCourse && (hasTimePattern || trimmed.match(/\d{2}\.\d/))) {
+      trainingTime = trimmed;
+    }
+    const ratingMatch = trimmed.match(/(?:調教評価|追切評価|調教|評価)[\s:：]*(S|[A-C][+-]?)/i) || 
+                        trimmed.match(/^[【\s]*(S|[A-C][+-]?)[】\s]*$/);
+    if (ratingMatch) {
+      trainingRating = ratingMatch[1].toUpperCase();
+    }
+  }
+
   const frame = parseInt(hp[0]);
   const number = parseInt(hp[1]);
   const rawName = hp[2] || "";
@@ -429,7 +451,9 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
     pastRaces,
     stableLocation: stableLocation || belonging || "地方",
     transferFrom: detectedTransfer || undefined,
-    jraEarnings: detectedJRAEarnings || undefined
+    jraEarnings: detectedJRAEarnings || undefined,
+    trainingTime: trainingTime || undefined,
+    trainingRating: trainingRating || undefined
   };
 }
 
@@ -481,6 +505,28 @@ export function parseJRAText(rawText: string): {
 
 function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   if (!lines[0]) return null;
+
+  // 調教情報の抽出
+  let trainingTime = "";
+  let trainingRating = "";
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const hasCourse = trimmed.includes("坂路") || trimmed.includes("南W") || trimmed.includes("ウッド") || 
+                      trimmed.includes("Ｗ") || trimmed.includes("坂") || trimmed.includes("芝") || 
+                      trimmed.includes("ポリ") || trimmed.includes("ダート") || trimmed.includes("ＤＰ");
+    const hasTimePattern = /\d{2}\.\d[ \t\-\s]*\d{2}\.\d/g.test(trimmed) || 
+                           /\d{2}\.\d[ \t\-\s]*-\d{2}\.\d/g.test(trimmed) || 
+                           trimmed.includes("馬なり") || trimmed.includes("強め") || trimmed.includes("一杯");
+    if (hasCourse && (hasTimePattern || trimmed.match(/\d{2}\.\d/))) {
+      trainingTime = trimmed;
+    }
+    const ratingMatch = trimmed.match(/(?:調教評価|追切評価|調教|評価)[\s:：]*(S|[A-C][+-]?)/i) || 
+                        trimmed.match(/^[【\s]*(S|[A-C][+-]?)[】\s]*$/);
+    if (ratingMatch) {
+      trainingRating = ratingMatch[1].toUpperCase();
+    }
+  }
 
   const frameMatch = lines[0].match(/枠[\s\t　]*(\d)/);
   const frame = frameMatch ? parseInt(frameMatch[1]) : 1;
@@ -700,5 +746,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     bloodline: [sire, bms].filter(Boolean).join(" / "),
     style: calculatedStyle, odds, popularity, pastRaces,
     useBlinkers: hasBlinker,
+    trainingTime: trainingTime || undefined,
+    trainingRating: trainingRating || undefined,
   };
 }

@@ -1,5 +1,8 @@
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 
+// モジュール共通のエリート騎手リスト
+const ELITE_JOCKEYS = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ", "松山弘平", "川田", "坂井", "戸崎", "笹川翼", "御神本訓", "吉村智洋", "渡邊竜也", "岡部誠"];
+
 // ==========================================
 // タイム文字列（コロン・ドット形式 "1:28.4" 等）を秒数（88.4）に安全変換するヘルパー
 // ==========================================
@@ -99,6 +102,134 @@ export function calculateTsuchiyaScore(
   let distortionBoost = 1.0;
   let isTargetYatomi = false;
   const tags: string[] = [];
+
+  // ==========================================
+  // 【新設】① 調教タイムの数値化スコアリング
+  // ==========================================
+  if (horse.trainingTime) {
+    const timeStr = horse.trainingTime;
+    const timeNumbers = timeStr
+      .replace(/[\[\]\(\)（）]/g, ' ')
+      .split(/[\s\- \t]/)
+      .map(part => parseFloat(part.trim()))
+      .filter(num => !isNaN(num) && num > 0 && num < 100);
+
+    const isSlope = timeStr.includes("坂路") || timeStr.includes("坂");
+    const isWood = timeStr.includes("ウッド") || timeStr.includes("南W") || timeStr.includes("Ｗ");
+
+    if (isSlope && timeNumbers.length >= 2) {
+      const overall = timeNumbers[0];
+      const last1f = timeNumbers[timeNumbers.length - 1];
+      if (overall <= 50.5 && last1f <= 11.8) {
+        potential += 35;
+        tags.push("🔥 坂路超抜時計(極上の仕上がり)");
+      } else if (overall <= 52.5 && last1f <= 12.2) {
+        potential += 20;
+        tags.push("⚡ 坂路好時計(スピード十分)");
+      } else if (overall <= 54.0 && last1f <= 12.5) {
+        potential += 10;
+        tags.push("📈 坂路順調(及第点の動き)");
+      }
+    } else if (isWood && timeNumbers.length >= 2) {
+      const overall = timeNumbers[0];
+      const last1f = timeNumbers[timeNumbers.length - 1];
+      if (overall <= 64.5 && last1f <= 11.0) {
+        potential += 35;
+        tags.push("🔥 ウッド超抜時計(極限のキレ)");
+      } else if (overall <= 66.5 && last1f <= 11.5) {
+        potential += 20;
+        tags.push("⚡ ウッド好調教(推進力十分)");
+      } else if (overall <= 69.0 && last1f <= 12.0) {
+        potential += 10;
+        tags.push("📈 ウッド順調(推進力十分)");
+      }
+    }
+  }
+
+  // 調教評価印による補正
+  if (horse.trainingRating) {
+    const rating = horse.trainingRating.toUpperCase();
+    if (rating === "S") {
+      potential += 30;
+      tags.push("🌟 調教S評価(超絶状態)");
+    } else if (rating === "A") {
+      potential += 20;
+      tags.push("⭐ 調教A評価(好仕上がり)");
+    } else if (rating === "B+") {
+      potential += 10;
+      tags.push("👍 調教B+評価(状態良好)");
+    }
+  }
+
+  // ==========================================
+  // 【新設】② 生産者（ブリーダー）のブランド評価
+  // ==========================================
+  if (horse.breeder) {
+    const breederName = horse.breeder;
+    const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
+
+    if (breederName.includes("ノーザンファーム")) {
+      if (isGradeOrSpecial) {
+        potential += 30;
+        tags.push("👑 ノーザンファーム生産(大舞台エリート)");
+      } else {
+        potential += 15;
+        tags.push("👑 ノーザンファーム生産(育成力抜群)");
+      }
+    } else if (
+      breederName.includes("社台ファーム") || 
+      breederName.includes("白老ファーム") || 
+      breederName.includes("追分ファーム")
+    ) {
+      if (isGradeOrSpecial) {
+        potential += 15;
+        tags.push("🏰 社台グループ生産(高水準ブランド)");
+      } else {
+        potential += 8;
+        tags.push("🏰 社台グループ生産(好気配)");
+      }
+    } else if (
+      breederName.includes("ダーレー") || 
+      breederName.includes("ヤナガワ牧場") || 
+      breederName.includes("三嶋牧場") || 
+      breederName.includes("グランド牧場") || 
+      breederName.includes("ノースヒルズ") ||
+      breederName.includes("下河辺牧場") ||
+      breederName.includes("千代田牧場") ||
+      breederName.includes("ケイアイファーム")
+    ) {
+      potential += 8;
+      tags.push(`🐎 有名実力牧場生産(${breederName.replace(/牧場|ファーム/g, '')})`);
+    }
+  }
+
+  // ==========================================
+  // 【新設】③ 同騎手・乗り替わりの精査
+  // ==========================================
+  const cleanCurrentJockey = jockey.replace(/[▲△☆◇]/g, '').trim();
+  const prevRace = horse.pastRaces && horse.pastRaces[0];
+  const prevJockey = prevRace?.jockey || horse.prevJockey || '';
+  const cleanPrevJockey = prevJockey.replace(/[▲△☆◇]/g, '').trim();
+
+  if (cleanCurrentJockey && cleanPrevJockey) {
+    if (cleanCurrentJockey === cleanPrevJockey) {
+      potential += 15;
+      tags.push("🤝 継続騎乗(人馬一体の絆)");
+    } else {
+      const isCurrentElite = ELITE_JOCKEYS.some(ej => cleanCurrentJockey.includes(ej));
+      const isPrevElite = ELITE_JOCKEYS.some(ej => cleanPrevJockey.includes(ej));
+
+      if (isCurrentElite && !isPrevElite) {
+        potential += 25;
+        tags.push("⚡ 鞍上強化：リーディングへの勝負乗り替え");
+      } else if (!isCurrentElite && isPrevElite) {
+        potential -= 10;
+        tags.push("⚠️ 鞍上交代(リーディングから乗り替わり)");
+      } else {
+        tags.push("🏇 鞍上交代(新コンビ)");
+      }
+    }
+  }
 
   // ==========================================
   // 【高知競馬場 超特化型オメガ・プロトコル推論エンジン】
@@ -1800,8 +1931,7 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【新設】人脈・相性・陣営の思惑 (Human Network & Intention)
   // ==========================================
-  const eliteJockeys = ['ルメール', '川田将雅', '武豊', '坂井瑠星', '戸崎圭太', 'モレイラ', 'レーン', '横山武史', '笹川翼', '御神本訓', '吉村智洋', '渡邊竜也', '岡部誠'];
-  const isEliteJockey = eliteJockeys.some(ej => jockey.includes(ej));
+  const isEliteJockey = ELITE_JOCKEYS.some(ej => jockey.includes(ej));
 
   // 1. 馬と騎手の相性（主戦騎手ボーナス）
   if (horse.pastRaces && horse.pastRaces.length > 0) {
@@ -2922,8 +3052,8 @@ export function calculateTsuchiyaScore(
     
     if (prevJ !== currJ) {
       // 鞍上強化：前走非エリート → 今回エリート騎手
-      const isPrevElite = eliteJockeys.some(ej => prevJ.includes(ej));
-      const isCurrElite = eliteJockeys.some(ej => currJ.includes(ej));
+      const isPrevElite = ELITE_JOCKEYS.some((ej: string) => prevJ.includes(ej));
+      const isCurrElite = ELITE_JOCKEYS.some((ej: string) => currJ.includes(ej));
       if (!isPrevElite && isCurrElite) {
         potential += 30;
         tags.push('🔥勝負気配:エリート騎手乗り替え強化');
