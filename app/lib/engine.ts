@@ -1244,10 +1244,85 @@ export function calculateTsuchiyaScore(
     }
 
     // 5. 券種別チューニングと「オッズ偏差値」の先鋭化
+    // ① 東京の超高速芝における限界時計の反動ペナルティの判定
+    if (isTurf && prevRace && prevRace.surface === '芝' && prevRace.time && race.date && prevRace.date) {
+      const prevDate = new Date(prevRace.date);
+      const currDate = new Date(race.date);
+      const diffTime = Math.abs(currDate.getTime() - prevDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 35) { // 中4週以下
+        const prevSeconds = parseTimeToSeconds(prevRace.time);
+        const prevDist = prevRace.distance;
+        let isLimitTime = false;
+
+        // 前走距離別の限界時計（激走）の判定
+        if (prevDist === 1000 && prevSeconds <= 54.5) isLimitTime = true;
+        else if (prevDist === 1200 && prevSeconds <= 67.5) isLimitTime = true;
+        else if (prevDist === 1400 && prevSeconds <= 80.0) isLimitTime = true;
+        else if (prevDist === 1600 && prevSeconds <= 91.8) isLimitTime = true;
+        else if (prevDist === 1800 && prevSeconds <= 104.5) isLimitTime = true;
+        else if (prevDist === 2000 && prevSeconds <= 117.2) isLimitTime = true;
+        else if (prevDist === 2400 && prevSeconds <= 143.5) isLimitTime = true;
+
+        // 前走5着以内で激走しており、今回上位人気（3番人気以内）
+        if (isLimitTime && prevRace.result <= 5 && popularity <= 3) {
+          potential -= 25;
+          tags.push("⚠️ 超高速馬場激走の反動ペナルティ(中4週内)");
+        }
+      }
+    }
+
+    // ② 直線だんだら坂の勾配適性判定
+    let hasSlopeAptitude = false;
+
+    // A. 急坂競馬場での好走実績判定
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const steepVenues = ["中山", "阪神", "中京", "小倉", "福島", "函館"];
+      const hasSteepGoodRecord = horse.pastRaces.some(pr => {
+        const isSteep = steepVenues.some(sv => pr.venue?.includes(sv));
+        return isSteep && pr.result <= 3;
+      });
+      if (hasSteepGoodRecord) {
+        hasSlopeAptitude = true;
+      }
+    }
+
+    // B. 調教加速ラップ・しぶとさ判定
+    if (horse.trainingTime) {
+      const timeStr = horse.trainingTime;
+      const timeNumbers = timeStr
+        .replace(/[\[\]\(\)（）]/g, ' ')
+        .split(/[\s\- \t]/)
+        .map(part => parseFloat(part.trim()))
+        .filter(num => !isNaN(num) && num > 0 && num < 100);
+
+      const isSlope = timeStr.includes("坂路") || timeStr.includes("坂");
+      const isWood = timeStr.includes("ウッド") || timeStr.includes("南W") || timeStr.includes("Ｗ");
+
+      if (timeNumbers.length >= 3) {
+        const last1f = timeNumbers[timeNumbers.length - 1];
+        const last2f = timeNumbers[timeNumbers.length - 2];
+        if (last1f <= last2f + 0.2) { // 減速幅が0.2秒以内か、加速ラップ
+          hasSlopeAptitude = true;
+          if (last1f < last2f) {
+            tags.push("⛰️ 調教加速ラップ：だんだら坂しぶとさ適合");
+          }
+        }
+      }
+    }
+
+    if (hasSlopeAptitude) {
+      potential += 20;
+      if (!tags.some(t => t.includes("だんだら坂しぶとさ"))) {
+        tags.push("⛰️ 急坂実績・だんだら坂勾配適性あり");
+      }
+    }
+
     // 1番人気の過剰人気（低期待値）の割り引き
     if (popularity === 1 && odds <= 2.0) {
       potential -= 10;
-      tags.push("⚠️ 東京1番人気過剰被り割引(期待値補正)");
+      tags.push("⚠️ 東京1番人気過剰被り割引(期待値用補正)"); // 衝突を避けるための微細調整
     }
 
     // 期待値最大の大穴（単勝50倍〜100倍超）あぶり出し（人気に対する逆数・動的期待値ブースト）

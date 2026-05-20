@@ -208,4 +208,117 @@ parsedRace.horses.forEach(horse => {
   prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
 });
 
-console.log("\n=== テスト完了 ===");
+console.log("\n=== 東京競馬場 的中精度極限先鋭化テスト開始 ===");
+
+const tokyoRaceInfo: Race = {
+  id: "tokyo-test-race",
+  date: "2026-05-20",
+  venue: "東京",
+  raceNumber: 11,
+  raceName: "安田記念",
+  distance: 1600,
+  surface: "芝",
+  condition: "良",
+  headCount: 2,
+  trackName: "東京",
+  horses: []
+};
+
+// 馬1: トウキョウゲキソウ（前走高速芝激走からの短間隔ローテ＆今回1番人気）
+const horseGekiso: Horse = {
+  id: "gekiso",
+  number: 1,
+  frame: 1,
+  name: "トウキョウゲキソウ",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "ルメール",
+  jockeyWeight: 57,
+  trainer: "手塚貴久",
+  owner: "社台レース",
+  sire: "ハーツクライ",
+  dam: "ハーツアマゾネス",
+  bms: "Bering",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 1.8,
+  popularity: 1, // 1番人気
+  pastRaces: [
+    {
+      date: "2026-04-25", // 今回2026-05-20まで25日（中4週内）
+      venue: "東京",
+      raceName: "マイラーズC",
+      raceClass: "G2",
+      distance: 1600,
+      surface: "芝",
+      condition: "良",
+      result: 2, // 2着好走
+      time: "1:31.2", // 91.2秒（1600m限界タイム91.8秒以下）
+      corner4Position: 5,
+      cornerOuterCount: 2,
+      weight: 480,
+      jockey: "ルメール",
+      odds: 2.3,
+      prize: 2000
+    }
+  ]
+};
+
+// 馬2: トウキョウサカノボル（急坂実績＆調教加速ラップによるだんだら坂適性）
+const horseSakanoboru: Horse = {
+  id: "sakanoboru",
+  number: 2,
+  frame: 2,
+  name: "トウキョウサカノボル",
+  age: 4,
+  gender: "牡",
+  weight: 500,
+  weightChange: 2,
+  jockey: "戸崎圭太",
+  jockeyWeight: 57,
+  trainer: "国枝栄",
+  owner: "サンデーレーシング",
+  sire: "ドゥラメンテ",
+  dam: "ドゥラアマゾネス",
+  bms: "Bering",
+  bloodline: "キングカメハメハ系",
+  style: "先行",
+  odds: 5.6,
+  popularity: 3,
+  trainingTime: "南W 良 64.5-50.2-36.1-11.2", // 加速ラップ
+  pastRaces: [
+    {
+      date: "2026-03-20",
+      venue: "中山", // 急坂実績
+      raceName: "スプリングS",
+      raceClass: "G2",
+      distance: 1800,
+      surface: "芝",
+      condition: "良",
+      result: 1, // 3着以内好走
+      time: "1:48.2",
+      corner4Position: 3,
+      cornerOuterCount: 1,
+      weight: 498,
+      jockey: "戸崎圭太",
+      odds: 3.5,
+      prize: 4000
+    }
+  ]
+};
+
+const tokyoTestHorses = [horseGekiso, horseSakanoboru];
+tokyoTestHorses.forEach(horse => {
+  console.log(`\n--------------------------------------------`);
+  console.log(`馬名: ${horse.name}`);
+  console.log(`前走走破タイム: ${horse.pastRaces[0]?.time} (日付: ${horse.pastRaces[0]?.date})`);
+  console.log(`調教タイム: ${horse.trainingTime}`);
+  const prediction = calculateTsuchiyaScore(horse, tokyoRaceInfo, [], { horses: {}, jockeys: {} });
+  console.log(`ポテンシャルスコア: ${prediction.potential}`);
+  console.log(`付与された適性タグ (aptitudeTags):`);
+  prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
+});
+
+console.log("\n=== 全テスト完了 ===");
