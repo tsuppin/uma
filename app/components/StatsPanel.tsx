@@ -103,7 +103,7 @@ export default function StatsPanel({ state }: { state: AppState }) {
             <thead>
               <tr>
                 <th>競馬場</th>
-                <th>レース数</th>
+                <th style={{ width: '36px', minWidth: '36px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px', fontSize: '10px' }}>ﾚｰｽ</th>
                 <th>三連複</th>
                 <th>三連単</th>
                 <th>馬連</th>
@@ -119,7 +119,7 @@ export default function StatsPanel({ state }: { state: AppState }) {
                 return (
                   <tr key={venue}>
                     <td className="fw-600">{venue}</td>
-                    <td>{s.total}</td>
+                    <td style={{ width: '36px', minWidth: '36px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px', fontSize: '11px' }}>{s.total}</td>
                     <td>{(trioRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trio})</span></td>
                     <td>{(trifectaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trifecta})</span></td>
                     <td>{(quinellaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.quinella})</span></td>
