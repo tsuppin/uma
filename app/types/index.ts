@@ -75,6 +75,7 @@ export interface PastRace {
   last3fTime?: string;     // 上がり3ハロン
   isStumbled?: boolean;    // 出遅れフラグ
   halonPace?: string;      // ペース（例: "34.5-35.2"）
+  incidents?: string;      // 競走中の不利・アクシデント詳細（例: "前が壁", "他馬の斜行でブレーキ"）
 }
 
 export interface Race {

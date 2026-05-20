@@ -1518,5 +1518,312 @@ narTestCases.forEach(({ horse, race, desc }) => {
   prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
 });
 
+// ============================================
+// === 地方競馬結果情報 6大未活用新要因テスト ===
+// ============================================
+console.log("\n============================================");
+console.log("=== 地方結果情報 6大新要因検証テスト開始 ===");
+console.log("============================================");
+
+const raceOoiNormal: Race = {
+  id: "ooi-normal-race",
+  date: "2026-05-20",
+  venue: "大井",
+  raceNumber: 10,
+  raceName: "一般特別",
+  distance: 1600,
+  surface: "ダート",
+  condition: "良",
+  headCount: 10,
+  trackName: "大井",
+  horses: []
+};
+
+// ① 不利事故度外視テスト馬
+const horseNarIncidentRescue: Horse = {
+  id: "nar-h9",
+  number: 9,
+  frame: 5,
+  name: "アクシデントレスキュー",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "御神本訓",
+  jockeyWeight: 56,
+  trainer: "小久保智",
+  owner: "不利度外視オーナー",
+  sire: "ロードカナロア",
+  dam: "レスキューレディ",
+  bms: "サンデーサイレンス",
+  bloodline: "キングマンボ系",
+  style: "先行",
+  odds: 5.5,
+  popularity: 3,
+  pastRaces: [
+    {
+      date: "2026-04-20",
+      venue: "浦和",
+      raceName: "一般戦",
+      raceClass: "B3",
+      distance: 1400,
+      surface: "ダート",
+      condition: "良",
+      result: 8, // 6着以下惨敗
+      time: "1:30.5",
+      corner4Position: 8,
+      cornerOuterCount: 1,
+      weight: 480,
+      jockey: "御神本訓",
+      odds: 2.5,
+      prize: 0,
+      incidents: "前が壁になり大きな不利" // 不利事故あり
+    }
+  ]
+};
+
+// ② 道中位置取り遷移テスト馬
+const horseNarPassingTransition: Horse = {
+  id: "nar-h10",
+  number: 10,
+  frame: 6,
+  name: "ロンスパマクラー",
+  age: 4,
+  gender: "牡",
+  weight: 490,
+  weightChange: 0,
+  jockey: "吉原寛人",
+  jockeyWeight: 56,
+  trainer: "打越勇児",
+  owner: "まくりオーナー",
+  sire: "ゴールドシップ",
+  dam: "マクラーレディ",
+  bms: "サンデーサイレンス",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 4.5,
+  popularity: 2,
+  pastRaces: [
+    {
+      date: "2026-04-15",
+      venue: "高知",
+      raceName: "一般戦",
+      raceClass: "C1",
+      distance: 1400,
+      surface: "ダート",
+      condition: "良",
+      result: 2,
+      time: "1:31.0",
+      corner4Position: 2,
+      cornerOuterCount: 2,
+      weight: 490,
+      jockey: "吉原寛人",
+      odds: 3.0,
+      prize: 50,
+      passingPositions: "12-10-5-2"
+    }
+  ]
+};
+
+// ③ 区間ラップ構成テスト馬
+const horseNarPaceBias: Horse = {
+  id: "nar-h11",
+  number: 11,
+  frame: 7,
+  name: "ハイペーストタフネス",
+  age: 5,
+  gender: "牡",
+  weight: 500,
+  weightChange: 0,
+  jockey: "森泰斗",
+  jockeyWeight: 56,
+  trainer: "藤田輝",
+  owner: "ラップオーナー",
+  sire: "シニスターミニスター",
+  dam: "タフネスレディ",
+  bms: "ブライアンズタイム",
+  bloodline: "エーピーインディ系",
+  style: "先行",
+  odds: 3.5,
+  popularity: 2,
+  pastRaces: [
+    {
+      date: "2026-04-10",
+      venue: "大井",
+      raceName: "一般戦",
+      raceClass: "B2",
+      distance: 1600,
+      surface: "ダート",
+      condition: "良",
+      result: 3,
+      time: "1:42.0",
+      corner4Position: 3,
+      cornerOuterCount: 1,
+      weight: 500,
+      jockey: "森泰斗",
+      odds: 4.0,
+      prize: 100,
+      halonPace: "34.2-36.0"
+    }
+  ]
+};
+
+// ④ 動的対戦レベルテスト馬
+const horseNarDynamicOpponent: Horse = {
+  id: "nar-h12",
+  number: 12,
+  frame: 8,
+  name: "レベルウォッチャー",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "赤岡修次",
+  jockeyWeight: 56,
+  trainer: "打越勇児",
+  owner: "対戦レベルオーナー",
+  sire: "キズナ",
+  dam: "ウォッチャーレディ",
+  bms: "キングカメハメハ",
+  bloodline: "サンデーサイレンス系",
+  style: "先行",
+  odds: 4.0,
+  popularity: 2,
+  pastRaces: [
+    {
+      date: "2026-04-05",
+      venue: "高知",
+      raceName: "一般戦",
+      raceClass: "C1",
+      distance: 1400,
+      surface: "ダート",
+      condition: "良",
+      result: 2,
+      time: "1:30.8",
+      corner4Position: 2,
+      cornerOuterCount: 1,
+      weight: 480,
+      jockey: "赤岡修次",
+      odds: 2.5,
+      prize: 60,
+      winnerName: "ゴールドオウジャ"
+    }
+  ]
+};
+
+const masterDataWithDynamicOpponent: MasterData = {
+  horses: {
+    "ゴールドオウジャ": {
+      name: "ゴールドオウジャ",
+      results: [
+        { date: "2026-04-05", rank: 1, venue: "高知", distance: 1400 },
+        { date: "2026-05-01", rank: 1, venue: "高知", distance: 1400 }
+      ]
+    }
+  },
+  jockeys: {}
+};
+
+// ⑤ 馬場別着差スケーリングテスト馬
+const horseNarMarginScaling: Horse = {
+  id: "nar-h13",
+  number: 13,
+  frame: 2,
+  name: "マージンスケーラー",
+  age: 4,
+  gender: "牡",
+  weight: 470,
+  weightChange: 0,
+  jockey: "矢野貴之",
+  jockeyWeight: 56,
+  trainer: "森下淳",
+  owner: "スケーリングオーナー",
+  sire: "ヘニーヒューズ",
+  dam: "スケーラーレディ",
+  bms: "サンデーサイレンス",
+  bloodline: "ストームキャット系",
+  style: "先行",
+  odds: 5.0,
+  popularity: 3,
+  pastRaces: [
+    {
+      date: "2026-04-18",
+      venue: "大井",
+      raceName: "一般戦",
+      raceClass: "B3",
+      distance: 1200,
+      surface: "ダート",
+      condition: "良",
+      result: 2,
+      time: "1:13.5",
+      corner4Position: 2,
+      cornerOuterCount: 1,
+      weight: 470,
+      jockey: "矢野貴之",
+      odds: 3.5,
+      prize: 80,
+      timeDiff: 0.2
+    }
+  ]
+};
+
+// ⑥ 期待値オッズ歪みテスト馬＆レース
+const kochiFinal12R: Race = {
+  id: "kochi-12r-final",
+  date: "2026-05-20",
+  venue: "高知",
+  raceNumber: 12,
+  raceName: "一発逆転ファイナルレース",
+  distance: 1300,
+  surface: "ダート",
+  condition: "良",
+  headCount: 12,
+  trackName: "高知",
+  horses: []
+};
+
+const horseNarDistortionOdds: Horse = {
+  id: "nar-h14",
+  number: 12,
+  frame: 8,
+  name: "オッズディストーション",
+  age: 5,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "永森大智",
+  jockeyWeight: 56,
+  trainer: "雑賀正光",
+  owner: "歪みオーナー",
+  sire: "ドゥラメンテ",
+  dam: "ディストーションレディ",
+  bms: "サンデーサイレンス",
+  bloodline: "キングカメハメハ系",
+  style: "差し",
+  odds: 12.5,
+  popularity: 6,
+  pastRaces: []
+};
+
+const extraNarTestCases = [
+  { horse: horseNarIncidentRescue, race: raceOoiNormal, mData: { horses: {}, jockeys: {} }, desc: "① 不利事故度外視テスト（+25加点）" },
+  { horse: horseNarPassingTransition, race: raceOoiNormal, mData: { horses: {}, jockeys: {} }, desc: "② 道中位置取り遷移（ロンスパまくり+20加点）" },
+  { horse: horseNarPaceBias, race: raceOoiNormal, mData: { horses: {}, jockeys: {} }, desc: "③ 区間ラップ構成（前傾ハイペースダートタフネス+20加点）" },
+  { horse: horseNarDynamicOpponent, race: raceOoiNormal, mData: masterDataWithDynamicOpponent, desc: "④ 動的対戦相手レベル（勝ち馬の次走勝ち上がり+25加点）" },
+  { horse: horseNarMarginScaling, race: raceOoiNormal, mData: { horses: {}, jockeys: {} }, desc: "⑤ 馬場状態別着差スケーリング（良馬場僅差+15加点）" },
+  { horse: horseNarDistortionOdds, race: kochiFinal12R, mData: { horses: {}, jockeys: {} }, desc: "⑥ 高波乱期待値オッズの歪み適合（+20加点 & distortionBoost*1.25）" }
+];
+
+extraNarTestCases.forEach(({ horse, race, mData, desc }) => {
+  console.log(`\n--------------------------------------------`);
+  console.log(`テストケース: ${desc}`);
+  console.log(`馬名: ${horse.name} (オッズ: ${horse.odds})`);
+  const prediction = calculateTsuchiyaScore(horse, race, [], mData);
+  console.log(`ポテンシャルスコア: ${prediction.potential}`);
+  console.log(`期待値の闇 (darkness): ${prediction.darkness}`);
+  console.log(`付与された適性タグ (aptitudeTags):`);
+  prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
+});
+
 console.log("\n=== 全テスト完了 ===");
 

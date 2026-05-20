@@ -4043,6 +4043,119 @@ export function calculateTsuchiyaScore(
         tags.push("🌀 移籍2戦目:オッズ急落による大化け激走期待値");
       }
     }
+
+    // ① 【新要因1】競走中の不利・事故（incidents）の度外視（ノーカウント）救済
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const prevRace = horse.pastRaces[0];
+      if (prevRace.incidents && /(前が壁|他馬の斜行|挟まれ|大きな不利|落鉄)/.test(prevRace.incidents) && prevRace.result >= 6) {
+        potential += 25;
+        tags.push("⚠️ 不利度外視:前走致命的不利による不可抗力惨敗");
+      }
+    }
+
+    // ② 【新要因2】道中の位置取り遷移（passingPositions）による脚質物理補正
+    if (horse.pastRaces) {
+      let hasRonsupamakuri = false;
+      let hasPositionKeep = false;
+      for (const pr of horse.pastRaces) {
+        if (pr.passingPositions) {
+          const parts = pr.passingPositions.split('-').map(x => parseInt(x, 10)).filter(x => !isNaN(x));
+          if (parts.length >= 2) {
+            const maxPos = Math.max(...parts);
+            const finalPos = parts[parts.length - 1];
+            if (maxPos - finalPos >= 5 && pr.result <= 3) {
+              hasRonsupamakuri = true;
+            }
+            if (parts.every(x => x <= 4) && pr.result <= 3 && /(逃げ|先行|好位)/.test(horse.style || '')) {
+              hasPositionKeep = true;
+            }
+          }
+        }
+      }
+      if (hasRonsupamakuri) {
+        potential += 20;
+        tags.push("📐 位置取り遷移:ロンスパまくり加速エッジ");
+      }
+      if (hasPositionKeep) {
+        potential += 15;
+        tags.push("📐 位置取り遷移:終始好位キープ自在性");
+      }
+    }
+
+    // ③ 【新要因3】区間ラップタイム（halonPace）の構成バイアス適合
+    if (horse.pastRaces) {
+      let hasFastPaceTough = false;
+      let hasSlowPaceSpeed = false;
+      for (const pr of horse.pastRaces) {
+        if (pr.halonPace) {
+          const paceParts = pr.halonPace.split('-').map(parseFloat);
+          if (paceParts.length === 2 && !paceParts.some(isNaN)) {
+            const first3F = paceParts[0];
+            const last3F = paceParts[1];
+            if (last3F - first3F >= 1.5 && pr.result <= 3) {
+              hasFastPaceTough = true;
+            }
+            if (first3F - last3F >= 1.0 && pr.result <= 3) {
+              hasSlowPaceSpeed = true;
+            }
+          }
+        }
+      }
+      if (hasFastPaceTough) {
+        potential += 20;
+        tags.push("⏱️ ラップ物理:前傾ハイペースダートタフネス適合");
+      }
+      if (hasSlowPaceSpeed) {
+        potential += 15;
+        tags.push("⏱️ ラップ物理:後傾スロー瞬発スピード適合");
+      }
+    }
+
+    // ④ 【新要因4】対戦相手の「その後の勝ち上がり実績（動的対戦レベル）」評価
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const prevRace = horse.pastRaces[0];
+      if (prevRace.winnerName) {
+        const winnerName = prevRace.winnerName.trim();
+        const prevRaceDate = prevRace.date;
+        let winnerData: any = masterData.horses[winnerName];
+        if (!winnerData) {
+          winnerData = Object.values(masterData.horses).find(h => h.name === winnerName);
+        }
+        if (winnerData && winnerData.results) {
+          const hasWonLater = winnerData.results.some((r: any) => r.date > prevRaceDate && r.rank === 1);
+          if (hasWonLater) {
+            potential += 25;
+            tags.push("👑 動的対戦レベル高:前走勝ち馬の次走勝ち上がり裏付け");
+          }
+        }
+      }
+    }
+
+    // ⑤ 【新要因5】着差（margin / timeDiff）と馬場状態・含水率の物理スケーリング
+    if (horse.pastRaces) {
+      const hasGoodFirmCloseResult = horse.pastRaces.some(pr => pr.condition === '良' && pr.timeDiff !== undefined && pr.timeDiff <= 0.3 && pr.result <= 3);
+      if (hasGoodFirmCloseResult) {
+        potential += 15;
+        tags.push("⚖️ 砂理学:良馬場タフ戦僅差実績の真価");
+      }
+      const hasMuddyCloseResult = horse.pastRaces.some(pr => (pr.condition === '重' || pr.condition === '不良') && pr.timeDiff !== undefined && pr.timeDiff <= 0.6 && pr.result <= 3);
+      if (hasMuddyCloseResult) {
+        potential += 15;
+        tags.push("⚖️ 砂理学:道悪高速追走耐久実績");
+      }
+    }
+
+    // ⑥ 【新要因6】払戻金（refunds）傾向と高波乱トリガーによるオッズの「歪み」適合
+    const isKochiFinal = /高知/.test(raceVenue) && (race.raceNumber === 12 || /ファイナル/.test(race.raceName || ''));
+    const isOoiSpecial = /大井/.test(raceVenue) && /(重賞|特別)/.test(race.raceName || '');
+    const isKawasakiSprint = /川崎/.test(raceVenue) && dist === 900;
+    const isKasamatsuC = /笠松/.test(raceVenue) && /(C|ｃ)/.test(horse.raceClass || '');
+
+    if ((isKochiFinal || isOoiSpecial || isKawasakiSprint || isKasamatsuC) && odds >= 8.0) {
+      distortionBoost *= 1.25;
+      potential += 20;
+      tags.push("🌀 期待値の闇:高波乱トリガーによるオッズ歪み適合");
+    }
   }
 
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
