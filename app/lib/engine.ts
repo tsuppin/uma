@@ -849,17 +849,27 @@ export function calculateTsuchiyaScore(
 
     const isTurf = race.surface === "芝";
     const isDirt = race.surface === "ダート";
+    const isOuterTrack = isTurf && [1600, 1800, 2200, 2400, 3000, 3200].includes(dist);
+    const isInnerTrack = isTurf && !isOuterTrack;
+    const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|G1|G2|G3|GI|GII|GIII|重賞|特別|ステークス|カップ)/i);
 
     // 1. 人間系シナジーと特定の乗り替わり・騎乗適正
-    // 岩田康誠騎手 × 内枠（イン突き極大期待値）
-    if (jockey.includes("岩田康") && frame <= 4) {
-      potential += 25;
+    // ② 岩田康誠騎手の「イン突き」エッジ (特別・重賞×1〜4枠)
+    if (jockey.includes("岩田康") && frame <= 4 && isGradeOrSpecial) {
+      potential += 35;
+      tags.push("👑 岩田康×京都イン突きエッジ");
+    } else if (jockey.includes("岩田康") && frame <= 4) {
+      potential += 15;
       tags.push("👑 岩田康誠×京都内枠：必殺イン突きバイアス適合");
     }
 
-    // 川田将雅騎手 × 芝2200m（外回り先行最適化）
-    if (jockey.includes("川田") && isTurf && dist === 2200) {
-      potential += 25;
+    // ③ 川田将雅騎手の「剛腕先行押し切り」エッジ (芝2200m外回り)
+    if (jockey.includes("川田") && isTurf && dist === 2200 && 
+        (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位" || horse.style === "差し")) {
+      potential += 35;
+      tags.push("👑 川田将雅×京都芝2200m先行押し切りエッジ");
+    } else if (jockey.includes("川田") && isTurf && dist === 2200) {
+      potential += 20;
       tags.push("👑 川田将雅×京都芝2200m：先行持続・淀の坂下り最適化");
     }
 
@@ -875,9 +885,12 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 馬体重減少（-4kg以上）× 内枠（1〜4枠）の登坂＆小回り複合エッジ
-    if (weightChange <= -4 && frame <= 4) {
-      potential += 20;
+    // ① 馬体重減少（-4kg以上）× 内枠（1〜4枠）の「淀の坂越え」機動力補正 (芝内回り)
+    if (isInnerTrack && weightChange <= -4 && frame <= 4) {
+      potential += 25;
+      tags.push("⛰️ 淀の坂越え：馬体絞りイン立ち回り");
+    } else if (weightChange <= -4 && frame <= 4) {
+      potential += 15;
       tags.push("📈 京都登坂物理:馬体絞り(-4kg以上)×内枠アドバンテージ");
     }
 
@@ -907,28 +920,48 @@ export function calculateTsuchiyaScore(
 
     // 京都適合血統（種牡馬）ブースト
     const sireUpper = horse.sire?.toUpperCase() || "";
+    const bloodlineUpper = horse.bloodline?.toUpperCase() || "";
     if (sireUpper.includes("キタサンブラック") && isTurf && dist === 1400) {
       potential += 20;
       tags.push("🧬 京都芝1400m適性：キタサンブラック産駒スタミナエッジ");
+    }
+
+    // ④ 改修後ダート（1800m）のスタミナ血統補正
+    if (isDirt && dist === 1800 && 
+        (sireUpper.includes("キズナ") || sireUpper.includes("サンダースノー") || sireUpper.includes("シニスターミニスター") || sireUpper.includes("ドレフォン") ||
+         bloodlineUpper.includes("キズナ") || bloodlineUpper.includes("サンダースノー") || bloodlineUpper.includes("シニスターミニスター") || bloodlineUpper.includes("ドレフォン")) &&
+        (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位")) {
+      potential += 30;
+      tags.push("🧬 改修後タフダート：スタミナ・パワー血統エッジ");
     } else if ((sireUpper.includes("サンダースノー") || sireUpper.includes("キズナ")) && isDirt && dist === 1800) {
-      potential += 25;
+      potential += 20;
       tags.push("🧬 京都ダ1800m適性：改修後タフダート適合血統(サンダースノー/キズナ)");
     }
 
-    // 芝2400mハンデ戦における軽量馬（55kg以下）の優遇、および重ハンデ馬（57kg以上）の割引
+    // ⑤ ハンデ戦（芝2400m）の「軽量馬優遇」と「実績不足の重斤量馬ペナルティ」
     const isHandicap = race.raceName?.includes("ハンデ");
+    const hasG1Record = horse.pastRaces?.some(pr => 
+      (pr.raceClass?.toUpperCase() === "G1" || pr.raceClass?.toUpperCase() === "GⅠ" || pr.raceName?.includes("GⅠ") || pr.raceName?.includes("G1")) &&
+      pr.result <= 2
+    );
+
     if (isHandicap && isTurf && dist === 2400) {
-      if (kinryo <= 55) {
-        potential += 20;
+      if (kinryo <= 55 && (age === 4 || age === 5)) {
+        potential += 30;
+        tags.push("⚖️ 軽量若駒ハンデ優遇(55kg以下)");
+      } else if (kinryo <= 55) {
+        potential += 15;
         tags.push("⚖️ 京都芝2400mハンデ戦：軽量馬(55kg以下)絶対優位");
+      } else if (kinryo >= 57 && !hasG1Record) {
+        potential -= 35;
+        tags.push("⚠️ 実績不足重ハンデペナルティ(57kg以上×GI実績なし)");
       } else if (kinryo >= 57) {
-        potential -= 20;
+        potential -= 15;
         tags.push("⚠️ 京都芝2400mハンデ戦：実績不足重斤量(57kg以上)割引");
       }
     }
 
     // 芝外回りコースにおけるスリングショット効果（好位差し適合）と大外一気（追込届かず）の判定
-    const isOuterTrack = isTurf && [1600, 1800, 2200, 2400, 3000, 3200].includes(dist);
     if (isOuterTrack) {
       if (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位" || horse.style === "差し") {
         potential += 15;
@@ -960,7 +993,6 @@ export function calculateTsuchiyaScore(
 
     // 所属バイアス（栗東馬の圧倒的優位）と美浦エリート遠征馬のエッジ
     const isRittoKyoto = horse.stableLocation?.includes("栗東") || horse.trainer?.includes("栗東") || horse.trainer?.includes("美浦") === false;
-    const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
 
     if (isRittoKyoto) {
       potential += 20; // +35から+20へバランス調整

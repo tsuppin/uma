@@ -321,4 +321,221 @@ tokyoTestHorses.forEach(horse => {
   prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
 });
 
+console.log("\n=== 京都競馬場 的中精度極限先鋭化テスト開始 ===");
+
+// 1. レースデータ
+const kyotoInnerTurfRace: Race = {
+  id: "kyoto-test-inner-turf",
+  date: "2026-05-20",
+  venue: "京都",
+  raceNumber: 10,
+  raceName: "山科ステークス",
+  distance: 1400, // 内回り
+  surface: "芝",
+  condition: "良",
+  headCount: 16,
+  trackName: "京都",
+  horses: []
+};
+
+const kyotoG2Race: Race = {
+  id: "kyoto-test-g2",
+  date: "2026-05-20",
+  venue: "京都",
+  raceNumber: 11,
+  raceName: "京都新聞杯(G2)",
+  distance: 2200,
+  surface: "芝",
+  condition: "良",
+  headCount: 12,
+  trackName: "京都",
+  horses: []
+};
+
+const kyotoDirtRace: Race = {
+  id: "kyoto-test-dirt",
+  date: "2026-05-20",
+  venue: "京都",
+  raceNumber: 9,
+  raceName: "端午ステークス",
+  distance: 1800,
+  surface: "ダート",
+  condition: "良",
+  headCount: 15,
+  trackName: "京都",
+  horses: []
+};
+
+const kyotoHandicapRace: Race = {
+  id: "kyoto-test-handicap",
+  date: "2026-05-20",
+  venue: "京都",
+  raceNumber: 11,
+  raceName: "万葉ステークス(ハンデ)",
+  distance: 2400,
+  surface: "芝",
+  condition: "良",
+  headCount: 14,
+  trackName: "京都",
+  horses: []
+};
+
+// 2. 馬データ
+// ① 淀の坂越え (芝内回り、馬体絞り-4kg以上、内枠1〜4枠)
+const horseSaka: Horse = {
+  id: "kyoto-saka",
+  number: 1,
+  frame: 2,
+  name: "ヨドノサカゴエ",
+  age: 4,
+  gender: "牡",
+  weight: 460,
+  weightChange: -6, // 馬体絞り
+  jockey: "坂井瑠星",
+  jockeyWeight: 57,
+  sire: "ハーツクライ",
+  bloodline: "サンデーサイレンス系",
+  style: "先行",
+  odds: 4.5,
+  popularity: 2,
+  pastRaces: []
+};
+
+// ② 岩田康イン突き (特別・重賞、岩田康、内枠1〜4枠)
+const horseIwata: Horse = {
+  id: "kyoto-iwata",
+  number: 2,
+  frame: 3,
+  name: "イワタインツキ",
+  age: 5,
+  gender: "牡",
+  weight: 490,
+  weightChange: 0,
+  jockey: "岩田康誠",
+  jockeyWeight: 57,
+  sire: "キングカメハメハ",
+  bloodline: "キングマンボ系",
+  style: "差し",
+  odds: 12.0,
+  popularity: 6,
+  pastRaces: []
+};
+
+// ③ 川田2200m (川田、芝2200m、逃げ/先行/好位/差し)
+const horseKawada: Horse = {
+  id: "kyoto-kawada",
+  number: 3,
+  frame: 5,
+  name: "カワダゴウワン",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: -2,
+  jockey: "川田将雅",
+  jockeyWeight: 57,
+  sire: "ロードカナロア",
+  bloodline: "キングカメハメハ系",
+  style: "先行",
+  odds: 2.1,
+  popularity: 1,
+  pastRaces: []
+};
+
+// ④ 改修後ダート1800mスタミナ血統先行 (ダ1800m、シニスターミニスター、先行)
+const horseDirtSire: Horse = {
+  id: "kyoto-dirtsire",
+  number: 4,
+  frame: 6,
+  name: "タフダートキング",
+  age: 4,
+  gender: "牡",
+  weight: 510,
+  weightChange: 0,
+  jockey: "松山弘平",
+  jockeyWeight: 57,
+  sire: "シニスターミニスター",
+  bloodline: "エーピーインディ系",
+  style: "先行",
+  odds: 5.5,
+  popularity: 3,
+  pastRaces: []
+};
+
+// ⑤ ハンデ戦軽量馬 (ハンデ芝2400m、斤量55kg以下、4〜5歳)
+const horseLightWeight: Horse = {
+  id: "kyoto-light",
+  number: 5,
+  frame: 4,
+  name: "カルイハンデ",
+  age: 4, // 4歳
+  gender: "牡",
+  weight: 450,
+  weightChange: -2,
+  jockey: "武豊",
+  jockeyWeight: 53, // 53kg
+  sire: "ディープインパクト",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 6.0,
+  popularity: 4,
+  pastRaces: []
+};
+
+// ⑥ ハンデ戦実績不足重斤量 (ハンデ芝2400m、斤量57kg以上、GI実績なし)
+const horseHeavyNoRecord: Horse = {
+  id: "kyoto-heavy",
+  number: 6,
+  frame: 8,
+  name: "オモイハンデ",
+  age: 6,
+  gender: "牡",
+  weight: 520,
+  weightChange: 4,
+  jockey: "デムーロ",
+  jockeyWeight: 57, // 57kg
+  sire: "ハーツクライ",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 3.5,
+  popularity: 2,
+  pastRaces: [
+    {
+      date: "2026-04-10",
+      venue: "中山",
+      raceName: "日経賞",
+      raceClass: "G2",
+      distance: 2500,
+      surface: "芝",
+      condition: "良",
+      result: 4, // GI実績なし
+      time: "2:32.1",
+      corner4Position: 4,
+      cornerOuterCount: 2,
+      weight: 516,
+      jockey: "デムーロ",
+      odds: 4.0
+    }
+  ]
+};
+
+const kyotoTestHorses = [
+  { horse: horseSaka, race: kyotoInnerTurfRace, desc: "① 淀の坂越え機動力補正 (芝内回り・馬体絞り・内枠)" },
+  { horse: horseIwata, race: kyotoG2Race, desc: "② 岩田康誠「イン突き」 (重賞・G2・内枠)" },
+  { horse: horseKawada, race: kyotoG2Race, desc: "③ 川田将雅芝2200m (芝2200m外回り・先行)" },
+  { horse: horseDirtSire, race: kyotoDirtRace, desc: "④ 改修後ダート1800mスタミナ血統先行" },
+  { horse: horseLightWeight, race: kyotoHandicapRace, desc: "⑤ ハンデ戦軽量若駒優遇 (53kg・4歳)" },
+  { horse: horseHeavyNoRecord, race: kyotoHandicapRace, desc: "⑥ ハンデ戦実績不足重ハンデペナルティ (57kg・GI実績なし)" }
+];
+
+kyotoTestHorses.forEach(({ horse, race, desc }) => {
+  console.log(`\n--------------------------------------------`);
+  console.log(`テストケース: ${desc}`);
+  console.log(`馬名: ${horse.name} (斤量: ${horse.jockeyWeight}kg, 馬体重増減: ${horse.weightChange}kg, 枠: ${horse.frame})`);
+  console.log(`騎手: ${horse.jockey}, 脚質: ${horse.style}, 血統: ${horse.sire}`);
+  const prediction = calculateTsuchiyaScore(horse, race, [], { horses: {}, jockeys: {} });
+  console.log(`ポテンシャルスコア: ${prediction.potential}`);
+  console.log(`付与された適性タグ (aptitudeTags):`);
+  prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
+});
+
 console.log("\n=== 全テスト完了 ===");
