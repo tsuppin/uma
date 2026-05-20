@@ -3710,6 +3710,230 @@ export function calculateTsuchiyaScore(
     tags.push('💎3連系:エピファネイア適性ブースト');
   }
 
+  // ===================================================
+  // 【新設】中央競馬10箇所（JRA）特化型オメガ・プロトコル推論エンジン
+  // ===================================================
+  const isJRA = /(東京|中山|京都|阪神|中京|新潟|小倉|福島|函館|札幌)/.test(race.venue || race.trackName || race.raceName || '');
+
+  if (isJRA) {
+    tags.push("JRA特化OMEGAエンジン適用中");
+
+    // ---------------------------------------------------
+    // ① 【要素1】今回レース環境（Race）の新要因評価
+    // ---------------------------------------------------
+    // 季節適性バイオリズム判定
+    if (race.season === 'summer') {
+      if (gender === '牝') {
+        potential += 15;
+        tags.push("☀️ 夏の牝馬バイアス適合(暑さ耐性)");
+      }
+      if (horse.coatColor && /(黒鹿毛|青鹿毛|青毛)/.test(horse.coatColor) && weight >= 500) {
+        potential -= 15;
+        tags.push("⚠️ 酷暑による大型黒毛馬の夏負けリスク(体熱放出困難)");
+      }
+    } else if (race.season === 'winter') {
+      if (gender === '牝' && weight <= 440 && weight > 0) {
+        potential -= 10;
+        tags.push("⚠️ 冬期寒冷馬場における小柄牝馬のスタミナ懸念(馬体維持困難)");
+      }
+    }
+
+    // 天候・馬場急変兆候検知
+    if ((race.weather?.includes('雨') || race.weather?.includes('雪')) && (condition === '良' || condition === '稍重')) {
+      const softBlood = ['キズナ', 'エピファネイア', 'ルーラーシップ', 'ハービンジャー', 'ゴールドシップ'];
+      const hasSoftBlood = softBlood.some(sb => bloodline.includes(sb) || (horse.sire && horse.sire.includes(sb)) || (horse.bms && horse.bms.includes(sb)));
+      if (hasSoftBlood) {
+        potential += 20;
+        tags.push("☔ 天候急変（雨/雪）による道悪血統適性(馬場軟化適性)");
+      }
+    }
+
+    // 薄暮・ナイター精神ストレス判定
+    if (race.isNight || race.isTwilight) {
+      const hasPastStumbled = horse.pastRaces && horse.pastRaces.some(pr => pr.isStumbled);
+      if (hasPastStumbled) {
+        potential -= 10;
+        tags.push("⚠️ 薄暮・ナイター時間帯による精神的イレ込みリスク(出遅れ再発警戒)");
+      }
+    }
+
+    // ---------------------------------------------------
+    // ② 【要素2】馬個体（Horse）の新要因評価
+    // ---------------------------------------------------
+    // 個別血統（sire, bms）のコース物理適性判定
+    if (horse.sire) {
+      if (race.surface === '芝' && dist >= 2000) {
+        const eliteLongSires = ['ディープインパクト', 'ハーツクライ', 'ドゥラメンテ', 'キタサンブラック'];
+        const isEliteLong = eliteLongSires.some(es => horse.sire.includes(es));
+        if (isEliteLong) {
+          potential += 25;
+          tags.push(`🧬 芝中長距離エリートサイアー適性(${horse.sire.replace(/ファーム|牧場/g, '')})`);
+        }
+      }
+      if (dist <= 1400 || race.surface === 'ダート') {
+        const speedSires = ['ロードカナロア', 'ヘニーヒューズ', 'シニスターミニスター', 'ドレフォン'];
+        const isSpeedSire = speedSires.some(ss => horse.sire.includes(ss));
+        if (isSpeedSire) {
+          potential += 20;
+          tags.push(`🧬 スピード・砂サイアー適性(${horse.sire.replace(/ファーム|牧場/g, '')})`);
+        }
+      }
+    }
+
+    // 鉄砲（休み明け初戦）仕上がり判定
+    if (horse.isAfterRest) {
+      const rating = horse.trainingRating?.toUpperCase();
+      if (rating === 'S' || rating === 'A') {
+        potential += 20;
+        tags.push("🔥 鉄砲抜群：休み明け初戦×好仕上がり(即戦力)");
+      } else {
+        potential -= 15;
+        tags.push("⚠️ 休み明け初戦・仕上がり途上割引(叩き良化型)");
+      }
+    }
+
+    // 過密ローテーションと疲労消耗判定
+    if (horse.rotation === '連闘' || horse.rotation === '中1週') {
+      const prevGood = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].result <= 3;
+      if (prevGood && weightChange < 0) {
+        potential -= 20;
+        tags.push("⚠️ 過密ローテ激走反動・馬体重減リスク(疲労蓄積懸念)");
+      }
+    }
+
+    // 昇降級クラス変動判定
+    if (horse.raceClass && horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].raceClass) {
+      const currentClass = horse.raceClass;
+      const prevClass = horse.pastRaces[0].raceClass;
+
+      // 簡易クラス強度マッピング (未勝利 < 1勝 < 2勝 < 3勝 < オープン/G3/G2/G1)
+      const getClassScore = (c: string): number => {
+        if (c.includes('GⅠ') || c.includes('G1') || c.includes('重賞')) return 6;
+        if (c.includes('GⅡ') || c.includes('G2') || c.includes('GⅢ') || c.includes('G3') || c.includes('オープン') || c.includes('OP')) return 5;
+        if (c.includes('3勝') || c.includes('1600万')) return 4;
+        if (c.includes('2勝') || c.includes('1000万')) return 3;
+        if (c.includes('1勝') || c.includes('500万')) return 2;
+        if (c.includes('新馬')) return 1.5;
+        if (c.includes('未勝利')) return 1;
+        return 0;
+      };
+
+      const currScore = getClassScore(currentClass);
+      const prevScore = getClassScore(prevClass);
+
+      if (currScore > 0 && prevScore > 0) {
+        if (currScore < prevScore) {
+          potential += 30;
+          tags.push(`👑 クラス降級による圧倒的格上位アドバンテージ(${prevClass}→${currentClass})`);
+        } else if (currScore > prevScore) {
+          potential -= 10;
+          tags.push(`⚠️ クラス昇級初戦による実力検証の壁(${prevClass}→${currentClass})`);
+        }
+      }
+    }
+
+    // コーナー通過順位変動（まくり機動力）判定
+    const isShortTrack = /(中山|福島|小倉|函館|札幌)/.test(race.venue || race.trackName || '');
+    if (isShortTrack && horse.cornerPositionVariance && horse.cornerPositionVariance >= 2.0) {
+      potential += 20;
+      tags.push("📐 小回り勝負所機動力（まくり適性）適合");
+    }
+
+    // 左回りサウスポー判定
+    const isLeftTrack = /(東京|中京|新潟)/.test(race.venue || race.trackName || '');
+    if (isLeftTrack && horse.leftTurnExperience && horse.leftTurnExperience >= 2) {
+      potential += 20;
+      tags.push("📐 左回りサウスポー実績適合");
+    }
+
+    // 前走イン物理ロスからの外枠激変判定
+    if (frame >= 6 && horse.pastRaces && horse.pastRaces[0]) {
+      const wasInner = horse.prevInnerLoadExp || (horse.pastRaces[0].frameNumber !== undefined && horse.pastRaces[0].frameNumber <= 2);
+      const didLose = horse.pastRaces[0].result >= 6;
+      if (wasInner && didLose) {
+        potential += 25;
+        tags.push("📐 前走内荒れロスからの外枠替わり激変期待値");
+      }
+    }
+
+    // 初ブリンカー変心判定
+    if (horse.useBlinkers) {
+      potential += 25;
+      tags.push("🎯 初ブリンカー装着による集中力激変期待");
+    }
+
+    // オッズ偏差値信頼度判定
+    if (horse.oddsStandardScore && horse.oddsStandardScore >= 65 && popularity === 1) {
+      potential += 15;
+      tags.push("👑 断然人気・オッズ偏差値SSS of 絶対的信頼");
+    }
+
+    // ---------------------------------------------------
+    // ③ 【要素3】過去走履歴（PastRace）の新要因評価
+    // ---------------------------------------------------
+    // 過去走勝ち馬のその後の出世度（winnerName）による対戦レベル補正
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const hasStrongRival = horse.pastRaces.slice(0, 3).some(pr => {
+        const eliteRivals = ['サトノフェンサー', 'イクイノックス', 'ドウデュース', 'リバティアイランド', 'ソールオリエンス', 'タスティエーラ', 'ジャスティンパレス', 'プログノーシス', 'ルガル'];
+        return pr.winnerName && eliteRivals.some(er => pr.winnerName?.includes(er)) && pr.timeDiff !== undefined && pr.timeDiff <= 0.4;
+      });
+      if (hasStrongRival) {
+        potential += 25;
+        tags.push("👑 過去走対戦馬レベル高（勝ち馬のその後の出世）");
+      }
+    }
+
+    // クラス基準タイム比較による時計的真価判定
+    if (horse.pastRaces) {
+      const hasExcellentTime = horse.pastRaces.slice(0, 3).some(pr => {
+        if (!pr.time || !pr.classBaseTime) return false;
+        
+        const parseTimeToSec = (tStr: string): number => {
+          const clean = tStr.trim();
+          if (clean.includes(':')) {
+            const parts = clean.split(':');
+            return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+          }
+          return parseFloat(clean) || 999;
+        };
+
+        const seconds = parseTimeToSec(pr.time);
+        const baseSeconds = pr.classBaseTime;
+        return seconds > 0 && baseSeconds > 0 && seconds <= baseSeconds - 0.8;
+      });
+
+      if (hasExcellentTime) {
+        potential += 25;
+        tags.push("⏱️ クラス基準タイム超えの高速時計実績");
+      }
+    }
+
+    // タフ場実績の他場適性判定
+    if (horse.pastRaces) {
+      const hasToughGood = horse.pastRaces.slice(0, 5).some(pr => {
+        const isToughVenue = /(中山|阪神|中京)/.test(pr.venue || '');
+        return isToughVenue && pr.result <= 3;
+      });
+      const isEasyVenue = /(京都|新潟|小倉)/.test(race.venue || race.trackName || '');
+      if (hasToughGood && isEasyVenue) {
+        potential += 15;
+        tags.push("⛰️ 急坂・タフ場での好走実績（底力の裏付け）");
+      }
+    }
+
+    // 直近人気トレンドからの過小評価スクリーニング
+    if (horse.pastRaces && horse.pastRaces.length >= 3) {
+      const avgPopularity = horse.pastRaces.slice(0, 3).reduce((sum, pr) => sum + (pr.popularity || 5), 0) / 3.0;
+      const lastFailed = horse.pastRaces[0].result >= 10;
+      const isUnderValued = odds >= 8.0;
+
+      if (avgPopularity <= 3.0 && lastFailed && isUnderValued) {
+        potential += 30;
+        tags.push("⚡ 過去走人気トレンドからの巻き返し急襲穴馬");
+      }
+    }
+  }
+
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
 
   return {

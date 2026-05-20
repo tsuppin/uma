@@ -802,4 +802,258 @@ niigataTestHorses.forEach(({ horse, race, desc }) => {
   prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
 });
 
+console.log("\n=== JRA 10箇所 高度新要因（要素1・2・3）テスト開始 ===");
+
+// 1. レースデータ
+const jraSummerRace: Race = {
+  id: "jra-summer-race",
+  date: "2026-08-10",
+  venue: "小倉",
+  raceNumber: 11,
+  raceName: "小倉記念(G3)",
+  distance: 2000,
+  surface: "芝",
+  condition: "良",
+  headCount: 12,
+  trackName: "小倉",
+  season: "summer",
+  horses: []
+};
+
+const jraRainyRace: Race = {
+  id: "jra-rainy-race",
+  date: "2026-05-20",
+  venue: "中山",
+  raceNumber: 11,
+  raceName: "皐月賞(G1)",
+  distance: 2000,
+  surface: "芝",
+  condition: "稍重",
+  weather: "雨",
+  headCount: 18,
+  trackName: "中山",
+  horses: []
+};
+
+// 2. 馬データ
+// ① 夏の牝馬バイアス適合 vs 酷暑大型黒毛馬
+const horseSummerMeba: Horse = {
+  id: "summer-meba",
+  number: 1,
+  frame: 2,
+  name: "ナツノメバ",
+  age: 4,
+  gender: "牝", // 牝馬
+  weight: 450,
+  weightChange: 0,
+  jockey: "ルメール",
+  jockeyWeight: 55,
+  sire: "ディープインパクト",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 3.5,
+  popularity: 2,
+  pastRaces: []
+};
+
+const horseSummerBlackHeavy: Horse = {
+  id: "summer-black-heavy",
+  number: 2,
+  frame: 4,
+  name: "オモクロウマ",
+  age: 5,
+  gender: "牡",
+  weight: 520, // 大型馬
+  weightChange: 0,
+  coatColor: "青毛", // 黒毛
+  jockey: "坂井瑠星",
+  jockeyWeight: 57,
+  sire: "ハーツクライ",
+  bloodline: "サンデーサイレンス系",
+  style: "先行",
+  odds: 5.2,
+  popularity: 3,
+  pastRaces: []
+};
+
+// ② 天候急変（雨/雪）による道悪血統適性
+const horseRainyBlood: Horse = {
+  id: "rainy-blood",
+  number: 3,
+  frame: 5,
+  name: "キズナスピリッツ",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "武豊",
+  jockeyWeight: 57,
+  sire: "キズナ", // キズナ産駒
+  bloodline: "サンデーサイレンス系",
+  style: "先行",
+  odds: 4.8,
+  popularity: 3,
+  pastRaces: []
+};
+
+// ③ 休み明け初戦×好仕上がり vs クラス降級戦
+const horseRestBest: Horse = {
+  id: "rest-best",
+  number: 4,
+  frame: 1,
+  name: "テッポウバクハツ",
+  age: 4,
+  gender: "牡",
+  weight: 490,
+  weightChange: 0,
+  jockey: "川田将雅",
+  jockeyWeight: 57,
+  sire: "ロードカナロア",
+  bloodline: "キングカメハメハ系",
+  style: "先行",
+  odds: 2.5,
+  popularity: 1,
+  isAfterRest: true, // 休み明け
+  trainingRating: "S", // 調教S
+  pastRaces: []
+};
+
+const horseClassDown: Horse = {
+  id: "class-down",
+  number: 5,
+  frame: 3,
+  name: "カクシタアリガトウ",
+  age: 5,
+  gender: "牡",
+  weight: 500,
+  weightChange: 0,
+  jockey: "戸崎圭太",
+  jockeyWeight: 57,
+  sire: "ドゥラメンテ",
+  bloodline: "キングカメハメハ系",
+  style: "差し",
+  odds: 3.0,
+  popularity: 2,
+  raceClass: "3勝クラス", // 今回3勝クラス
+  pastRaces: [
+    {
+      date: "2026-04-10",
+      venue: "東京",
+      raceName: "OP特別",
+      raceClass: "OP", // 前走オープン（降級戦）
+      distance: 2000,
+      surface: "芝",
+      condition: "良",
+      result: 5,
+      time: "1:59.2",
+      corner4Position: 6,
+      cornerOuterCount: 2,
+      weight: 500,
+      jockeyWeight: 57,
+      jockey: "戸崎圭太",
+      odds: 6.5
+    }
+  ]
+};
+
+// ④ 過去走対戦馬レベル高 vs クラス基準タイム超え vs 直近人気トレンド巻き返し穴馬
+const horseTrendAnama: Horse = {
+  id: "trend-anama",
+  number: 6,
+  frame: 6,
+  name: "フドウトレンド",
+  age: 4,
+  gender: "牡",
+  weight: 470,
+  weightChange: -2,
+  jockey: "松山弘平",
+  jockeyWeight: 57,
+  sire: "ディープインパクト",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 9.5, // 今回9.5倍（人気薄）
+  popularity: 5,
+  pastRaces: [
+    {
+      date: "2026-05-01",
+      venue: "東京",
+      raceName: "プリンシパルS",
+      raceClass: "OP",
+      distance: 2000,
+      surface: "芝",
+      condition: "良",
+      result: 11, // 前走2桁大敗
+      time: "2:01.5",
+      classBaseTime: 120.0, // 2:00.0 ( pr.time "2:01.5" => 121.5秒 > 120.0秒 )
+      corner4Position: 12,
+      cornerOuterCount: 3,
+      weight: 472,
+      jockeyWeight: 57,
+      jockey: "デムーロ",
+      odds: 3.2,
+      popularity: 2 // 前走2番人気
+    },
+    {
+      date: "2026-04-05",
+      venue: "中山",
+      raceName: "弥生賞",
+      raceClass: "G2",
+      distance: 2000,
+      surface: "芝",
+      condition: "良",
+      result: 2, // 僅差2着
+      time: "1:59.0", // 119.0秒 (基準タイム120.0秒 => 基準より-1.0秒で超優秀)
+      classBaseTime: 120.0, 
+      corner4Position: 5,
+      cornerOuterCount: 1,
+      weight: 470,
+      jockeyWeight: 56,
+      jockey: "松山弘平",
+      odds: 2.8,
+      popularity: 1, // 前々走1番人気
+      winnerName: "サトノフェンサー" // 強い勝ち馬と対戦
+    },
+    {
+      date: "2026-03-01",
+      venue: "東京",
+      raceName: "共同通信杯",
+      raceClass: "G3",
+      distance: 1800,
+      surface: "芝",
+      condition: "良",
+      result: 3,
+      time: "1:46.8",
+      corner4Position: 4,
+      cornerOuterCount: 2,
+      weight: 474,
+      jockeyWeight: 56,
+      jockey: "松山弘平",
+      odds: 3.5,
+      popularity: 2 // 3走前2番人気
+    }
+  ]
+};
+
+const jraTestCases = [
+  { horse: horseSummerMeba, race: jraSummerRace, desc: "① 夏の牝馬バイアス適合 (+15)" },
+  { horse: horseSummerBlackHeavy, race: jraSummerRace, desc: "② 酷暑の大型黒毛馬ペナルティ (-15)" },
+  { horse: horseRainyBlood, race: jraRainyRace, desc: "③ 雨天急変による道悪血統適合 (+20)" },
+  { horse: horseRestBest, race: jraSummerRace, desc: "④ 鉄砲抜群：休み明け初戦×好仕上がり (+20)" },
+  { horse: horseClassDown, race: jraSummerRace, desc: "⑤ クラス降級による圧倒的格上位アドバンテージ (+30)" },
+  { horse: horseTrendAnama, race: jraSummerRace, desc: "⑥ 過去走対戦馬レベル高(+25)＆基準タイム超え(+25)＆直近人気トレンド巻き返し穴馬(+30)" }
+];
+
+jraTestCases.forEach(({ horse, race, desc }) => {
+  console.log(`\n--------------------------------------------`);
+  console.log(`テストケース: ${desc}`);
+  console.log(`馬名: ${horse.name} (性別: ${horse.gender}, 毛色: ${horse.coatColor}, 馬体重: ${horse.weight}kg, 枠: ${horse.frame})`);
+  if (horse.pastRaces && horse.pastRaces[0]) {
+    console.log(`前走着順: ${horse.pastRaces[0].result}`);
+  }
+  const prediction = calculateTsuchiyaScore(horse, race, [], { horses: {}, jockeys: {} });
+  console.log(`ポテンシャルスコア: ${prediction.potential}`);
+  console.log(`付与された適性タグ (aptitudeTags):`);
+  prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
+});
+
 console.log("\n=== 全テスト完了 ===");
