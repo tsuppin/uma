@@ -94,10 +94,15 @@ def add_prev_race_features(df: pd.DataFrame, current_distance_col: str = '距離
     prev_cols = [
         'prev_result', 'prev_last3f', 'prev_time_diff',
         'prev_popularity', 'prev_distance', 'distance_change',
-        'interval_weeks', 'prev_top3_flag'
+        'interval_weeks', 'prev_top3_flag',
+        'is_transfer', 'class_drop_flag', 'first_corner_pos', 'makuri_flag',
+        'is_roberto_line'
     ]
     for col in prev_cols:
-        df[col] = df[col].fillna(0)
+        if col in df.columns:
+            df[col] = df[col].fillna(0)
+        else:
+            df[col] = 0.0
 
     return df
 
@@ -259,10 +264,11 @@ def add_trainer_target_encoding(
 BASE_FEATURES = [
     '枠番', '馬番', '斤量', '単勝', '人気',
     '年齢', '性別', '馬体重_base', '馬体重_増減',
-    'cushion_value', 'moisture'
+    'cushion_value', 'moisture',
+    'is_roberto_line'    # Roberto系フラグ
 ]
 
-# 追加された前走特徴量
+# 追加された前走・展開特徴量
 PREV_RACE_FEATURES = [
     'prev_result',       # 前走着順
     'prev_last3f',       # 前走上がり3F
@@ -274,6 +280,10 @@ PREV_RACE_FEATURES = [
     'prev_top3_flag',    # 前走3着以内フラグ
     'is_jockey_changed', # 乗り替わりフラグ(1=乗替, 0=継続)
     'jockey_te_diff',    # 今走と前走の騎手TE勝率の差分
+    'is_transfer',       # 転入初戦フラグ
+    'class_drop_flag',   # 降級馬フラグ
+    'first_corner_pos',  # 前走初角位置
+    'makuri_flag',       # 前走マクリフラグ
 ]
 
 # Target Encoding特徴量
@@ -283,7 +293,7 @@ TARGET_ENCODING_FEATURES = [
     'trainer_win_rate_te', # 調教師×場所 勝率
 ]
 
-# 全特徴量（合計24）
+# 全特徴量（合計29）
 ALL_FEATURES = BASE_FEATURES + PREV_RACE_FEATURES + TARGET_ENCODING_FEATURES
 
 

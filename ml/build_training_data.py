@@ -47,6 +47,13 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
+# 代表的なRoberto系種牡馬（笠松・大井等の砂適性血統）
+ROBERTO_SIRES = [
+    "グラスワンダー", "スクリーンヒーロー", "モーリス", "エピファネイア",
+    "ブライアンズタイム", "シンボリクリスエス", "エスポワールシチー", "スマートファルコン",
+    "マヤノトップガン", "タニノギムレット", "タイムパラドックス", "ストロングリターン",
+    "ゴールドアクター", "リオンディーズ", "ルヴァンスレーヴ"
+]
 
 # =============================================================================
 # 1. 1頭分の特徴量辞書を生成する関数
@@ -111,6 +118,8 @@ def build_row_from_past(
         'surface':    target_race.get('surface', race_info.get('surface', 'ダート')),
         'condition':  target_race.get('condition', race_info.get('condition', '良')),
         'head_count': target_race.get('head_count', race_info.get('head_count', 0)),
+        'race_class': target_race.get('race_class', race_info.get('race_class', '')),
+        'race_name':  target_race.get('race_name', race_info.get('race_name', '')),
     }
 
     # 馬属性（年齢を過去走時点に補正）
@@ -185,11 +194,47 @@ def _build_base_row(
         # 環境データ
         'cushion_value': float(race_info.get('cushion_value') or float('nan')),
         'moisture':      float(race_info.get('moisture') or float('nan')),
+        
+        # 血統系統フラグ
+        'is_roberto_line': 1.0 if horse.get('sire') in ROBERTO_SIRES else 0.0,
     }
 
     # --- 前走特徴量 (8個) ---
     if prev:
         prev_date_obj = _date_str_to_date(prev.get('date', ''))
+        
+        # 転入初戦判定
+        prev_venue = prev.get('venue', '')
+        current_venue = race_info.get('venue', '')
+        is_transfer = 1.0 if prev_venue and current_venue and prev_venue != current_venue else 0.0
+        
+        # クラス降級判定
+        def _get_class_rank(c: str) -> int:
+            if not c: return 0
+            if 'A' in c or 'Ａ' in c or 'オープン' in c or 'OP' in c or '重賞' in c: return 3
+            if 'B' in c or 'Ｂ' in c or '3勝' in c or '2勝' in c: return 2
+            if 'C' in c or 'Ｃ' in c or '1勝' in c or '未勝利' in c or '新馬' in c: return 1
+            return 0
+            
+        current_rank = _get_class_rank(race_info.get('race_class') or race_info.get('race_name', ''))
+        prev_rank = _get_class_rank(prev.get('race_class', ''))
+        class_drop_flag = 1.0 if prev_rank > current_rank and current_rank > 0 else 0.0
+        
+        # 初角位置・マクリ判定
+        prev_passing = prev.get('passing', '')
+        first_corner_pos = 0.0
+        makuri_flag = 0.0
+        if prev_passing and '-' in prev_passing:
+            parts = prev_passing.split('-')
+            if parts[0].isdigit():
+                first_corner_pos = float(parts[0])
+            if len(parts) >= 2 and parts[0].isdigit() and parts[-1].isdigit():
+                # 初角順位 - 最終角順位 >= 3 ならマクリ
+                if int(parts[0]) - int(parts[-1]) >= 3:
+                    makuri_flag = 1.0
+        elif prev_passing and prev_passing.isdigit():
+            first_corner_pos = float(prev_passing)
+
         row.update({
             'prev_result':     float(prev.get('result', 0) or 0),
             'prev_last3f':     float(prev.get('last3f', 0) or 0),
@@ -201,6 +246,10 @@ def _build_base_row(
             'prev_top3_flag':  1.0 if prev.get('result', 0) and prev['result'] <= 3 else 0.0,
             'prev_jockey':     prev.get('jockey', ''),
             'is_jockey_changed': 1.0 if prev.get('jockey') and horse.get('jockey') and prev.get('jockey') != horse.get('jockey') else 0.0,
+            'is_transfer':     is_transfer,
+            'class_drop_flag': class_drop_flag,
+            'first_corner_pos': first_corner_pos,
+            'makuri_flag':     makuri_flag,
         })
     else:
         row.update({
@@ -209,6 +258,10 @@ def _build_base_row(
             'interval_weeks': 0.0, 'prev_top3_flag': 0.0,
             'prev_jockey': '',
             'is_jockey_changed': 0.0,
+            'is_transfer': 0.0,
+            'class_drop_flag': 0.0,
+            'first_corner_pos': 0.0,
+            'makuri_flag': 0.0,
         })
 
     return row

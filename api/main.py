@@ -2,10 +2,10 @@
 api/main.py
 =============================================================================
 Tsuchiya Protocol-Omega API
-24特徴量対応版（前走データ + 騎手・種牡馬・調教師TE + 強化乗り替わり・環境データ追加）
+29特徴量対応版（前走データ + 騎手・種牡馬・調教師TE + 地方競馬特化ファクター追加）
 
 特徴量一覧（順序厳守）:
-  [ベース 11]
+  [ベース 12]
   1.  wakuban            枠番
   2.  umaban             馬番
   3.  kinryo             斤量
@@ -17,39 +17,49 @@ Tsuchiya Protocol-Omega API
   9.  bataiju_zohen      馬体重増減（kg）
   10. cushion_value      クッション値 (デフォルト: 9.5)
   11. moisture           含水率 (デフォルト: 10.0)
+  12. is_roberto_line    Roberto系種牡馬フラグ（1.0=該当, 0.0=非該当）
 
-  [前走 10]
-  12. prev_result        前走着順
-  13. prev_last3f        前走上がり3F（秒）
-  14. prev_time_diff     前走タイム差（1着との差・秒）
-  15. prev_popularity    前走人気
-  16. prev_distance      前走距離（m）
-  17. distance_change    距離変化（今走 - 前走, m）
-  18. interval_weeks     出走間隔（週）
-  19. prev_top3_flag     前走3着以内フラグ（0 or 1）
-  20. is_jockey_changed  乗り替わりフラグ（0=継続, 1=乗り替わり）
-  21. jockey_te_diff     今走と前走の騎手TE勝率の差分（強化乗り替わり指標）
+  [前走・展開 14]
+  13. prev_result        前走着順
+  14. prev_last3f        前走上がり3F（秒）
+  15. prev_time_diff     前走タイム差（1着との差・秒）
+  16. prev_popularity    前走人気
+  17. prev_distance      前走距離（m）
+  18. distance_change    距離変化（今走 - 前走, m）
+  19. interval_weeks     出走間隔（週）
+  20. prev_top3_flag     前走3着以内フラグ（0 or 1）
+  21. is_jockey_changed  乗り替わりフラグ（0=継続, 1=乗り替わり）
+  22. jockey_te_diff     今走と前走の騎手TE勝率の差分（強化乗り替わり指標）
+  23. is_transfer        転入初戦フラグ（前走と競馬場が異なれば1.0）
+  24. class_drop_flag    降級馬フラグ（前走からクラスが落ちていれば1.0）
+  25. first_corner_pos   前走初角順位（例: 3-3-2 なら 3.0）
+  26. makuri_flag        前走マクリフラグ（道中で順位を3つ以上上げたら1.0）
 
   [Target Encoding 3]
-  22. jockey_win_rate_te 騎手×会場の勝率（Target Encoding）
-  23. sire_win_rate_te   種牡馬×会場の勝率（Target Encoding）
-  24. trainer_win_rate_te 調教師×会場の勝率（Target Encoding）
+  27. jockey_win_rate_te 騎手×会場の勝率（Target Encoding）
+  28. sire_win_rate_te   種牡馬×会場の勝率（Target Encoding）
+  29. trainer_win_rate_te 調教師×会場の勝率（Target Encoding）
 =============================================================================
 """
 
+import sys
+import io
+import os
+import glob
+from contextlib import asynccontextmanager
 import lightgbm as lgb
 import numpy as np
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-import os
 
 # =============================================================================
-# アプリ初期化
+# API メタデータ定義
 # =============================================================================
 app = FastAPI(
     title="Tsuchiya Protocol-Omega API",
-    description="24特徴量対応 競馬予測推論エンジン",
-    version="2.2.0"
+    description="29特徴量対応 競馬予測推論エンジン",
+    version="3.0.0"
 )
 
 # =============================================================================
@@ -92,6 +102,7 @@ class HorseFeatures(BaseModel):
     bataiju_zohen:      float = Field(default=0.0, description="馬体重増減（kg）")
     cushion_value:      float = Field(default=9.5, description="クッション値")
     moisture:           float = Field(default=10.0, description="含水率")
+    is_roberto_line:    float = Field(default=0.0, description="Roberto系フラグ")
     # ---- 前走特徴量 ----
     prev_result:        float = Field(default=0.0, description="前走着順（不明=0）")
     prev_last3f:        float = Field(default=0.0, description="前走上がり3F（秒）")
@@ -103,6 +114,10 @@ class HorseFeatures(BaseModel):
     prev_top3_flag:     float = Field(default=0.0, description="前走3着以内フラグ")
     is_jockey_changed:  float = Field(default=0.0, description="乗り替わりフラグ(1=乗替, 0=継続)")
     jockey_te_diff:     float = Field(default=0.0, description="今走と前走の騎手TE勝率差分")
+    is_transfer:        float = Field(default=0.0, description="転入初戦フラグ")
+    class_drop_flag:    float = Field(default=0.0, description="降級馬フラグ")
+    first_corner_pos:   float = Field(default=0.0, description="前走初角位置")
+    makuri_flag:        float = Field(default=0.0, description="前走マクリフラグ")
     # ---- Target Encoding ----
     jockey_win_rate_te: float = Field(default=0.1, description="騎手×会場の勝率（TE）")
     sire_win_rate_te:   float = Field(default=0.1, description="種牡馬×会場の勝率（TE）")
@@ -134,10 +149,11 @@ class PredictionResponse(BaseModel):
 FEATURE_ORDER = [
     'wakuban', 'umaban', 'kinryo', 'tansho', 'ninki',
     'nenrei', 'seibetsu', 'bataiju_base', 'bataiju_zohen',
-    'cushion_value', 'moisture',
+    'cushion_value', 'moisture', 'is_roberto_line',
     'prev_result', 'prev_last3f', 'prev_time_diff', 'prev_popularity',
     'prev_distance', 'distance_change', 'interval_weeks', 'prev_top3_flag',
     'is_jockey_changed', 'jockey_te_diff',
+    'is_transfer', 'class_drop_flag', 'first_corner_pos', 'makuri_flag',
     'jockey_win_rate_te', 'sire_win_rate_te', 'trainer_win_rate_te'
 ]
 
