@@ -12317,4 +12317,57 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779247764183",
+    version: "v312.1",
+    date: "2026-05-20T03:29:24.183Z",
+    description: "新潟 - 好走馬(トリニタリオ等)の特性学習",
+    track: "新潟",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "斎藤 新",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ウインブライト",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weightChange",
+        "operator": "<=",
+        "value": -10,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "石神 深道",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ダノンバラード",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
