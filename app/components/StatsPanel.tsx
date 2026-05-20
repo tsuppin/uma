@@ -142,12 +142,10 @@ export default function StatsPanel({ state }: { state: AppState }) {
           <div className="card-header"><div className="card-title">📋 レース履歴</div></div>
           <table className="horse-table">
             <thead>
-              <tr><th>日付</th><th>競馬場</th><th>レース</th><th>距離</th><th>1着</th><th>的中</th><th>収支</th></tr>
+              <tr><th>日付</th><th>競馬場</th><th>レース</th><th>距離</th><th>1着</th><th>的中</th></tr>
             </thead>
             <tbody>
               {completed.slice().reverse().map(race => {
-                const invested = 1300;
-                const profit = (race.result?.profit || 0) - invested;
                 return (
                   <tr key={race.id}>
                     <td className="fs-sm text-muted">{race.date}</td>
@@ -188,9 +186,6 @@ export default function StatsPanel({ state }: { state: AppState }) {
                         }
                         return <span className="text-muted fs-sm">不的中</span>;
                       })()}
-                    </td>
-                    <td className={`fw-700 ${profit >= 0 ? "text-green" : "text-red"}`}>
-                      {profit >= 0 ? "+" : ""}{profit.toLocaleString()}円
                     </td>
                   </tr>
                 );
