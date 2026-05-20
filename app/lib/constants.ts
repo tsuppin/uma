@@ -12411,4 +12411,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779247843375",
+    version: "v314.1",
+    date: "2026-05-20T03:30:43.375Z",
+    description: "新潟 - 好走馬(シャンハイナイト等)の特性学習",
+    track: "新潟",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "★河原田 菜々",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "シャンハイボビー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
