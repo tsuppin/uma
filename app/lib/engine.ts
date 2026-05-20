@@ -2303,7 +2303,7 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【新設】レース展開シミュレーション（先行争いの激しさ予測）
   // ==========================================
-  const frontRunnersCount = race.horses.filter(h => h.style === '逃げ' || h.style === '先行' || h.style === '好位').length;
+  const frontRunnersCount = (race.horses || []).filter(h => h.style === '逃げ' || h.style === '先行' || h.style === '好位').length;
   const isHighPaceSim = frontRunnersCount >= 6; // 先行馬が多い -> 激戦 -> 差し有利
   // const isSlowPaceSim = frontRunnersCount <= 2; // 先行馬が少ない -> 展開利 -> 逃げ有利
 
@@ -3930,6 +3930,117 @@ export function calculateTsuchiyaScore(
       if (avgPopularity <= 3.0 && lastFailed && isUnderValued) {
         potential += 30;
         tags.push("⚡ 過去走人気トレンドからの巻き返し急襲穴馬");
+      }
+    }
+  }
+
+  // ===================================================
+  // 【新設】地方競馬特化（NAR）共通高度新要因ロジック
+  // ===================================================
+  const isNAR = /(大井|川崎|船橋|浦和|門別|盛岡|水沢|金沢|笠松|名古屋|園田|姫路|高知|佐賀|帯広)/.test(race.venue || race.trackName || race.raceName || '');
+
+  if (isNAR) {
+    tags.push("NAR特化OMEGAエンジン適用中");
+
+    // ---------------------------------------------------
+    // ① 【要素1】地方レース環境（Race）の新要因評価
+    // ---------------------------------------------------
+    // 輸送ストレス判定: 所属（belonging または stableLocation）と開催場（race.venue または trackName）が異なり（長距離遠征）、かつ今回馬体重が減少している（weightChange < 0）場合
+    const horseBelonging = horse.belonging || horse.stableLocation || '';
+    const raceVenue = race.venue || race.trackName || '';
+    if (horseBelonging && raceVenue) {
+      const cleanBelonging = horseBelonging.replace(/(競馬場|厩舎|所属)/g, '').trim();
+      const cleanVenue = raceVenue.replace(/(競馬場|特別|重賞)/g, '').trim();
+      if (cleanBelonging && cleanVenue && !cleanVenue.includes(cleanBelonging) && !cleanBelonging.includes(cleanVenue)) {
+        if (weightChange < 0) {
+          potential -= 15;
+          tags.push("⚠️ 地方遠征輸送ストレス（馬体重減少リスク）");
+        }
+      }
+    }
+
+    // ナイター光・影精神ストレス判定: race.isNight または 発走時刻(startTime)が17時以降の際、出遅れ実績のある馬または3歳以下の若駒
+    const isNightTime = race.isNight || (race.startTime && parseInt(race.startTime.split(':')[0], 10) >= 17);
+    if (isNightTime) {
+      const hasPastStumbled = horse.pastRaces && horse.pastRaces.some(pr => pr.isStumbled);
+      if (hasPastStumbled || age <= 3) {
+        potential -= 10;
+        tags.push("⚠️ ナイター精神ストレス懸念（イレ込み・出遅れ警戒）");
+      }
+    }
+
+    // 夜間ダート砂物理（粘性・冷え込み）適性: 夜間かつ馬場状態が「良」で、馬体重が450kg以下の小柄な馬はペナルティ。逆に500kg以上の大型馬かつ先行脚質は加点。
+    if (isNightTime && condition === '良') {
+      if (weight <= 440 && weight > 0) {
+        potential -= 10;
+        tags.push("⚠️ 夜間冷え込み砂緊縮：小柄馬スタミナ・パワー懸念");
+      } else if (weight >= 500 && /(逃げ|先行|好位)/.test(horse.style || '')) {
+        potential += 15;
+        tags.push("⚡ 夜間冷え込み砂緊縮：大型先行馬パワーアドバンテージ");
+      }
+    }
+
+    // ---------------------------------------------------
+    // ② 【要素2】馬個体（Horse）の新要因評価
+    // ---------------------------------------------------
+    // 南関ヒエラルキーと遠征アドバンテージ: 川崎・浦和開催において、大井・船橋所属の遠征馬は実力レベルの高さを評価
+    if (/(川崎|浦和)/.test(raceVenue)) {
+      if (/(大井|船橋)/.test(horseBelonging)) {
+        potential += 20;
+        tags.push("🌋 南関遠征所属ヒエラルキー適合");
+      }
+    }
+
+    // 砂理学（馬体重×枠順の砂被りキックバック）シナジー:
+    // - 内枠小型馬の砂被り自滅ペナルティ: 馬体重460kg以下の小型馬で、内枠（1〜2枠）かつブリンカー非装着の場合
+    if (weight <= 460 && weight > 0 && frame <= 2 && !horse.useBlinkers) {
+      potential -= 20;
+      tags.push("☔ 砂理学:内枠小型馬の砂被り自滅懸念");
+    }
+    // - 外枠大型馬の砂被り回避＋推進力エッジ: 馬体重500kg以上の大型馬で、外枠（6枠以上）かつ先行脚質
+    if (weight >= 500 && frame >= 6 && /(逃げ|先行|好位)/.test(horse.style || '')) {
+      potential += 25;
+      tags.push("⚡ 砂理学:外枠大型馬の砂被り回避黄金エッジ");
+    }
+
+    // 小回り超スプリント幾何学ボトルネック: 距離が1000m未満（900mや800mなど）の超短距離戦において、内枠（1〜3枠）かつ逃げ・先行脚質は大幅加点。外枠（7枠以上）は減点。
+    if (dist > 0 && dist < 1000) {
+      if (frame <= 3 && /(逃げ|先行)/.test(horse.style || '')) {
+        potential += 35;
+        tags.push("📐 スプリント幾何学:極小回り内枠逃げ先行アドバンテージ");
+      } else if (frame >= 7) {
+        potential -= 25;
+        tags.push("⚠️ スプリント幾何学:極小回り外枠距離ロス壊滅");
+      }
+    }
+
+    // 地方リーディング厩舎×勝負仕上げ
+    const isLeadingTrainer = /(小久保|森下|藤田|荒山|打越|角田|川西|笹野|今津|内田|吉村|高木|新子|田中守|宮川)/.test(horse.trainer || '');
+    if (isLeadingTrainer) {
+      const rating = horse.trainingRating?.toUpperCase();
+      if (rating === 'S' || rating === 'A') {
+        potential += 25;
+        tags.push("🔥 地方リーディング厩舎×勝負仕上げ（メイチ回収）");
+      }
+    }
+
+    // ---------------------------------------------------
+    // ③ 【要素3】過去走履歴（PastRace）の新要因評価
+    // ---------------------------------------------------
+    // 中央（JRA）移籍初戦の過剰人気割引: 中央転入初戦かつ単勝2.5倍以下の過剰人気馬
+    const isJRATransferFirst = horse.transferFrom === 'JRA' || horse.isTransferFirstRace || false;
+    if (isJRATransferFirst && odds <= 2.5) {
+      potential -= 15;
+      tags.push("⚠️ JRA移籍初戦の過剰人気割引（地方砂不確実性）");
+    }
+
+    // 中央移籍2戦目の期待値乖離（大化け穴馬）
+    if (horse.pastRaces && horse.pastRaces.length >= 2) {
+      const isSecondRaceAfterTransfer = !isJRATransferFirst && horse.pastRaces[0] && horse.pastRaces[0].result >= 6;
+      const hasJRAHistory = horse.pastRaces.slice(1).some(pr => /(東京|中山|京都|阪神|中京|新潟|小倉|福島|函館|札幌)/.test(pr.venue || ''));
+      if (isSecondRaceAfterTransfer && hasJRAHistory && odds >= 6.0) {
+        potential += 30;
+        tags.push("🌀 移籍2戦目:オッズ急落による大化け激走期待値");
       }
     }
   }

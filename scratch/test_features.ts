@@ -1043,6 +1043,7 @@ const jraTestCases = [
   { horse: horseTrendAnama, race: jraSummerRace, desc: "⑥ 過去走対戦馬レベル高(+25)＆基準タイム超え(+25)＆直近人気トレンド巻き返し穴馬(+30)" }
 ];
 
+console.log("=== JRA特化OMEGAエンジンテスト開始 ===");
 jraTestCases.forEach(({ horse, race, desc }) => {
   console.log(`\n--------------------------------------------`);
   console.log(`テストケース: ${desc}`);
@@ -1056,4 +1057,466 @@ jraTestCases.forEach(({ horse, race, desc }) => {
   prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
 });
 
+// ===================================================
+// 【新設】地方競馬（NAR）共通高度要因テストデータ定義
+// ===================================================
+
+// レース定義
+const narKawasakiNightRace = {
+  id: "nar-kawa-01",
+  date: "2026-05-20",
+  venue: "川崎競馬場",
+  raceNumber: 11,
+  raceName: "スパーキングサマーカップ",
+  distance: 1600,
+  surface: "ダート" as const,
+  condition: "良" as const,
+  headCount: 12,
+  trackName: "川崎",
+  isNight: true,
+  startTime: "20:10",
+  horses: []
+};
+
+const narOoiNightRace = {
+  id: "nar-ooi-01",
+  date: "2026-05-21",
+  venue: "大井競馬場",
+  raceNumber: 11,
+  raceName: "東京ダービー",
+  distance: 2000,
+  surface: "ダート" as const,
+  condition: "良" as const,
+  headCount: 14,
+  trackName: "大井",
+  isNight: true,
+  startTime: "20:00",
+  horses: []
+};
+
+const narKawasakiSprintRace = {
+  id: "nar-kawa-sprint",
+  date: "2026-05-22",
+  venue: "川崎競馬場",
+  raceNumber: 10,
+  raceName: "スプリント特別",
+  distance: 900,
+  surface: "ダート" as const,
+  condition: "良" as const,
+  headCount: 12,
+  trackName: "川崎",
+  isNight: false,
+  startTime: "16:30",
+  horses: []
+};
+
+const narUrawaDayRace = {
+  id: "nar-urawa-01",
+  date: "2026-05-23",
+  venue: "浦和競馬場",
+  raceNumber: 11,
+  raceName: "さきたま杯",
+  distance: 1400,
+  surface: "ダート" as const,
+  condition: "良" as const,
+  headCount: 12,
+  trackName: "浦和",
+  isNight: false,
+  startTime: "16:00",
+  horses: []
+};
+
+// 馬定義
+// 1. 地方遠征・輸送ストレス馬（門別から川崎へ遠征、馬体重減、3歳若駒でナイターストレス、リーディング打越厩舎で調教A）
+const horseNarBelongingStress = {
+  id: "nar-h1",
+  number: 5,
+  frame: 4,
+  name: "ホッカイドウオウジャ",
+  belonging: "門別競馬場",
+  age: 3,
+  gender: "牡" as const,
+  weight: 430,
+  weightChange: -10,
+  jockey: "落合玄太",
+  jockeyWeight: 56,
+  trainer: "打越勇児",
+  owner: "地方馬主連合",
+  sire: "ゴールドシップ",
+  dam: "マザーレイク",
+  bms: "キングカメハメハ",
+  bloodline: "サンデーサイレンス系",
+  style: "好位" as const,
+  odds: 4.5,
+  popularity: 2,
+  trainingRating: "A",
+  pastRaces: [
+    {
+      date: "2026-04-15",
+      venue: "門別",
+      raceName: "北斗盃",
+      raceClass: "重賞",
+      distance: 1600,
+      surface: "ダート" as const,
+      condition: "良" as const,
+      result: 1,
+      time: "1:42.5",
+      corner4Position: 2,
+      cornerOuterCount: 1,
+      weight: 440,
+      jockey: "落合玄太",
+      odds: 1.8,
+      prize: 500
+    }
+  ]
+};
+
+// 2. 砂理学・内枠小型馬（大井1枠1番、440kg、ブリンカー無、砂被り懸念、他地区所属なしで輸送ストレスはなし）
+const horseNarSandSmallInner = {
+  id: "nar-h2",
+  number: 1,
+  frame: 1,
+  name: "スナカブリプティ",
+  belonging: "大井競馬場",
+  age: 4,
+  gender: "牝" as const,
+  weight: 435,
+  weightChange: 2,
+  jockey: "矢野貴之",
+  jockeyWeight: 54,
+  trainer: "荒山沙",
+  owner: "砂理学オーナー",
+  sire: "ヘニーヒューズ",
+  dam: "サンドクィーン",
+  bms: "アグネスタキオン",
+  bloodline: "ストームキャット系",
+  style: "好位" as const,
+  odds: 12.0,
+  popularity: 5,
+  pastRaces: [
+    {
+      date: "2026-04-20",
+      venue: "大井",
+      raceName: "一般戦",
+      raceClass: "B2",
+      distance: 1600,
+      surface: "ダート" as const,
+      condition: "良" as const,
+      result: 4,
+      time: "1:41.8",
+      corner4Position: 4,
+      cornerOuterCount: 1,
+      weight: 433,
+      jockey: "矢野貴之",
+      odds: 5.5,
+      prize: 80
+    }
+  ]
+};
+
+// 3. 砂理学・外枠大型馬（大井8枠12番、520kg、先行脚質、砂被り回避エッジ、ナイター大型先行馬加点）
+const horseNarSandBigOuter = {
+  id: "nar-h3",
+  number: 12,
+  frame: 8,
+  name: "キングオブダート",
+  belonging: "大井競馬場",
+  age: 5,
+  gender: "牡" as const,
+  weight: 525,
+  weightChange: 0,
+  jockey: "森泰斗",
+  jockeyWeight: 57,
+  trainer: "藤田輝",
+  owner: "ゴールドダート",
+  sire: "シニスターミニスター",
+  dam: "マッシヴパワー",
+  bms: "クロフネ",
+  bloodline: "ボールドルーラー系",
+  style: "先行" as const,
+  odds: 3.2,
+  popularity: 1,
+  pastRaces: [
+    {
+      date: "2026-04-21",
+      venue: "大井",
+      raceName: "大井記念",
+      raceClass: "重賞",
+      distance: 2000,
+      surface: "ダート" as const,
+      condition: "良" as const,
+      result: 2,
+      time: "2:06.5",
+      corner4Position: 2,
+      cornerOuterCount: 2,
+      weight: 525,
+      jockey: "森泰斗",
+      odds: 2.5,
+      prize: 400
+    }
+  ]
+};
+
+// 4. 南関ヒエラルキー遠征馬（川崎開催で大井所属の遠征馬）
+const horseNarHierarchyNankan = {
+  id: "nar-h4",
+  number: 8,
+  frame: 6,
+  name: "オオイノハシャ",
+  belonging: "大井競馬場",
+  age: 4,
+  gender: "牡" as const,
+  weight: 480,
+  weightChange: 2,
+  jockey: "笹川翼",
+  jockeyWeight: 56,
+  trainer: "小久保智",
+  owner: "南関エリート",
+  sire: "ロードカナロア",
+  dam: "サザンクロス",
+  bms: "スペシャルウィーク",
+  bloodline: "キングマンボ系",
+  style: "先行" as const,
+  odds: 2.1,
+  popularity: 1,
+  trainingRating: "S",
+  pastRaces: [
+    {
+      date: "2026-04-22",
+      venue: "大井",
+      raceName: "羽田盃",
+      raceClass: "重賞",
+      distance: 1800,
+      surface: "ダート" as const,
+      condition: "良" as const,
+      result: 1,
+      time: "1:53.2",
+      corner4Position: 3,
+      cornerOuterCount: 1,
+      weight: 478,
+      jockey: "笹川翼",
+      odds: 1.9,
+      prize: 1000
+    }
+  ]
+};
+
+// 5. 小回り超スプリント幾何学・内枠逃げ馬 (川崎900m、1枠1番、逃げ脚質)
+const horseNarSprintInnerEscape = {
+  id: "nar-h5",
+  number: 1,
+  frame: 1,
+  name: "スプリントエクスプレス",
+  belonging: "川崎競馬場",
+  age: 4,
+  gender: "牡" as const,
+  weight: 470,
+  weightChange: -2,
+  jockey: "山崎誠士",
+  jockeyWeight: 56,
+  trainer: "内田勝",
+  owner: "スピード狂",
+  sire: "サウスヴィグラス",
+  dam: "クイックショット",
+  bms: "タイキシャトル",
+  bloodline: "フォーティナイナー系",
+  style: "逃げ" as const,
+  odds: 3.5,
+  popularity: 2,
+  pastRaces: [
+    {
+      date: "2026-04-10",
+      venue: "川崎",
+      raceName: "スプリント一般",
+      raceClass: "A2",
+      distance: 900,
+      surface: "ダート" as const,
+      condition: "良" as const,
+      result: 1,
+      time: "0:53.5",
+      corner4Position: 1,
+      cornerOuterCount: 1,
+      weight: 472,
+      jockey: "山崎誠士",
+      odds: 2.4,
+      prize: 300
+    }
+  ]
+};
+
+// 6. 小回り超スプリント幾何学・外枠差し馬 (川崎900m、8枠12番、差し脚質)
+const horseNarSprintOuterInsert = {
+  id: "nar-h6",
+  number: 12,
+  frame: 8,
+  name: "スプリントチャレンジャー",
+  belonging: "川崎競馬場",
+  age: 4,
+  gender: "牡" as const,
+  weight: 475,
+  weightChange: 4,
+  jockey: "町田直希",
+  jockeyWeight: 56,
+  trainer: "今津博",
+  owner: "大外一気",
+  sire: "サウスヴィグラス",
+  dam: "チェイシングドリーム",
+  bms: "ディープインパクト",
+  bloodline: "フォーティナイナー系",
+  style: "差し" as const,
+  odds: 15.0,
+  popularity: 7,
+  pastRaces: [
+    {
+      date: "2026-04-10",
+      venue: "川崎",
+      raceName: "スプリント一般",
+      raceClass: "A2",
+      distance: 900,
+      surface: "ダート" as const,
+      condition: "良" as const,
+      result: 4,
+      time: "0:54.2",
+      corner4Position: 8,
+      cornerOuterCount: 3,
+      weight: 471,
+      jockey: "町田直希",
+      odds: 12.0,
+      prize: 40
+    }
+  ]
+};
+
+// 7. JRA移籍初戦過剰人気割引馬 (転入初戦、単勝1.8倍)
+const horseNarJraTransferFirst = {
+  id: "nar-h7",
+  number: 3,
+  frame: 2,
+  name: "ジェイアールエース",
+  transferFrom: "JRA",
+  isTransferFirstRace: true,
+  age: 3,
+  gender: "牡" as const,
+  weight: 490,
+  weightChange: 0,
+  jockey: "御神本訓",
+  jockeyWeight: 56,
+  trainer: "吉村寛",
+  owner: "転入クラブ",
+  sire: "ロードカナロア",
+  dam: "エリートレディ",
+  bms: "ハーツクライ",
+  bloodline: "キングマンボ系",
+  style: "先行" as const,
+  odds: 1.8,
+  popularity: 1,
+  pastRaces: [
+    {
+      date: "2026-03-20",
+      venue: "中山",
+      raceName: "3歳未勝利",
+      raceClass: "未勝利",
+      distance: 1800,
+      surface: "芝" as const,
+      condition: "良" as const,
+      result: 2,
+      time: "1:52.5",
+      corner4Position: 3,
+      cornerOuterCount: 1,
+      weight: 490,
+      jockey: "ルメール",
+      odds: 2.1,
+      prize: 200
+    }
+  ]
+};
+
+// 8. JRA移籍2戦目大化け期待値馬 (前走移籍初戦で8着大敗、前々走以前JRA、今回単勝オッズ8.5倍に下落)
+const horseNarJraTransferSecond = {
+  id: "nar-h8",
+  number: 6,
+  frame: 4,
+  name: "オオバケロマン",
+  age: 4,
+  gender: "セ" as any, // セン
+  weight: 470,
+  weightChange: 4,
+  jockey: "吉原寛人",
+  jockeyWeight: 56,
+  trainer: "打越勇児",
+  owner: "大化けロマン",
+  sire: "ディープインパクト",
+  dam: "ロマンシーカー",
+  bms: "フレンチデピュティ",
+  bloodline: "サンデーサイレンス系",
+  style: "差し" as const,
+  odds: 8.5,
+  popularity: 4,
+  pastRaces: [
+    {
+      date: "2026-04-20",
+      venue: "川崎",
+      raceName: "一般戦",
+      raceClass: "B3",
+      distance: 1500,
+      surface: "ダート" as const,
+      condition: "良" as const,
+      result: 8, // 移籍初戦は大敗
+      time: "1:38.5",
+      corner4Position: 9,
+      cornerOuterCount: 2,
+      weight: 466,
+      jockey: "山崎誠士",
+      odds: 2.8,
+      prize: 0
+    },
+    {
+      date: "2026-02-15",
+      venue: "東京",
+      raceName: "4歳上1勝クラス",
+      raceClass: "1勝",
+      distance: 1600,
+      surface: "ダート" as const,
+      condition: "良" as const,
+      result: 10,
+      time: "1:38.2",
+      corner4Position: 12,
+      cornerOuterCount: 3,
+      weight: 472,
+      jockey: "戸崎圭太",
+      odds: 12.5,
+      prize: 0
+    }
+  ]
+};
+
+const narTestCases = [
+  { horse: horseNarBelongingStress, race: narKawasakiNightRace, desc: "① 地方遠征輸送ストレス(-15) & 若駒ナイターストレス(-10) & リーディング厩舎勝負仕上げ(+25)" },
+  { horse: horseNarSandSmallInner, race: narOoiNightRace, desc: "② 砂理学:内枠小型馬の砂被り自滅懸念(-20) & 夜間小柄馬パワー懸念(-10)" },
+  { horse: horseNarSandBigOuter, race: narOoiNightRace, desc: "③ 砂理学:外枠大型馬の砂被り回避黄金エッジ(+25) & 夜間大型先行馬パワー加点(+15)" },
+  { horse: horseNarHierarchyNankan, race: narKawasakiNightRace, desc: "④ 南関遠征所属ヒエラルキー適合(+20) & リーディング厩舎勝負仕上げ(+25)" },
+  { horse: horseNarSprintInnerEscape, race: narKawasakiSprintRace, desc: "⑤ スプリント幾何学:極小回り内枠逃げ先行アドバンテージ(+35)" },
+  { horse: horseNarSprintOuterInsert, race: narKawasakiSprintRace, desc: "⑥ スプリント幾何学:極小回り外枠距離ロス壊滅(-25)" },
+  { horse: horseNarJraTransferFirst, race: narUrawaDayRace, desc: "⑦ JRA移籍初戦の過剰人気割引(-15)" },
+  { horse: horseNarJraTransferSecond, race: narUrawaDayRace, desc: "⑧ JRA移籍2戦目:オッズ急落による大化け激走期待値(+30) & リーディング厩舎勝負仕上げ(+25)" }
+];
+
+console.log("\n============================================");
+console.log("=== NAR特化OMEGAエンジンテスト開始 ===");
+console.log("============================================");
+
+narTestCases.forEach(({ horse, race, desc }) => {
+  console.log(`\n--------------------------------------------`);
+  console.log(`テストケース: ${desc}`);
+  console.log(`馬名: ${horse.name} (所属: ${horse.belonging || '不明'}, 性別: ${horse.gender}, 馬体重: ${horse.weight}kg, 枠: ${horse.frame}, 単勝オッズ: ${horse.odds})`);
+  if (horse.pastRaces && horse.pastRaces[0]) {
+    console.log(`前走着順: ${horse.pastRaces[0].result} (開催場: ${horse.pastRaces[0].venue})`);
+  }
+  const prediction = calculateTsuchiyaScore(horse as any, race as any, [], { horses: {}, jockeys: {} });
+  console.log(`ポテンシャルスコア: ${prediction.potential}`);
+  console.log(`付与された適性タグ (aptitudeTags):`);
+  prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
+});
+
 console.log("\n=== 全テスト完了 ===");
+
