@@ -12235,4 +12235,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779247671887",
+    version: "v310.1",
+    date: "2026-05-20T03:27:51.887Z",
+    description: "新潟 - 好走馬(バンオンタイム等)の特性学習",
+    track: "新潟",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "舟山 瑠泉",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ロードカナロア",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "武藤 雅",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "コパノリッキー",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
