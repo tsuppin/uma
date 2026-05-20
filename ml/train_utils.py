@@ -264,8 +264,9 @@ def add_trainer_target_encoding(
 BASE_FEATURES = [
     '枠番', '馬番', '斤量', '単勝', '人気',
     '年齢', '性別', '馬体重_base', '馬体重_増減',
+    'kinryo_weight_ratio', 'race_month',
     'cushion_value', 'moisture',
-    'is_roberto_line'    # Roberto系フラグ
+    'is_roberto_line', 'is_heavy_track_sire'
 ]
 
 # 追加された前走・展開特徴量
@@ -293,7 +294,7 @@ TARGET_ENCODING_FEATURES = [
     'trainer_win_rate_te', # 調教師×場所 勝率
 ]
 
-# 全特徴量（合計29）
+# 全特徴量（合計32）
 ALL_FEATURES = BASE_FEATURES + PREV_RACE_FEATURES + TARGET_ENCODING_FEATURES
 
 
@@ -347,16 +348,33 @@ def preprocess_common(df: pd.DataFrame) -> pd.DataFrame:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
             
-    # 環境データのNaN補完
-    if 'cushion_value' in df.columns:
-        df['cushion_value'] = df['cushion_value'].fillna(9.5)
-    else:
+    # ---- 環境データ等のフォールバック --------------------------
+    if 'cushion_value' not in df.columns:
         df['cushion_value'] = 9.5
-        
-    if 'moisture' in df.columns:
-        df['moisture'] = df['moisture'].fillna(10.0)
     else:
+        df['cushion_value'] = df['cushion_value'].fillna(9.5)
+
+    if 'moisture' not in df.columns:
         df['moisture'] = 10.0
+    else:
+        df['moisture'] = df['moisture'].fillna(10.0)
+
+    # ---- 物理環境ファクターのフォールバック --------------------------
+    if 'kinryo_weight_ratio' not in df.columns:
+        # 斤量と馬体重カラムがあれば計算、なければ平均的な0.114
+        if '斤量' in df.columns and '馬体重_base' in df.columns:
+            df['kinryo_weight_ratio'] = df['斤量'] / df['馬体重_base'].replace(0, 480)
+        else:
+            df['kinryo_weight_ratio'] = 0.114
+            
+    if 'race_month' not in df.columns:
+        df['race_month'] = 6.0
+        
+    if 'is_roberto_line' not in df.columns:
+        df['is_roberto_line'] = 0.0
+        
+    if 'is_heavy_track_sire' not in df.columns:
+        df['is_heavy_track_sire'] = 0.0
 
     # 性別の数値化
     if '性別' in df.columns:
@@ -555,8 +573,10 @@ def load_training_df_from_text_dir(
 # （以下 元のコメント）
 
 if __name__ == "__main__":
+    import numpy as np
     print("=== train_utils.py 単体テスト ===\n")
 
+    n = 10
     # ダミーデータでテスト
     dummy = pd.DataFrame({
         '着順':      [1, 2, 3, 4, 5, 6, 1, 2, 3, 10],

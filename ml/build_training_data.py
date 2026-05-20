@@ -55,6 +55,14 @@ ROBERTO_SIRES = [
     "ゴールドアクター", "リオンディーズ", "ルヴァンスレーヴ"
 ]
 
+# 道悪パワー型種牡馬（湿潤馬場・含水率が高い時に激走）
+HEAVY_TRACK_SIRES = [
+    "ゴールドアリュール", "クロフネ", "ドレフォン", "マインドユアビスケッツ",
+    "シニスターミニスター", "パイロ", "サウスヴィグラス", "ヘニーヒューズ",
+    "エスポワールシチー", "スマートファルコン", "ホッコータルマエ",
+    "コパノリッキー", "マジェスティックウォリアー"
+]
+
 # =============================================================================
 # 1. 1頭分の特徴量辞書を生成する関数
 # =============================================================================
@@ -184,12 +192,14 @@ def _build_base_row(
         '性別':          float(GENDER_VALUES.get(horse.get('gender', '牡'), 0)),
         '馬体重_base':   float(horse.get('weight', 480) or 480),
         '馬体重_増減':   float(horse.get('weight_chg', 0) or 0),
+        'kinryo_weight_ratio': float(horse.get('kinryo', 55.0) or 55.0) / float(horse.get('weight', 480) or 480) if float(horse.get('weight', 480) or 480) > 0 else 0.11,
 
         # レース条件
         '距離':          float(race_info.get('distance', 0) or 0),
         '馬場':          float(SURFACE_VALUES.get(race_info.get('surface', 'ダート'), 1)),
         '馬場状態':      float(CONDITION_VALUES.get(race_info.get('condition', '良'), 0)),
         '頭数':          float(race_info.get('head_count', 0) or 0),
+        'race_month':    float(race_date_obj.month) if race_date_obj else 6.0,
         
         # 環境データ
         'cushion_value': float(race_info.get('cushion_value') or float('nan')),
@@ -197,6 +207,7 @@ def _build_base_row(
         
         # 血統系統フラグ
         'is_roberto_line': 1.0 if horse.get('sire') in ROBERTO_SIRES else 0.0,
+        'is_heavy_track_sire': 1.0 if horse.get('sire') in HEAVY_TRACK_SIRES else 0.0,
     }
 
     # --- 前走特徴量 (8個) ---

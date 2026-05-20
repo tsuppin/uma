@@ -2,10 +2,10 @@
 api/main.py
 =============================================================================
 Tsuchiya Protocol-Omega API
-29特徴量対応版（前走データ + 騎手・種牡馬・調教師TE + 地方競馬特化ファクター追加）
+32特徴量対応版（前走データ + 騎手・種牡馬・調教師TE + 地方競馬特化ファクター + 物理環境ファクター追加）
 
 特徴量一覧（順序厳守）:
-  [ベース 12]
+  [ベース 15]
   1.  wakuban            枠番
   2.  umaban             馬番
   3.  kinryo             斤量
@@ -15,30 +15,33 @@ Tsuchiya Protocol-Omega API
   7.  seibetsu           性別 (牡=0, 牝=1, セン=2)
   8.  bataiju_base       馬体重（kg）
   9.  bataiju_zohen      馬体重増減（kg）
-  10. cushion_value      クッション値 (デフォルト: 9.5)
-  11. moisture           含水率 (デフォルト: 10.0)
-  12. is_roberto_line    Roberto系種牡馬フラグ（1.0=該当, 0.0=非該当）
+  10. kinryo_weight_ratio 斤量体重比（斤量 / 馬体重）
+  11. race_month         出走月（1〜12）
+  12. cushion_value      クッション値 (デフォルト: 9.5)
+  13. moisture           含水率 (デフォルト: 10.0)
+  14. is_roberto_line    Roberto系種牡馬フラグ（1.0=該当, 0.0=非該当）
+  15. is_heavy_track_sire 道悪パワー型種牡馬フラグ（1.0=該当, 0.0=非該当）
 
   [前走・展開 14]
-  13. prev_result        前走着順
-  14. prev_last3f        前走上がり3F（秒）
-  15. prev_time_diff     前走タイム差（1着との差・秒）
-  16. prev_popularity    前走人気
-  17. prev_distance      前走距離（m）
-  18. distance_change    距離変化（今走 - 前走, m）
-  19. interval_weeks     出走間隔（週）
-  20. prev_top3_flag     前走3着以内フラグ（0 or 1）
-  21. is_jockey_changed  乗り替わりフラグ（0=継続, 1=乗り替わり）
-  22. jockey_te_diff     今走と前走の騎手TE勝率の差分（強化乗り替わり指標）
-  23. is_transfer        転入初戦フラグ（前走と競馬場が異なれば1.0）
-  24. class_drop_flag    降級馬フラグ（前走からクラスが落ちていれば1.0）
-  25. first_corner_pos   前走初角順位（例: 3-3-2 なら 3.0）
-  26. makuri_flag        前走マクリフラグ（道中で順位を3つ以上上げたら1.0）
+  16. prev_result        前走着順
+  17. prev_last3f        前走上がり3F（秒）
+  18. prev_time_diff     前走タイム差（1着との差・秒）
+  19. prev_popularity    前走人気
+  20. prev_distance      前走距離（m）
+  21. distance_change    距離変化（今走 - 前走, m）
+  22. interval_weeks     出走間隔（週）
+  23. prev_top3_flag     前走3着以内フラグ（0 or 1）
+  24. is_jockey_changed  乗り替わりフラグ（0=継続, 1=乗り替わり）
+  25. jockey_te_diff     今走と前走の騎手TE勝率の差分（強化乗り替わり指標）
+  26. is_transfer        転入初戦フラグ（前走と競馬場が異なれば1.0）
+  27. class_drop_flag    降級馬フラグ（前走からクラスが落ちていれば1.0）
+  28. first_corner_pos   前走初角順位（例: 3-3-2 なら 3.0）
+  29. makuri_flag        前走マクリフラグ（道中で順位を3つ以上上げたら1.0）
 
   [Target Encoding 3]
-  27. jockey_win_rate_te 騎手×会場の勝率（Target Encoding）
-  28. sire_win_rate_te   種牡馬×会場の勝率（Target Encoding）
-  29. trainer_win_rate_te 調教師×会場の勝率（Target Encoding）
+  30. jockey_win_rate_te 騎手×会場の勝率（Target Encoding）
+  31. sire_win_rate_te   種牡馬×会場の勝率（Target Encoding）
+  32. trainer_win_rate_te 調教師×会場の勝率（Target Encoding）
 =============================================================================
 """
 
@@ -58,8 +61,8 @@ from pydantic import BaseModel, Field
 # =============================================================================
 app = FastAPI(
     title="Tsuchiya Protocol-Omega API",
-    description="29特徴量対応 競馬予測推論エンジン",
-    version="3.0.0"
+    description="32特徴量対応 競馬予測推論エンジン",
+    version="4.0.0"
 )
 
 # =============================================================================
@@ -100,9 +103,12 @@ class HorseFeatures(BaseModel):
     seibetsu:           float = Field(default=0.0, description="性別: 牡=0, 牝=1, セン=2")
     bataiju_base:       float = Field(default=480.0, description="馬体重（kg）")
     bataiju_zohen:      float = Field(default=0.0, description="馬体重増減（kg）")
+    kinryo_weight_ratio: float = Field(default=0.114, description="斤量体重比")
+    race_month:         float = Field(default=6.0, description="出走月")
     cushion_value:      float = Field(default=9.5, description="クッション値")
     moisture:           float = Field(default=10.0, description="含水率")
     is_roberto_line:    float = Field(default=0.0, description="Roberto系フラグ")
+    is_heavy_track_sire: float = Field(default=0.0, description="道悪パワー型種牡馬フラグ")
     # ---- 前走特徴量 ----
     prev_result:        float = Field(default=0.0, description="前走着順（不明=0）")
     prev_last3f:        float = Field(default=0.0, description="前走上がり3F（秒）")
@@ -149,7 +155,9 @@ class PredictionResponse(BaseModel):
 FEATURE_ORDER = [
     'wakuban', 'umaban', 'kinryo', 'tansho', 'ninki',
     'nenrei', 'seibetsu', 'bataiju_base', 'bataiju_zohen',
-    'cushion_value', 'moisture', 'is_roberto_line',
+    'kinryo_weight_ratio', 'race_month',
+    'cushion_value', 'moisture',
+    'is_roberto_line', 'is_heavy_track_sire',
     'prev_result', 'prev_last3f', 'prev_time_diff', 'prev_popularity',
     'prev_distance', 'distance_change', 'interval_weeks', 'prev_top3_flag',
     'is_jockey_changed', 'jockey_te_diff',
