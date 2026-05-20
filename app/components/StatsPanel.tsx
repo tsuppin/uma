@@ -105,7 +105,6 @@ export default function StatsPanel({ state }: { state: AppState }) {
                 <th>競馬場</th>
                 <th>レース数</th>
                 <th>的中数</th>
-                <th>的中率</th>
                 <th>三連複</th>
                 <th>三連単</th>
                 <th>馬連</th>
@@ -114,7 +113,6 @@ export default function StatsPanel({ state }: { state: AppState }) {
             </thead>
             <tbody>
               {Object.entries(venueStats).map(([venue, s]) => {
-                const hitRate = s.total > 0 ? s.hit / s.total : 0;
                 const trioRate = s.total > 0 ? s.trio / s.total : 0;
                 const trifectaRate = s.total > 0 ? s.trifecta / s.total : 0;
                 const quinellaRate = s.total > 0 ? s.quinella / s.total : 0;
@@ -124,7 +122,6 @@ export default function StatsPanel({ state }: { state: AppState }) {
                     <td className="fw-600">{venue}</td>
                     <td>{s.total}</td>
                     <td className="text-green fw-700">{s.hit}</td>
-                    <td>{(hitRate * 100).toFixed(1)}%</td>
                     <td>{(trioRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trio})</span></td>
                     <td>{(trifectaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trifecta})</span></td>
                     <td>{(quinellaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.quinella})</span></td>
