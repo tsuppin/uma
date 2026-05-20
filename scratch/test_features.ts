@@ -538,4 +538,268 @@ kyotoTestHorses.forEach(({ horse, race, desc }) => {
   prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
 });
 
+console.log("\n=== 新潟競馬場 的中精度極限先鋭化テスト開始 ===");
+
+// 1. 新潟レースデータ
+const niigataChokuRace: Race = {
+  id: "niigata-test-choku",
+  date: "2026-05-20",
+  venue: "新潟",
+  raceNumber: 11,
+  raceName: "駿風ステークス",
+  distance: 1000,
+  surface: "芝",
+  condition: "良",
+  headCount: 16,
+  trackName: "新潟",
+  horses: []
+};
+
+const niigataOuterTurfRace: Race = {
+  id: "niigata-test-outer-turf",
+  date: "2026-05-20",
+  venue: "新潟",
+  raceNumber: 10,
+  raceName: "佐渡ステークス",
+  distance: 1800, // 外回り
+  surface: "芝",
+  condition: "良",
+  headCount: 14,
+  trackName: "新潟",
+  horses: []
+};
+
+const niigataFinalWeekRace: Race = {
+  id: "niigata-test-final-week",
+  date: "2026-09-06", // 新潟記念
+  venue: "新潟",
+  raceNumber: 11,
+  raceName: "新潟記念",
+  distance: 2000,
+  surface: "芝",
+  condition: "良",
+  headCount: 18,
+  trackName: "新潟",
+  horses: []
+};
+
+const niigataDirt1200Race: Race = {
+  id: "niigata-test-dirt-1200",
+  date: "2026-05-20",
+  venue: "新潟",
+  raceNumber: 8,
+  raceName: "4歳以上1勝クラス",
+  distance: 1200,
+  surface: "ダート",
+  condition: "良",
+  headCount: 15,
+  trackName: "新潟",
+  horses: []
+};
+
+const niigataDirt1800SummerRace: Race = {
+  id: "niigata-test-dirt-1800-summer",
+  date: "2026-08-15", // 夏開催
+  venue: "新潟",
+  raceNumber: 9,
+  raceName: "麒麟山特別",
+  distance: 1800,
+  surface: "ダート",
+  condition: "良",
+  headCount: 15,
+  trackName: "新潟",
+  horses: []
+};
+
+const niigataDirt1800AutumnRace: Race = {
+  id: "niigata-test-dirt-1800-autumn",
+  date: "2026-10-15", // 秋開催
+  venue: "新潟",
+  raceNumber: 9,
+  raceName: "北陸ステークス",
+  distance: 1800,
+  surface: "ダート",
+  condition: "稍重",
+  headCount: 15,
+  trackName: "新潟",
+  horses: []
+};
+
+// 2. 馬データ
+// ① 新潟千直：大幅距離短縮ローテ×斤量減
+const horseNiigataChoku: Horse = {
+  id: "niigata-choku",
+  number: 1,
+  frame: 8,
+  name: "センチョクキング",
+  age: 4,
+  gender: "牡",
+  weight: 480,
+  weightChange: 0,
+  jockey: "戸崎圭太",
+  jockeyWeight: 54, // 今回54kg
+  sire: "ロードカナロア",
+  bloodline: "キングカメハメハ系",
+  style: "先行",
+  odds: 3.5,
+  popularity: 2,
+  pastRaces: [
+    {
+      date: "2026-04-20",
+      venue: "東京",
+      raceName: "府中S",
+      raceClass: "3勝クラス",
+      distance: 1600, // 前走1600m (1500m以上)
+      surface: "芝",
+      condition: "良",
+      result: 4,
+      time: "1:33.2",
+      corner4Position: 3,
+      cornerOuterCount: 1,
+      weight: 480,
+      jockeyWeight: 56, // 前走56kg
+      jockey: "戸崎圭太",
+      odds: 5.0
+    }
+  ]
+};
+
+// ② 新潟芝外回り：人気薄逃げ馬スロー逃げ残り
+const horseNiigataOuterTurf: Horse = {
+  id: "niigata-outer-turf",
+  number: 2,
+  frame: 6,
+  name: "オオマワリニゲ",
+  age: 5,
+  gender: "牡",
+  weight: 470,
+  weightChange: 2,
+  jockey: "坂井瑠星",
+  jockeyWeight: 57,
+  sire: "キズナ",
+  bloodline: "サンデーサイレンス系",
+  style: "逃げ",
+  odds: 15.0, // 人気薄
+  popularity: 7, // 7番人気
+  pastRaces: []
+};
+
+// ③ 新潟最終週外回り：全車外出しの逆張りイン突き
+const horseNiigataFinalWeek: Horse = {
+  id: "niigata-final-week",
+  number: 3,
+  frame: 2, // 内枠
+  name: "サイシュウインツキ",
+  age: 5,
+  gender: "牡",
+  weight: 490,
+  weightChange: 0,
+  jockey: "岩田康誠",
+  jockeyWeight: 57,
+  sire: "ハーツクライ",
+  bloodline: "サンデーサイレンス系",
+  style: "差し",
+  odds: 8.5,
+  popularity: 4,
+  pastRaces: []
+};
+
+// ④ 新潟ダ1200m：芝スタート外枠×快速牝馬逃げの最強スピードシナジー
+const horseNiigataDirt1200: Horse = {
+  id: "niigata-dirt-1200",
+  number: 4,
+  frame: 7, // 外枠
+  name: "ダートクイーン",
+  age: 4,
+  gender: "牝", // 牝馬
+  weight: 460,
+  weightChange: 2,
+  jockey: "武豊",
+  jockeyWeight: 55,
+  sire: "ヘニーヒューズ",
+  bloodline: "ストームキャット系",
+  style: "逃げ", // 逃げ
+  odds: 4.2,
+  popularity: 2,
+  pastRaces: []
+};
+
+// ⑤ 新潟ダ1800m夏良馬場：スタミナ要求さらさら砂×距離延長・外枠エッジ
+const horseNiigataDirt1800Summer: Horse = {
+  id: "niigata-dirt-1800-summer",
+  number: 5,
+  frame: 8, // 外枠
+  name: "サマーデザート",
+  age: 4,
+  gender: "牡",
+  weight: 500,
+  weightChange: 4,
+  jockey: "ルメール",
+  jockeyWeight: 57,
+  sire: "シニスターミニスター",
+  bloodline: "エーピーインディ系",
+  style: "先行",
+  odds: 3.2,
+  popularity: 1,
+  pastRaces: [
+    {
+      date: "2026-07-10",
+      venue: "中京",
+      raceName: "3歳以上1勝クラス",
+      raceClass: "1勝",
+      distance: 1400, // 距離延長 (1400 -> 1800)
+      surface: "ダート",
+      condition: "良",
+      result: 3,
+      time: "1:25.5",
+      corner4Position: 2,
+      cornerOuterCount: 1,
+      weight: 496,
+      jockeyWeight: 57,
+      jockey: "ルメール",
+      odds: 2.5
+    }
+  ]
+};
+
+// ⑥ 新潟ダ1800m粘性泥濘馬場：パワー型前残り先行
+const horseNiigataDirt1800Autumn: Horse = {
+  id: "niigata-dirt-1800-autumn",
+  number: 6,
+  frame: 3,
+  name: "ネンセイドレイコウ",
+  age: 5,
+  gender: "牡",
+  weight: 510,
+  weightChange: -2,
+  jockey: "松山弘平",
+  jockeyWeight: 57,
+  sire: "ドレフォン",
+  bloodline: "ストームキャット系",
+  style: "先行", // 先行
+  odds: 5.8,
+  popularity: 3,
+  pastRaces: []
+};
+
+const niigataTestHorses = [
+  { horse: horseNiigataChoku, race: niigataChokuRace, desc: "① 新潟千直：大幅距離短縮ローテ×斤量減エッジ (芝1000m・距離短縮・斤量減)" },
+  { horse: horseNiigataOuterTurf, race: niigataOuterTurfRace, desc: "② 新潟外回り芝：スローペースの逃げ残りエッジ (芝1800m・人気薄・逃げ)" },
+  { horse: horseNiigataFinalWeek, race: niigataFinalWeekRace, desc: "③ 新潟最終週外回り：全車外出しの逆張りイン突きエッジ (芝2000m新潟記念・内枠)" },
+  { horse: horseNiigataDirt1200, race: niigataDirt1200Race, desc: "④ 新潟ダ1200m：芝スタート外枠×快速牝馬逃げの最強スピードシナジー (ダ1200m・外枠・牝馬・逃げ)" },
+  { horse: horseNiigataDirt1800Summer, race: niigataDirt1800SummerRace, desc: "⑤ 新潟ダ1800m夏良馬場：スタミナ要求さらさら砂×距離延長・外枠エッジ (ダ1800m・夏開催・良馬場・外枠・距離延長)" },
+  { horse: horseNiigataDirt1800Autumn, race: niigataDirt1800AutumnRace, desc: "⑥ 新潟ダ1800m粘性泥濘馬場：パワー型前残り先行エッジ (ダ1800m・秋開催・稍重・先行)" }
+];
+
+niigataTestHorses.forEach(({ horse, race, desc }) => {
+  console.log(`\n--------------------------------------------`);
+  console.log(`テストケース: ${desc}`);
+  console.log(`馬名: ${horse.name} (斤量: ${horse.jockeyWeight}kg, 馬体重増減: ${horse.weightChange}kg, 枠: ${horse.frame})`);
+  console.log(`脚質: ${horse.style}, 人気: ${horse.popularity}, オッズ: ${horse.odds}`);
+  const prediction = calculateTsuchiyaScore(horse, race, [], { horses: {}, jockeys: {} });
+  console.log(`ポテンシャルスコア: ${prediction.potential}`);
+  console.log(`付与された適性タグ (aptitudeTags):`);
+  prediction.aptitudeTags?.forEach(tag => console.log(`  - ${tag}`));
+});
+
 console.log("\n=== 全テスト完了 ===");

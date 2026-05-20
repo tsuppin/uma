@@ -633,7 +633,10 @@ export function calculateTsuchiyaScore(
       // 【激走】芝・大幅距離短縮ローテ×斤量減
       if (prevRace && prevRace.distance >= 1500) {
         const prevJockeyWeight = prevRace.jockeyWeight || 55;
-        if (kinryo < prevJockeyWeight) {
+        if (prevJockeyWeight - kinryo >= 1) {
+          potential += 35;
+          tags.push("⚡ 新潟千直：大幅距離短縮ローテ×斤量減エッジ");
+        } else if (kinryo < prevJockeyWeight) {
           potential += 25;
           tags.push("⚡ 千直激変：大幅距離短縮ローテ×斤量減エッジ");
         }
@@ -673,16 +676,16 @@ export function calculateTsuchiyaScore(
       }
 
       // 開催最終週（重賞）における内枠イン突き逆張りエッジ
-      const isFinalWeekStakes = isGradeOrSpecial && race.raceName?.match(/(新潟記念|新潟２歳)/);
+      const isFinalWeekStakes = race.raceName?.match(/(新潟記念|新潟２歳|新潟2歳)/) !== null;
       if (isFinalWeekStakes && frame <= 3) {
-        potential += 25;
-        tags.push("📐 新潟最終週外回り：イン強襲内枠逆張りバイアス適合");
+        potential += 35;
+        tags.push("📐 新潟最終週外回り：全車外出しの逆張りイン突きエッジ");
       }
 
       // 芝外回りにおける「人気薄の逃げ馬」の過小評価補正
       if (horse.style === "逃げ" && (popularity >= 6 || odds >= 12.0)) {
-        potential += 20;
-        tags.push("🏃 新潟芝外回り：人気薄逃げ馬スロー逃げ粘りエッジ");
+        potential += 30;
+        tags.push("🏃 新潟芝外回り：人気薄逃げ馬スロー逃げ残りエッジ");
       }
     }
 
@@ -717,21 +720,58 @@ export function calculateTsuchiyaScore(
 
         // 【激走】新潟ダ1200m「牝馬の逃げ」（超平坦直線恩恵）
         if (gender === "牝" && horse.style === "逃げ") {
-          potential += 25;
-          tags.push("⚡ 新潟ダ1200m牝馬逃げ：超平坦路盤スピード持続エッジ");
+          if (frame >= 6) {
+            potential += 40;
+            tags.push("⚡ 新潟ダ1200m：芝スタート外枠×快速牝馬逃げの最強スピードシナジー");
+          } else {
+            potential += 25;
+            tags.push("⚡ 新潟ダ1200m牝馬逃げ：超平坦路盤スピード持続エッジ");
+          }
         }
       } else if (dist === 1800) {
-        // 一般ダート：外枠のキックバック回避優位
-        if (frame >= 6) {
-          potential += 15;
-          tags.push("📈 ダート戦：砂被り回避の外枠優位");
-        } else if (frame <= 2) {
-          potential -= 10;
-          tags.push("⚠️ ダート戦：砂被り・揉まれ内枠割引");
+        // 新潟ダ1800m 砂の物理特性（砂理学）補正
+        const raceDate = race.date ? new Date(race.date) : null;
+        const raceMonth = raceDate ? raceDate.getMonth() + 1 : 0;
+        const isSummer = raceMonth === 7 || raceMonth === 8;
+
+        if (isSummer && condition === "良") {
+          // 夏の良馬場：さらさら砂で高いスタミナ・キックバック回避が求められる
+          if (prevRace && prevRace.distance < 1800 && frame >= 6) {
+            potential += 30;
+            tags.push("🌾 新潟ダ1800m夏良馬場：スタミナ要求さらさら砂×距離延長・外枠エッジ");
+          } else if (frame >= 6) {
+            potential += 15;
+            tags.push("📈 ダート戦：砂被り回避の外枠優位");
+          } else if (frame <= 2) {
+            potential -= 10;
+            tags.push("⚠️ ダート戦：砂被り・揉まれ内枠割引");
+          }
+        } else if (condition !== "良" || raceMonth === 10 || raceMonth === 11) {
+          // 雨での含水率上昇時、または秋開催の砂細粒化（粘性泥濘馬場）：スピード減少のためパワー先行優位
+          if (horse.style === "逃げ" || horse.style === "先行") {
+            potential += 30;
+            tags.push("🌾 新潟ダ1800m粘性泥濘馬場：パワー型前残り先行エッジ");
+          }
+          if (frame >= 6) {
+            potential += 15;
+            tags.push("📈 ダート戦：砂被り回避の外枠優位");
+          } else if (frame <= 2) {
+            potential -= 10;
+            tags.push("⚠️ ダート戦：砂被り・揉まれ内枠割引");
+          }
+        } else {
+          // 一般ダート：外枠のキックバック回避優位
+          if (frame >= 6) {
+            potential += 15;
+            tags.push("📈 ダート戦：砂被り回避の外枠優位");
+          } else if (frame <= 2) {
+            potential -= 10;
+            tags.push("⚠️ ダート戦：砂被り・揉まれ内枠割引");
+          }
         }
 
         // 【激走】新潟ダ1800m「距離延長×外枠」（ストレスフリー追走）
-        if (prevRace && prevRace.distance < 1800 && frame >= 6) {
+        if (prevRace && prevRace.distance < 1800 && frame >= 6 && !(isSummer && condition === "良")) {
           potential += 20;
           tags.push("📈 新潟ダ1800m：砂被り回避外枠×距離延長エッジ");
         }
