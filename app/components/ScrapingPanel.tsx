@@ -237,6 +237,7 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
       headCount: horses.length,
       trackName: editVenue,
       horses,
+      sourceUrl: scraped.raceInfo?.sourceUrl || url,
     };
 
     onAddRace(race);
@@ -653,6 +654,12 @@ function ResultSection({
   };
 
   const autoGenerateResultUrl = (race: Race): string => {
+    if (race.sourceUrl) {
+      if (race.sourceUrl.includes("shutuba.html")) {
+        return race.sourceUrl.replace("shutuba.html", "result.html");
+      }
+      return race.sourceUrl;
+    }
     // race_id がURLに含まれていれば結果URLを推定（netkeiba形式）
     if (!race.date) return "";
     const d = race.date.replace(/-/g, "");

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as cheerio from "cheerio";
+import iconv from "iconv-lite";
 
 // ==========================================
 // レース結果スクレイピング API Route
@@ -28,7 +29,14 @@ export async function POST(req: NextRequest) {
         if (!res.ok) {
           return NextResponse.json({ error: `HTTP ${res.status}: ${res.statusText}` }, { status: 400 });
         }
-        html = await res.text();
+
+        const isNetkeiba = url.includes("netkeiba.com");
+        if (isNetkeiba) {
+          const buffer = await res.arrayBuffer();
+          html = iconv.decode(Buffer.from(buffer), "euc-jp");
+        } else {
+          html = await res.text();
+        }
         sourceUrl = url;
       } catch (e) {
         return NextResponse.json(

@@ -107,6 +107,7 @@ export interface Race {
   horses: Horse[];
   predictions?: Prediction[];
   result?: RaceResult;
+  sourceUrl?: string;  // 取得元URL
 }
 
 export interface Prediction {

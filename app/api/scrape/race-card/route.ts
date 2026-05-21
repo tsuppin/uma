@@ -82,6 +82,10 @@ export async function POST(req: NextRequest) {
       result = parseNetkeibaHtml(html, sourceUrl, fallbackDate);
     }
 
+    if (result && result.raceInfo) {
+      result.raceInfo.sourceUrl = sourceUrl;
+    }
+
     return NextResponse.json({ success: true, ...result });
   } catch (e) {
     console.error("[scrape/race-card]", e);
