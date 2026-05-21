@@ -12934,4 +12934,57 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779360967609",
+    version: "v325.1",
+    date: "2026-05-21T10:56:07.609Z",
+    description: "名古屋 - 好走馬(テーオーエメラルド等)の特性学習",
+    track: "名古屋",
+    condition: "不良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "★小笠羚",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "コパノリッキー",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weightChange",
+        "operator": ">=",
+        "value": 10,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "丹羽克",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "レイデオロ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
