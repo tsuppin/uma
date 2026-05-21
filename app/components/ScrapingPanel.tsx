@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   AppState,
   Race,
@@ -106,6 +106,8 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
   const [autoDate, setAutoDate] = useState(new Date().toISOString().slice(0, 10));
   const [autoVenue, setAutoVenue] = useState("東京");
   const [autoRaceNumber, setAutoRaceNumber] = useState(11);
+  const [availableVenues, setAvailableVenues] = useState<string[]>(VENUES);
+  const [isFetchingVenues, setIsFetchingVenues] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [scraped, setScraped] = useState<ScrapedData | null>(null);
@@ -118,6 +120,34 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
   const [editDistance, setEditDistance] = useState(0);
   const [editSurface, setEditSurface] = useState<Race["surface"]>("ダート");
   const [editCondition, setEditCondition] = useState<Race["condition"]>("良");
+
+  // 日付変更時に開催している競馬場を取得
+  useEffect(() => {
+    let isMounted = true;
+    const fetchVenues = async () => {
+      if (!autoDate) return;
+      setIsFetchingVenues(true);
+      try {
+        const res = await fetch(`/api/scrape/venues?date=${autoDate}`);
+        const data = await res.json();
+        if (isMounted && data.success && data.venues) {
+          if (data.venues.length > 0) {
+            setAvailableVenues(data.venues);
+            // 現在の選択値がリストにない場合は先頭の競馬場を選択する
+            setAutoVenue((prev) => data.venues.includes(prev) ? prev : data.venues[0]);
+          } else {
+            setAvailableVenues(VENUES); // 取得できなければ全件表示
+          }
+        }
+      } catch (e) {
+        if (isMounted) setAvailableVenues(VENUES);
+      } finally {
+        if (isMounted) setIsFetchingVenues(false);
+      }
+    };
+    fetchVenues();
+    return () => { isMounted = false; };
+  }, [autoDate]);
 
   const handleFetch = useCallback(async () => {
     setError("");
@@ -252,9 +282,11 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
               <input id="auto-date" type="date" className="form-input" value={autoDate} onChange={(e) => setAutoDate(e.target.value)} />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="auto-venue">競馬場</label>
-              <select id="auto-venue" className="form-input" value={autoVenue} onChange={(e) => setAutoVenue(e.target.value)}>
-                {VENUES.map(v => <option key={v} value={v}>{v}</option>)}
+              <label className="form-label" htmlFor="auto-venue">
+                競馬場 {isFetchingVenues && <span className="fs-xs text-muted">(取得中...)</span>}
+              </label>
+              <select id="auto-venue" className="form-input" value={autoVenue} onChange={(e) => setAutoVenue(e.target.value)} disabled={isFetchingVenues}>
+                {availableVenues.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
             <div className="form-group">
