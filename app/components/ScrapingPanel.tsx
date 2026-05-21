@@ -104,8 +104,8 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
   const [url, setUrl] = useState("");
   const [html, setHtml] = useState("");
   const [autoDate, setAutoDate] = useState(new Date().toISOString().slice(0, 10));
-  const [autoVenue, setAutoVenue] = useState("東京");
-  const [autoRaceNumber, setAutoRaceNumber] = useState(11);
+  const [autoVenue, setAutoVenue] = useState("");
+  const [autoRaceNumber, setAutoRaceNumber] = useState<number | "">("");
   const [availableVenues, setAvailableVenues] = useState<string[]>(VENUES);
   const [isFetchingVenues, setIsFetchingVenues] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -133,8 +133,8 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
         if (isMounted && data.success && data.venues) {
           if (data.venues.length > 0) {
             setAvailableVenues(data.venues);
-            // 現在の選択値がリストにない場合は先頭の競馬場を選択する
-            setAutoVenue((prev) => data.venues.includes(prev) ? prev : data.venues[0]);
+            // 現在の選択値がリストにない場合は先頭の競馬場を選択する。初期表示時（prevが空）は空のまま維持
+            setAutoVenue((prev) => prev === "" ? "" : (data.venues.includes(prev) ? prev : data.venues[0]));
           } else {
             setAvailableVenues(VENUES); // 取得できなければ全件表示
           }
@@ -297,12 +297,13 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
                 競馬場 {isFetchingVenues && <span className="fs-xs text-muted">(取得中...)</span>}
               </label>
               <select id="auto-venue" className="form-input" value={autoVenue} onChange={(e) => setAutoVenue(e.target.value)} disabled={isFetchingVenues}>
+                <option value="">選択してください</option>
                 {availableVenues.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="auto-race-number">レース番号</label>
-              <input id="auto-race-number" type="number" min={1} max={12} className="form-input" value={autoRaceNumber} onChange={(e) => setAutoRaceNumber(parseInt(e.target.value) || 1)} />
+              <input id="auto-race-number" type="number" min={1} max={12} className="form-input" value={autoRaceNumber} onChange={(e) => setAutoRaceNumber(e.target.value === "" ? "" : parseInt(e.target.value) || 1)} />
             </div>
             <div className="fs-xs text-muted mt-4 grid-col-3" style={{ gridColumn: "span 3" }}>
               ※JRAおよび地方競馬に対応。日付・競馬場に合致するレースをnetkeibaから自動検索します。
@@ -350,7 +351,7 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
           <button
             className="btn btn-primary p-10-28 fs-md"
             onClick={handleFetch}
-            disabled={isLoading || (inputMode === "url" ? !url.trim() : inputMode === "html" ? !html.trim() : (!autoDate || !autoVenue))}
+            disabled={isLoading || (inputMode === "url" ? !url.trim() : inputMode === "html" ? !html.trim() : (!autoDate || !autoVenue || !autoRaceNumber))}
           >
             {isLoading ? "⌛ 取得中..." : "🔍 取得・解析"}
           </button>
