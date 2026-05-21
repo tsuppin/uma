@@ -8,6 +8,11 @@ import {
 } from "../types";
 import { generateId } from "../lib/storage";
 
+const VENUES = [
+  "札幌", "函館", "福島", "新潟", "東京", "中山", "中京", "京都", "阪神", "小倉",
+  "帯広", "門別", "盛岡", "水沢", "浦和", "船橋", "大井", "川崎", "金沢", "笠松", "名古屋", "園田", "姫路", "高知", "佐賀"
+];
+
 // ==========================================
 // ScrapingPanel - WEBスクレイピング自動化タブ
 // ==========================================
@@ -248,7 +253,9 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="auto-venue">競馬場</label>
-              <input id="auto-venue" className="form-input" value={autoVenue} onChange={(e) => setAutoVenue(e.target.value)} placeholder="例: 東京、大井" />
+              <select id="auto-venue" className="form-input" value={autoVenue} onChange={(e) => setAutoVenue(e.target.value)}>
+                {VENUES.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="auto-race-number">レース番号</label>
@@ -328,7 +335,10 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="s-venue">競馬場 *</label>
-              <input id="s-venue" className="form-input" value={editVenue} onChange={(e) => setEditVenue(e.target.value)} placeholder="大井、笠松..." />
+              <select id="s-venue" className="form-input" value={editVenue} onChange={(e) => setEditVenue(e.target.value)}>
+                <option value="">選択してください</option>
+                {VENUES.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="s-rnum">R番号</label>
