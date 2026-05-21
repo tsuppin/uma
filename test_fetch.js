@@ -1,36 +1,18 @@
+const iconv = require('iconv-lite');
 const cheerio = require('cheerio');
 
 async function testFetch() {
-  const date = '20240505';
-  const url = `https://nar.netkeiba.com/top/race_list_sub.html?kaisai_date=${date}`;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0' }
-  });
+  const url = `https://race.netkeiba.com/race/shutuba.html?race_id=202405020611`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
   
-  const html = await res.text();
+  const buffer = await res.arrayBuffer();
+  const html = iconv.decode(Buffer.from(buffer), 'EUC-JP');
+  
   const $ = cheerio.load(html);
-
-  let raceId = null;
-  const venue = '盛岡';
-  const raceNumber = 11;
-
-  $('.RaceList_DataList').each((_, el) => {
-    const venueText = $(el).find('.RaceList_DataTitle').text().trim();
-    if (venueText.includes(venue)) {
-      $(el).find('.RaceList_DataItem a').each((_, a) => {
-        const href = $(a).attr('href');
-        const rNumText = $(a).find('.Race_Num').text().trim().replace(/[^0-9]/g, '');
-        if (parseInt(rNumText) === raceNumber) {
-          if (href) {
-            const match = href.match(/race_id=(\d+)/);
-            if (match) raceId = match[1];
-          }
-        }
-      });
-    }
-  });
-
-  console.log("Found NAR Race ID:", raceId);
+  
+  console.log("Title:", $('title').text());
+  console.log("RaceData02:", $('.RaceData02').text().trim());
+  console.log("Date regex search:", html.match(/\d{4}年\d{1,2}月\d{1,2}日/));
 }
 
 testFetch().catch(console.error);

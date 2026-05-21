@@ -70,14 +70,16 @@ export async function POST(req: NextRequest) {
     const isOddsPark = sourceUrl.includes("oddspark.com") || html.includes("oddspark");
     const isNARKeibaGo = sourceUrl.includes("keiba.go.jp") || html.includes("keiba.go.jp");
 
+    const fallbackDate = auto?.date || new Date().toISOString().slice(0, 10);
+
     let result;
     if (isOddsPark) {
-      result = parseOddsParkHtml(html, sourceUrl);
+      result = parseOddsParkHtml(html, sourceUrl, fallbackDate);
     } else if (isNARKeibaGo) {
-      result = parseNARKeibaGoHtml(html, sourceUrl);
+      result = parseNARKeibaGoHtml(html, sourceUrl, fallbackDate);
     } else {
       // デフォルトはnetkeiba形式
-      result = parseNetkeibaHtml(html, sourceUrl);
+      result = parseNetkeibaHtml(html, sourceUrl, fallbackDate);
     }
 
     return NextResponse.json({ success: true, ...result });
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
 // ==========================================
 // netkeiba.com 出馬表パーサー
 // ==========================================
-function parseNetkeibaHtml(html: string, url: string) {
+function parseNetkeibaHtml(html: string, url: string, fallbackDate: string) {
   const $ = cheerio.load(html);
 
   // レース基本情報
@@ -114,14 +116,23 @@ function parseNetkeibaHtml(html: string, url: string) {
 
   // 日付・開催場
   const raceSubTitle = $(".RaceData02").first().text().trim();
-  let date = new Date().toISOString().slice(0, 10);
+  let date = fallbackDate;
+  
+  // HTMLから正確な日付を抽出 (例: "2024年5月5日")
+  const dateMatchHTML = html.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if (dateMatchHTML) {
+    const y = dateMatchHTML[1];
+    const m = dateMatchHTML[2].padStart(2, "0");
+    const d = dateMatchHTML[3].padStart(2, "0");
+    date = `${y}-${m}-${d}`;
+  }
+
   let venue = "";
   let raceNumber = 1;
 
   const dateMatch = url.match(/race_id=(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/);
   if (dateMatch) {
-    date = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
-    venue = getVenueFromCode(dateMatch[4]);
+    venue = getVenueFromCode(dateMatch[2]);
     raceNumber = parseInt(dateMatch[5]);
   }
 
@@ -200,7 +211,7 @@ function parseNetkeibaHtml(html: string, url: string) {
 // ==========================================
 // ODDS PARK パーサー
 // ==========================================
-function parseOddsParkHtml(html: string, _url: string) {
+function parseOddsParkHtml(html: string, _url: string, fallbackDate: string) {
   const $ = cheerio.load(html);
 
   const raceName = $("h1, .raceName, .race-name").first().text().trim();
@@ -232,7 +243,7 @@ function parseOddsParkHtml(html: string, _url: string) {
 
   return {
     raceInfo: {
-      date: new Date().toISOString().slice(0, 10),
+      date: fallbackDate,
       venue: "",
       raceNumber: 1,
       raceName,
@@ -249,7 +260,7 @@ function parseOddsParkHtml(html: string, _url: string) {
 // ==========================================
 // KEIBA.GO.JP (地方競馬) パーサー
 // ==========================================
-function parseNARKeibaGoHtml(html: string, url: string) {
+function parseNARKeibaGoHtml(html: string, url: string, fallbackDate: string) {
   const $ = cheerio.load(html);
 
   const pageTitle = $("title").text().trim();
@@ -259,7 +270,7 @@ function parseNARKeibaGoHtml(html: string, url: string) {
   const dateStr = url.match(/hd=(\d{8})/)?.[1] || "";
   const date = dateStr
     ? `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`
-    : new Date().toISOString().slice(0, 10);
+    : fallbackDate;
 
   // 出走馬テーブル
   $("table tr").each((_, row) => {
