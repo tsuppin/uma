@@ -12728,4 +12728,51 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779360810171",
+    version: "v321.1",
+    date: "2026-05-21T10:53:30.171Z",
+    description: "名古屋 - 好走馬(サクリファイス等)の特性学習",
+    track: "名古屋",
+    condition: "重",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "大畑慧",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アメリカンペイトリ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 2,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "★小笠羚",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "リオンディーズ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
