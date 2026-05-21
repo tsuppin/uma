@@ -138,7 +138,7 @@ function parseNetkeibaHtml(html: string, url: string, fallbackDate: string) {
 
   // venue から別の方法で取得
   if (!venue) {
-    const venueMatch = raceSubTitle.match(/(東京|中山|京都|阪神|中京|新潟|福島|小倉|函館|札幌|大井|川崎|船橋|浦和|門別|笠松|名古屋|金沢)/);
+    const venueMatch = raceSubTitle.match(/(札幌|函館|福島|新潟|東京|中山|中京|京都|阪神|小倉|帯広|門別|盛岡|水沢|浦和|船橋|大井|川崎|金沢|笠松|名古屋|園田|姫路|高知|佐賀)/);
     if (venueMatch) venue = venueMatch[1];
   }
   const rnMatch = raceSubTitle.match(/(\d+)R/);
