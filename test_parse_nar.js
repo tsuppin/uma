@@ -61,9 +61,53 @@ function parseNetkeibaHtml(html, url, fallbackDate) {
     const cells = $(row).find("td");
     if (cells.length < 5) return;
 
-    // ...
-    // Let's just count horses
-    horses.push({});
+    const frameNum = parseInt($(cells[0]).text().trim()) || 0;
+    const horseNum = parseInt($(cells[1]).text().trim()) || 0;
+    if (!horseNum) return;
+
+    const horseName = $(cells[3]).find(".HorseName a, a").first().text().trim() ||
+      $(cells[3]).text().trim();
+
+    const jockeyText = $(cells[6]).text().trim() || $(cells[7]).text().trim();
+    const weightText = $(cells[8]).text().trim() || "";
+    const weightMatch = weightText.match(/(\d+)(?:\(([+-]?\d+)\))?/);
+    const horseWeight = weightMatch ? parseInt(weightMatch[1]) : 480;
+    const weightChange = weightMatch?.[2] ? parseInt(weightMatch[2]) : 0;
+
+    const kinryoText = $(cells[5]).text().trim();
+    const kinryo = parseFloat(kinryoText) || 55;
+
+    const oddsText = $(cells[9])?.text().trim() || $(cells[10])?.text().trim() || "0";
+    const odds = parseFloat(oddsText.replace(/[^\d.]/g, "")) || 0;
+
+    const popularityText = $(cells[10])?.text().trim() || "";
+    const popularity = parseInt(popularityText) || 0;
+
+    let age = 4;
+    let gender = "牡";
+    const ageText = $(cells[4]).text().trim();
+    const ageMatch = ageText.match(/([牡牝セ])(\d+)/);
+    if (ageMatch) {
+      gender = ageMatch[1];
+      age = parseInt(ageMatch[2]);
+    }
+
+    const sire = $(cells[4]).find(".Horse_Info a").first().text().trim() || "";
+
+    horses.push({
+      frame: frameNum,
+      number: horseNum,
+      name: horseName,
+      jockey: jockeyText,
+      jockeyWeight: kinryo,
+      weight: horseWeight,
+      weightChange,
+      odds,
+      popularity,
+      sire,
+      age,
+      gender,
+    });
   });
 
   return {
@@ -77,7 +121,8 @@ function parseNetkeibaHtml(html, url, fallbackDate) {
       condition,
       headCount: horses.length,
     },
-    horsesLength: horses.length
+    horsesLength: horses.length,
+    horses
   };
 }
 

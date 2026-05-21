@@ -172,9 +172,18 @@ function parseNetkeibaHtml(html: string, url: string, fallbackDate: string) {
     const popularityText = $(cells[10])?.text().trim() || "";
     const popularity = parseInt(popularityText) || 0;
 
-    // 血統
+    let age = 4;
+    let gender = "牡";
+    const ageText = $(cells[4]).text().trim();
+    const ageMatch = ageText.match(/([牡牝セ])(\d+)/);
+    if (ageMatch) {
+      gender = ageMatch[1];
+      age = parseInt(ageMatch[2]);
+    }
+
+    // 血統 (JRA用には .Horse_Info がある)
     const sire = $(cells[4]).find(".Horse_Info a").first().text().trim() ||
-      $(cells[4]).text().split("\n")[0].trim();
+      ($(cells[4]).find(".Horse_Info").length ? $(cells[4]).text().split("\n")[0].trim().replace(/^[牡牝セ]\d+/, '').trim() : "");
 
     horses.push({
       frame: frameNum,
@@ -187,8 +196,8 @@ function parseNetkeibaHtml(html: string, url: string, fallbackDate: string) {
       odds,
       popularity,
       sire,
-      age: 4,
-      gender: "牡",
+      age,
+      gender,
     });
   });
 
@@ -335,8 +344,7 @@ function getVenueFromCode(code: string): string {
 // 自動検索用ユーティリティ
 // ==========================================
 async function autoFetchRaceId(dateStr: string, venue: string, raceNumber: number): Promise<string | null> {
-  const dateObj = new Date(dateStr);
-  const formattedDate = dateObj.toISOString().slice(0, 10).replace(/-/g, "");
+  const formattedDate = dateStr.replace(/-/g, "").slice(0, 8);
 
   // JRAかNARか判定
   const isJra = ["札幌", "函館", "福島", "新潟", "東京", "中山", "中京", "京都", "阪神", "小倉"].includes(venue);

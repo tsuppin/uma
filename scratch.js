@@ -134,7 +134,7 @@ function parsePasteText() {
       const prizeMatch = line.match(/(\d+[\d,]*)\s*万?円/);
       const prize = prizeMatch ? parseInt(prizeMatch[1].replace(",", "")) : 0;
 
-      if (horseNumber > 0 || horseName) {
+      if (horseNumber > 0 && horseName) {
         parsed.push({ rank, horseNumber, horseName, time, odds, prize });
       }
     }
