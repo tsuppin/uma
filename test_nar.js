@@ -1,21 +1,19 @@
 const cheerio = require('cheerio');
+const iconv = require('iconv-lite');
 
-async function testNarShutuba() {
-  const shutubaUrl = `https://nar.netkeiba.com/race/shutuba.html?race_id=202445050811`;
-  const sRes = await fetch(shutubaUrl);
-  
-  // NAR is probably EUC-JP too?
-  const iconv = require('iconv-lite');
-  const buffer = await sRes.arrayBuffer();
-  const html = iconv.decode(Buffer.from(buffer), 'EUC-JP');
-  
-  const $ = cheerio.load(html);
-  
-  console.log("Title:", $('title').text());
-  console.log("RaceData01:", $('.RaceData01').text().trim());
-  console.log("RaceData02:", $('.RaceData02').text().trim());
-  console.log("Date regex:", html.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/));
-  console.log("Horse count:", $('table.ShutubaTable tr.HorseList, .shutuba-table tr').length);
+async function checkNar() {
+  const listUrl = `https://nar.netkeiba.com/top/race_list_sub.html?kaisai_date=20240508`;
+  const res = await fetch(listUrl);
+  const buffer = Buffer.from(await res.arrayBuffer());
+
+  console.log("=== UTF-8 ===");
+  const htmlUtf8 = buffer.toString('utf-8');
+  const $1 = cheerio.load(htmlUtf8);
+  $1('.RaceList_DataTitle').each((_, el) => console.log($1(el).text().trim()));
+
+  console.log("=== EUC-JP ===");
+  const htmlEuc = iconv.decode(buffer, 'EUC-JP');
+  const $2 = cheerio.load(htmlEuc);
+  $2('.RaceList_DataTitle').each((_, el) => console.log($2(el).text().trim()));
 }
-
-testNarShutuba().catch(console.error);
+checkNar();

@@ -1,29 +1,20 @@
 const cheerio = require('cheerio');
 const iconv = require('iconv-lite');
-const fs = require('fs');
 
 async function testFetch() {
   const url = `https://nar.netkeiba.com/race/shutuba.html?race_id=202644052111`;
   const res = await fetch(url);
   const buffer = Buffer.from(await res.arrayBuffer());
-  
-  // It should be EUC-JP
   const html = iconv.decode(buffer, 'EUC-JP');
-  
   const $ = cheerio.load(html);
   
-  const horses = [];
   $("table.ShutubaTable tr.HorseList").each((_, row) => {
     const cells = $(row).find("td");
     if (cells.length < 5) return;
     
-    const horseName = $(cells[3]).find(".HorseName a, a").first().text().trim() ||
-                      $(cells[3]).text().trim();
-    if (horseName) horses.push(horseName);
+    console.log("Horse:", $(cells[3]).text().trim().split('\n')[0]);
+    console.log("Cell 4 HTML:", $(cells[4]).html());
+    console.log("Cell 4 Text:", $(cells[4]).text().trim());
   });
-  
-  console.log("Found horses:", horses.length);
-  if (horses.length > 0) console.log("Horses:", horses);
 }
-
 testFetch();
