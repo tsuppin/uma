@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     // URLが指定された、または自動検索でURLが取得できた場合はフェッチ
     if (sourceUrl && !html) {
       try {
-        const res = await fetch(sourceUrl, { headers: HEADERS, signal: AbortSignal.timeout(10000) });
+        const res = await fetch(sourceUrl, { headers: HEADERS, signal: AbortSignal.timeout(6000) });
         if (!res.ok) {
           return NextResponse.json({ error: `HTTP ${res.status}: ${res.statusText}` }, { status: 400 });
         }
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     if (sourceUrl && sourceUrl.includes("netkeiba.com")) {
       const resultUrl = sourceUrl.replace("shutuba.html", "result.html");
       try {
-        const resResult = await fetch(resultUrl, { headers: HEADERS, signal: AbortSignal.timeout(5000) });
+        const resResult = await fetch(resultUrl, { headers: HEADERS, signal: AbortSignal.timeout(2500) });
         if (resResult.ok) {
           const buffer = await resResult.arrayBuffer();
           const resultHtml = iconv.decode(Buffer.from(buffer), "euc-jp");
@@ -397,8 +397,8 @@ async function autoFetchRaceId(dateStr: string, venue: string, raceNumber: numbe
   const domain = isJra ? "race.netkeiba.com" : "nar.netkeiba.com";
   
   const listUrl = `https://${domain}/top/race_list_sub.html?kaisai_date=${formattedDate}`;
-  const res = await fetch(listUrl, { headers: HEADERS });
-  if (!res.ok) return null;
+  const res = await fetch(listUrl, { headers: HEADERS, signal: AbortSignal.timeout(5000) }).catch(() => null);
+  if (!res || !res.ok) return null;
 
   const html = await res.text();
   const $ = cheerio.load(html);
