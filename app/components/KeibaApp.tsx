@@ -11,8 +11,9 @@ import LearningPanel from "./LearningPanel";
 import Win5Panel from "./Win5Panel";
 import StatsPanel from "./StatsPanel";
 import KnowledgePanel from "./KnowledgePanel";
+import ScrapingPanel from "./ScrapingPanel";
 
-type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge";
+type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge" | "scraping";
 
 export default function KeibaApp() {
   const [state, setState] = useState<AppState>(() => {
@@ -65,6 +66,36 @@ export default function KeibaApp() {
     setView("dashboard");
   };
 
+  // スクレイピングタブ用ハンドラー
+  const handleScrapingAddRace = (race: Race) => {
+    const newState = addRace(state, race);
+    setState(newState);
+    setSelectedRaceId(race.id);
+  };
+
+  const handleScrapingRunPrediction = (race: Race) => {
+    const predictions = race.horses.map(h =>
+      calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
+    );
+    const sorted = sortPredictions(predictions);
+    const formation = generateFormation(sorted);
+    const updated = { ...race, predictions: sorted, formation } as Race & { formation: unknown };
+    const newState = updateRace(state, updated);
+    setState(newState);
+  };
+
+  const handleScrapingAddResult = (result: RaceResult, raceId: string) => {
+    const race = state.races.find(r => r.id === raceId);
+    if (!race || !race.predictions) return;
+    const actualResult = result.result.map(r => ({ rank: r.rank, horseNumber: r.horseNumber }));
+    const patch = generateLearningPatch(race, race.predictions, actualResult, state.learningPatches);
+    let newState = addResult(state, result);
+    if (patch) {
+      newState = addLearningPatch(newState, patch);
+    }
+    setState(newState);
+  };
+
   const handleDeleteRace = (id: string) => {
     if (confirm("本当にこのレースを削除しますか？")) {
       setState(deleteRace(state, id));
@@ -102,6 +133,7 @@ export default function KeibaApp() {
         {([
           ["dashboard", "🏠", "ダッシュボード"],
           ["new_race", "➕", "新規レース登録"],
+          ["scraping", "🌐", "スクレイピング"],
           ["win5", "🎯", "WIN5予想"],
           ["stats", "📈", "成績・統計"],
           ["knowledge", "📚", "ナレッジ＆AI"],
@@ -169,6 +201,14 @@ export default function KeibaApp() {
         )}
         {view === "knowledge" && (
           <KnowledgePanel />
+        )}
+        {view === "scraping" && (
+          <ScrapingPanel
+            state={state}
+            onAddRace={handleScrapingAddRace}
+            onRunPrediction={handleScrapingRunPrediction}
+            onAddResult={handleScrapingAddResult}
+          />
         )}
         {view === "prediction" && !selectedRace && (
           <div className="empty-state">

@@ -1135,3 +1135,198 @@ body {
 .btn-icon { background: none !important; border: none !important; cursor: pointer !important; padding: 4px 8px !important; font-size: 1.25rem !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0.7; transition: opacity 0.2s; }
 .btn-icon:hover { opacity: 1 !important; }
 .race-card:hover { border-color: var(--accent-gold)50 !important; }
+
+/* ==========================================
+   ScrapingPanel スタイル
+   ========================================== */
+
+/* セクション切り替えタブ */
+.scraping-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+
+.scraping-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  font-family: inherit;
+}
+
+.scraping-tab:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.scraping-tab.active {
+  background: var(--gradient-blue);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--accent-blue)30;
+}
+
+.scraping-tab-icon {
+  font-size: 1.1rem;
+}
+
+/* バッジカウント */
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--accent-red);
+  color: #fff;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.scraping-tab.active .badge-count {
+  background: rgba(255,255,255,0.3);
+}
+
+/* ガイドステップ */
+.scraping-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guide-step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.guide-num {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-blue);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  box-shadow: 0 2px 8px var(--accent-blue)30;
+}
+
+.guide-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.guide-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.guide-desc code {
+  background: var(--bg-elevated);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--accent-blue);
+}
+
+/* 予想行・結果行 */
+.predict-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s;
+  gap: 12px;
+}
+
+.predict-row:hover {
+  border-color: var(--accent-blue)40;
+}
+
+.predict-row-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* 払い戻しグリッド */
+.refund-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.refund-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+}
+
+.refund-type {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.refund-combo {
+  color: var(--text-secondary);
+  font-weight: 600;
+  flex: 1;
+}
+
+.refund-payout {
+  font-family: 'Outfit', monospace;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.refund-pop {
+  white-space: nowrap;
+}
+
+/* mb-16 */
+.mb-16 { margin-bottom: 16px !important; }
+.w-65 { width: 65px !important; }
+.max-w-80 { max-width: 80px !important; }
+.min-h-200 { min-height: 200px !important; }
+
