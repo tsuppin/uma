@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
+import { parseNetkeibaResultHtml } from "../race-result/route";
 
 // ==========================================
 // 出馬表スクレイピング API Route
@@ -86,7 +87,48 @@ export async function POST(req: NextRequest) {
       result.raceInfo.sourceUrl = sourceUrl;
     }
 
-    return NextResponse.json({ success: true, ...result });
+    // レース結果が既に存在するかどうかのチェックと取得
+    let raceResult = null;
+    if (sourceUrl && sourceUrl.includes("netkeiba.com")) {
+      const resultUrl = sourceUrl.replace("shutuba.html", "result.html");
+      try {
+        const resResult = await fetch(resultUrl, { headers: HEADERS, signal: AbortSignal.timeout(5000) });
+        if (resResult.ok) {
+          const buffer = await resResult.arrayBuffer();
+          const resultHtml = iconv.decode(Buffer.from(buffer), "euc-jp");
+          
+          if (resultHtml.includes("RaceTable01") || resultHtml.includes("race_table_01")) {
+            const parsedResult = parseNetkeibaResultHtml(resultHtml, resultUrl);
+            if (parsedResult && parsedResult.results && parsedResult.results.length > 0) {
+              raceResult = {
+                raceId: "",
+                result: parsedResult.results.map((r) => ({
+                  rank: r.rank,
+                  horseNumber: r.horseNumber,
+                  horseName: r.horseName,
+                  time: r.time || "",
+                  odds: r.odds || 0,
+                  prize: r.prize || 0,
+                  popularity: r.popularity,
+                  weight: r.weight,
+                  weightChange: r.weightChange,
+                  jockey: r.jockey,
+                  jockeyWeight: r.jockeyWeight,
+                  last3f: r.last3f,
+                  margin: r.margin,
+                })),
+                refunds: parsedResult.refunds || {},
+                lapTimes: parsedResult.lapTimes || [],
+              };
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[scrape/race-card] 結果の自動取得に失敗（スキップします）:", e);
+      }
+    }
+
+    return NextResponse.json({ success: true, ...result, raceResult });
   } catch (e) {
     console.error("[scrape/race-card]", e);
     return NextResponse.json(

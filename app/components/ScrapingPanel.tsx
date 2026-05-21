@@ -240,11 +240,21 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
       sourceUrl: scraped.raceInfo?.sourceUrl || url,
     };
 
+    if (scraped.raceResult) {
+      race.result = {
+        ...scraped.raceResult,
+        raceId: race.id,
+      };
+    }
+
     onAddRace(race);
     setScraped(null);
     setUrl("");
     setHtml("");
-    alert(`✅ ${editVenue} ${editRaceNumber}R（${horses.length}頭）を登録しました`);
+    const alertMsg = scraped.raceResult
+      ? `✅ ${editVenue} ${editRaceNumber}R（${horses.length}頭・結果情報も同時取得）を登録しました`
+      : `✅ ${editVenue} ${editRaceNumber}R（${horses.length}頭）を登録しました`;
+    alert(alertMsg);
   };
 
   return (
@@ -356,8 +366,13 @@ function FetchSection({ onAddRace }: { onAddRace: (race: Race) => void }) {
       {/* 解析結果プレビュー */}
       {scraped && (
         <div className="card fade-in mt-16">
-          <div className="card-header">
+          <div className="card-header flex justify-between items-center">
             <div className="card-title">✅ 解析結果（{scraped.horses?.length || 0}頭）</div>
+            {scraped.raceResult && (
+              <span className="badge-count" style={{ backgroundColor: "#28a745", color: "#fff", fontSize: "0.8rem", padding: "4px 8px", borderRadius: "4px", fontWeight: "bold" }}>
+                📊 レース結果も同時に取得しました（1着: {scraped.raceResult.result?.[0]?.horseName || "不明"}）
+              </span>
+            )}
           </div>
 
           {/* レース情報編集 */}
@@ -870,9 +885,11 @@ interface ScrapedData {
     surface: Race["surface"];
     condition: Race["condition"];
     headCount: number;
+    sourceUrl?: string;
   };
   horses: ScrapedHorse[];
   rawText?: string;
+  raceResult?: any;
 }
 
 interface ResultRow {

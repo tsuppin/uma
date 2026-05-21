@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 // ==========================================
 // netkeiba.com 結果パーサー
 // ==========================================
-function parseNetkeibaResultHtml(html: string, _url: string) {
+export function parseNetkeibaResultHtml(html: string, _url: string) {
   const $ = cheerio.load(html);
 
   const results: ResultEntry[] = [];
@@ -190,7 +190,7 @@ function parseNetkeibaRefunds($: ReturnType<typeof cheerio.load>) {
 // ==========================================
 // ODDS PARK 結果パーサー
 // ==========================================
-function parseOddsParkResultHtml(html: string) {
+export function parseOddsParkResultHtml(html: string) {
   const $ = cheerio.load(html);
   const results: ResultEntry[] = [];
 
@@ -223,7 +223,7 @@ function parseOddsParkResultHtml(html: string) {
 // ==========================================
 // KEIBA.GO.JP 結果パーサー
 // ==========================================
-function parseNARKeibaGoResultHtml(html: string) {
+export function parseNARKeibaGoResultHtml(html: string) {
   const $ = cheerio.load(html);
   const results: ResultEntry[] = [];
 
