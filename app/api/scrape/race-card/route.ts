@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (result && result.raceInfo) {
-      result.raceInfo.sourceUrl = sourceUrl;
+      (result.raceInfo as any).sourceUrl = sourceUrl;
     }
 
     // レース結果が既に存在するかどうかのチェックと取得
