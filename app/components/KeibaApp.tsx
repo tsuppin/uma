@@ -61,11 +61,12 @@ export default function KeibaApp() {
 
   const handleAddResult = (result: RaceResult, raceId: string) => {
     const race = state.races.find(r => r.id === raceId);
-    if (!race || !race.predictions) return;
+    const predictions = race?.predictions;
+    if (!race || !predictions) return;
     setIsProcessing(true);
     setTimeout(() => {
       const actualResult = result.result.map(r => ({ rank: r.rank, horseNumber: r.horseNumber }));
-      const patch = generateLearningPatch(race, race.predictions, actualResult, state.learningPatches);
+      const patch = generateLearningPatch(race, predictions, actualResult, state.learningPatches);
       let newState = addResult(state, result);
       if (patch) {
         newState = addLearningPatch(newState, patch);
@@ -96,9 +97,10 @@ export default function KeibaApp() {
 
   const handleScrapingAddResult = (result: RaceResult, raceId: string) => {
     const race = state.races.find(r => r.id === raceId);
-    if (!race || !race.predictions) return;
+    const predictions = race?.predictions;
+    if (!race || !predictions) return;
     const actualResult = result.result.map(r => ({ rank: r.rank, horseNumber: r.horseNumber }));
-    const patch = generateLearningPatch(race, race.predictions, actualResult, state.learningPatches);
+    const patch = generateLearningPatch(race, predictions, actualResult, state.learningPatches);
     let newState = addResult(state, result);
     if (patch) {
       newState = addLearningPatch(newState, patch);
