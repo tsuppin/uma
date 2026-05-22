@@ -1,19 +1,32 @@
 const cheerio = require('cheerio');
-const iconv = require('iconv-lite');
-
-async function checkNar() {
-  const listUrl = `https://nar.netkeiba.com/top/race_list_sub.html?kaisai_date=20240508`;
-  const res = await fetch(listUrl);
-  const buffer = Buffer.from(await res.arrayBuffer());
-
-  console.log("=== UTF-8 ===");
-  const htmlUtf8 = buffer.toString('utf-8');
-  const $1 = cheerio.load(htmlUtf8);
-  $1('.RaceList_DataTitle').each((_, el) => console.log($1(el).text().trim()));
-
-  console.log("=== EUC-JP ===");
-  const htmlEuc = iconv.decode(buffer, 'EUC-JP');
-  const $2 = cheerio.load(htmlEuc);
-  $2('.RaceList_DataTitle').each((_, el) => console.log($2(el).text().trim()));
+const headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36', Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'ja,en-US;q=0.9' };
+async function test() {
+  const dateStr = '2026-05-22'; // Today
+  const venue = '園田'; // NAR venue
+  const raceNumber = 11;
+  const formattedDate = dateStr.replace(/-/g, '').slice(0, 8);
+  const domain = 'nar.netkeiba.com';
+  const listUrl = 'https://' + domain + '/top/race_list_sub.html?kaisai_date=' + formattedDate;
+  console.log('Fetching list:', listUrl);
+  const res = await fetch(listUrl, { headers });
+  const html = await res.text();
+  const $ = cheerio.load(html);
+  let raceId = null;
+  $('.RaceList_DataList').each((_, el) => {
+    const venueText = $(el).find('.RaceList_DataTitle').text().trim();
+    if (venueText.includes(venue)) {
+      $(el).find('.RaceList_DataItem a').each((_, a) => {
+        const rNumText = $(a).find('.Race_Num').text().trim().replace(/[^0-9]/g, '');
+        if (parseInt(rNumText) === raceNumber) {
+          const href = $(a).attr('href');
+          if (href) {
+            const match = href.match(/race_id=(\d+)/);
+            if (match) raceId = match[1];
+          }
+        }
+      });
+    }
+  });
+  console.log('Race ID:', raceId);
 }
-checkNar();
+test();

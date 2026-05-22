@@ -59,6 +59,18 @@ from pydantic import BaseModel, Field
 # =============================================================================
 # API メタデータ定義
 # =============================================================================
+import sys
+sys.path.append('Keiba_AI_Models')
+try:
+    import keiba_system
+    import pandas as pd
+    import sqlite3
+    import datetime
+    V5_ENABLED = True
+except ImportError:
+    V5_ENABLED = False
+    print("⚠️ Keiba_AI_Models のインポートに失敗したため、v5 APIは無効化されます。")
+
 app = FastAPI(
     title="Tsuchiya Protocol-Omega API",
     description="32特徴量対応 競馬予測推論エンジン",
@@ -147,6 +159,26 @@ class PredictionResponse(BaseModel):
     horse_count:  int
     predictions:  list[HorsePrediction]
 
+
+class V5HorseInput(BaseModel):
+    horse_number: int
+    horse_name: str
+    jockey: str
+    trainer: str
+    sire: str = "不明"
+    broodmare_sire: str = "不明"
+    horse_weight: float
+    jockey_weight: float
+    
+class V5RaceInput(BaseModel):
+    venue: str
+    distance: int
+    horses: list[V5HorseInput]
+
+class V5LearnInput(BaseModel):
+    venue: str
+    distance: int
+    results: list[dict] # {horse_number, horse_name, jockey, trainer, horse_weight, jockey_weight, actual_rank}
 
 # =============================================================================
 # ヘルパー関数
@@ -262,6 +294,94 @@ def list_venues():
         "loaded": list(models.keys()),
         "not_loaded": [v for v in SUPPORTED_VENUES if v not in models]
     }
+
+
+@app.post("/api/predict/v5", response_model=PredictionResponse)
+def predict_v5(data: V5RaceInput):
+    if not V5_ENABLED:
+        raise HTTPException(status_code=500, detail="v5モデルが利用できません")
+    
+    records = []
+    for h in data.horses:
+        pwr = h.horse_weight / h.jockey_weight if h.jockey_weight > 0 else 0
+        inertia = h.horse_weight * h.jockey_weight
+        records.append({
+            'distance': data.distance,
+            'track_name': data.venue,
+            'horse_number': h.horse_number,
+            'horse_name': h.horse_name,
+            'jockey': h.jockey,
+            'trainer': h.trainer,
+            'sire': h.sire,
+            'broodmare_sire': h.broodmare_sire,
+            'horse_weight': h.horse_weight,
+            'jockey_weight': h.jockey_weight,
+            'pwr': pwr,
+            'inertia': inertia
+        })
+        
+    df_race = pd.DataFrame(records)
+    df_encoded = keiba_system.encoder.fit_transform(df_race, is_train=False)
+    darkness = keiba_system.predict_darkness(df_encoded)
+    
+    predictions = []
+    for i, score in enumerate(darkness):
+        predictions.append(
+            HorsePrediction(
+                horse_index=i,
+                top3_probability=float(score),
+                rank_score=float(score * 100)
+            )
+        )
+        
+    return PredictionResponse(
+        venue=data.venue,
+        horse_count=len(data.horses),
+        predictions=predictions
+    )
+
+
+@app.post("/api/learn/v5")
+def learn_v5(data: V5LearnInput):
+    if not V5_ENABLED:
+        raise HTTPException(status_code=500, detail="v5モデルが利用できません")
+    
+    records = []
+    today = datetime.datetime.now().strftime('%Y年%m月%d日')
+    for r in data.results:
+        horse_weight = float(r.get('horse_weight', 480))
+        jockey_weight = float(r.get('jockey_weight', 55))
+        pwr = horse_weight / jockey_weight if jockey_weight > 0 else 0
+        inertia = horse_weight * jockey_weight
+        
+        records.append((
+            today, data.venue, 1, data.distance,
+            int(r.get('horse_number', 0)), str(r.get('horse_name', '不明')), 
+            str(r.get('jockey', '不明')), str(r.get('trainer', '不明')),
+            '不明', '不明', horse_weight, jockey_weight,
+            pwr, inertia, 0.0,
+            int(r.get('actual_rank', 99)), 0.0, 1
+        ))
+        
+    try:
+        conn = sqlite3.connect(keiba_system.DB_PATH)
+        conn.executemany('''
+            INSERT INTO training_logs (
+                date, track_name, race_num, distance,
+                horse_number, horse_name, jockey, trainer,
+                sire, broodmare_sire, horse_weight, jockey_weight,
+                pwr, inertia, darkness_score,
+                actual_rank, actual_time, is_truth
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', records)
+        conn.commit()
+        conn.close()
+        
+        # キック
+        keiba_system.full_retraining()
+        return {"status": "success", "message": "v5 full_retraining completed."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # =============================================================================

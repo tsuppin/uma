@@ -1,0 +1,103 @@
+import numpy as np
+import pandas as pd
+import itertools
+
+class AdvancedBettingLogic:
+    def __init__(self, total_budget=10000, race_distance=1400):
+        self.total_budget = total_budget
+        self.race_distance = race_distance
+        
+        # 距離に応じたケリー基準のフラクション（割引係数）
+        # 短距離(波乱含み)はクォーター(0.25)、中長距離はハーフ(0.5)など
+        self.kelly_fraction = 0.25 if race_distance < 1600 else 0.5
+
+    def calculate_kelly_fraction(self, win_prob, odds):
+        '''フラクショナル・ケリー基準による資金配分率の計算'''
+        b = odds - 1.0
+        if b <= 0:
+            return 0.0
+        q = 1.0 - win_prob
+        kelly = (b * win_prob - q) / b
+        
+        if kelly <= 0:
+            return 0.0
+        return kelly * self.kelly_fraction
+
+    def generate_tickets(self, df_preds):
+        '''
+        df_preds: DataFrame containing ['horse_num', 'win_prob', 'odds']
+        '''
+        df = df_preds.copy()
+        
+        # 期待値(EV)の計算
+        df['ev'] = df['win_prob'] * df['odds']
+        
+        # --- 1. 評価軸の2極化（軸馬とヒモ穴の選定） ---
+        # 軸馬（安定感重視）：勝率(予測確率)トップ2頭
+        jiku_df = df.nlargest(2, 'win_prob')
+        jiku_horses = jiku_df['horse_num'].tolist()
+        
+        # ヒモ穴（爆発力重視）：軸馬以外で、期待値(EV)が1.0以上の馬上位5頭
+        himo_df = df[~df['horse_num'].isin(jiku_horses)]
+        himo_df = himo_df[himo_df['ev'] >= 0.8].nlargest(5, 'ev') # 穴狙いのためEV閾値を少し緩和
+        himo_horses = himo_df['horse_num'].tolist()
+        
+        if not jiku_horses or not himo_horses:
+            return {"status": "error", "message": "軸馬またはヒモ穴の条件を満たす馬がいません。ケン（見送り）を推奨します。"}
+
+        # --- 2. フォーメーションの自動生成 ---
+        tickets = []
+        
+        # ワイド流し（軸馬からヒモ穴へ）
+        for jiku in jiku_horses:
+            for himo in himo_horses:
+                comb = tuple(sorted([jiku, himo]))
+                
+                # 仮想的な合成確率とオッズ（実際はワイドオッズを取得すべきですが、簡易的に計算）
+                jiku_prob = jiku_df[jiku_df['horse_num'] == jiku]['win_prob'].values[0]
+                himo_ev = himo_df[himo_df['horse_num'] == himo]['ev'].values[0]
+                
+                # 組合わせのスコア
+                comb_score = jiku_prob * himo_ev 
+                
+                tickets.append({
+                    'type': 'ワイド',
+                    'combination': comb,
+                    'score': comb_score
+                })
+        
+        # 3連複フォーメーション（軸1頭 - 軸+ヒモ - ヒモ）
+        for jiku in jiku_horses:
+            # 2頭目はもう1頭の軸馬、またはヒモ上位2頭
+            second_horses = [h for h in jiku_horses if h != jiku] + himo_horses[:2]
+            # 3頭目はヒモ穴全頭
+            third_horses = himo_horses
+            
+            for h2 in set(second_horses):
+                for h3 in third_horses:
+                    if len(set([jiku, h2, h3])) == 3: # 3頭すべて異なる場合
+                        comb = tuple(sorted([jiku, h2, h3]))
+                        
+                        tickets.append({
+                            'type': '3連複',
+                            'combination': comb,
+                            'score': 1.0 # ここは実際の3連複オッズ取得後に再計算を推奨
+                        })
+
+        # --- 3. 重複排除と足切りフィルター ---
+        unique_tickets = []
+        seen = set()
+        for t in tickets:
+            ticket_id = f"{t['type']}_{t['combination']}"
+            if ticket_id not in seen:
+                seen.add(ticket_id)
+                unique_tickets.append(t)
+                
+        # ※ここにトリガミ防止フィルター（合成オッズ < 1.0 を除外）などを追加可能
+        
+        return {
+            "status": "success",
+            "jiku_horses": jiku_horses,
+            "himo_horses": himo_horses,
+            "recommended_tickets": unique_tickets
+        }

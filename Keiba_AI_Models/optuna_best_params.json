@@ -1,0 +1,1 @@
+{"learning_rate": 0.05669199042315169, "num_leaves": 34, "max_depth": 6, "feature_fraction": 0.8094459285801485, "bagging_fraction": 0.8300095967799752, "bagging_freq": 3, "min_child_samples": 31, "objective": "binary", "metric": "binary_logloss", "verbose": -1, "seed": 42}
