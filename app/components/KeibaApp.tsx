@@ -43,70 +43,27 @@ export default function KeibaApp() {
     setView("prediction");
   };
 
-  const handleRunPrediction = async (race: Race) => {
+  const handleRunPrediction = (race: Race) => {
     setIsProcessing(true);
-    try {
-      const res = await fetch("http://localhost:8000/api/predict/v5", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          venue: race.venue,
-          distance: race.distance || 1400,
-          horses: race.horses.map(h => ({
-            horse_number: h.number,
-            horse_name: h.name,
-            jockey: h.jockey || "不明",
-            trainer: "不明",
-            sire: h.sire || "不明",
-            broodmare_sire: "不明",
-            horse_weight: h.weight || 480,
-            jockey_weight: h.jockeyWeight || 55
-          }))
-        })
-      });
-      
-      let predictions;
-      if (res.ok) {
-        const data = await res.json();
-        predictions = data.predictions.map((p: any) => {
-          const horse = race.horses[p.horse_index];
-          // v5モデルの結果を既存のPotential/Darknessにマッピング
-          return {
-            horseId: horse.id,
-            horseNumber: horse.number,
-            horseName: horse.name,
-            potential: Math.round(p.rank_score),
-            darkness: p.top3_probability,
-            aptitudeTags: ["v5-AI"]
-          };
-        });
-      } else {
-        // フォールバック: TSローカルエンジン
-        predictions = race.horses.map(h =>
-          calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
-        );
-      }
-      
+    // わずかにディレイを入れてUIの描画を許容
+    setTimeout(() => {
+      const predictions = race.horses.map(h =>
+        calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
+      );
       const sorted = sortPredictions(predictions);
       const formation = generateFormation(sorted);
       const updated = { ...race, predictions: sorted, formation } as Race & { formation: unknown };
       const newState = updateRace(state, updated);
       setState(newState);
-    } catch (e) {
-      console.error(e);
-      alert("AI予測に失敗しました");
-    } finally {
       setIsProcessing(false);
-    }
+    }, 100);
   };
 
-  const handleAddResult = async (result: RaceResult, raceId: string) => {
+  const handleAddResult = (result: RaceResult, raceId: string) => {
     const race = state.races.find(r => r.id === raceId);
     if (!race || !race.predictions) return;
-    
     setIsProcessing(true);
-    try {
-      // TSローカルの学習パッチも一応作成
+    setTimeout(() => {
       const actualResult = result.result.map(r => ({ rank: r.rank, horseNumber: r.horseNumber }));
       const patch = generateLearningPatch(race, race.predictions, actualResult, state.learningPatches);
       let newState = addResult(state, result);
@@ -114,36 +71,9 @@ export default function KeibaApp() {
         newState = addLearningPatch(newState, patch);
       }
       setState(newState);
-      
-      // v5のフルスクラッチ学習をキック
-      await fetch("http://localhost:8000/api/learn/v5", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          venue: race.venue,
-          distance: race.distance || 1400,
-          results: result.result.map(r => {
-            const h = race.horses.find(hx => hx.number === r.horseNumber);
-            return {
-              horse_number: r.horseNumber,
-              horse_name: h ? h.name : "不明",
-              jockey: h ? h.jockey : "不明",
-              trainer: "不明",
-              horse_weight: h ? h.weight : 480,
-              jockey_weight: h ? h.jockeyWeight : 55,
-              actual_rank: r.rank
-            };
-          })
-        })
-      });
-      alert("v5 AIの自動学習（フルスクラッチ）が完了しました！");
-    } catch (e) {
-      console.error(e);
-      alert("v5 AI学習の送信に失敗しました");
-    } finally {
       setIsProcessing(false);
       setView("dashboard");
-    }
+    }, 100);
   };
 
   // スクレイピングタブ用ハンドラー
@@ -252,8 +182,8 @@ export default function KeibaApp() {
         {isProcessing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50 rounded-8 backdrop-blur-sm">
             <div className="bg-surface p-24 rounded-12 border text-center">
-              <div className="fs-xl mb-12">🧠 Omega v5 通信中...</div>
-              <div className="text-muted fs-sm">AI予測/学習処理を実行しています</div>
+              <div className="fs-xl mb-12">⏳ 解析中...</div>
+              <div className="text-muted fs-sm">出馬表の解析/学習処理を実行しています</div>
             </div>
           </div>
         )}
