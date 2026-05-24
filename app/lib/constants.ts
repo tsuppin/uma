@@ -13334,4 +13334,27 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779615617045",
+    version: "v333.1",
+    date: "2026-05-24T09:40:17.045Z",
+    description: "京都 - 好走馬(ルクスデイジー等)の特性学習",
+    track: "京都",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "団野 大成",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "カリフォルニアクローム",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
