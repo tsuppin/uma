@@ -13252,4 +13252,51 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779609141251",
+    version: "v331.1",
+    date: "2026-05-24T07:52:21.251Z",
+    description: "高知 - 好走馬(スマイル等)の特性学習",
+    track: "高知",
+    condition: "不良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": ">=",
+        "value": 8,
+        "scoreAdjust": 20
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "大澤誠",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ダイワメジャー",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "阿部基",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "マクフィ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
