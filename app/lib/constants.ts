@@ -13704,4 +13704,57 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779616015119",
+    version: "v341.1",
+    date: "2026-05-24T09:46:55.119Z",
+    description: "東京 - 好走馬(ルナルーチェット等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "田辺 裕信",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ブリックスアンドモルタル",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weightChange",
+        "operator": ">=",
+        "value": 10,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "石川 裕紀人",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ドゥラメンテ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
