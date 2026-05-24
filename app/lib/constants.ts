@@ -13105,4 +13105,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779609020992",
+    version: "v328.1",
+    date: "2026-05-24T07:50:20.992Z",
+    description: "高知 - 好走馬(シデンイッセン等)の特性学習",
+    track: "高知",
+    condition: "不良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "佐原秀",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "エイシンフラッシュ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
