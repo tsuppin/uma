@@ -13357,4 +13357,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779615676734",
+    version: "v334.1",
+    date: "2026-05-24T09:41:16.734Z",
+    description: "東京 - 好走馬(チムグクル等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "C.ルメール",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ラブリーデイ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "横山 武史",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "Frankel",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
