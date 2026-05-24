@@ -13669,4 +13669,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1779615965579",
+    version: "v340.1",
+    date: "2026-05-24T09:46:05.579Z",
+    description: "東京 - 好走馬(ゴールドバローズ等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "荻野 極",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ゴールドドリーム",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
