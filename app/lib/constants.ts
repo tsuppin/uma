@@ -13786,4 +13786,81 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1780104693607",
+    version: "v343.1",
+    date: "2026-05-30T01:31:33.607Z",
+    description: "浦和 - 好走馬(ラブシリカ等)の特性学習",
+    track: "浦和",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weightChange",
+        "operator": "<=",
+        "value": -10,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "野畑凌",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ダノンスマッシュ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "福原杏",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ルヴァンスレーヴ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "中山遥",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サトノアレス",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
