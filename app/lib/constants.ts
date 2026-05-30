@@ -13863,4 +13863,57 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1780104721315",
+    version: "v344.1",
+    date: "2026-05-30T01:32:01.315Z",
+    description: "浦和 - 好走馬(オーデンリッキー等)の特性学習",
+    track: "浦和",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "秋元耕",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "コパノリッキー",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "加藤雄",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ノボジャック",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
