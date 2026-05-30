@@ -14081,4 +14081,33 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1780137256515",
+    version: "v315.1",
+    date: "2026-05-30T10:34:16.515Z",
+    description: "東京 - 好走馬(コウユーニポポニコ等)の特性学習",
+    track: "東京",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "石田 拓郎",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "タリスマニック",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
