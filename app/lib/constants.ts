@@ -13916,4 +13916,63 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1780104753894",
+    version: "v345.1",
+    date: "2026-05-30T01:32:33.894Z",
+    description: "浦和 - 好走馬(センチュリーラヴ等)の特性学習",
+    track: "浦和",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weightChange",
+        "operator": ">=",
+        "value": 10,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "中島良",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ヘンリーバローズ",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "岡村裕",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "リオンディーズ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
