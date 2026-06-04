@@ -1,7 +1,6 @@
 "use client";
 import { AppState, LearningPatch } from "../types";
-import { togglePatch, saveState } from "../lib/storage";
-import { generateId } from "../lib/storage";
+import { togglePatch, saveStateToServer, generateId } from "../lib/storage";
 import { useState } from "react";
 
 export default function LearningPanel({ state, onStateChange }: { state: AppState; onStateChange: (s: AppState) => void }) {
@@ -29,14 +28,14 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
       active: true,
     };
     const newState = { ...state, learningPatches: [...state.learningPatches, patch], modelVersion: `TsuchiyaProtocol-Omega ${patch.version}` };
-    saveState(newState);
+    saveStateToServer(newState);
     onStateChange(newState);
     setShowAdd(false);
   };
 
   const handleDelete = (id: string) => {
     const newState = { ...state, learningPatches: state.learningPatches.filter(p => p.id !== id) };
-    saveState(newState);
+    saveStateToServer(newState);
     onStateChange(newState);
   };
 

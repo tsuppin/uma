@@ -1,12 +1,10 @@
 // ==========================================
-// LocalStorage データ管理
+// データ管理 - サーバーサイドAPI経由
+// localStorage ではなくサーバーのJSONファイルに保存
+// どのブラウザ・スマホモードでも確実に永続化される
 // ==========================================
 
 import { AppState, Race, LearningPatch, RaceResult } from '../types';
-import { INITIAL_PATCHES } from './constants';
-
-const STORAGE_KEY = 'tsuchiya_keiba_ai_v1';
-
 import { updateMasterDataWithRace, updateMasterDataWithResult } from './db';
 
 export const defaultState: AppState = {
@@ -27,38 +25,44 @@ export const defaultState: AppState = {
   }
 };
 
-export function loadState(): AppState {
-  if (typeof window === 'undefined') return defaultState;
+// ==========================================
+// サーバーからの状態ロード（非同期）
+// ==========================================
+export async function loadStateFromServer(): Promise<AppState> {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const state = stored ? { ...defaultState, ...JSON.parse(stored) } : defaultState;
-    
-    // masterData がなければ初期化
-    if (!state.masterData) {
-      state.masterData = defaultState.masterData;
-    }
-    
-    // 初期パッチをマージ (既存のIDがあればスキップ)
-    const existingIds = new Set(state.learningPatches.map((p: LearningPatch) => p.id));
-    const mergedPatches = [
-      ...state.learningPatches,
-      ...INITIAL_PATCHES.filter((p: LearningPatch) => !existingIds.has(p.id))
-    ];
-    
-    return { ...state, learningPatches: mergedPatches };
-  } catch {
+    const res = await fetch('/api/state', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json() as AppState;
+    return data;
+  } catch (e) {
+    console.error('[storage] サーバーからの読み込み失敗:', e);
     return defaultState;
   }
 }
 
-export function saveState(state: AppState): void {
-  if (typeof window === 'undefined') return;
+// ==========================================
+// サーバーへの状態保存（非同期・fire-and-forget）
+// ==========================================
+export async function saveStateToServer(state: AppState): Promise<void> {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    console.error('Failed to save state');
+    const res = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (e) {
+    console.error('[storage] サーバーへの保存失敗:', e);
+    // 保存失敗をユーザーに通知
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('storage-save-error', { detail: { reason: 'server_error' } }));
+    }
   }
 }
+
+// ==========================================
+// 状態変更関数（同期的にReact stateを更新し、非同期でサーバーに保存）
+// ==========================================
 
 export function addRace(state: AppState, race: Race): AppState {
   const newState = {
@@ -66,7 +70,7 @@ export function addRace(state: AppState, race: Race): AppState {
     races: [...state.races, race],
     masterData: updateMasterDataWithRace(state.masterData, race)
   };
-  saveState(newState);
+  saveStateToServer(newState); // 非同期保存
   return newState;
 }
 
@@ -76,7 +80,7 @@ export function updateRace(state: AppState, updatedRace: Race): AppState {
     races: state.races.map(r => r.id === updatedRace.id ? updatedRace : r),
     masterData: updateMasterDataWithRace(state.masterData, updatedRace)
   };
-  saveState(newState);
+  saveStateToServer(newState);
   return newState;
 }
 
@@ -107,7 +111,7 @@ export function addResult(state: AppState, result: RaceResult): AppState {
     },
     masterData: race ? updateMasterDataWithResult(state.masterData, result, race) : state.masterData
   };
-  saveState(newState);
+  saveStateToServer(newState);
   return newState;
 }
 
@@ -117,7 +121,7 @@ export function addLearningPatch(state: AppState, patch: LearningPatch): AppStat
     learningPatches: [...state.learningPatches, patch],
     modelVersion: `TsuchiyaProtocol-Omega ${patch.version}`,
   };
-  saveState(newState);
+  saveStateToServer(newState);
 
   // Trigger Git Sync asynchronously
   if (typeof window !== 'undefined') {
@@ -138,7 +142,7 @@ export function togglePatch(state: AppState, patchId: string): AppState {
       p.id === patchId ? { ...p, active: !p.active } : p
     ),
   };
-  saveState(newState);
+  saveStateToServer(newState);
   return newState;
 }
 
@@ -147,10 +151,17 @@ export function deleteRace(state: AppState, raceId: string): AppState {
     ...state,
     races: state.races.filter(r => r.id !== raceId),
   };
-  saveState(newState);
+  saveStateToServer(newState);
   return newState;
 }
 
 export function generateId(): string {
   return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// ==========================================
+// 後方互換（他コンポーネントからのimport対応）
+// ==========================================
+export function saveState(state: AppState): void {
+  saveStateToServer(state);
 }

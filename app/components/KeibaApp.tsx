@@ -1,7 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AppState, Race, RaceResult } from "../types";
-import { loadState, addRace, updateRace, addResult, addLearningPatch, deleteRace, defaultState } from "../lib/storage";
+import {
+  loadStateFromServer,
+  addRace,
+  updateRace,
+  addResult,
+  addLearningPatch,
+  deleteRace,
+  defaultState
+} from "../lib/storage";
 import { calculateTsuchiyaScore, generateFormation, generateLearningPatch, sortPredictions } from "../lib/engine";
 import RaceForm from "./RaceForm";
 import RaceCard from "./RaceCard";
@@ -16,23 +24,69 @@ import ScrapingPanel from "./ScrapingPanel";
 type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge" | "scraping";
 
 export default function KeibaApp() {
-  const [state, setState] = useState<AppState>(() => {
-    if (typeof window !== "undefined") {
-      return loadState();
-    }
-    return defaultState;
-  });
+  const [state, setState] = useState<AppState>(defaultState);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [view, setView] = useState<View>("dashboard");
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // サーバーからデータを読み込む
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoaded(true);
+    loadStateFromServer()
+      .then((loaded) => {
+        setState(loaded);
+        setIsLoaded(true);
+      })
+      .catch(() => {
+        setLoadError("サーバーへの接続に失敗しました。Next.js が起動しているか確認してください。");
+        setState(defaultState);
+        setIsLoaded(true);
+      });
   }, []);
 
-  if (!isLoaded) return null;
+  // storage-save-error イベントをリッスン
+  const handleStorageError = useCallback((e: Event) => {
+    const reason = (e as CustomEvent).detail?.reason;
+    if (reason === 'server_error') {
+      setSaveError('⚠️ サーバーへの保存に失敗しました。サーバーが起動しているか確認してください。');
+    } else {
+      setSaveError('⚠️ データの保存に失敗しました。');
+    }
+    // 5秒後に自動消去
+    setTimeout(() => setSaveError(null), 5000);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('storage-save-error', handleStorageError);
+    return () => window.removeEventListener('storage-save-error', handleStorageError);
+  }, [handleStorageError]);
+
+  // ロード中
+  if (!isLoaded) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        gap: '16px',
+        color: 'var(--text-muted, #aaa)',
+        background: 'var(--bg, #0f1117)',
+      }}>
+        <div style={{ fontSize: '48px' }}>🛰️</div>
+        <div style={{ fontSize: '18px', fontWeight: 600 }}>土屋プロトコル 起動中...</div>
+        <div style={{ fontSize: '13px' }}>サーバーからデータを読み込んでいます</div>
+        {loadError && (
+          <div style={{ color: '#ef4444', fontSize: '13px', maxWidth: '380px', textAlign: 'center', marginTop: '8px' }}>
+            {loadError}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const selectedRace = state.races.find(r => r.id === selectedRaceId) || null;
 
@@ -45,7 +99,6 @@ export default function KeibaApp() {
 
   const handleRunPrediction = (race: Race) => {
     setIsProcessing(true);
-    // わずかにディレイを入れてUIの描画を許容
     setTimeout(() => {
       const predictions = race.horses.map(h =>
         calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
@@ -119,6 +172,35 @@ export default function KeibaApp() {
 
   return (
     <div className="app-shell">
+      {/* 保存エラートースト */}
+      {saveError && (
+        <div style={{
+          position: 'fixed',
+          top: '16px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          background: '#7c2d12',
+          border: '1px solid #dc2626',
+          color: '#fef2f2',
+          padding: '12px 20px',
+          borderRadius: '10px',
+          fontSize: '13px',
+          maxWidth: '90vw',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          lineHeight: '1.5',
+        }}>
+          <span style={{ flex: 1 }}>{saveError}</span>
+          <button
+            onClick={() => setSaveError(null)}
+            style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer', fontSize: '18px', lineHeight: 1, flexShrink: 0 }}
+          >✕</button>
+        </div>
+      )}
+
       {/* Header */}
       <header className="header">
         <div className="header-logo">🛰️ 土屋プロトコル</div>
