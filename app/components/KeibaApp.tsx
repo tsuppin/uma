@@ -20,8 +20,9 @@ import Win5Panel from "./Win5Panel";
 import StatsPanel from "./StatsPanel";
 import KnowledgePanel from "./KnowledgePanel";
 import ScrapingPanel from "./ScrapingPanel";
+import SettingsPanel from "./SettingsPanel";
 
-type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge" | "scraping";
+type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge" | "scraping" | "settings";
 
 export default function KeibaApp() {
   const [state, setState] = useState<AppState>(defaultState);
@@ -231,6 +232,7 @@ export default function KeibaApp() {
           ["win5", "🎯", "WIN5予想"],
           ["stats", "📈", "成績・統計"],
           ["knowledge", "📚", "ナレッジ＆AI"],
+          ["settings", "⚙️", "設定・同期"],
         ] as [View, string, string][]).map(([v, icon, label]) => (
           <div key={v} className={`nav-item ${view === v ? "active" : ""}`} onClick={() => setView(v)}>
             <span className="nav-icon">{icon}</span>{label}
@@ -312,6 +314,9 @@ export default function KeibaApp() {
             onRunPrediction={handleScrapingRunPrediction}
             onAddResult={handleScrapingAddResult}
           />
+        )}
+        {view === "settings" && (
+          <SettingsPanel state={state} />
         )}
         {view === "prediction" && !selectedRace && (
           <div className="empty-state">

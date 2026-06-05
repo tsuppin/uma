@@ -6,6 +6,7 @@
 
 import { AppState, Race, LearningPatch, RaceResult } from '../types';
 import { updateMasterDataWithRace, updateMasterDataWithResult } from './db';
+import { syncToGitHub } from './githubSync';
 
 export const defaultState: AppState = {
   races: [],
@@ -48,7 +49,11 @@ export async function loadStateFromServer(): Promise<AppState> {
 export async function saveStateToServer(state: AppState): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem('keiba_app_state', JSON.stringify(state));
+    const jsonStr = JSON.stringify(state);
+    localStorage.setItem('keiba_app_state', jsonStr);
+
+    // GitHubへ自動同期（バックグラウンド実行）
+    syncToGitHub(jsonStr).catch(err => console.error(err));
   } catch (e) {
     console.error('[storage] ローカルストレージへの保存失敗:', e);
     window.dispatchEvent(new CustomEvent('storage-save-error', { detail: { reason: 'local_error' } }));
@@ -117,16 +122,6 @@ export function addLearningPatch(state: AppState, patch: LearningPatch): AppStat
     modelVersion: `TsuchiyaProtocol-Omega ${patch.version}`,
   };
   saveStateToServer(newState);
-
-  // Trigger Git Sync asynchronously
-  if (typeof window !== 'undefined') {
-    fetch('/api/git-sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch)
-    }).catch(e => console.error("Git sync failed:", e));
-  }
-
   return newState;
 }
 
