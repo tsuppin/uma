@@ -14305,4 +14305,39 @@ export const INITIAL_PATCHES: LearningPatch[] = [
     ],
     active: true
   },
+  {
+    id: "patch_1780629925341",
+    version: "v1.1",
+    date: "2026-06-05T03:25:25.341Z",
+    description: "門別 - 好走馬(モウフブキ等)の特性学習",
+    track: "門別",
+    condition: "良",
+    adjustments: [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 7,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "渡邊準",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ラブリーデイ",
+        "scoreAdjust": 15
+      }
+    ],
+    active: true
+  },
 ];
