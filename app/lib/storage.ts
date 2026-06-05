@@ -7,6 +7,7 @@
 import { AppState, Race, LearningPatch, RaceResult } from '../types';
 import { updateMasterDataWithRace, updateMasterDataWithResult } from './db';
 import { syncToGitHub } from './githubSync';
+import { loadStateFromIDB, saveStateToIDB } from './indexeddb';
 
 export const defaultState: AppState = {
   races: [],
@@ -32,13 +33,22 @@ export const defaultState: AppState = {
 export async function loadStateFromServer(): Promise<AppState> {
   if (typeof window === 'undefined') return defaultState;
   try {
-    const data = localStorage.getItem('keiba_app_state');
+    const data = await loadStateFromIDB();
     if (data) {
-      return JSON.parse(data) as AppState;
+      return data as AppState;
     }
+    
+    // IndexedDBにデータがない場合は、古いLocalStorageからのマイグレーションを試みる
+    const oldData = localStorage.getItem('keiba_app_state');
+    if (oldData) {
+      const parsed = JSON.parse(oldData) as AppState;
+      saveStateToIDB(parsed).catch(console.error); // IndexedDBへ移行
+      return parsed;
+    }
+    
     return defaultState;
   } catch (e) {
-    console.error('[storage] ローカルストレージからの読み込み失敗:', e);
+    console.error('[storage] IndexedDBからの読み込み失敗:', e);
     return defaultState;
   }
 }
@@ -49,13 +59,13 @@ export async function loadStateFromServer(): Promise<AppState> {
 export async function saveStateToServer(state: AppState): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
-    const jsonStr = JSON.stringify(state);
-    localStorage.setItem('keiba_app_state', jsonStr);
-
+    await saveStateToIDB(state);
+    
     // GitHubへ自動同期（バックグラウンド実行）
-    syncToGitHub(jsonStr).catch(err => console.error(err));
+    // JSON文字列化はGitHubAPI送信のためだけに行う（IDBへは生オブジェクトで保存済）
+    syncToGitHub(JSON.stringify(state)).catch(err => console.error(err));
   } catch (e) {
-    console.error('[storage] ローカルストレージへの保存失敗:', e);
+    console.error('[storage] IndexedDBへの保存失敗:', e);
     window.dispatchEvent(new CustomEvent('storage-save-error', { detail: { reason: 'local_error' } }));
   }
 }
