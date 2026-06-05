@@ -3,5 +3,4 @@ node_modules
 .env*
 *.log
 __pycache__/
-# サーバー保存データ（個人データのため除外）
-keiba_data/app_state.json
+# keiba_data/app_state.json はGitで管理（バックアップのため）
