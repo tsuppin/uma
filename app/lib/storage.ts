@@ -105,7 +105,13 @@ export function addResult(state: AppState, result: RaceResult): AppState {
 
   // 統計更新
   const completedRaces = updatedRaces.filter(r => r.result);
-  const hitRaces = completedRaces.filter(r => r.result?.hitTickets && r.result.hitTickets.length > 0);
+  const hitRaces = completedRaces.filter(r => {
+    const res = r.result;
+    if (!res) return false;
+    const isHitViaHits = res.hits && (res.hits.trio || res.hits.trifecta || res.hits.quinella || res.hits.exacta);
+    const isHitViaTickets = res.hitTickets && res.hitTickets.length > 0;
+    return isHitViaHits || isHitViaTickets;
+  });
   const totalReturn = completedRaces.reduce((sum, r) => sum + (r.result?.profit || 0), 0);
 
   const newState = {
