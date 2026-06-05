@@ -27,8 +27,22 @@ export function updateMasterDataWithRace(masterData: MasterData, race: Race): Ma
         const exists = hm.results.some(old => old.date === pr.date && old.venue === pr.venue);
         if (!exists) {
           hm.results.push({
-            date: pr.date, rank: pr.result, venue: pr.venue, distance: pr.distance
+            date: pr.date, rank: pr.result, venue: pr.venue, distance: pr.distance, weight: pr.weight, time: pr.time
           });
+        }
+        
+        // 自己ベストタイムの更新
+        if (pr.time && pr.time.includes(':')) {
+          const key = `${pr.venue}_${pr.distance}`;
+          if (!hm.bestTime) hm.bestTime = {};
+          const parseTime = (t: string) => {
+            const [m, s] = t.split(':');
+            return parseFloat(m) * 60 + parseFloat(s);
+          };
+          const currentSec = parseTime(pr.time);
+          if (!hm.bestTime[key] || currentSec < parseTime(hm.bestTime[key])) {
+            hm.bestTime[key] = pr.time;
+          }
         }
 
         // 1.2 過去走の騎手データも蓄積 (精度向上)
@@ -145,8 +159,24 @@ export function updateMasterDataWithResult(masterData: MasterData, result: RaceR
         date: race.date,
         rank: r.rank,
         venue: race.venue,
-        distance: race.distance
+        distance: race.distance,
+        weight: r.weight,
+        time: r.time
       });
+    }
+
+    // 自己ベストタイムの更新
+    if (r.time && r.time.includes(':')) {
+      const key = `${race.venue}_${race.distance}`;
+      if (!hm.bestTime) hm.bestTime = {};
+      const parseTime = (t: string) => {
+        const [m, s] = t.split(':');
+        return parseFloat(m) * 60 + parseFloat(s);
+      };
+      const currentSec = parseTime(r.time);
+      if (!hm.bestTime[key] || currentSec < parseTime(hm.bestTime[key])) {
+        hm.bestTime[key] = r.time;
+      }
     }
 
     // 5. 騎手の成績を更新

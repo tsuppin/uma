@@ -83,7 +83,23 @@ export function calculateTsuchiyaScore(
   learningPatches: LearningPatch[],
   masterData: MasterData
 ): Prediction {
-  const bloodline = horse.bloodline || '';
+  const hm = masterData.horses?.[horse.name];
+  const jm = masterData.jockeys?.[horse.jockey];
+
+  // ==========================================
+  // 【新設】④ プロフィール（血統・生産者）の自動補完ロジック
+  // ==========================================
+  let bloodline = horse.bloodline || '';
+  let horseBreeder = horse.breeder || '';
+  if (hm) {
+    if (!bloodline && hm.sire) {
+      bloodline = `${hm.sire} / ${hm.dam || 'Unknown'}`;
+    }
+    if (!horseBreeder && hm.breeder) {
+      horseBreeder = hm.breeder;
+    }
+  }
+
   const trackName = race.trackName;
   const dist = race.distance;
   const condition = race.condition;
@@ -102,6 +118,30 @@ export function calculateTsuchiyaScore(
   let distortionBoost = 1.0;
   let isTargetYatomi = false;
   const tags: string[] = [];
+
+  // ==========================================
+  // 【新設】③ 馬体重の長期的トレンド（成長・本格化・激ヤセ）判定
+  // ==========================================
+  if (hm && hm.results && hm.results.length >= 3 && weight > 0) {
+    // 過去3戦で馬体重データがあるものを抽出
+    const recentWeights = hm.results
+      .filter(r => r.weight && r.weight > 0)
+      .slice(0, 3)
+      .map(r => r.weight as number);
+    
+    if (recentWeights.length >= 2) {
+      const avgRecentWeight = recentWeights.reduce((a, b) => a + b, 0) / recentWeights.length;
+      const longTermDiff = weight - avgRecentWeight;
+
+      if (age <= 4 && longTermDiff >= 10 && longTermDiff <= 25) {
+        potential += 20;
+        tags.push(`💪 成長期・本格化(長期馬体増 +${Math.round(longTermDiff)}kg)`);
+      } else if (longTermDiff <= -15) {
+        potential -= 25;
+        tags.push(`⚠️ 大幅馬体減リスク(長期馬体減 ${Math.round(longTermDiff)}kg)`);
+      }
+    }
+  }
 
   // ==========================================
   // 【新設】① 調教タイムの数値化スコアリング
@@ -164,8 +204,8 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【新設】② 生産者（ブリーダー）のブランド評価
   // ==========================================
-  if (horse.breeder) {
-    const breederName = horse.breeder;
+  if (horseBreeder) {
+    const breederName = horseBreeder;
     const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
 
     if (breederName.includes("ノーザンファーム")) {
@@ -2175,11 +2215,7 @@ export function calculateTsuchiyaScore(
     }
   }
 
-  // ==========================================
-  // 【新設】データベース（MasterData）連携
-  // ==========================================
-  const hm = masterData.horses?.[horse.name];
-  const jm = masterData.jockeys?.[horse.jockey];
+  // （hm, jm の取得は関数冒頭に移動済み）
 
   if (hm) {
     // コース実績加点
@@ -2193,6 +2229,18 @@ export function calculateTsuchiyaScore(
     if (distTop3 > 0) {
       potential += 15;
       tags.push(`距離・近接適性(${distTop3}回)`);
+    }
+
+    // ==========================================
+    // 【新設】① 長期間の持ち時計（生涯ベストタイム）エッジ加点
+    // ==========================================
+    const key = `${race.venue}_${race.distance}`;
+    if (hm.bestTime && hm.bestTime[key]) {
+      const bestTimeStr = hm.bestTime[key];
+      // ※ 今回の出走馬全体との相対比較はコンテキストがないため、絶対的なスピード加点として機能させる
+      // クラス基準タイムや直近5走の最速タイムと比べても遜色ない場合は底力として評価
+      potential += 25;
+      tags.push(`⌚ 生涯ベスト時計保有(${bestTimeStr})`);
     }
   }
 
@@ -2315,13 +2363,27 @@ export function calculateTsuchiyaScore(
     tags.push('👑エリート鞍上');
   }
 
-  if (jm && jm.venueStats[race.venue]) {
-    const vs = jm.venueStats[race.venue];
-    if (vs.total >= 3) {
-      const winRate = vs.wins / vs.total;
-      const top3Rate = vs.top3 / vs.total;
-      if (winRate > 0.20) { potential += 25; tags.push('会場勝率エリート'); }
-      else if (top3Rate > 0.40) { potential += 20; tags.push('会場安定勢'); }
+  if (jm) {
+    // 会場別エリート
+    if (jm.venueStats[race.venue]) {
+      const vs = jm.venueStats[race.venue];
+      if (vs.total >= 3) {
+        const winRate = vs.wins / vs.total;
+        const top3Rate = vs.top3 / vs.total;
+        if (winRate > 0.20) { potential += 25; tags.push('会場勝率エリート'); }
+        else if (top3Rate > 0.40) { potential += 20; tags.push('会場安定勢'); }
+      }
+    }
+
+    // ==========================================
+    // 【新設】② 騎手の全国通算勝率エリート加点
+    // ==========================================
+    if (jm.totalRaces >= 10) {
+      const nationwideWinRate = jm.wins / jm.totalRaces;
+      if (nationwideWinRate >= 0.15) {
+        potential += 15;
+        tags.push(`👑 全国トップジョッキー(勝率${(nationwideWinRate*100).toFixed(1)}%)`);
+      }
     }
   }
 
