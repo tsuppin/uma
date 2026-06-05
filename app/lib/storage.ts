@@ -29,13 +29,15 @@ export const defaultState: AppState = {
 // サーバーからの状態ロード（非同期）
 // ==========================================
 export async function loadStateFromServer(): Promise<AppState> {
+  if (typeof window === 'undefined') return defaultState;
   try {
-    const res = await fetch('/api/state', { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json() as AppState;
-    return data;
+    const data = localStorage.getItem('keiba_app_state');
+    if (data) {
+      return JSON.parse(data) as AppState;
+    }
+    return defaultState;
   } catch (e) {
-    console.error('[storage] サーバーからの読み込み失敗:', e);
+    console.error('[storage] ローカルストレージからの読み込み失敗:', e);
     return defaultState;
   }
 }
@@ -44,19 +46,12 @@ export async function loadStateFromServer(): Promise<AppState> {
 // サーバーへの状態保存（非同期・fire-and-forget）
 // ==========================================
 export async function saveStateToServer(state: AppState): Promise<void> {
+  if (typeof window === 'undefined') return;
   try {
-    const res = await fetch('/api/state', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    localStorage.setItem('keiba_app_state', JSON.stringify(state));
   } catch (e) {
-    console.error('[storage] サーバーへの保存失敗:', e);
-    // 保存失敗をユーザーに通知
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('storage-save-error', { detail: { reason: 'server_error' } }));
-    }
+    console.error('[storage] ローカルストレージへの保存失敗:', e);
+    window.dispatchEvent(new CustomEvent('storage-save-error', { detail: { reason: 'local_error' } }));
   }
 }
 

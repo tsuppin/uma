@@ -49,8 +49,8 @@ export default function KeibaApp() {
   // storage-save-error イベントをリッスン
   const handleStorageError = useCallback((e: Event) => {
     const reason = (e as CustomEvent).detail?.reason;
-    if (reason === 'server_error') {
-      setSaveError('⚠️ サーバーへの保存に失敗しました。サーバーが起動しているか確認してください。');
+    if (reason === 'local_error') {
+      setSaveError('⚠️ ブラウザの保存領域（LocalStorage）への保存に失敗しました。容量制限などに達している可能性があります。');
     } else {
       setSaveError('⚠️ データの保存に失敗しました。');
     }
