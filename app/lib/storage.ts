@@ -6,7 +6,6 @@
 
 import { AppState, Race, LearningPatch, RaceResult } from '../types';
 import { updateMasterDataWithRace, updateMasterDataWithResult } from './db';
-import { syncToGitHub } from './githubSync';
 import { loadStateFromIDB, saveStateToIDB } from './indexeddb';
 
 export const defaultState: AppState = {
@@ -33,19 +32,33 @@ export const defaultState: AppState = {
 export async function loadStateFromServer(): Promise<AppState> {
   if (typeof window === 'undefined') return defaultState;
   try {
+    // 1. IndexedDB から読み込む
     const data = await loadStateFromIDB();
     if (data) {
       return data as AppState;
     }
-    
-    // IndexedDBにデータがない場合は、古いLocalStorageからのマイグレーションを試みる
+
+    // 2. IDB が空なら LocalStorage からマイグレーション
     const oldData = localStorage.getItem('keiba_app_state');
     if (oldData) {
       const parsed = JSON.parse(oldData) as AppState;
-      saveStateToIDB(parsed).catch(console.error); // IndexedDBへ移行
+      saveStateToIDB(parsed).catch(console.error);
       return parsed;
     }
-    
+
+    // 3. どちらもなければサーバーJSON（/api/state）から取得
+    try {
+      const res = await fetch('/api/state');
+      if (res.ok) {
+        const serverState = await res.json() as AppState;
+        // IDB に保存しておく
+        saveStateToIDB(serverState).catch(console.error);
+        return serverState;
+      }
+    } catch (fetchErr) {
+      console.warn('[storage] /api/state からの読み込み失敗:', fetchErr);
+    }
+
     return defaultState;
   } catch (e) {
     console.error('[storage] IndexedDBからの読み込み失敗:', e);
@@ -60,10 +73,12 @@ export async function saveStateToServer(state: AppState): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
     await saveStateToIDB(state);
-    
-    // GitHubへ自動同期（バックグラウンド実行）
-    // JSON文字列化はGitHubAPI送信のためだけに行う（IDBへは生オブジェクトで保存済）
-    syncToGitHub(JSON.stringify(state)).catch(err => console.error(err));
+    // サーバーJSONにも保存（バックグラウンド）
+    fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state),
+    }).catch(err => console.warn('[storage] /api/state POST 失敗:', err));
   } catch (e) {
     console.error('[storage] IndexedDBへの保存失敗:', e);
     window.dispatchEvent(new CustomEvent('storage-save-error', { detail: { reason: 'local_error' } }));
