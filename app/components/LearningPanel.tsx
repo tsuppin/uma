@@ -39,6 +39,13 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
     onStateChange(newState);
   };
 
+  const handleDeleteAll = () => {
+    if (!confirm(`全${state.learningPatches.length}件のパッチを削除しますか？\nこの操作は元に戻せません。`)) return;
+    const newState = { ...state, learningPatches: [], modelVersion: "TsuchiyaProtocol-Omega v7.0" };
+    saveStateToServer(newState);
+    onStateChange(newState);
+  };
+
   return (
     <div className="fade-in">
       <div className="section-header">
@@ -49,6 +56,9 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
             navigator.clipboard.writeText(json);
             alert("パッチデータをクリップボードにコピーしました。これをAntigravityに伝えてGitに反映させてください。");
           }}>📤 エクスポート</button>
+          {state.learningPatches.length > 0 && (
+            <button className="btn btn-danger" onClick={handleDeleteAll}>🗑 全削除</button>
+          )}
           <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>＋ 手動パッチ追加</button>
         </div>
       </div>

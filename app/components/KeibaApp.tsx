@@ -18,11 +18,8 @@ import ResultInput from "./ResultInput";
 import LearningPanel from "./LearningPanel";
 import Win5Panel from "./Win5Panel";
 import StatsPanel from "./StatsPanel";
-import KnowledgePanel from "./KnowledgePanel";
-import ScrapingPanel from "./ScrapingPanel";
-import SettingsPanel from "./SettingsPanel";
 
-type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "knowledge" | "scraping" | "settings";
+type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats";
 
 export default function KeibaApp() {
   const [state, setState] = useState<AppState>(defaultState);
@@ -131,37 +128,6 @@ export default function KeibaApp() {
     }, 100);
   };
 
-  // スクレイピングタブ用ハンドラー
-  const handleScrapingAddRace = (race: Race) => {
-    const newState = addRace(state, race);
-    setState(newState);
-    setSelectedRaceId(race.id);
-  };
-
-  const handleScrapingRunPrediction = (race: Race) => {
-    const predictions = race.horses.map(h =>
-      calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
-    );
-    const sorted = sortPredictions(predictions);
-    const formation = generateFormation(sorted);
-    const updated = { ...race, predictions: sorted, formation } as Race & { formation: unknown };
-    const newState = updateRace(state, updated);
-    setState(newState);
-  };
-
-  const handleScrapingAddResult = (result: RaceResult, raceId: string) => {
-    const race = state.races.find(r => r.id === raceId);
-    const predictions = race?.predictions;
-    if (!race || !predictions) return;
-    const actualResult = result.result.map(r => ({ rank: r.rank, horseNumber: r.horseNumber }));
-    const patch = generateLearningPatch(race, predictions, actualResult, state.learningPatches);
-    let newState = addResult(state, result);
-    if (patch) {
-      newState = addLearningPatch(newState, patch);
-    }
-    setState(newState);
-  };
-
   const handleDeleteRace = (id: string) => {
     if (confirm("本当にこのレースを削除しますか？")) {
       setState(deleteRace(state, id));
@@ -228,11 +194,8 @@ export default function KeibaApp() {
         {([
           ["dashboard", "🏠", "ダッシュボード"],
           ["new_race", "➕", "新規レース登録"],
-          ["scraping", "🌐", "スクレイピング"],
           ["win5", "🎯", "WIN5予想"],
           ["stats", "📈", "成績・統計"],
-          ["knowledge", "📚", "ナレッジ＆AI"],
-          ["settings", "⚙️", "設定・同期"],
         ] as [View, string, string][]).map(([v, icon, label]) => (
           <div key={v} className={`nav-item ${view === v ? "active" : ""}`} onClick={() => setView(v)}>
             <span className="nav-icon">{icon}</span>{label}
@@ -241,7 +204,7 @@ export default function KeibaApp() {
 
         <div className="nav-section">AI学習</div>
         <div className={`nav-item ${view === "learning" ? "active" : ""}`} onClick={() => setView("learning")}>
-          <span className="nav-icon">🧬</span>学習パッチ管理
+          <span className="nav-icon">🧬</span>学習
         </div>
 
         {state.races.length > 0 && (
@@ -303,20 +266,6 @@ export default function KeibaApp() {
         )}
         {view === "stats" && (
           <StatsPanel state={state} />
-        )}
-        {view === "knowledge" && (
-          <KnowledgePanel />
-        )}
-        {view === "scraping" && (
-          <ScrapingPanel
-            state={state}
-            onAddRace={handleScrapingAddRace}
-            onRunPrediction={handleScrapingRunPrediction}
-            onAddResult={handleScrapingAddResult}
-          />
-        )}
-        {view === "settings" && (
-          <SettingsPanel state={state} />
         )}
         {view === "prediction" && !selectedRace && (
           <div className="empty-state">
