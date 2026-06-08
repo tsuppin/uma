@@ -256,6 +256,74 @@ def add_trainer_target_encoding(
     return df
 
 
+def add_bms_target_encoding(
+    df: pd.DataFrame,
+    bms_col: str = 'bms',
+    target_col: str = 'target',
+    venue_col: str = '場所',
+    smoothing: float = 10.0
+) -> pd.DataFrame:
+    """
+    母父(BMS)の勝率を Target Encoding で連続値化する。
+    出力カラム: 'bms_win_rate_te'
+    """
+    if bms_col not in df.columns or target_col not in df.columns:
+        df['bms_win_rate_te'] = 0.0
+        return df
+
+    global_mean = df[target_col].mean()
+
+    if venue_col in df.columns:
+        group_key = [bms_col, venue_col]
+    else:
+        group_key = [bms_col]
+
+    stats = df.groupby(group_key)[target_col].agg(['count', 'mean'])
+    stats.columns = ['count', 'mean']
+    stats['te_value'] = (
+        (stats['count'] * stats['mean'] + smoothing * global_mean)
+        / (stats['count'] + smoothing)
+    )
+
+    if venue_col in df.columns:
+        df = df.join(stats['te_value'].rename('bms_win_rate_te'), on=group_key)
+    else:
+        df = df.join(stats['te_value'].rename('bms_win_rate_te'), on=bms_col)
+
+    df['bms_win_rate_te'] = df['bms_win_rate_te'].fillna(global_mean)
+    return df
+
+
+def add_trainer_jockey_target_encoding(
+    df: pd.DataFrame,
+    trainer_col: str = 'trainer',
+    jockey_col: str = '騎手',
+    target_col: str = 'target',
+    smoothing: float = 10.0
+) -> pd.DataFrame:
+    """
+    調教師×騎手の勝負ラインの勝率を Target Encoding で連続値化する。
+    出力カラム: 'trainer_jockey_win_rate_te'
+    """
+    if trainer_col not in df.columns or jockey_col not in df.columns or target_col not in df.columns:
+        df['trainer_jockey_win_rate_te'] = 0.0
+        return df
+
+    global_mean = df[target_col].mean()
+    group_key = [trainer_col, jockey_col]
+
+    stats = df.groupby(group_key)[target_col].agg(['count', 'mean'])
+    stats.columns = ['count', 'mean']
+    stats['te_value'] = (
+        (stats['count'] * stats['mean'] + smoothing * global_mean)
+        / (stats['count'] + smoothing)
+    )
+
+    df = df.join(stats['te_value'].rename('trainer_jockey_win_rate_te'), on=group_key)
+    df['trainer_jockey_win_rate_te'] = df['trainer_jockey_win_rate_te'].fillna(global_mean)
+    
+    return df
+
 # =============================================================================
 # 3. 標準化された特徴量リストの取得
 # =============================================================================
@@ -273,10 +341,12 @@ BASE_FEATURES = [
 PREV_RACE_FEATURES = [
     'prev_result',       # 前走着順
     'prev_last3f',       # 前走上がり3F
+    'prev_front3f',      # 前走前半ペース（未取得時は0.0）
     'prev_time_diff',    # 前走タイム差
     'prev_popularity',   # 前走人気
     'prev_distance',     # 前走距離
     'distance_change',   # 距離変化
+    'surface_change',    # 馬場替わりフラグ（芝↔ダート=1）
     'interval_weeks',    # 出走間隔（週）
     'prev_top3_flag',    # 前走3着以内フラグ
     'is_jockey_changed', # 乗り替わりフラグ(1=乗替, 0=継続)
@@ -289,12 +359,14 @@ PREV_RACE_FEATURES = [
 
 # Target Encoding特徴量
 TARGET_ENCODING_FEATURES = [
-    'jockey_win_rate_te',  # 騎手×場所 勝率
-    'sire_win_rate_te',    # 種牡馬×場所 勝率
-    'trainer_win_rate_te', # 調教師×場所 勝率
+    'jockey_win_rate_te',         # 騎手×場所 勝率
+    'sire_win_rate_te',           # 種牡馬×場所 勝率
+    'trainer_win_rate_te',        # 調教師×場所 勝率
+    'bms_win_rate_te',            # 母父×場所 勝率
+    'trainer_jockey_win_rate_te', # 調教師×騎手ライン 勝率
 ]
 
-# 全特徴量（合計32）
+# 全特徴量（合計37）
 ALL_FEATURES = BASE_FEATURES + PREV_RACE_FEATURES + TARGET_ENCODING_FEATURES
 
 
@@ -391,6 +463,14 @@ def preprocess_common(df: pd.DataFrame) -> pd.DataFrame:
     df = add_jockey_target_encoding(df)
     df = add_sire_target_encoding(df)
     df = add_trainer_target_encoding(df)
+    df = add_bms_target_encoding(df)
+    df = add_trainer_jockey_target_encoding(df)
+
+    # 追加フラグのフォールバック
+    if 'surface_change' not in df.columns:
+        df['surface_change'] = 0.0
+    if 'prev_front3f' not in df.columns:
+        df['prev_front3f'] = 0.0
 
     return df
 
@@ -545,6 +625,14 @@ def preprocess_from_text_df(df: pd.DataFrame) -> pd.DataFrame:
     df = add_jockey_target_encoding(df, jockey_col='騎手', venue_col='場所')
     df = add_sire_target_encoding(df, sire_col='sire', venue_col='場所')
     df = add_trainer_target_encoding(df, trainer_col='trainer', venue_col='場所')
+    df = add_bms_target_encoding(df, bms_col='bms', venue_col='場所')
+    df = add_trainer_jockey_target_encoding(df, trainer_col='trainer', jockey_col='騎手')
+
+    # ---- 新規特徴量のフォールバック ----
+    if 'surface_change' not in df.columns:
+        df['surface_change'] = 0.0
+    if 'prev_front3f' not in df.columns:
+        df['prev_front3f'] = 0.0
 
     return df
 

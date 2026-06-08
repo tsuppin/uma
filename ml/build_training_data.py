@@ -177,6 +177,7 @@ def _build_base_row(
         'jockey':    horse.get('jockey', ''),
         'trainer':   horse.get('trainer', ''),
         'sire':      horse.get('sire', ''),
+        'bms':       horse.get('bms', ''),
 
         # ターゲット変数
         'target':    1 if actual_result <= 3 and actual_result > 0 else 0,
@@ -246,9 +247,15 @@ def _build_base_row(
         elif prev_passing and prev_passing.isdigit():
             first_corner_pos = float(prev_passing)
 
+        # 馬場替わり判定
+        prev_surface = prev.get('surface', '')
+        current_surface = race_info.get('surface', '')
+        surface_change = 1.0 if prev_surface and current_surface and prev_surface != current_surface else 0.0
+
         row.update({
             'prev_result':     float(prev.get('result', 0) or 0),
             'prev_last3f':     float(prev.get('last3f', 0) or 0),
+            'prev_front3f':    float(prev.get('front3f', 0) or 0),
             'prev_time_diff':  float(prev.get('time_diff', 0) or 0),
             'prev_popularity': float(prev.get('popularity', 0) or 0),
             'prev_distance':   float(prev.get('distance', 0) or 0),
@@ -259,18 +266,20 @@ def _build_base_row(
             'is_jockey_changed': 1.0 if prev.get('jockey') and horse.get('jockey') and prev.get('jockey') != horse.get('jockey') else 0.0,
             'is_transfer':     is_transfer,
             'class_drop_flag': class_drop_flag,
+            'surface_change':  surface_change,
             'first_corner_pos': first_corner_pos,
             'makuri_flag':     makuri_flag,
         })
     else:
         row.update({
-            'prev_result': 0.0, 'prev_last3f': 0.0, 'prev_time_diff': 0.0,
+            'prev_result': 0.0, 'prev_last3f': 0.0, 'prev_front3f': 0.0, 'prev_time_diff': 0.0,
             'prev_popularity': 0.0, 'prev_distance': 0.0, 'distance_change': 0.0,
             'interval_weeks': 0.0, 'prev_top3_flag': 0.0,
             'prev_jockey': '',
             'is_jockey_changed': 0.0,
             'is_transfer': 0.0,
             'class_drop_flag': 0.0,
+            'surface_change': 0.0,
             'first_corner_pos': 0.0,
             'makuri_flag': 0.0,
         })
