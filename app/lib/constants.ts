@@ -15231,5 +15231,168 @@ export const INITIAL_PATCHES: LearningPatch[] = [
       }
     ],
     "active": true
+  },
+  {
+    "id": "patch_1780890680669",
+    "version": "v1.1",
+    "date": "2026-06-08T03:51:20.669Z",
+    "description": "高知 - 好走馬(バリキング等)の特性学習",
+    "track": "高知",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "age",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "赤岡修",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "タリスマニック",
+        "scoreAdjust": 15
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_1780890720644",
+    "version": "v2.1",
+    "date": "2026-06-08T03:52:00.644Z",
+    "description": "高知 - 好走馬(ヴァンケドミンゴ等)の特性学習",
+    "track": "高知",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "age",
+        "operator": ">=",
+        "value": 8,
+        "scoreAdjust": 20
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "多田誠",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ルーラーシップ",
+        "scoreAdjust": 15
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_1780890750545",
+    "version": "v3.1",
+    "date": "2026-06-08T03:52:30.545Z",
+    "description": "高知 - 好走馬(ロレンツォ等)の特性学習",
+    "track": "高知",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "age",
+        "operator": ">=",
+        "value": 8,
+        "scoreAdjust": 20
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "赤岡修",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ロードカナロア",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "佐原秀",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ノヴェリスト",
+        "scoreAdjust": 15
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_1780890784861",
+    "version": "v4.1",
+    "date": "2026-06-08T03:53:04.861Z",
+    "description": "高知 - 好走馬(マイネルバルビゾン等)の特性学習",
+    "track": "高知",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 480,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "age",
+        "operator": ">=",
+        "value": 8,
+        "scoreAdjust": 20
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "阿部基",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アグネスデジタル",
+        "scoreAdjust": 15
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_1780890844581",
+    "version": "v5.1",
+    "date": "2026-06-08T03:54:04.581Z",
+    "description": "高知 - 好走馬(ペイシャブギー等)の特性学習",
+    "track": "高知",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "weight",
+        "operator": "<=",
+        "value": 440,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "jockey",
+        "operator": "includes",
+        "value": "山崎雅",
+        "scoreAdjust": 15
+      },
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モーニン",
+        "scoreAdjust": 15
+      }
+    ],
+    "active": true
   }
 ];
