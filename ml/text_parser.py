@@ -833,6 +833,7 @@ def _parse_jra_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
         'sire':        sire,
         'dam':         dam,
         'bms':         bms,
+        'breeder':     breeder,
         'odds':        odds,
         'popularity':  popularity,
         'has_blinker': has_blinker,

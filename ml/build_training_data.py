@@ -178,6 +178,8 @@ def _build_base_row(
         'trainer':   horse.get('trainer', ''),
         'sire':      horse.get('sire', ''),
         'bms':       horse.get('bms', ''),
+        'owner':     horse.get('owner', ''),
+        'breeder':   horse.get('breeder', ''),
 
         # ターゲット変数
         'target':    1 if actual_result <= 3 and actual_result > 0 else 0,
@@ -231,19 +233,43 @@ def _build_base_row(
         current_rank = _get_class_rank(race_info.get('race_class') or race_info.get('race_name', ''))
         prev_rank = _get_class_rank(prev.get('race_class', ''))
         class_drop_flag = 1.0 if prev_rank > current_rank and current_rank > 0 else 0.0
+        class_up_flag = 1.0 if prev_rank < current_rank and prev_rank > 0 else 0.0
         
-        # 初角位置・マクリ判定
+        # 全過去走から適性を算出
+        past_races_all = horse.get('past_races', [])
+        heavy_runs, heavy_top3 = 0, 0
+        left_runs, left_top3 = 0, 0
+        LEFT_HANDED_TRACKS = ["東京", "中京", "新潟", "川崎", "船橋", "浦和", "盛岡"]
+        
+        for pr in past_races_all:
+            cond = pr.get('condition')
+            res = pr.get('result', 0)
+            if cond in ['稍重', '重', '不良']:
+                heavy_runs += 1
+                if 0 < res <= 3:
+                    heavy_top3 += 1
+            if pr.get('venue') in LEFT_HANDED_TRACKS:
+                left_runs += 1
+                if 0 < res <= 3:
+                    left_top3 += 1
+                    
+        heavy_track_aptitude = float(heavy_top3 / heavy_runs) if heavy_runs > 0 else 0.0
+        left_handed_aptitude = float(left_top3 / left_runs) if left_runs > 0 else 0.0
+        
+        # 初角位置・マクリ判定・ごぼう抜き指数
         prev_passing = prev.get('passing', '')
         first_corner_pos = 0.0
         makuri_flag = 0.0
+        prev_corner34_overtake = 0.0
         if prev_passing and '-' in prev_passing:
             parts = prev_passing.split('-')
             if parts[0].isdigit():
                 first_corner_pos = float(parts[0])
             if len(parts) >= 2 and parts[0].isdigit() and parts[-1].isdigit():
-                # 初角順位 - 最終角順位 >= 3 ならマクリ
                 if int(parts[0]) - int(parts[-1]) >= 3:
                     makuri_flag = 1.0
+            if len(parts) >= 2 and parts[-2].isdigit() and parts[-1].isdigit():
+                prev_corner34_overtake = float(int(parts[-2]) - int(parts[-1]))
         elif prev_passing and prev_passing.isdigit():
             first_corner_pos = float(prev_passing)
 
@@ -274,9 +300,13 @@ def _build_base_row(
             'is_jockey_changed': 1.0 if prev.get('jockey') and horse.get('jockey') and prev.get('jockey') != horse.get('jockey') else 0.0,
             'is_transfer':     is_transfer,
             'class_drop_flag': class_drop_flag,
+            'class_up_flag':   class_up_flag,
             'surface_change':  surface_change,
             'first_corner_pos': first_corner_pos,
             'makuri_flag':     makuri_flag,
+            'prev_corner34_overtake': prev_corner34_overtake,
+            'heavy_track_aptitude': heavy_track_aptitude,
+            'left_handed_aptitude': left_handed_aptitude,
         })
     else:
         row.update({
@@ -288,9 +318,13 @@ def _build_base_row(
             'is_jockey_changed': 0.0,
             'is_transfer': 0.0,
             'class_drop_flag': 0.0,
+            'class_up_flag': 0.0,
             'surface_change': 0.0,
             'first_corner_pos': 0.0,
             'makuri_flag': 0.0,
+            'prev_corner34_overtake': 0.0,
+            'heavy_track_aptitude': 0.0,
+            'left_handed_aptitude': 0.0,
         })
 
     return row

@@ -101,14 +101,26 @@ def add_prev_race_features(df: pd.DataFrame, current_distance_col: str = '距離
     else:
         df['prev_position_ratio'] = 0.0
 
-    # ---- NaN を 0 で埋める（LightGBM は NaN を内部処理するが明示的に対応）----
+    # 着順と人気の乖離（期待裏切り度合い）
+    df['prev_pop_result_gap'] = df['prev_result'] - df['prev_popularity']
+
+    # 左右回り適性とコース替わり
+    LEFT_HANDED_TRACKS = ["東京", "中京", "新潟", "川崎", "船橋", "浦和", "盛岡"]
+    venue_col = '場所' if '場所' in df.columns else 'venue'
+    if venue_col in df.columns:
+        df['is_left_handed'] = df[venue_col].isin(LEFT_HANDED_TRACKS).astype(float)
+    else:
+        df['is_left_handed'] = 0.0
+
+    # NaN を 0 で埋める（LightGBM は NaN を内部処理するが明示的に対応）
     prev_cols = [
         'prev_result', 'prev_last3f', 'prev_time_diff',
         'prev_popularity', 'prev_distance', 'distance_change',
         'interval_weeks', 'prev_top3_flag',
-        'is_transfer', 'class_drop_flag', 'first_corner_pos', 'makuri_flag',
+        'is_transfer', 'class_drop_flag', 'class_up_flag', 'first_corner_pos', 'makuri_flag',
+        'prev_corner34_overtake', 'heavy_track_aptitude', 'left_handed_aptitude',
         'is_roberto_line', 'prev_time_diff_norm', 'prev_position_ratio',
-        'weight_trend', 'prev_last3f_rank'
+        'weight_trend', 'prev_last3f_rank', 'prev_pop_result_gap', 'is_left_handed'
     ]
     for col in prev_cols:
         if col in df.columns:
@@ -284,26 +296,56 @@ def add_bms_target_encoding(
         return df
 
     global_mean = df[target_col].mean()
-
-    if venue_col in df.columns:
-        group_key = [bms_col, venue_col]
-    else:
-        group_key = [bms_col]
+    group_key = [bms_col, venue_col] if venue_col in df.columns else [bms_col]
 
     stats = df.groupby(group_key)[target_col].agg(['count', 'mean'])
     stats.columns = ['count', 'mean']
-    stats['te_value'] = (
-        (stats['count'] * stats['mean'] + smoothing * global_mean)
-        / (stats['count'] + smoothing)
-    )
+    stats['te_value'] = (stats['count'] * stats['mean'] + smoothing * global_mean) / (stats['count'] + smoothing)
 
-    if venue_col in df.columns:
-        df = df.join(stats['te_value'].rename('bms_win_rate_te'), on=group_key)
-    else:
-        df = df.join(stats['te_value'].rename('bms_win_rate_te'), on=bms_col)
-
+    df = df.join(stats['te_value'].rename('bms_win_rate_te'), on=group_key) if venue_col in df.columns else df.join(stats['te_value'].rename('bms_win_rate_te'), on=bms_col)
     df['bms_win_rate_te'] = df['bms_win_rate_te'].fillna(global_mean)
     return df
+
+def add_owner_target_encoding(
+    df: pd.DataFrame,
+    owner_col: str = 'owner',
+    target_col: str = 'target',
+    venue_col: str = '場所',
+    smoothing: float = 10.0
+) -> pd.DataFrame:
+    """馬主の勝率を TE で連続値化する"""
+    if owner_col not in df.columns or target_col not in df.columns:
+        df['owner_win_rate_te'] = 0.0
+        return df
+    global_mean = df[target_col].mean()
+    group_key = [owner_col, venue_col] if venue_col in df.columns else [owner_col]
+    stats = df.groupby(group_key)[target_col].agg(['count', 'mean'])
+    stats.columns = ['count', 'mean']
+    stats['te_value'] = (stats['count'] * stats['mean'] + smoothing * global_mean) / (stats['count'] + smoothing)
+    df = df.join(stats['te_value'].rename('owner_win_rate_te'), on=group_key) if venue_col in df.columns else df.join(stats['te_value'].rename('owner_win_rate_te'), on=owner_col)
+    df['owner_win_rate_te'] = df['owner_win_rate_te'].fillna(global_mean)
+    return df
+
+def add_breeder_target_encoding(
+    df: pd.DataFrame,
+    breeder_col: str = 'breeder',
+    target_col: str = 'target',
+    venue_col: str = '場所',
+    smoothing: float = 10.0
+) -> pd.DataFrame:
+    """生産者の勝率を TE で連続値化する"""
+    if breeder_col not in df.columns or target_col not in df.columns:
+        df['breeder_win_rate_te'] = 0.0
+        return df
+    global_mean = df[target_col].mean()
+    group_key = [breeder_col, venue_col] if venue_col in df.columns else [breeder_col]
+    stats = df.groupby(group_key)[target_col].agg(['count', 'mean'])
+    stats.columns = ['count', 'mean']
+    stats['te_value'] = (stats['count'] * stats['mean'] + smoothing * global_mean) / (stats['count'] + smoothing)
+    df = df.join(stats['te_value'].rename('breeder_win_rate_te'), on=group_key) if venue_col in df.columns else df.join(stats['te_value'].rename('breeder_win_rate_te'), on=breeder_col)
+    df['breeder_win_rate_te'] = df['breeder_win_rate_te'].fillna(global_mean)
+    return df
+
 
 
 def add_trainer_jockey_target_encoding(
@@ -367,10 +409,16 @@ PREV_RACE_FEATURES = [
     'jockey_te_diff',    # 今走と前走の騎手TE勝率の差分
     'is_transfer',       # 転入初戦フラグ
     'class_drop_flag',   # 降級馬フラグ
+    'class_up_flag',     # 昇級馬フラグ
     'first_corner_pos',  # 前走初角位置
     'prev_position_ratio', # 前走通過順位バイアス
     'makuri_flag',       # 前走マクリフラグ
+    'prev_corner34_overtake', # 前走3-4角ごぼう抜き指数
     'weight_trend',      # 馬体重トレンド
+    'heavy_track_aptitude', # 道悪適性
+    'left_handed_aptitude', # 左回り適性
+    'prev_pop_result_gap',  # 前走人気着順乖離
+    'is_left_handed',       # 左回りフラグ
 ]
 
 # Target Encoding特徴量
@@ -380,6 +428,8 @@ TARGET_ENCODING_FEATURES = [
     'trainer_win_rate_te',        # 調教師×場所 勝率
     'bms_win_rate_te',            # 母父×場所 勝率
     'trainer_jockey_win_rate_te', # 調教師×騎手ライン 勝率
+    'owner_win_rate_te',          # 馬主×場所 勝率
+    'breeder_win_rate_te',        # 生産者×場所 勝率
 ]
 
 # 全特徴量（合計37）
@@ -481,6 +531,8 @@ def preprocess_common(df: pd.DataFrame) -> pd.DataFrame:
     df = add_trainer_target_encoding(df)
     df = add_bms_target_encoding(df)
     df = add_trainer_jockey_target_encoding(df)
+    df = add_owner_target_encoding(df)
+    df = add_breeder_target_encoding(df)
 
     # 追加フラグのフォールバック
     if 'surface_change' not in df.columns:
@@ -647,6 +699,8 @@ def preprocess_from_text_df(df: pd.DataFrame) -> pd.DataFrame:
     df = add_trainer_target_encoding(df, trainer_col='trainer', venue_col='場所')
     df = add_bms_target_encoding(df, bms_col='bms', venue_col='場所')
     df = add_trainer_jockey_target_encoding(df, trainer_col='trainer', jockey_col='騎手')
+    df = add_owner_target_encoding(df, owner_col='owner', venue_col='場所')
+    df = add_breeder_target_encoding(df, breeder_col='breeder', venue_col='場所')
 
     # ---- 新規特徴量のフォールバック ----
     if 'surface_change' not in df.columns:
