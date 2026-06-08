@@ -37,8 +37,19 @@ const ALL_TRACKS = [
 ];
 
 export function extractVenue(text: string): string | null {
+  // レース情報が集まっている先頭20行程度から検索する（馬名や所属による誤爆を防ぐため）
+  const headLines = text.split("\n").slice(0, 20).join("\n");
+  
+  // 「大井 11R」や「東京11R」のような明確なパターンを優先
   for (const track of ALL_TRACKS) {
-    if (text.includes(track)) {
+    if (new RegExp(`${track}\\s*\\d+R`).test(headLines)) {
+      return track;
+    }
+  }
+
+  // 単純な出現確認（ヘッダー部分のみ）
+  for (const track of ALL_TRACKS) {
+    if (headLines.includes(track)) {
       return track;
     }
   }
@@ -57,7 +68,7 @@ export function parseNARText(rawText: string): {
   const lines = rawText.split("\n").map(l => l.trim());
 
   let date = new Date().toISOString().slice(0, 10);
-  let venue = extractVenue(rawText) || "川崎";
+  let venue = extractVenue(rawText) || "";
   let raceNumber = 1, distance = 1200, headCount = 0, raceName = "";
   const surface: Race["surface"] = "ダート";
   let condition: Race["condition"] = "良";
