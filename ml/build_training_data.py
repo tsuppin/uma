@@ -252,13 +252,21 @@ def _build_base_row(
         current_surface = race_info.get('surface', '')
         surface_change = 1.0 if prev_surface and current_surface and prev_surface != current_surface else 0.0
 
+        # 馬体重トレンド判定 (今走体重 - 前走体重)
+        prev_weight = float(prev.get('weight', 0) or 0)
+        current_weight = float(horse.get('weight', 0) or 0)
+        weight_trend = current_weight - prev_weight if prev_weight > 0 and current_weight > 0 else 0.0
+
         row.update({
             'prev_result':     float(prev.get('result', 0) or 0),
             'prev_last3f':     float(prev.get('last3f', 0) or 0),
+            'prev_last3f_rank': float(prev.get('last3f_rank', 0) or 0),
             'prev_front3f':    float(prev.get('front3f', 0) or 0),
             'prev_time_diff':  float(prev.get('time_diff', 0) or 0),
             'prev_popularity': float(prev.get('popularity', 0) or 0),
             'prev_distance':   float(prev.get('distance', 0) or 0),
+            'prev_head_count': float(prev.get('head_count', 0) or 0),
+            'weight_trend':    float(weight_trend),
             'distance_change': float((race_info.get('distance', 0) or 0) - (prev.get('distance', 0) or 0)),
             'interval_weeks':  float(_weeks_between(race_date_obj, prev_date_obj)),
             'prev_top3_flag':  1.0 if prev.get('result', 0) and prev['result'] <= 3 else 0.0,
@@ -272,8 +280,9 @@ def _build_base_row(
         })
     else:
         row.update({
-            'prev_result': 0.0, 'prev_last3f': 0.0, 'prev_front3f': 0.0, 'prev_time_diff': 0.0,
+            'prev_result': 0.0, 'prev_last3f': 0.0, 'prev_last3f_rank': 0.0, 'prev_front3f': 0.0, 'prev_time_diff': 0.0,
             'prev_popularity': 0.0, 'prev_distance': 0.0, 'distance_change': 0.0,
+            'prev_head_count': 0.0, 'weight_trend': 0.0,
             'interval_weeks': 0.0, 'prev_top3_flag': 0.0,
             'prev_jockey': '',
             'is_jockey_changed': 0.0,

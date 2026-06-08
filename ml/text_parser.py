@@ -196,6 +196,7 @@ def _parse_nar_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
         pr_kinryo = 0.0
         pr_weight = 480
         pr_last3f = 0.0
+        pr_last3f_rank = 0
         pr_time_diff = 0.0
         pr_time = ""
         pr_jockey = ""
@@ -241,6 +242,15 @@ def _parse_nar_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
                 f3m = re.search(r'\((\d{2}\.\d)\)', l4)
                 if f3m:
                     pr_last3f = float(f3m.group(1))
+                    rank_m = re.search(r'([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳])', l4)
+                    if rank_m:
+                        char_to_rank = {'①':1,'②':2,'③':3,'④':4,'⑤':5,'⑥':6,'⑦':7,'⑧':8,'⑨':9,'⑩':10,
+                                        '⑪':11,'⑫':12,'⑬':13,'⑭':14,'⑮':15,'⑯':16,'⑰':17,'⑱':18,'⑲':19,'⑳':20}
+                        pr_last3f_rank = char_to_rank.get(rank_m.group(1), 0)
+                    else:
+                        rank_m2 = re.search(r'\[(\d+)\]', l4)
+                        if rank_m2:
+                            pr_last3f_rank = int(rank_m2.group(1))
                 # タイム差
                 wm = re.search(r'\s+[^\s(]+\(([-+]\d+\.?\d*)\)', l4)
                 if wm:
@@ -263,6 +273,7 @@ def _parse_nar_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
                 'weight':      pr_weight,
                 'jockey':      pr_jockey,
                 'last3f':      pr_last3f,
+                'last3f_rank': pr_last3f_rank,
                 'time_diff':   pr_time_diff,
                 'time':        pr_time,
                 'passing':     pr_passing,
@@ -588,11 +599,21 @@ def _parse_jra_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
 
         # 上がり3F
         pr_last3f = 0.0
+        pr_last3f_rank = 0
         if idx < len(lines):
             f3l = lines[idx].strip()
             f3m = re.search(r'3F\s*(\d+\.\d)', f3l) or re.match(r'^(\d{2}\.\d)$', f3l)
             if f3m:
                 pr_last3f = float(f3m.group(1))
+                rank_m = re.search(r'([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳])', f3l)
+                if rank_m:
+                    char_to_rank = {'①':1,'②':2,'③':3,'④':4,'⑤':5,'⑥':6,'⑦':7,'⑧':8,'⑨':9,'⑩':10,
+                                    '⑪':11,'⑫':12,'⑬':13,'⑭':14,'⑮':15,'⑯':16,'⑰':17,'⑱':18,'⑲':19,'⑳':20}
+                    pr_last3f_rank = char_to_rank.get(rank_m.group(1), 0)
+                else:
+                    rank_m2 = re.search(r'\[(\d+)\]', f3l)
+                    if rank_m2:
+                        pr_last3f_rank = int(rank_m2.group(1))
                 idx += 1
 
         # タイム差
@@ -627,6 +648,7 @@ def _parse_jra_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
                 'weight':     pr_weight,
                 'jockey':     pr_jockey,
                 'last3f':     pr_last3f,
+                'last3f_rank': pr_last3f_rank,
                 'time_diff':  pr_time_diff,
                 'time':       pr_time,
                 'passing':    pr_passing,

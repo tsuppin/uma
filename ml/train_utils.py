@@ -90,13 +90,25 @@ def add_prev_race_features(df: pd.DataFrame, current_distance_col: str = '距離
     df['prev_top3_flag'] = (df['prev_result'] <= 3).astype(float)
     df.loc[df['prev_result'].isna(), 'prev_top3_flag'] = np.nan
 
+    # ---- 派生指標：距離補正タイム差 & 通過順位バイアス ----
+    # 前走タイム差 / 前走距離 * 1000
+    df['prev_time_diff_norm'] = np.where(df['prev_distance'] > 0, (df['prev_time_diff'] / df['prev_distance']) * 1000.0, 0.0)
+    
+    # 初角位置 / 前走頭数
+    if 'prev_head_count' in df.columns:
+        df['prev_head_count'] = pd.to_numeric(df['prev_head_count'], errors='coerce')
+        df['prev_position_ratio'] = np.where(df['prev_head_count'] > 0, df['first_corner_pos'] / df['prev_head_count'], 0.0)
+    else:
+        df['prev_position_ratio'] = 0.0
+
     # ---- NaN を 0 で埋める（LightGBM は NaN を内部処理するが明示的に対応）----
     prev_cols = [
         'prev_result', 'prev_last3f', 'prev_time_diff',
         'prev_popularity', 'prev_distance', 'distance_change',
         'interval_weeks', 'prev_top3_flag',
         'is_transfer', 'class_drop_flag', 'first_corner_pos', 'makuri_flag',
-        'is_roberto_line'
+        'is_roberto_line', 'prev_time_diff_norm', 'prev_position_ratio',
+        'weight_trend', 'prev_last3f_rank'
     ]
     for col in prev_cols:
         if col in df.columns:
@@ -341,8 +353,10 @@ BASE_FEATURES = [
 PREV_RACE_FEATURES = [
     'prev_result',       # 前走着順
     'prev_last3f',       # 前走上がり3F
+    'prev_last3f_rank',  # 前走上がり3F順位
     'prev_front3f',      # 前走前半ペース（未取得時は0.0）
     'prev_time_diff',    # 前走タイム差
+    'prev_time_diff_norm', # 距離補正タイム差
     'prev_popularity',   # 前走人気
     'prev_distance',     # 前走距離
     'distance_change',   # 距離変化
@@ -354,7 +368,9 @@ PREV_RACE_FEATURES = [
     'is_transfer',       # 転入初戦フラグ
     'class_drop_flag',   # 降級馬フラグ
     'first_corner_pos',  # 前走初角位置
+    'prev_position_ratio', # 前走通過順位バイアス
     'makuri_flag',       # 前走マクリフラグ
+    'weight_trend',      # 馬体重トレンド
 ]
 
 # Target Encoding特徴量
@@ -471,6 +487,10 @@ def preprocess_common(df: pd.DataFrame) -> pd.DataFrame:
         df['surface_change'] = 0.0
     if 'prev_front3f' not in df.columns:
         df['prev_front3f'] = 0.0
+    if 'weight_trend' not in df.columns:
+        df['weight_trend'] = 0.0
+    if 'prev_last3f_rank' not in df.columns:
+        df['prev_last3f_rank'] = 0.0
 
     return df
 
@@ -633,6 +653,10 @@ def preprocess_from_text_df(df: pd.DataFrame) -> pd.DataFrame:
         df['surface_change'] = 0.0
     if 'prev_front3f' not in df.columns:
         df['prev_front3f'] = 0.0
+    if 'weight_trend' not in df.columns:
+        df['weight_trend'] = 0.0
+    if 'prev_last3f_rank' not in df.columns:
+        df['prev_last3f_rank'] = 0.0
 
     return df
 
