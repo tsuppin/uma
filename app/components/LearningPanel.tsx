@@ -22,6 +22,8 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
   const [page, setPage] = useState(0);
   const [filterText, setFilterText] = useState("");
   const [showSuspiciousOnly, setShowSuspiciousOnly] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState("");
 
   const handleToggle = (id: string) => {
     onStateChange(togglePatch(state, id));
@@ -103,6 +105,9 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
             navigator.clipboard.writeText(JSON.stringify(state.learningPatches, null, 2));
             alert("パッチデータをクリップボードにコピーしました。");
           }}>📤 エクスポート</button>
+          <button className="btn btn-secondary" onClick={() => setShowImport(!showImport)}>
+            📥 インポート
+          </button>
           {suspiciousCount > 0 && (
             <button className="btn btn-warning" onClick={handleDeleteSuspicious}>
               ⚠️ 異常削除 ({suspiciousCount})
@@ -173,6 +178,56 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
             </div>
           </div>
           <button className="btn btn-primary" onClick={handleAdd}>追加</button>
+        </div>
+      )}
+
+      {showImport && (
+        <div className="card">
+          <div className="card-header"><div className="card-title">📥 JSONからインポート</div></div>
+          <div className="form-group">
+            <label className="form-label">エクスポートしたJSONデータを貼り付けてください</label>
+            <textarea 
+              className="form-input" 
+              rows={8} 
+              value={importText} 
+              onChange={e => setImportText(e.target.value)} 
+              placeholder="[\n  {\n    &quot;id&quot;: &quot;patch_123&quot;,\n    ...\n  }\n]"
+            />
+          </div>
+          <div className="flex gap-8">
+            <button className="btn btn-primary" onClick={() => {
+              try {
+                const parsed = JSON.parse(importText);
+                if (!Array.isArray(parsed)) throw new Error("配列形式のJSONを指定してください。");
+                
+                // 重複を避けるための処理（同じIDのパッチは上書き、新規は追加）
+                const existingMap = new Map(state.learningPatches.map(p => [p.id, p]));
+                parsed.forEach(p => {
+                  if (p.id) {
+                    existingMap.set(p.id, p);
+                  } else {
+                    const newPatch = { ...p, id: `patch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` };
+                    existingMap.set(newPatch.id, newPatch);
+                  }
+                });
+                
+                const newPatches = Array.from(existingMap.values());
+                const newState = { 
+                  ...state, 
+                  learningPatches: newPatches, 
+                  modelVersion: `TsuchiyaProtocol-Omega v${newPatches.length}.0` 
+                };
+                saveStateToServer(newState);
+                onStateChange(newState);
+                setShowImport(false);
+                setImportText("");
+                alert(`${parsed.length}件のパッチを処理しました。`);
+              } catch (e: any) {
+                alert("インポートに失敗しました。正しいJSON形式か確認してください。\n" + e.message);
+              }
+            }}>インポート実行</button>
+            <button className="btn btn-secondary" onClick={() => setShowImport(false)}>キャンセル</button>
+          </div>
         </div>
       )}
 
