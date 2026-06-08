@@ -3996,6 +3996,51 @@ export function calculateTsuchiyaScore(
     }
 
     // ---------------------------------------------------
+    // ④ 【新要因1】市場・オッズに基づく期待値補正（回収率重視シフト）
+    // ---------------------------------------------------
+    // 1. 過剰人気馬への厳しいペナルティ（JRA特有のオッズ歪み補正）
+    if (popularity === 1 || odds <= 2.5) {
+      potential -= 25; // 期待値が低いため大幅減点
+      tags.push("⚠️ JRA過剰人気による期待値減点(オッズ歪み警戒)");
+    }
+    
+    // 2. 前走の展開・馬場バイアス的不利 ＋ 今回人気落ちの黄金パターン（実力隠蔽馬）
+    const prevRace = horse.pastRaces && horse.pastRaces[0];
+    if (prevRace) {
+      const wasOuterRun = prevRace.cornerOuterCount >= 4;
+      const didStumble = prevRace.isStumbled;
+      const isUnderValuedNow = odds >= 10.0 || popularity >= 4;
+      
+      if ((wasOuterRun || didStumble) && isUnderValuedNow) {
+        potential += 35;
+        tags.push("🚀 展開バイアス不利からの巻き返し(期待値特大の穴馬)");
+      }
+    }
+    
+    // 3. クラス基準タイム超え実績があるのに人気がない馬の評価引き上げ
+    if (horse.pastRaces) {
+      const hasExcellentTime = horse.pastRaces.slice(0, 3).some(pr => {
+        if (!pr.time || !pr.classBaseTime) return false;
+        const parseTimeToSec = (tStr: string): number => {
+          const clean = tStr.trim();
+          if (clean.includes(':')) {
+            const parts = clean.split(':');
+            return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+          }
+          return parseFloat(clean) || 999;
+        };
+        const seconds = parseTimeToSec(pr.time);
+        const baseSeconds = pr.classBaseTime;
+        return seconds > 0 && baseSeconds > 0 && seconds <= baseSeconds - 0.8;
+      });
+
+      if (hasExcellentTime && (odds >= 10.0 || popularity >= 4)) {
+        potential += 30;
+        tags.push("💎 持ち時計優秀の過小評価馬(期待値特大の穴馬)");
+      }
+    }
+
+    // ---------------------------------------------------
     // ④ 【新要因1】勾配物理とラップ局所ロス（坂の慣性エネルギー）の判定
     // ---------------------------------------------------
     if (horse.pastRaces && horse.pastRaces.length > 0) {
