@@ -288,7 +288,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                 let isHit = false;
                 if (race.result) {
                   if (race.result.hitTicketsMap) {
-                    const activeType = formationType === 'trifecta' ? 'trio' : formationType;
+                    const activeType = formationType === 'trifecta' ? 'trio' : formationType === 'trifecta_exact' ? 'trifecta' : formationType;
                     const hitMapList = race.result.hitTicketsMap[activeType as keyof typeof race.result.hitTicketsMap] || [];
                     isHit = hitMapList.some(h =>
                       h.length === ticket.length && h.every((n, j) => n === ticket[j])
