@@ -104,13 +104,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
               ))}
             </tbody>
           </table>
-          {!hasPrediction && (
-            <div className="mt-20 text-center">
-              <button type="button" className="btn btn-primary p-12-32 fs-lg" onClick={onRunPrediction}>
-                🛰️ 土屋プロトコル実行
-              </button>
-            </div>
-          )}
+
         </div>
       )}
 
