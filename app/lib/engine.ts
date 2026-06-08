@@ -120,6 +120,40 @@ export function calculateTsuchiyaScore(
   const tags: string[] = [];
 
   // ==========================================
+  // 【新設】◎ データ・ドリブン・コア（最適化ロジック）
+  // 機械学習の結果から導き出された最も重要な「物理・人間」要素を最優先評価
+  // ==========================================
+  
+  // 1. 斤量体重比（kinryo_weight_ratio）の最適化
+  if (weight > 0) {
+    const kinryoWeightRatio = (kinryo / weight) * 100;
+    if (kinryoWeightRatio < 11.5) {
+      potential += 30;
+      tags.push("👑 物理黄金比:負担極小・圧倒的パワーアドバンテージ");
+    } else if (kinryoWeightRatio >= 12.5) {
+      potential -= 30;
+      tags.push("⚠️ 物理的過負荷:小柄馬の斤量負担ペナルティ");
+    }
+  }
+
+  // 2. 馬格（馬体重ベース）の絶対評価
+  if (weight >= 500) {
+    potential += 15;
+    tags.push("💪 大型馬パワーボーナス(500kg以上)");
+  } else if (weight > 0 && weight <= 440) {
+    potential -= 15;
+    tags.push("⚠️ 小型馬パワー不足ペナルティ(440kg以下)");
+  }
+
+  // 3. エリート騎手への極大ブースト（騎手ファクター最大化）
+  const cleanJockey = jockey.replace(/[▲△☆◇]/g, '').trim();
+  const isEliteJockey = ELITE_JOCKEYS.some(ej => cleanJockey.includes(ej));
+  if (isEliteJockey) {
+    potential += 40;
+    tags.push("👑 トップジョッキー絶対値ブースト(最重要人間ファクター)");
+  }
+
+  // ==========================================
   // 【新設】③ 馬体重の長期的トレンド（成長・本格化・激ヤセ）判定
   // ==========================================
   if (hm && hm.results && hm.results.length >= 3 && weight > 0) {
