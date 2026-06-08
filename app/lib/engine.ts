@@ -2307,7 +2307,7 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【新設】人脈・相性・陣営の思惑 (Human Network & Intention)
   // ==========================================
-  const isEliteJockey = ELITE_JOCKEYS.some(ej => jockey.includes(ej));
+  // isEliteJockey は冒頭（150行目付近）で定義済みのため、ここでは再宣言しない
 
   // 1. 馬と騎手の相性（主戦騎手ボーナス）
   if (horse.pastRaces && horse.pastRaces.length > 0) {
