@@ -4602,3 +4602,26 @@ function combinations<T>(arr: T[], size: number): T[][] {
 export function sortPredictions(predictions: Prediction[]): Prediction[] {
   return [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber).map((p, i) => ({ ...p, rank: i + 1 }));
 }
+
+// AIを利用した非同期ラーニングパッチ生成
+export async function generateAILearningPatch(race: Race, predictions: Prediction[], actualResult: { rank: number; horseNumber: number; }[]): Promise<LearningPatch | null> {
+  try {
+    const res = await fetch('/api/learning-patch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ race, predictions, actualResult }),
+    });
+
+    if (!res.ok) {
+      console.warn("AI Learning failed:", await res.text());
+      return null;
+    }
+
+    const patch: LearningPatch = await res.json();
+    return patch;
+  } catch (err) {
+    console.error("AI Learning exception:", err);
+    return null;
+  }
+}
+

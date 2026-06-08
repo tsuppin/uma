@@ -10,7 +10,7 @@ import {
   deleteRace,
   defaultState
 } from "../lib/storage";
-import { calculateTsuchiyaScore, generateFormation, generateLearningPatch, sortPredictions } from "../lib/engine";
+import { calculateTsuchiyaScore, generateFormation, generateLearningPatch, generateAILearningPatch, sortPredictions } from "../lib/engine";
 import RaceForm from "./RaceForm";
 import RaceCard from "./RaceCard";
 import PredictionView from "./PredictionView";
@@ -110,22 +110,30 @@ export default function KeibaApp() {
     }, 100);
   };
 
-  const handleAddResult = (result: RaceResult, raceId: string) => {
+  const handleAddResult = async (result: RaceResult, raceId: string) => {
     const race = state.races.find(r => r.id === raceId);
     const predictions = race?.predictions;
     if (!race || !predictions) return;
     setIsProcessing(true);
-    setTimeout(() => {
+    
+    try {
       const actualResult = result.result.map(r => ({ rank: r.rank, horseNumber: r.horseNumber }));
-      const patch = generateLearningPatch(race, predictions, actualResult, state.learningPatches);
+      // APIを通じてAIによる自動学習・反省を実行
+      const patch = await generateAILearningPatch(race, predictions, actualResult);
+      
       let newState = addResult(state, result);
       if (patch) {
         newState = addLearningPatch(newState, patch);
       }
       setState(newState);
+    } catch (e) {
+      console.error("AI Reflection failed:", e);
+      // AI反省に失敗した場合は結果の登録だけ行う
+      setState(addResult(state, result));
+    } finally {
       setIsProcessing(false);
       setView("dashboard");
-    }, 100);
+    }
   };
 
   const handleDeleteRace = (id: string) => {
