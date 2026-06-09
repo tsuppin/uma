@@ -4681,6 +4681,59 @@ export function calculateTsuchiyaScore(
     tags.push('🐴 ブリンカー着用（集中力UP）');
   }
 
+  // ===================================================
+  // 【追加】JRA未使用データ（馬場・風・調教ラップ・ローテ・仮柵）完全活用ロジック
+  // ===================================================
+
+  // 1. クッション値の完全一致リンク（馬場ピタリ）
+  if (race.cushionValue && race.cushionValue > 0 && horse.pastRaces) {
+    const hasPerfectMatch = horse.pastRaces.some(pr => 
+      pr.result <= 3 && pr.cushionValue !== undefined && Math.abs(pr.cushionValue - race.cushionValue!) <= 0.3
+    );
+    if (hasPerfectMatch) {
+      potential += 20;
+      tags.push('🎯 馬場ピタリ: 好走時のクッション値と完全一致');
+    }
+  }
+
+  // 2. 強風・向かい風によるバイアス（逃げ馬ペナルティ）
+  if (race.windSpeed && race.windSpeed >= 5 && race.isHeadwind) {
+    if (horse.style === '逃げ') {
+      potential -= 25;
+      tags.push('⚠️ 危険信号: 強烈な向かい風による逃げ馬の失速懸念');
+    } else if (horse.style === '差し' || horse.style === '追込') {
+      potential += 15;
+      tags.push('🌪️ 強風展開利: 向かい風で前が潰れる差し展開');
+    }
+  }
+
+  // 3. 調教タイムの加速ラップ検知（隠れS評価）
+  if (horse.trainingTime) {
+    // 例: "南W 67.5-51.2-37.1-11.4" から "-11.X" の部分を抽出
+    const match = horse.trainingTime.match(/-11\.[0-6]$/);
+    if (match) {
+      potential += 20;
+      tags.push('⚡ 鬼脚仕上: 調教ラスト1F 11秒台の超加速ラップ');
+    }
+  }
+
+  // 4. ローテーションの妙味（叩き2走目）と疲労検知（連闘減体重）
+  if (horse.rotation === '休み明け2戦目' || horse.rotation === '叩き2走目') {
+    potential += 20;
+    tags.push('🔥 状態ピーク: 叩き2走目の大幅な上積み');
+  } else if ((horse.rotation === '連闘' || horse.rotation === '中1週') && horse.weightChange <= -4) {
+    potential -= 15;
+    tags.push('⚠️ 疲労蓄積: 間隔詰まりでの馬体減');
+  }
+
+  // 5. 仮柵（A→B/Cコース）替わりのイン突きバイアス
+  if (race.temporaryFencePosition === 'B' || race.temporaryFencePosition === 'C') {
+    if (horse.frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+      potential += 25;
+      tags.push(`🛣️ トラックバイアス絶対神: ${race.temporaryFencePosition}コース替わりの内枠先行`);
+    }
+  }
+
   // ---------------------------------------------------
   // 動的学習パッチの適用
   // ---------------------------------------------------
