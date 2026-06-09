@@ -426,6 +426,42 @@ export function calculateTsuchiyaScore(
         tags.push("⚠️ 中山危険: 短い直線で届かない『追込馬』の物理的絶望（消し）");
       }
     }
+
+    // ==========================================
+    // 【追加】函館重賞特化プロトコル（100%洋芝と日本一短い直線の攻略）
+    // ==========================================
+    const isHakodateStakes = trackName.includes('函館') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isHakodateStakes) {
+      // 函館重賞1: 100%洋芝適性（欧州・パワー型血統）
+      const isYoshibaSire = ['ハービンジャー', 'バゴ', 'ルーラーシップ', 'キングカメハメハ', 'クロフネ', 'ヘニーヒューズ', 'ステイゴールド', 'フランケル', 'Frankel', 'ロベルト'].some(s => (horse.sire || '').includes(s));
+      if (isYoshibaSire) {
+        potential += 40;
+        tags.push("👑 函館特注: 重い洋芝をパワーでねじ伏せる欧州・タフネス血統");
+      }
+
+      // 函館重賞2: 日本一短い直線の絶対法則（逃げ・先行）
+      if (horse.style === '逃げ' || horse.style === '先行') {
+        potential += 35;
+        tags.push("👑 函館特注: JRA最短の直線(262m)を活かす絶対的な前残り");
+      }
+
+      // 函館重賞3: 北海道マイスター（函館・札幌での好走実績）
+      const hasHokkaidoExp = horse.pastRaces?.some(pr => 
+        (pr.venue.includes('函館') || pr.venue.includes('札幌')) && pr.result <= 3
+      );
+      if (hasHokkaidoExp) {
+        potential += 30;
+        tags.push("👑 函館特注: 特殊な100%洋芝環境（北海道）での実績証明");
+      }
+
+      // 函館重賞4: 絶望の直線一気（追込馬ペナルティ）
+      // 直線が262mしかないため、後方待機の馬はよほど展開が向かない限り届かない
+      if (horse.style === '追込' && !isYoshibaSire) {
+        potential -= 40;
+        tags.push("⚠️ 函館危険: 日本一短い直線では物理的に届かない『追込馬』（消し）");
+      }
+    }
   }
 
   // ==========================================
