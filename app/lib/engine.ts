@@ -195,9 +195,9 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【追加】JRA専用・最強の複合ファクター判定
   // ==========================================
-  const isJRA = ['東京', '中山', '京都', '阪神', '中京', '新潟', '福島', '小倉', '函館', '札幌'].some(t => track.includes(t));
+  const isJraCourse = ['東京', '中山', '京都', '阪神', '中京', '新潟', '福島', '小倉', '函館', '札幌'].some(t => track.includes(t));
 
-  if (isJRA) {
+  if (isJraCourse) {
     // JRAコンボ1: 外厩帰り × トップ騎手 × 休み明け初戦
     if (horse.isAfterRest && eliteJockeys.some(j => jockey.includes(j))) {
       potential += 45;
