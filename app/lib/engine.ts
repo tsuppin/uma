@@ -164,7 +164,7 @@ export function calculateTsuchiyaScore(
   // ==========================================
   
   // コンボ1: 物理的絶対優位（小回り × 内枠 × 先行）
-  const isTightCourse = ['浦和', '函館', '福島', '小倉', '高知'].some(t => track.includes(t));
+  const isTightCourse = ['浦和', '函館', '福島', '小倉', '高知'].some(t => trackName.includes(t));
   if (isTightCourse && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
     potential += 45;
     tags.push("🔥 黄金コンボ: 小回り × 内枠 × 逃げ先行 (絶対物理優位)");
@@ -195,7 +195,7 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【追加】JRA専用・最強の複合ファクター判定
   // ==========================================
-  const isJraCourse = ['東京', '中山', '京都', '阪神', '中京', '新潟', '福島', '小倉', '函館', '札幌'].some(t => track.includes(t));
+  const isJraCourse = ['東京', '中山', '京都', '阪神', '中京', '新潟', '福島', '小倉', '函館', '札幌'].some(t => trackName.includes(t));
 
   if (isJraCourse) {
     // JRAコンボ1: 外厩帰り × トップ騎手 × 休み明け初戦
@@ -211,7 +211,7 @@ export function calculateTsuchiyaScore(
     }
 
     // JRAコンボ3: 上がり3F最速実績 × 直線の長いコース
-    const isLongStraight = ['東京', '新潟', '阪神'].some(t => track.includes(t));
+    const isLongStraight = ['東京', '新潟', '阪神'].some(t => trackName.includes(t));
     if (isLongStraight && prevRaceData && prevRaceData.last3fTime) {
       const last3f = parseFloat(prevRaceData.last3fTime);
       if (!isNaN(last3f) && last3f <= 34.0) {
@@ -238,7 +238,7 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【追加】阪神専用バイアス（ローカル学習結果の反映）
   // ==========================================
-  if (track.includes('阪神')) {
+  if (trackName.includes('阪神')) {
     let hanshinScore = 0;
     const isHanshinSire = ['キズナ', 'ホッコータルマエ', 'ハーツクライ', 'マジェスティックウォリアー', 'シュヴァルグラン', 'モズアスコット', 'Essential Quality'].some(s => sire.includes(s));
     const isHanshinJockey = ['西村 淳也', '鮫島 克駿', '小牧 加矢太', '森 一馬', '上野 翔', '西塚 洸二', '太宰 啓介', '角田 大和', '高倉 稜', '菱田 裕二'].some(j => jockey.includes(j));
