@@ -618,6 +618,70 @@ export function calculateTsuchiyaScore(
         tags.push("👑 札幌特注: スーパーG2(札幌記念)における『G1級』の絶対的な地力の違い");
       }
     }
+
+    // ==========================================
+    // 【追加】中京重賞特化プロトコル（左回りのタフな直線と内枠先行）
+    // ==========================================
+    const isChukyoStakes = trackName.includes('中京') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isChukyoStakes) {
+      // 中京重賞1: 魔の左回り・タフネス血統（坂と長い直線に耐えるパワー）
+      const isChukyoSire = ['キングカメハメハ', 'ロードカナロア', 'エピファネイア', 'モーリス', 'ルーラーシップ', 'ハーツクライ', 'ドゥラメンテ'].some(s => (horse.sire || '').includes(s));
+      if (isChukyoSire) {
+        potential += 35;
+        tags.push("👑 中京特注: 長い直線と急坂を耐え抜くタフなパワー系血統");
+      }
+
+      // 中京重賞2: 中京の絶対セオリー（内枠・先行有利）
+      // 直線は長いが、馬場が渋ったりコーナーの形状上、内枠の逃げ先行が非常に残る
+      if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
+        potential += 40;
+        tags.push("👑 中京特注: コース形状がもたらす『内枠×先行』の絶対的有利");
+      }
+
+      // 中京重賞3: 左回りマイスター（東京・中京・新潟の実績）
+      const hasLeftTurnExp = horse.pastRaces?.some(pr => 
+        (pr.venue.includes('東京') || pr.venue.includes('中京') || pr.venue.includes('新潟')) && pr.result <= 3
+      );
+      if (hasLeftTurnExp) {
+        potential += 30;
+        tags.push("👑 中京特注: ごまかしの利かない左回りコースの好走実績");
+      }
+    }
+
+    // ==========================================
+    // 【追加】福島重賞特化プロトコル（極限の小回りと機動力）
+    // ==========================================
+    const isFukushimaStakes = trackName.includes('福島') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isFukushimaStakes) {
+      // 福島重賞1: ローカル小回りの鬼（ステイゴールド・ロベルト系）
+      const isFukushimaSire = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'スクリーンヒーロー', 'エピファネイア', 'ナカヤマフェスタ'].some(s => (horse.sire || '').includes(s));
+      if (isFukushimaSire) {
+        potential += 40;
+        tags.push("👑 福島特注: 荒れた小回りを捲り切るローカル特化のタフネス血統");
+      }
+
+      // 福島重賞2: 直線292mの機動力（マクリ・先行）
+      // 直線が極端に短いため、4コーナーで前列にいないと物理的に届かない
+      if (horse.style === '逃げ' || horse.style === '先行') {
+        potential += 35;
+        tags.push("👑 福島特注: 直線292mの絶望を回避する先行力");
+      }
+
+      // 福島重賞3: 荒れるハンデ戦のセオリー（軽斤量）
+      // 七夕賞や福島記念など、斤量が軽い逃げ馬が波乱を起こす
+      if (kinryo <= 54) {
+        potential += 30;
+        tags.push("👑 福島特注: 波乱のハンデ戦における軽斤量アドバンテージ");
+      }
+
+      // 福島重賞4: 直線一気の完全否定（追込馬ペナルティ）
+      if (horse.style === '追込') {
+        potential -= 40;
+        tags.push("⚠️ 福島危険: 短い直線とタイトなコーナーでは絶望的な『追込馬』（消し）");
+      }
+    }
   }
 
   // ==========================================
