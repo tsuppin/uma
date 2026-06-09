@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { AppState, Race, RaceResult } from "../types";
+import { auth } from '../lib/firebase';
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import {
   loadStateFromServer,
   addRace,
@@ -30,6 +32,7 @@ export default function KeibaApp() {
   const [view, setView] = useState<View>("dashboard");
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   // サーバーからデータを読み込む
   useEffect(() => {
@@ -44,6 +47,40 @@ export default function KeibaApp() {
         setIsLoaded(true);
       });
   }, []);
+
+  // Firebase Auth の状態監視
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // ログインしたらクラウドから最新データを取得
+        loadStateFromServer()
+          .then((loaded) => {
+            setState(loaded);
+          })
+          .catch(console.error);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogin = async () => {
+    if (!auth) {
+      alert('Firebaseが設定されていません。環境変数を確認してください。');
+      return;
+    }
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Login Error:", error);
+    }
+  };
+
+  const handleLogout = () => {
+    if (auth) signOut(auth);
+  };
 
   // storage-save-error イベントをリッスン
   const handleStorageError = useCallback((e: Event) => {
@@ -180,8 +217,20 @@ export default function KeibaApp() {
       {/* Header */}
       <header className="header">
         <div className="header-logo">🛰️ 土屋プロトコル</div>
-        <div className="header-version">Omega v7.0</div>
+        <div className="header-version">{state.modelVersion}</div>
         <div className="header-spacer" />
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '24px' }}>
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img src={user.photoURL || ''} alt="User" style={{width: '28px', height: '28px', borderRadius: '50%'}} />
+              <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={handleLogout}>ログアウト</button>
+            </div>
+          ) : (
+            <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={handleLogin}>Googleでログイン</button>
+          )}
+        </div>
+
         <div className="header-stats">
           <div className="stat-badge">
             📊 <span>的中率:</span><span className="value">{(stats.hitRate * 100).toFixed(1)}%</span>

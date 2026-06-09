@@ -7,6 +7,8 @@
 import { AppState, Race, LearningPatch, RaceResult } from '../types';
 import { updateMasterDataWithRace, updateMasterDataWithResult } from './db';
 import { loadStateFromIDB, saveStateToIDB } from './indexeddb';
+import { db, auth } from './firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export const defaultState: AppState = {
   races: [],
@@ -32,6 +34,21 @@ export const defaultState: AppState = {
 export async function loadStateFromServer(): Promise<AppState> {
   if (typeof window === 'undefined') return defaultState;
   try {
+    // もしFirebaseにログインしていれば、クラウド上の状態を取得（最新のものとして上書き）
+    if (auth && auth.currentUser && db) {
+      try {
+        const docRef = doc(db, 'users', auth.currentUser.uid, 'appState', 'current');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const cloudState = docSnap.data() as AppState;
+          saveStateToIDB(cloudState).catch(console.error);
+          return cloudState;
+        }
+      } catch (err) {
+        console.warn('[storage] Firebaseからの読み込み失敗:', err);
+      }
+    }
+
     // 1. IndexedDB から読み込む
     const data = await loadStateFromIDB();
     if (data) {
@@ -51,7 +68,6 @@ export async function loadStateFromServer(): Promise<AppState> {
       const res = await fetch('/api/state');
       if (res.ok) {
         const serverState = await res.json() as AppState;
-        // IDB に保存しておく
         saveStateToIDB(serverState).catch(console.error);
         return serverState;
       }
@@ -79,6 +95,15 @@ export async function saveStateToServer(state: AppState): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state),
     }).catch(err => console.warn('[storage] /api/state POST 失敗:', err));
+
+    // もしFirebaseにログインしていれば、クラウドにも保存
+    if (auth && auth.currentUser && db) {
+      const docRef = doc(db, 'users', auth.currentUser.uid, 'appState', 'current');
+      setDoc(docRef, state).catch(err => {
+        console.warn('[storage] Firebaseへの保存失敗:', err);
+      });
+    }
+
   } catch (e) {
     console.error('[storage] IndexedDBへの保存失敗:', e);
     window.dispatchEvent(new CustomEvent('storage-save-error', { detail: { reason: 'local_error' } }));
