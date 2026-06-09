@@ -2618,9 +2618,28 @@ export function calculateTsuchiyaScore(
     const eliteTrainersM = ["角川", "佐々木", "佐々国", "田中淳", "黒川", "小国", "田中正"];
     const isEliteTrainerM = eliteTrainersM.some(et => trainerName.includes(et));
 
-    if (isEliteJockeyM && isEliteTrainerM) {
-      potential += 35;
-      tags.push("🌟 門別黄金コンビ:トップジョッキー×有力厩舎");
+    if (isEliteJockeyM) {
+      potential += 25; // 騎手単体でも強力に加点
+      tags.push("👑 門別トップジョッキー信頼度");
+      if (isEliteTrainerM) {
+        potential += 20; // コンビで合計+45
+        tags.push("🌟 門別黄金コンビ:トップジョッキー×有力厩舎");
+      }
+    } else {
+      potential -= 10; // トップ騎手でない場合は的中率向上のため割引
+    }
+
+    // 門別実績（近走実績）の追加
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const pr = horse.pastRaces[0];
+      if (pr.result <= 3) {
+        potential += 20;
+        tags.push("📈 門別実績: 前走好走の堅実性");
+      }
+      if (pr.venue?.includes("門別") && pr.result <= 2) {
+        potential += 15;
+        tags.push("🥇 門別適性: 同コース連続好走の鉄板度");
+      }
     }
 
     // 3. 馬券種マルチタスク学習（仕上がり安定とヒモ大穴激走）
@@ -2629,25 +2648,30 @@ export function calculateTsuchiyaScore(
       potential += 20;
       tags.push("📈 門別仕上がり安定(馬体重増減なし・微小)");
     }
-    // 牝馬ボーナス
+    // 牝馬ボーナス（適正化）
     if (gender === "牝") {
-      potential += 20;
-      tags.push("🐎 門別牝馬エッジ");
+      potential += 5; // 20から5に減らして過剰評価を防ぐ
+      tags.push("🐎 門別牝馬エッジ(微加点)");
     }
 
     // 2着・3着（ヒモ穴）モデルの期待値（大幅体重増減・減量騎手）
     const absWeightChange = Math.abs(weightChange);
     if (absWeightChange >= 10) {
       if (popularity >= 6 || odds >= 12.0) {
-        potential += 25;
+        potential += 15; // 25から15へ
         tags.push("⚡ 門別特選:大幅馬体重変則仕上げ妙味");
       }
     }
-    // 減量騎手フラグ
+    // 減量騎手フラグ（適正化）
     const isApprentice = jockey.match(/^[▲△☆◇]/) || jockey.includes("減量") || jockey.includes("▲") || jockey.includes("△");
     if (isApprentice) {
-      potential += 30;
-      tags.push("🏃 門別若手・減量ジョッキー起爆剤");
+      if (isFrontRunner) {
+        potential += 10; // 30から10へ
+        tags.push("🏃 門別減量騎手×先行力");
+      } else {
+        potential -= 15; // 差し追込の減量騎手は割引
+        tags.push("⚠️ 門別減量騎手×控える競馬(割引)");
+      }
     }
 
     // 4. レース条件（前半・後半）による堅実/波乱モデル切り替え
