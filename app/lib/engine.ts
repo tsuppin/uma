@@ -520,6 +520,48 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
+    // 【追加】中山マニアック特化プロトコル（ニッチな高回収率ロジック）
+    // ==========================================
+    if (trackName.includes('中山')) {
+      // マニアック1: 東京からの大逆転「スピード負けからの急坂パワー替わり」
+      if (prevRaceData && prevRaceData.venue?.includes('東京') && prevRaceData.result >= 4) {
+        const isPowerSire = ['キズナ', 'エピファネイア', 'ルーラーシップ', 'ハービンジャー', 'モーリス', 'スクリーンヒーロー'].some(s => (horse.sire || '').includes(s));
+        if (isPowerSire) {
+          potential += 45;
+          tags.push("🔥 中山特注: 東京(直線キレ負け)からの急坂パワー替わり大逆転");
+        }
+      }
+
+      // マニアック2: 中山ダート1200m専用「芝スタート・急坂下り×大外枠の暴力」
+      if (race.surface === 'ダート' && dist === 1200) {
+        if (frame >= 7 && (horse.style === '逃げ' || horse.style === '先行')) {
+          potential += 45;
+          tags.push("🔥 中山D1200特注: 芝スタートの急坂下りを活かして制圧する大外枠");
+        }
+      }
+
+      // マニアック3: 冬の中山・荒れ馬場専用「ロベルト系の無双」
+      if (race.surface === '芝' && ['稍重', '重', '不良'].includes(condition)) {
+        const isRoberto = ['エピファネイア', 'スクリーンヒーロー', 'モーリス', 'シンボリクリスエス', 'ストロングリターン'].some(s => (horse.sire || '').includes(s) || (horse.bms || '').includes(s));
+        if (isRoberto) {
+          potential += 40;
+          tags.push("🔥 中山荒れ馬場特注: 時計のかかるタフな馬場で他を圧倒するロベルト系");
+        }
+      }
+
+      // マニアック4: 中山芝2500m（有馬記念）専用「内枠絶対主義×非根幹適性」
+      if (race.surface === '芝' && dist === 2500) {
+        if (frame <= 3) {
+          const isNonRootStamina = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'エピファネイア', 'スクリーンヒーロー'].some(s => (horse.sire || '').includes(s));
+          if (isNonRootStamina) {
+            potential += 45;
+            tags.push("🔥 中山2500特注: コーナー6回をロスなく回る内枠と非根幹スタミナ");
+          }
+        }
+      }
+    }
+
+    // ==========================================
     // 【追加】宝塚記念（阪神2200m・グランプリ）特化プロトコル
     // ==========================================
     const isTakarazukaKinen = trackName.includes('阪神') && race.raceName && race.raceName.includes('宝塚記念');
