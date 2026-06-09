@@ -195,10 +195,18 @@ export function calculateNARScore(
   // 【追加】結果×出馬表のクロスロジック（期待値ハック）
   // ===================================================
   const frontRunnersCount = race.horses.filter(h => h.style === '逃げ').length;
+  const isFrontBias = race.condition === '重' || race.condition === '不良' || 
+    learningPatches.some(p => p.description.includes('前残り'));
   
-  // 1. 展開（ペース）予測と脚質の逆転ロジック
+  // 1. 展開（ペース）予測と脚質の逆転（相殺）ロジック
   if (frontRunnersCount >= 3) {
-    if (prevRaceData && prevRaceData.last3fTime) {
+    if (isFrontBias) {
+      // ハイペースでも前が止まらない馬場状態の場合の特殊相殺
+      if (horse.style === '逃げ' || horse.style === '先行') {
+        potential += 30;
+        tags.push("⚔️ 前止まらず: ハイペースでも潰れない前残り特殊馬場");
+      }
+    } else if (prevRaceData && prevRaceData.last3fTime) {
       const prevLast3f = parseFloat(prevRaceData.last3fTime);
       if ((horse.style === '差し' || horse.style === '追込') && prevRaceData.result >= 4 && !isNaN(prevLast3f) && prevLast3f <= 38.0) {
         potential += 45;
@@ -212,6 +220,15 @@ export function calculateNARScore(
     }
   }
 
+  // 1-B. 「逃げ馬の隣の枠」スリップストリーム恩恵
+  if (horse.style === '先行' || horse.style === '好位') {
+    const insideHorse = race.horses.find(h => h.horseNumber === horse.horseNumber - 1);
+    if (insideHorse && insideHorse.style === '逃げ') {
+      potential += 15;
+      tags.push("🛡️ 砂被り回避: 内側の逃げ馬を利用する絶好の特等席（スリップストリーム）");
+    }
+  }
+
   // 2. 着順ではなく着差（タイム差）評価ロジック
   if (prevRaceData && prevRaceData.result >= 6 && prevRaceData.timeDiff !== undefined) {
     if (prevRaceData.timeDiff <= 0.6) {
@@ -220,13 +237,24 @@ export function calculateNARScore(
     }
   }
 
-  // 3. 陣営の勝負気配（トップ騎手への乗り替わり）検知
+  // 3. 陣営の勝負気配（トップ騎手への乗り替わり・ヤリ）検知
   if (prevRaceData && prevRaceData.jockey) {
     const prevWasTop = NAR_ELITE_JOCKEYS.some(j => prevRaceData.jockey.includes(j));
     const nowIsTop = NAR_ELITE_JOCKEYS.some(j => horse.jockey.includes(j));
     if (!prevWasTop && nowIsTop) {
       potential += 40;
-      tags.push("🔥 期待値クロス: 前走非エリートからの地方トップ騎手手配（陣営の超勝負気配）");
+      tags.push("🔀 勝負のヤリ: 前走非エリートからの地方エース手配（陣営の超勝負気配）");
+    }
+  }
+
+  // 4. 同開催（連闘）のリベンジ追跡
+  if (horse.rotation === '連闘' && prevRaceData) {
+    if (prevRaceData.condition && race.condition && prevRaceData.condition !== race.condition) {
+      potential += 15;
+      tags.push("🔄 執念の連闘: 馬場条件の好転を狙った陣営のリベンジ出走");
+    } else if (masterData?.horses[horse.name]?.incidents?.some(i => i.note === "上がり最速で敗退")) {
+      potential += 15;
+      tags.push("🔄 執念の連闘: 前走展開泣きからの即反撃（陣営の勝算あり）");
     }
   }
 
