@@ -483,6 +483,43 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
+    // 【追加】福島マニアック特化プロトコル（ニッチな高回収率ロジック）
+    // ==========================================
+    if (trackName.includes('福島')) {
+      // マニアック1: ステイゴールド系の庭「マクリの美学」
+      if (race.surface === '芝' && (horse.style === '差し' || horse.style === '追込' || horse.style === '後方')) {
+        const isStayGold = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'ナカヤマフェスタ', 'ドリームジャーニー'].some(s => (horse.sire || '').includes(s));
+        if (isStayGold) {
+          potential += 45;
+          tags.push("🔥 福島芝特注: 小回りで長く良い脚を持続させるステイゴールド系(マクリ)");
+        }
+      }
+
+      // マニアック2: 荒れ馬場の洋芝リンク「北海道実績馬の降臨」
+      if (race.surface === '芝' && ['稍重', '重', '不良'].includes(condition)) {
+        const hasHokkaidoRecord = horse.pastRaces?.some(pr => pr.venue?.match(/(函館|札幌)/) && pr.result <= 3);
+        if (hasHokkaidoRecord) {
+          potential += 35;
+          tags.push("🔥 福島特注: 荒れて時計のかかる馬場で覚醒する洋芝(北海道)適性馬");
+        }
+      }
+
+      // マニアック3: 福島ダート1150m専用「芝スタート×スピード絶対主義」
+      if (race.surface === 'ダート' && dist === 1150) {
+        if (frame >= 6 && horse.style === '逃げ') {
+          potential += 40;
+          tags.push("🔥 福島D1150特注: 芝スタートを活かしてハナを奪いきる外枠の逃げ馬");
+        }
+      }
+
+      // マニアック4: 小回りの先行力「内枠・逃げ先行のインベタ」
+      if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+        potential += 30;
+        tags.push("🔥 福島特注: コーナーのキツい小回りをロスなく立ち回る内枠先行馬");
+      }
+    }
+
+    // ==========================================
     // 【追加】宝塚記念（阪神2200m・グランプリ）特化プロトコル
     // ==========================================
     const isTakarazukaKinen = trackName.includes('阪神') && race.raceName && race.raceName.includes('宝塚記念');
