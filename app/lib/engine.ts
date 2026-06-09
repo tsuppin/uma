@@ -462,6 +462,45 @@ export function calculateTsuchiyaScore(
         tags.push("⚠️ 函館危険: 日本一短い直線では物理的に届かない『追込馬』（消し）");
       }
     }
+
+    // ==========================================
+    // 【追加】小倉重賞特化プロトコル（超高速・平坦・小回りの攻略）
+    // ==========================================
+    const isKokuraStakes = trackName.includes('小倉') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isKokuraStakes) {
+      // 小倉重賞1: 超高速野芝の絶対スピード（スプリント・スピード血統）
+      const isKokuraSpeedSire = ['ロードカナロア', 'ビッグアーサー', 'ミッキーアイル', 'ダイワメジャー', 'キンシャサノキセキ', 'ディープインパクト', 'サクラバクシンオー', 'ファインニードル', 'マクフィ'].some(s => (horse.sire || '').includes(s));
+      if (isKokuraSpeedSire) {
+        potential += 40;
+        tags.push("👑 小倉特注: 超高速馬場に適合する絶対的なスピード血統");
+      }
+
+      // 小倉重賞2: 平坦・小回りの逃げ切り（テンの速さと内枠先行）
+      if (frame <= 5 && (horse.style === '逃げ' || horse.style === '先行')) {
+        potential += 35;
+        tags.push("👑 小倉特注: 小回り＆平坦コースでの止まらない逃げ・先行");
+      }
+
+      // 小倉重賞3: 軽量馬の平坦コース無双（軽斤量の恩恵）
+      // 小倉記念や北九州記念などハンデ戦が多い。平坦なため軽い馬がスイスイ走る
+      if (kinryo <= 53 && horse.gender === '牝') {
+        potential += 30;
+        tags.push("👑 小倉特注: 坂のない平坦コースで躍動する軽斤量の牝馬");
+      } else if (kinryo <= 54) {
+        potential += 20;
+        tags.push("👑 小倉特注: 平坦コースの軽斤量アドバンテージ");
+      }
+
+      // 小倉重賞4: 小倉巧者のリピーター（過去の小倉実績）
+      const hasKokuraExp = horse.pastRaces?.some(pr => 
+        pr.venue.includes('小倉') && pr.result <= 3
+      );
+      if (hasKokuraExp) {
+        potential += 30;
+        tags.push("👑 小倉特注: 独特の高速小回りコースに対する完全なコース適性");
+      }
+    }
   }
 
   // ==========================================
