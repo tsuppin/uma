@@ -105,6 +105,47 @@ export function calculateNARScore(
       tags.push("👑 船橋特注: スパイラルカーブの遠心力を活かして加速する外枠");
     }
   }
+  else if (trackName.includes('名古屋') || trackName.includes('弥富')) {
+    // 名古屋（弥富）特化: 圧倒的な先行有利
+    // 移転後の新競馬場は圧倒的に前が止まらない
+    if (horse.style === '逃げ' || horse.style === '先行') {
+      potential += 30;
+      tags.push("👑 名古屋特注: 新競馬場特有の止まらない圧倒的先行力");
+    }
+  }
+  else if (trackName.includes('笠松')) {
+    // 笠松特化: 小回り特有の内枠先行
+    if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
+      potential += 35;
+      tags.push("👑 笠松特注: タイトなコーナーを最短で回る内枠先行の絶対優位");
+    }
+  }
+  else if (trackName.includes('園田') || trackName.includes('姫路')) {
+    // 園田特化: 1400mの1コーナー争い（内枠絶対有利）
+    // 園田のメイン距離はスタート直後にコーナーがあるため、外枠は致命的なロスになる
+    if (frame <= 3) {
+      potential += 40;
+      tags.push("👑 園田特注: スタート直後のポジション争いを制する『内枠』の絶対的有利");
+    }
+    if (frame >= 7) {
+      potential -= 30;
+      tags.push("⚠️ 園田危険: 1コーナーで外を回される致命的な距離ロス（外枠減点）");
+    }
+  }
+  else if (trackName.includes('高知')) {
+    // 高知特化1: 内ラチ沿いの深い砂（1枠のペナルティ）
+    // 高知競馬は馬場保護のため内側の砂が非常に深く、1枠で包まれると抜け出せない
+    if (frame === 1) {
+      potential -= 40;
+      tags.push("⚠️ 高知危険: 砂が最も深くスタミナを奪われる魔の『1枠』（大減点）");
+    }
+    // 高知特化2: 外回しの差し（外枠・差し有利）
+    // 全馬が馬場の良い外側に出そうとするため、最初から外を走れる外枠や差し馬が有利
+    if (frame >= 6 && (horse.style === '差し' || horse.style === '追込')) {
+      potential += 45;
+      tags.push("👑 高知特注: 馬場の良い外側をスムーズに押し上げる『外枠の差し』");
+    }
+  }
 
   // ==========================================
   // ベースロジック（オッズ歪み等）
