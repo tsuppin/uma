@@ -576,6 +576,48 @@ export function calculateTsuchiyaScore(
         tags.push("👑 新潟特注: 独特の左回り超ロング直線に対するコース適性の証明");
       }
     }
+
+    // ==========================================
+    // 【追加】札幌重賞特化プロトコル（大回り・平坦の100%洋芝）
+    // ==========================================
+    const isSapporoStakes = trackName.includes('札幌') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isSapporoStakes) {
+      // 札幌重賞1: 100%洋芝適性（欧州・タフネス血統）
+      const isYoshibaSire = ['ハービンジャー', 'バゴ', 'ルーラーシップ', 'キングカメハメハ', 'クロフネ', 'スクリーンヒーロー', 'ステイゴールド', 'ゴールドシップ', 'オルフェーヴル'].some(s => (horse.sire || '').includes(s));
+      if (isYoshibaSire) {
+        potential += 40;
+        tags.push("👑 札幌特注: 力のいる洋芝をねじ伏せる欧州・タフネス血統");
+      }
+
+      // 札幌重賞2: 大回り・平坦コースの持続力（コーナーでの機動力）
+      // 札幌は函館と違い、コーナーが大きくて緩やかなため、外から長く良い脚を使う「マクリ」や「差し」が決まりやすい
+      if (horse.style === '差し' && isYoshibaSire) {
+        potential += 35;
+        tags.push("👑 札幌特注: 大きなコーナーで失速しない洋芝適性馬の長く良い脚（マクリ・差し）");
+      } else if (horse.style === '先行') {
+        potential += 20;
+        tags.push("👑 札幌特注: 大回り平坦コースでしぶとく粘り込む先行力");
+      }
+
+      // 札幌重賞3: 北海道マイスター（函館・札幌での好走実績）
+      const hasHokkaidoExp = horse.pastRaces?.some(pr => 
+        (pr.venue.includes('函館') || pr.venue.includes('札幌')) && pr.result <= 3
+      );
+      if (hasHokkaidoExp) {
+        potential += 30;
+        tags.push("👑 札幌特注: 特殊な100%洋芝環境（北海道）に対する完全な適性証明");
+      }
+
+      // 札幌重賞4: スーパーG2の格の違い（札幌記念のG1実績馬）
+      // 札幌記念(G2)は秋のG1を見据えた超一級馬が集まるため、過去にG1で5着以内の実績がある馬が地力の違いを見せる
+      const isSapporoKinen = race.raceName.includes('札幌記念');
+      const hasG1Class = horse.pastRaces?.some(pr => (pr.raceClass?.match(/G[1I]/i) || pr.raceName?.match(/G[1I]/i)) && pr.result <= 5);
+      if (isSapporoKinen && hasG1Class) {
+        potential += 45;
+        tags.push("👑 札幌特注: スーパーG2(札幌記念)における『G1級』の絶対的な地力の違い");
+      }
+    }
   }
 
   // ==========================================
