@@ -562,6 +562,90 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
+    // 【追加】残り4競馬場マニアック特化プロトコル（京都・中京・札幌・小倉）
+    // ==========================================
+    
+    // 【京都】平坦と淀の坂の魔術師
+    if (trackName.includes('京都')) {
+      // マニアック1: 下り坂の魔術師（ディープ系・スピード）
+      if (race.surface === '芝') {
+        const isKyotoMaster = ['ディープインパクト', 'キタサンブラック', 'ロードカナロア', 'ダイワメジャー'].some(s => (horse.sire || '').includes(s));
+        if (isKyotoMaster && (horse.style === '先行' || horse.style === '差し')) {
+          potential += 40;
+          tags.push("🔥 京都芝特注: 淀の下り坂を利用して末脚を伸ばす京都巧者");
+        }
+      }
+      // マニアック2: 急坂負けからの平坦スピード替わり
+      if (prevRaceData && prevRaceData.venue?.match(/(中山|阪神)/) && prevRaceData.result >= 4) {
+        if (weight <= 480) { // 比較的軽い馬（スピード型）
+          potential += 40;
+          tags.push("🔥 京都特注: 急坂パワー負けからの平坦スピード勝負替わり");
+        }
+      }
+      // マニアック3: 京都ダート1800m特注（内枠逃げ先行）
+      if (race.surface === 'ダート' && dist === 1800 && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+        potential += 35;
+        tags.push("🔥 京都D1800特注: 平坦ダートをロスなく立ち回る内枠先行馬");
+      }
+    }
+
+    // 【中京】左回り×急坂の特殊サウスポー
+    if (trackName.includes('中京')) {
+      // マニアック1: サウスポーのパワー型
+      const hasSouthpawRecord = horse.pastRaces?.some(pr => pr.venue?.match(/(東京|新潟)/) && pr.result <= 3);
+      if (hasSouthpawRecord) {
+        const isPower = ['キングカメハメハ', 'ルーラーシップ', 'エピファネイア', 'ハービンジャー'].some(s => (horse.sire || '').includes(s)) || weight >= 500;
+        if (isPower) {
+          potential += 45;
+          tags.push("🔥 中京特注: 左回りが得意なパワー型(急坂対応サウスポー)");
+        }
+      }
+      // マニアック2: 中京ダート1400m（芝スタート・外枠優位）
+      if (race.surface === 'ダート' && dist === 1400 && frame >= 6 && horse.style === '逃げ') {
+        potential += 40;
+        tags.push("🔥 中京D1400特注: 芝スタートの恩恵をフルに受ける外枠逃げ馬");
+      }
+    }
+
+    // 【札幌】コーナー加速の洋芝マクリ
+    if (trackName.includes('札幌')) {
+      // マニアック1: 洋芝マクリ（コーナー加速）
+      if (race.surface === '芝' && horse.style === 'マクリ') {
+        potential += 45;
+        tags.push("🔥 札幌芝特注: 直線がほぼ無い丸いコースを制圧するコーナーマクリ");
+      }
+      // マニアック2: 函館からの洋芝完全リンク
+      if (prevRaceData && prevRaceData.venue?.includes('函館') && prevRaceData.result <= 3) {
+        potential += 35;
+        tags.push("🔥 札幌特注: 函館好走からの洋芝完全リンク(北海道滞在)");
+      }
+      // マニアック3: 滞在競馬の牝馬
+      if (gender === '牝') {
+        potential += 20;
+        tags.push("🔥 札幌特注: 長距離輸送のストレスがない滞在競馬で躍動する牝馬");
+      }
+    }
+
+    // 【小倉】超高速馬場のスピード至上主義
+    if (trackName.includes('小倉')) {
+      // マニアック1: 小倉芝1200mの絶対的テンの速さ
+      if (race.surface === '芝' && dist === 1200 && frame <= 3 && horse.style === '逃げ') {
+        potential += 45;
+        tags.push("🔥 小倉芝1200特注: 超高速馬場を最短距離で逃げ切る内枠スプリンター");
+      }
+      // マニアック2: 夏の滞在牝馬
+      if (gender === '牝') {
+        potential += 20;
+        tags.push("🔥 小倉特注: 小倉滞在競馬でストレスなく走れる牝馬");
+      }
+      // マニアック3: 急坂負けからの平坦スピード替わり
+      if (prevRaceData && prevRaceData.venue?.match(/(中山|阪神)/) && prevRaceData.result >= 4) {
+        potential += 40;
+        tags.push("🔥 小倉特注: 急坂パワー負けからの平坦超高速馬場替わり");
+      }
+    }
+
+    // ==========================================
     // 【追加】宝塚記念（阪神2200m・グランプリ）特化プロトコル
     // ==========================================
     const isTakarazukaKinen = trackName.includes('阪神') && race.raceName && race.raceName.includes('宝塚記念');
