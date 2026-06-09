@@ -233,6 +233,43 @@ export function calculateTsuchiyaScore(
         }
       }
     }
+
+    // ==========================================
+    // 【追加】JRAアドバンスド・プロトコル（極秘条件）
+    // ==========================================
+
+    // JRAアドバンスコンボ1: 中山マイスター（急坂適性血統×リピーター）
+    if (trackName.includes('中山')) {
+      const isPowerSire = ['ルーラーシップ', 'ドレフォン', 'ヘニーヒューズ', 'ステイゴールド', 'オルフェーヴル', 'キズナ'].some(s => (horse.sire || '').includes(s));
+      const isRepeater = horse.pastRaces?.some(pr => pr.venue.includes('中山') && pr.result <= 3);
+      if (isPowerSire && isRepeater) {
+        potential += 40;
+        tags.push("🔥 JRA極秘: 中山マイスター(リピーター×急坂適性血統)");
+      }
+    }
+
+    // JRAアドバンスコンボ2: 夏の牝馬・滞在競馬
+    const isLocalStayTrack = ['札幌', '函館', '小倉'].some(t => trackName.includes(t));
+    const raceMonth = new Date(race.date).getMonth() + 1;
+    if (isLocalStayTrack && (raceMonth >= 7 && raceMonth <= 9) && gender === '牝') {
+      potential += 35;
+      tags.push("🔥 JRA極秘: 夏の滞在競馬における牝馬の激走");
+    }
+
+    // JRAアドバンスコンボ3: 距離短縮ショック
+    if (prevRaceData && prevRaceData.distance > dist && (horse.style === '差し' || horse.style === '追込')) {
+      potential += 30;
+      tags.push("🔥 JRA極秘: 距離短縮ショック(豊富なスタミナ×末脚爆発)");
+    }
+
+    // JRAアドバンスコンボ4: 初ダートの米国型血統覚醒
+    if (race.surface === 'ダート' && prevRaceData?.surface === '芝') {
+      const isUsDirtSire = ['シニスターミニスター', 'マジェスティックウォリアー', 'ヘニーヒューズ', 'パイロ', 'マクフィ', 'ダノンレジェンド', 'キンシャサノキセキ', 'エスポワールシチー'].some(s => (horse.sire || '').includes(s));
+      if (isUsDirtSire) {
+        potential += 50; // オッズが落ちやすいため期待値が跳ね上がる
+        tags.push("🔥 JRA極秘: 初ダート×ダート特化血統(覚醒の可能性大)");
+      }
+    }
   }
 
   // ==========================================
