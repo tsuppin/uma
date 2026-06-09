@@ -60,120 +60,122 @@ export function calculateNARScore(
   // ==========================================
 
   if (trackName.includes('浦和')) {
-    // 浦和特化1: 日本一の小回り・逃げ先行絶対有利
-    if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
-      potential += 45;
-      tags.push("👑 浦和特注: 日本一の小回りを制する『内枠×逃げ・先行』");
+    // マニアック1: 日本一の小回り・逃げ先行絶対主義
+    if (frame <= 2 && (horse.style === '逃げ' || horse.style === '先行')) {
+      potential += 50;
+      tags.push("🔥 浦和マニアック: 日本一の小回りを制する『1〜2枠×逃げ先行』の絶対優位");
     }
-    // 浦和特化2: 大外枠の差し・追込の絶望
+    // マニアック2: 大外枠の差し・追込の絶望
     if (frame >= 7 && (horse.style === '差し' || horse.style === '追込')) {
       potential -= 50;
       tags.push("⚠️ 浦和危険: コース形状的に物理的に届かない大外枠の差し・追込（消し）");
     }
   } 
   else if (trackName.includes('大井')) {
-    // 大井特化1: 外回りの長い直線（差し・追込の台頭）
-    // 大井の外回りは右回りで直線が長いため、地方では珍しく差しが決まる
+    // マニアック1: 外回りの長い直線（差し・追込の台頭）
     if ((dist === 1800 || dist === 2000) && (horse.style === '差し' || horse.style === '追込') && isNarSire) {
-      potential += 35;
-      tags.push("👑 大井特注: 外回りの長い直線で爆発するパワー型の差し・追込");
+      potential += 45;
+      tags.push("🔥 大井マニアック: 地方唯一の長い直線で末脚が爆発するパワー型差し馬");
     }
-    // 大井特化2: オーストラリア産白砂適性（タフな馬場での大型馬）
-    if (horse.weight && horse.weight >= 500) {
+    // マニアック2: シニスターミニスター等の大井巧者（大井D2000特注）
+    if (dist === 2000) {
+      const isOhiMaster = ['シニスターミニスター', 'パイロ', 'マジェスティックウォリアー'].some(s => (horse.sire || bloodline).includes(s));
+      if (isOhiMaster) {
+        potential += 40;
+        tags.push("🔥 大井マニアック: 大井の中距離を力でねじ伏せる大井巧者血統");
+      }
+    }
+    // マニアック3: オーストラリア産白砂適性（タフな馬場での大型馬）
+    if (horse.weight && horse.weight >= 520) {
       potential += 25;
-      tags.push("👑 大井特注: 極端に力のいる白砂をこなす大型馬の馬格");
+      tags.push("🔥 大井特注: 極端に力のいる白砂をこなす520kg以上の大型馬格");
     }
   } 
   else if (trackName.includes('川崎')) {
-    // 川崎特化1: 非常にキツいコーナー（内枠有利・立ち回りの上手さ）
-    if (frame <= 3) {
-      potential += 35;
-      tags.push("👑 川崎特注: タイトなコーナーで圧倒的ロスを防げる『内枠』の絶対優位");
+    // マニアック1: 超絶タイトコーナーの内枠逃げ（川崎1500特注）
+    if (dist === 1500 && frame <= 3 && horse.style === '逃げ') {
+      potential += 50;
+      tags.push("🔥 川崎マニアック: 日本一タイトなコーナーをロスなく回る川崎1500m内枠逃げ");
     }
-    // 川崎の向正面スパート（マクリ実績）
-    const hasMakuri = horse.pastRaces?.some(pr => pr.cornerOuterCount >= 3 && pr.result <= 3); // 簡易的に外回し実績をマクリとみなす
+    // マニアック2: 向正面からのロンスパ（マクリ実績）
+    const hasMakuri = horse.pastRaces?.some(pr => pr.cornerOuterCount >= 3 && pr.result <= 3); 
     if (hasMakuri) {
-      potential += 20;
-      tags.push("👑 川崎特注: 向正面からのロンスパ（マクリ）に対応できる機動力");
+      potential += 30;
+      tags.push("🔥 川崎特注: 向正面からのロンスパ（マクリ）に対応できる地方特有の機動力");
     }
   } 
   else if (trackName.includes('船橋')) {
-    // 船橋特化1: スパイラルカーブ（外枠の差し・マクリ有利）
-    // 船橋はコーナーの出口が緩く、外から勢いをつけた馬が直線で伸びやすい
-    if (frame >= 6 && (horse.style === '差し' || horse.style === '先行')) {
-      potential += 40;
-      tags.push("👑 船橋特注: スパイラルカーブの遠心力を活かして加速する外枠");
+    // マニアック1: スパイラルカーブ（外枠の差し・マクリ有利）
+    if (frame >= 6 && (horse.style === '差し' || horse.style === '先行' || horse.style === 'マクリ')) {
+      potential += 45;
+      tags.push("🔥 船橋マニアック: スパイラルカーブの遠心力を活かして加速する外枠マクリ・差し");
     }
   }
   else if (trackName.includes('名古屋') || trackName.includes('弥富')) {
-    // 名古屋（弥富）特化: 圧倒的な先行有利
-    // 移転後の新競馬場は圧倒的に前が止まらない
+    // マニアック: 圧倒的な先行有利（移転後の新名古屋）
     if (horse.style === '逃げ' || horse.style === '先行') {
-      potential += 30;
-      tags.push("👑 名古屋特注: 新競馬場特有の止まらない圧倒的先行力");
+      potential += 35;
+      tags.push("🔥 名古屋マニアック: 移転後の新競馬場特有の止まらない圧倒的先行力");
     }
   }
   else if (trackName.includes('笠松')) {
-    // 笠松特化: 小回り特有の内枠先行
+    // マニアック: 小回り特有の内枠先行
     if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
       potential += 35;
-      tags.push("👑 笠松特注: タイトなコーナーを最短で回る内枠先行の絶対優位");
+      tags.push("🔥 笠松マニアック: タイトなコーナーを最短で回る内枠先行の絶対優位");
     }
   }
   else if (trackName.includes('園田') || trackName.includes('姫路')) {
-    // 園田特化: 1400mの1コーナー争い（内枠絶対有利）
-    // 園田のメイン距離はスタート直後にコーナーがあるため、外枠は致命的なロスになる
-    if (frame <= 3) {
-      potential += 40;
-      tags.push("👑 園田特注: スタート直後のポジション争いを制する『内枠』の絶対的有利");
+    // マニアック1: 1400mの1コーナー争い（内枠絶対有利・イン突き）
+    if (dist === 1400 && frame <= 3) {
+      potential += 45;
+      tags.push("🔥 園田マニアック: 最初のコーナー争いを制し、イン突きを狙える『内枠』の絶対的有利");
     }
-    if (frame >= 7) {
+    // マニアック2: 大外枠の絶望
+    if (frame >= 7 && dist === 1400) {
       potential -= 30;
-      tags.push("⚠️ 園田危険: 1コーナーで外を回される致命的な距離ロス（外枠減点）");
+      tags.push("⚠️ 園田危険: 1400mの1コーナーで外を回される致命的な距離ロス（外枠減点）");
     }
   }
   else if (trackName.includes('高知')) {
-    // 高知特化1: 内ラチ沿いの深い砂（1枠のペナルティ）
-    // 高知競馬は馬場保護のため内側の砂が非常に深く、1枠で包まれると抜け出せない
-    if (frame === 1) {
-      potential -= 40;
-      tags.push("⚠️ 高知危険: 砂が最も深くスタミナを奪われる魔の『1枠』（大減点）");
+    // マニアック1: 内ラチ沿いの深い砂（1枠のペナルティ）
+    if (frame === 1 || frame === 2) {
+      potential -= 45;
+      tags.push("⚠️ 高知マニアック危険: 馬場保護用の深い砂に足を取られる内枠（大幅減点）");
     }
-    // 高知特化2: 外回しの差し（外枠・差し有利）
-    // 全馬が馬場の良い外側に出そうとするため、最初から外を走れる外枠や差し馬が有利
-    if (frame >= 6 && (horse.style === '差し' || horse.style === '追込')) {
-      potential += 45;
-      tags.push("👑 高知特注: 馬場の良い外側をスムーズに押し上げる『外枠の差し』");
+    // マニアック2: 深い砂を避ける外回しの差し（外枠・差し有利）
+    if (frame >= 6 && (horse.style === '差し' || horse.style === '追込' || horse.style === '先行')) {
+      potential += 50;
+      tags.push("🔥 高知マニアック: 内の深い砂を避け、馬場の良い外側をスムーズに押し上げる『外枠』");
     }
   }
   else if (trackName.includes('佐賀')) {
-    // 佐賀特化: 高知同様に内側の砂が非常に深く、内ラチを空けて走る特殊馬場
+    // マニアック: 佐賀特有の内ラチ開け（深い砂）
     if (frame === 1 || frame === 2) {
       potential -= 35;
-      tags.push("⚠️ 佐賀危険: 砂が非常に深くスタミナを削られる内枠（大幅減点）");
+      tags.push("⚠️ 佐賀マニアック危険: 砂が非常に深くスタミナを削られる内枠（大幅減点）");
     }
     if (frame >= 5 && (horse.style === '先行' || horse.style === '差し')) {
       potential += 40;
-      tags.push("👑 佐賀特注: 荒れた内側を避けて好位を押し上げる『外枠の先行・差し』");
+      tags.push("🔥 佐賀マニアック: 荒れた内側を避けて好位を押し上げる『外枠の先行・差し』");
     }
   }
   else if (trackName.includes('金沢') || trackName.includes('水沢')) {
-    // 金沢・水沢特化: 極端な小回りコースによる「イン前絶対有利」
+    // マニアック: 極端な小回りコースによる「イン前絶対有利」
     if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
-      potential += 40;
-      tags.push(`👑 ${trackName.replace(/競馬場/g, '')}特注: 超小回りコースで物理的に止まらない『内枠の逃げ先行』`);
+      potential += 45;
+      tags.push(`🔥 ${trackName.replace(/競馬場/g, '')}マニアック: 超小回りコースで物理的に止まらない『内枠の逃げ先行』`);
     }
     if (horse.style === '追込') {
-      potential -= 35;
+      potential -= 40;
       tags.push(`⚠️ ${trackName.replace(/競馬場/g, '')}危険: コーナーがタイトすぎて物理的に届かない追込馬`);
     }
   }
   else if (trackName.includes('門別') || trackName.includes('盛岡')) {
-    // 門別・盛岡特化: 地方屈指の大箱コース（直線が長く差しが届く）
-    // 地方競馬としては珍しく、スピードと長い直線での持続力が問われる
+    // マニアック: 地方屈指の大箱コース（直線が長く差しが届く）
     if ((horse.style === '差し' || horse.style === '追込') && isNarSire) {
-      potential += 35;
-      tags.push(`👑 ${trackName.replace(/競馬場/g, '')}特注: 地方屈指の大箱コースで末脚が爆発するパワー型差し馬`);
+      potential += 40;
+      tags.push(`🔥 ${trackName.replace(/競馬場/g, '')}マニアック: 地方屈指の大箱コースで末脚が爆発するパワー型差し馬`);
     }
   }
 
