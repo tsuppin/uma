@@ -146,6 +146,36 @@ export function calculateNARScore(
       tags.push("👑 高知特注: 馬場の良い外側をスムーズに押し上げる『外枠の差し』");
     }
   }
+  else if (trackName.includes('佐賀')) {
+    // 佐賀特化: 高知同様に内側の砂が非常に深く、内ラチを空けて走る特殊馬場
+    if (frame === 1 || frame === 2) {
+      potential -= 35;
+      tags.push("⚠️ 佐賀危険: 砂が非常に深くスタミナを削られる内枠（大幅減点）");
+    }
+    if (frame >= 5 && (horse.style === '先行' || horse.style === '差し')) {
+      potential += 40;
+      tags.push("👑 佐賀特注: 荒れた内側を避けて好位を押し上げる『外枠の先行・差し』");
+    }
+  }
+  else if (trackName.includes('金沢') || trackName.includes('水沢')) {
+    // 金沢・水沢特化: 極端な小回りコースによる「イン前絶対有利」
+    if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+      potential += 40;
+      tags.push(`👑 ${trackName.replace(/競馬場/g, '')}特注: 超小回りコースで物理的に止まらない『内枠の逃げ先行』`);
+    }
+    if (horse.style === '追込') {
+      potential -= 35;
+      tags.push(`⚠️ ${trackName.replace(/競馬場/g, '')}危険: コーナーがタイトすぎて物理的に届かない追込馬`);
+    }
+  }
+  else if (trackName.includes('門別') || trackName.includes('盛岡')) {
+    // 門別・盛岡特化: 地方屈指の大箱コース（直線が長く差しが届く）
+    // 地方競馬としては珍しく、スピードと長い直線での持続力が問われる
+    if ((horse.style === '差し' || horse.style === '追込') && isNarSire) {
+      potential += 35;
+      tags.push(`👑 ${trackName.replace(/競馬場/g, '')}特注: 地方屈指の大箱コースで末脚が爆発するパワー型差し馬`);
+    }
+  }
 
   // ==========================================
   // ベースロジック（オッズ歪み等）
