@@ -310,6 +310,45 @@ export function calculateTsuchiyaScore(
         }
       }
     }
+
+    // ==========================================
+    // 【追加】宝塚記念（阪神2200m・グランプリ）特化プロトコル
+    // ==========================================
+    const isTakarazukaKinen = trackName.includes('阪神') && race.raceName && race.raceName.includes('宝塚記念');
+    if (isTakarazukaKinen) {
+      // 宝塚特注1: 梅雨の非根幹タフネス（ステイゴールド系・ロベルト系・欧州系 × 牝馬）
+      const isToughSire = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'ナカヤマフェスタ', 'バゴ', 'ルーラーシップ', 'エピファネイア', 'スクリーンヒーロー', 'モーリス', 'ハービンジャー'].some(s => (horse.sire || '').includes(s));
+      if (isToughSire) {
+        potential += 40;
+        tags.push("👑 宝塚特注: 梅雨の荒れ馬場に強いタフネス血統");
+        if (gender === '牝') {
+          potential += 20;
+          tags.push("👑 宝塚特注: 荒れ馬場・非根幹距離で覚醒する牝馬 (+20)");
+        }
+      }
+
+      // 宝塚特注2: グランプリ適性（阪神内回り・中山の好走実績）
+      const hasGrandPrixExp = horse.pastRaces?.some(pr => 
+        (pr.venue.includes('阪神') || pr.venue.includes('中山')) && 
+        pr.distance >= 2000 && pr.result <= 3 && (pr.raceClass?.match(/G[12]/i) || pr.raceName?.match(/G[12]/i))
+      );
+      if (hasGrandPrixExp) {
+        potential += 35;
+        tags.push("👑 宝塚特注: 阪神・中山で証明済みの小回りグランプリ適性");
+      }
+
+      // 宝塚特注3: スタミナ証明（前走・天皇賞春組からの距離短縮）
+      if (prevRaceData?.raceName?.includes('天皇賞') && prevRaceData?.distance >= 3000) {
+        potential += 30;
+        tags.push("👑 宝塚特注: 天皇賞(春)経由の絶対的スタミナ証明(距離短縮)");
+      }
+
+      // 宝塚特注4: 大外枠の悲劇（8枠ペナルティ）※極端な外枠は不利
+      if (frame === 8) {
+        potential -= 30;
+        tags.push("⚠️ 宝塚危険: 過去データで圧倒的不利な8枠(外々を回されるロス)");
+      }
+    }
   }
 
   // ==========================================
