@@ -159,6 +159,39 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ==========================================
+  // 【追加】最強の複合ファクター（黄金コンボ）判定
+  // ==========================================
+  
+  // コンボ1: 物理的絶対優位（小回り × 内枠 × 先行）
+  const isTightCourse = ['浦和', '函館', '福島', '小倉', '高知'].some(t => track.includes(t));
+  if (isTightCourse && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+    potential += 45;
+    tags.push("🔥 黄金コンボ: 小回り × 内枠 × 逃げ先行 (絶対物理優位)");
+  }
+
+  // コンボ2: 期待値の爆発（前走の不利 × 枠順の好転）
+  if (prevRaceData && prevRaceData.cornerOuterCount >= 4 && frame <= 4) {
+    potential += 40;
+    tags.push("🔥 黄金コンボ: 前走大外ロス度外視 × 今回好枠替わり");
+  }
+
+  // コンボ3: 危険なトラップ（物理的過負荷 × タフな馬場）
+  if (weight > 0 && ['重', '不良'].includes(condition)) {
+    const kinryoWeightRatio = (kinryo / weight) * 100;
+    if (kinryoWeightRatio >= 12.0) {
+      potential -= 50;
+      tags.push("❄️ 危険コンボ: 物理的過負荷(斤量比12%超) × タフな重馬場");
+    }
+  }
+
+  // コンボ4: 陣営の勝負気配（エリート騎手への乗り替わり）
+  const eliteJockeys = ['ルメール', '川田', '武豊', 'モレイラ', 'レーン', '御神本', '吉村', '赤岡'];
+  if (prevRaceData && prevRaceData.jockey !== jockey && eliteJockeys.some(j => jockey.includes(j))) {
+    potential += 35;
+    tags.push("🔥 黄金コンボ: エリート騎手への勝負の乗り替わり");
+  }
+
   // 1. 斤量体重比（kinryo_weight_ratio）の最適化
   if (weight > 0) {
     const kinryoWeightRatio = (kinryo / weight) * 100;
