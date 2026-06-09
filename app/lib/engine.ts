@@ -349,6 +349,46 @@ export function calculateTsuchiyaScore(
         tags.push("⚠️ 宝塚危険: 過去データで圧倒的不利な8枠(外々を回されるロス)");
       }
     }
+
+    // ==========================================
+    // 【追加】阪神重賞特化プロトコル（外回りの末脚と内回りのパワー）
+    // ==========================================
+    const isHanshinStakes = trackName.includes('阪神') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isHanshinStakes) {
+      // 阪神重賞1: 川田将雅の庭（阪神重賞×川田×上位人気）
+      if (jockey.includes('川田') && popularity <= 3) {
+        potential += 40;
+        tags.push("👑 阪神特注: 阪神重賞における川田将雅の鉄板騎乗");
+      }
+
+      // 阪神重賞2: 外回り（1600m・2400m）の鬼脚と王道血統（桜花賞・阪神JF等）
+      if (dist === 1600 || dist === 2400) {
+        const isHanshinOuterSire = ['ディープインパクト', 'キズナ', 'エピファネイア', 'ロードカナロア', 'ドゥラメンテ'].some(s => (horse.sire || '').includes(s));
+        if (isHanshinOuterSire && prevRaceData && parseFloat(prevRaceData.last3fTime || '99') <= 34.0) {
+          potential += 45;
+          tags.push("👑 阪神特注: 外回りコース特有の究極の瞬発力と王道血統");
+        }
+      }
+
+      // 阪神重賞3: 内回り（2000m・2200m）の先行力（大阪杯など）
+      if (dist === 2000 || dist === 2200) {
+        if ((horse.style === '逃げ' || horse.style === '先行') && frame <= 5) {
+          potential += 35;
+          tags.push("👑 阪神特注: ごまかしの利かない内回り重賞での内枠先行力");
+        }
+      }
+
+      // 阪神重賞4: 急坂マイスター（阪神・中山での重賞実績）
+      const hasHillExp = horse.pastRaces?.some(pr => 
+        (pr.venue.includes('阪神') || pr.venue.includes('中山')) && 
+        pr.result <= 3 && (pr.raceClass?.match(/G[1-3]/i) || pr.raceName?.match(/G[1-3I-III]/i))
+      );
+      if (hasHillExp) {
+        potential += 30;
+        tags.push("👑 阪神特注: ゴール前の急坂を苦にしないパワーと実績");
+      }
+    }
   }
 
   // ==========================================
