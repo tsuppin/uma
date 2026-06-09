@@ -501,6 +501,44 @@ export function calculateTsuchiyaScore(
         tags.push("👑 小倉特注: 独特の高速小回りコースに対する完全なコース適性");
       }
     }
+
+    // ==========================================
+    // 【追加】京都重賞特化プロトコル（淀の坂越えと超高速馬場の適性）
+    // ==========================================
+    const isKyotoStakes = trackName.includes('京都') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isKyotoStakes) {
+      // 京都重賞1: 淀の申し子（超高速馬場と下り坂に適合する王道血統）
+      // ディープ系やハーツクライ系など、下り坂から惰性でキレる血統
+      const isKyotoSire = ['ディープインパクト', 'キズナ', 'コントレイル', 'ハーツクライ', 'スワーヴリチャード', 'ダイワメジャー', 'エピファネイア', 'ジャスタウェイ'].some(s => (horse.sire || '').includes(s));
+      if (isKyotoSire) {
+        potential += 40;
+        tags.push("👑 京都特注: 淀の軽い芝に完璧に適合する究極のスピード・キレ血統");
+      }
+
+      // 京都重賞2: 坂の下り適性（京都好走実績 ＋ 優れた上がりタイム）
+      const hasKyotoAgility = horse.pastRaces?.some(pr => 
+        pr.venue.includes('京都') && pr.result <= 3 && parseFloat(pr.last3fTime || '99') <= 34.5
+      );
+      if (hasKyotoAgility) {
+        potential += 35;
+        tags.push("👑 京都特注: 3コーナーの「淀の坂」を器用に下るバランスとコース実績");
+      }
+
+      // 京都重賞3: 長距離G1の絶対セオリー（天皇賞春・菊花賞の内枠ロスなし）
+      if (dist >= 3000 && frame <= 4) {
+        potential += 45;
+        tags.push("👑 京都特注: 3000m超えの長距離戦における『内枠』の絶対的スタミナ温存有利");
+      }
+
+      // 京都重賞4: 外回りの究極の斬れ味（外回りコースの差し・追込）
+      // 京都外回り（1600, 1800, 2200, 2400, 3000, 3200）は平坦な直線を長く使える
+      const isOuterCourseDist = [1600, 1800, 2200, 2400, 3000, 3200].includes(dist);
+      if (isOuterCourseDist && (horse.style === '差し' || horse.style === '追込') && isKyotoSire) {
+        potential += 30;
+        tags.push("👑 京都特注: 平坦な長い直線で爆発する『外回り特化の末脚』");
+      }
+    }
   }
 
   // ==========================================
