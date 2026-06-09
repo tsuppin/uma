@@ -18,8 +18,9 @@ import ResultInput from "./ResultInput";
 import LearningPanel from "./LearningPanel";
 import Win5Panel from "./Win5Panel";
 import StatsPanel from "./StatsPanel";
+import BulkProcessPanel from "./BulkProcessPanel";
 
-type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats";
+type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "bulk_process";
 
 export default function KeibaApp() {
   const [state, setState] = useState<AppState>(defaultState);
@@ -202,6 +203,7 @@ export default function KeibaApp() {
         {([
           ["dashboard", "🏠", "ダッシュボード"],
           ["new_race", "➕", "新規レース登録"],
+          ["bulk_process", "📅", "一括バックテスト"],
           ["win5", "🎯", "WIN5予想"],
           ["stats", "📈", "成績・統計"],
         ] as [View, string, string][]).map(([v, icon, label]) => (
@@ -246,7 +248,7 @@ export default function KeibaApp() {
         )}
 
         {view === "dashboard" && (
-          <Dashboard state={state} onSelectRace={(id) => { setSelectedRaceId(id); setView("prediction"); }} onNewRace={() => setView("new_race")} onDeleteRace={handleDeleteRace} />
+          <Dashboard state={state} onSelectRace={(id) => { setSelectedRaceId(id); setView("prediction"); }} onNewRace={() => setView("new_race")} onDeleteRace={handleDeleteRace} onBulkProcess={() => setView("bulk_process")} />
         )}
         {view === "new_race" && (
           <RaceForm onSubmit={handleNewRace} onCancel={() => setView("dashboard")} />
@@ -275,6 +277,9 @@ export default function KeibaApp() {
         {view === "stats" && (
           <StatsPanel state={state} />
         )}
+        {view === "bulk_process" && (
+          <BulkProcessPanel state={state} onStateChange={setState} onCancel={() => setView("dashboard")} />
+        )}
         {view === "prediction" && !selectedRace && (
           <div className="empty-state">
             <div className="empty-state-icon">🏇</div>
@@ -286,7 +291,7 @@ export default function KeibaApp() {
   );
 }
 
-function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: AppState; onSelectRace: (id: string) => void; onNewRace: () => void; onDeleteRace: (id: string) => void }) {
+function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace, onBulkProcess }: { state: AppState; onSelectRace: (id: string) => void; onNewRace: () => void; onDeleteRace: (id: string) => void; onBulkProcess: () => void }) {
   const { stats } = state;
   const pending = state.races.filter(r => !r.result);
   const completed = state.races.filter(r => r.result).slice(-24).reverse();
@@ -295,7 +300,10 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
     <div className="fade-in">
       <div className="section-header">
         <h1 className="section-title">🛰️ ダッシュボード</h1>
-        <button className="btn btn-primary" onClick={onNewRace}>➕ 新規レース登録</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn btn-secondary" onClick={onBulkProcess}>📅 一括バックテスト</button>
+          <button className="btn btn-primary" onClick={onNewRace}>➕ 新規レース登録</button>
+        </div>
       </div>
 
       <div className="stats-grid">
