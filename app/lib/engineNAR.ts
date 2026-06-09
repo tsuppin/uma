@@ -258,7 +258,42 @@ export function calculateNARScore(
     potential += 10;
     tags.push('🐴 ブリンカー着用（集中力UP）');
   }
+  // ==========================================
+  // 【追加】NAR未使用データ（転入・泥・斤量・遠征）完全活用ロジック
+  // ==========================================
 
+  // 1. JRA転入初戦（クラスの壁）の無双ロジック
+  if (horse.transferFrom === 'JRA') {
+    potential += 30;
+    tags.push('🚀 中央からの刺客: JRA転入初戦の絶対的能力上位');
+  } else if (prevRaceData && prevRaceData.venue && prevRaceData.venue.match(/(東京|中山|京都|阪神|中京|新潟|福島|小倉|札幌|函館)/)) {
+    potential += 30;
+    tags.push('🚀 中央からの刺客: JRA転入初戦の絶対的能力上位');
+  }
+
+  // 2. 雨の日の「高速泥ダート」前残りバイアス
+  if (race.condition === '重' || race.condition === '不良' || (race.moistureContent && race.moistureContent >= 10)) {
+    if (horse.style === '逃げ') {
+      potential += 25;
+      tags.push('☔ 高速泥ダート: 前残り超有利（泥被り回避の逃げ馬）');
+    }
+  }
+
+  // 3. 減量騎手（軽斤量）の逃げ残り物理アドバンテージ
+  if (horse.jockeyWeight && horse.jockeyWeight <= 53 && (horse.style === '逃げ' || horse.style === '先行')) {
+    potential += 20;
+    tags.push(`🪽 裸同然の軽斤量(${horse.jockeyWeight}kg): 減量騎手×先行力によるアドバンテージ`);
+  }
+
+  // 4. 南関東（エリート地区）からの遠征馬バイアス
+  const isSouthKantoTrack = race.trackName.match(/(大井|川崎|船橋|浦和)/);
+  if (!isSouthKantoTrack) {
+    const isSouthKantoHorse = horse.belonging?.match(/(大井|川崎|船橋|浦和)/) || horse.stableLocation?.match(/(大井|川崎|船橋|浦和)/);
+    if (isSouthKantoHorse) {
+      potential += 20;
+      tags.push('💎 エリート遠征: 南関（トップ地区）からの格上挑戦');
+    }
+  }
   // ==========================================
   // 【追加】MasterDataの記憶（自己学習履歴）の活用
   // ==========================================
