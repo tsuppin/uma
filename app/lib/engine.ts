@@ -1868,6 +1868,103 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【阪神競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isHanshin = race.venue?.includes("阪神") || race.trackName?.includes("阪神") || race.raceName?.includes("阪神");
+
+  if (isHanshin) {
+    tags.push("🐅 阪神特化OMEGAエンジン適用中");
+
+    const isTurf = race.surface === "芝";
+    const isDirt = race.surface === "ダート";
+    const isOuterTrack = isTurf && [1600, 1800, 2400].includes(dist);
+    const isInnerTrack = isTurf && !isOuterTrack;
+    const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|G1|G2|G3|GI|GII|GIII|重賞|特別|ステークス|カップ)/i);
+
+    // 1. ダート1400mの「芝スタート×外枠」特注
+    if (isDirt && dist === 1400) {
+      if (frame >= 7) {
+        potential += 30;
+        tags.push("⚡ 阪神ダ1400m黄金条件：芝スタート外枠の圧倒的エッジ");
+      }
+      
+      // 距離短縮ローテの優遇（追走が楽になり急坂で粘る）
+      if (horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance >= 1800) {
+        potential += 20;
+        tags.push("📈 阪神ダ1400m：中距離からの距離短縮によるスタミナ優位性");
+      }
+    }
+
+    // 2. 小回り・平坦コース負けからの「急坂・パワー勝負」逆襲
+    if (horse.pastRaces && horse.pastRaces[0]) {
+      const prevRace = horse.pastRaces[0];
+      const isFlatTrack = /(京都|小倉|新潟)/.test(prevRace.venue || "");
+      if (isFlatTrack && prevRace.result >= 6) {
+        // 特にダート2000mなどのスタミナ戦での逆襲
+        if (isDirt && dist === 2000) {
+          potential += 25;
+          tags.push("🚀 阪神ダ2000m特注：平坦大敗からの急坂スタミナ勝負一変");
+        } else {
+          potential += 15;
+          tags.push("🚀 阪神替わり一変：平坦スピード負けからの急坂パワー逆襲期待");
+        }
+      }
+    }
+
+    // 3. クラスに応じた「脚質」のパラダイムシフト
+    if (race.raceNumber <= 5 || (!isGradeOrSpecial && race.raceNumber <= 8)) {
+      // 下級条件：前残り（逃げ・先行）有利
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 20;
+        tags.push("🏃 下級条件の鉄則：急坂でも止まらない先行前残りアドバンテージ");
+      }
+    } else {
+      // 上級条件（OP・重賞）：差し・マクリ有利
+      if (horse.style === "差し" || horse.style === "追込" || horse.style === "マクリ") {
+        potential += 25;
+        tags.push("🏹 上級条件の鉄則：過酷な消耗戦を斬り裂く底力の差し・マクリ");
+      }
+    }
+
+    // 4. 川田将雅・田口貫太騎手の特注バイアス
+    if (jockey.includes("川田")) {
+      if (isDirt && (horse.style === "逃げ" || horse.style === "先行")) {
+        potential += 30;
+        tags.push("👑 川田将雅×阪神ダート先行：最強の鉄板バイアス");
+      } else {
+        potential += 15;
+        tags.push("👑 川田将雅×阪神：絶対的コース相性");
+      }
+    }
+    if (jockey.includes("田口") && isDirt && dist === 1400) {
+      potential += 25;
+      tags.push("🌟 田口貫太×阪神ダ1400m：減量特典を活かした穴の使者エッジ");
+    }
+
+    // 5. パワーと持続力に特化した血統バイアス
+    const sireUpper = horse.sire?.toUpperCase() || "";
+    if (isDirt) {
+      if (sireUpper.includes("ヘニーヒューズ") && dist === 1400) {
+        potential += 20;
+        tags.push("🧬 阪神ダ1400m特注血統：ヘニーヒューズ産駒の極限適性");
+      }
+      if ((sireUpper.includes("シニスターミニスター") || sireUpper.includes("ドレフォン")) && frame >= 6) {
+        potential += 25;
+        tags.push("🧬 阪神ダ外枠特注血統：パワーとスピードの融合(シニミニ/ドレフォン)");
+      }
+      if (sireUpper.includes("キングカメハメハ") || sireUpper.includes("ルーラーシップ")) {
+        potential += 15;
+        tags.push("🧬 阪神急坂特注血統：急坂を苦にしないキンカメ系パワー");
+      }
+    } else if (isInnerTrack) {
+      if (sireUpper.includes("ロードカナロア") || sireUpper.includes("エピファネイア") || sireUpper.includes("キズナ")) {
+        potential += 15;
+        tags.push("🧬 阪神内回り特注血統：機動力とパワーを兼ね備えた持続力");
+      }
+    }
+  }
+
+  // ==========================================
   // 【京都競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isKyoto = race.venue?.includes("京都") || race.trackName?.includes("京都") || race.raceName?.includes("京都");
@@ -2064,10 +2161,17 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // C.ルメール騎手 × 8枠（大外）の黄金エッジ
-    if (jockey.includes("ルメー") && frame === 8) {
-      potential += 20;
-      tags.push("👑 東京ルメール×8枠大外：抜群のコース取りエッジ");
+    // C.ルメール騎手 × 8枠（大外）または距離短縮の黄金エッジ
+    const isDistanceShortened = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance > dist;
+    if (jockey.includes("ルメー")) {
+      if (frame === 8) {
+        potential += 20;
+        tags.push("👑 東京ルメール×8枠大外：抜群のコース取りエッジ");
+      }
+      if (isDistanceShortened) {
+        potential += 15;
+        tags.push("👑 東京ルメール×距離短縮：スタミナを活かす絶妙なペース配分");
+      }
     }
 
     // 「西高東低」の適正化（アウェイ栗東馬の過少評価排除と特別・重賞でのエッジ評価）
@@ -2085,11 +2189,16 @@ export function calculateTsuchiyaScore(
     // 東京適合血統（種牡馬）ブースト
     const sireUpper = horse.sire?.toUpperCase() || "";
     if (sireUpper.includes("キタサンブラック")) {
-      potential += 15;
-      tags.push("🧬 東京適性：キタサンブラック産駒エッジ");
+      if (isDirt) {
+        potential += 30; // ダートで極めて強い
+        tags.push("🧬 東京ダート適性：キタサンブラック産駒の圧倒的パフォーマンス");
+      } else {
+        potential += 15;
+        tags.push("🧬 東京適性：キタサンブラック産駒エッジ");
+      }
     } else if (sireUpper.includes("パイロ") || sireUpper.includes("ジャスタウェイ")) {
       potential += 10;
-      tags.push(`🧬 東京適性：${horse.sire}産駒穴期待`);
+      tags.push(`🧬 東京適性：${horse.sire}産駒穴期待(タフな展開に強い)`);
     }
 
     // 2. レースフェーズ（条件）と戦績データ・物理環境の連動評価
@@ -2267,6 +2376,11 @@ export function calculateTsuchiyaScore(
       if (isShortTrack && isPrevBad) {
         potential += 25;
         tags.push("🚀 コース替わり一変:小回り大外ロス → 広大な東京の直線解放期待");
+        // 今走外枠の場合はさらなる解放ブースト
+        if (frame >= 7) {
+          potential += 15;
+          tags.push("🚀 外枠解放ブースト:揉まれず直線大外一気の期待");
+        }
       }
     }
 
