@@ -1,4 +1,5 @@
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
+import { calculateNARScore } from './engineNAR';
 
 // モジュール共通のエリート騎手リスト
 const ELITE_JOCKEYS = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ", "松山弘平", "川田", "坂井", "戸崎", "笹川翼", "御神本訓", "吉村智洋", "渡邊竜也", "岡部誠"];
@@ -83,6 +84,13 @@ export function calculateTsuchiyaScore(
   learningPatches: LearningPatch[],
   masterData: MasterData
 ): Prediction {
+  const trackName = race.trackName || '';
+  // 地方競馬（NAR）の判定
+  const isNAR = ['大井', '川崎', '船橋', '浦和', '盛岡', '水沢', '門別', '名古屋', '笠松', '園田', '姫路', '高知', '佐賀', '金沢'].some(t => trackName.includes(t));
+  if (isNAR) {
+    return calculateNARScore(horse, race, learningPatches, masterData);
+  }
+
   const hm = masterData.horses?.[horse.name];
   const jm = masterData.jockeys?.[horse.jockey];
 

@@ -1,0 +1,142 @@
+import { Horse, Prediction, Race, LearningPatch, MasterData } from '../types';
+
+// 地方特化のエリート騎手リスト（南関東を中心とした地方トップジョッキー）
+const NAR_ELITE_JOCKEYS = ["森泰斗", "御神本訓史", "矢野貴之", "笹川翼", "吉原寛人", "和田譲治", "山崎誠士", "吉村智洋", "赤岡修次", "山口勲"];
+
+// 地方ダート無双血統
+const NAR_POWER_SIRES = ['シニスターミニスター', 'パイロ', 'サウスヴィグラス', 'ヘニーヒューズ', 'マジェスティックウォリアー', 'エスポワールシチー', 'ホッコータルマエ', 'コパノリッキー', 'スマートファルコン', 'カネヒキリ'];
+
+export function calculateNARScore(
+  horse: Horse, 
+  race: Race, 
+  learningPatches: LearningPatch[],
+  masterData: MasterData
+): Prediction {
+  const hm = masterData.horses?.[horse.name];
+  
+  let bloodline = horse.bloodline || '';
+  if (hm && !bloodline && hm.sire) {
+    bloodline = `${hm.sire} / ${hm.dam || 'Unknown'}`;
+  }
+
+  const trackName = race.trackName || '';
+  const dist = race.distance;
+  const frame = horse.frame;
+  const odds = horse.odds || 10;
+  const kinryo = horse.jockeyWeight || 55;
+  const jockey = horse.jockey || '';
+  
+  let potential = 500;
+  const tags: string[] = [];
+
+  // ==========================================
+  // 【共通】地方ダートの絶対セオリー（パワー血統と地方名手）
+  // ==========================================
+  
+  // 地方特化のパワー血統加点
+  const isNarSire = NAR_POWER_SIRES.some(s => (horse.sire || bloodline).includes(s));
+  if (isNarSire) {
+    potential += 40;
+    tags.push("👑 地方ダート特注: 深い砂を力でねじ伏せる圧倒的パワー血統");
+  }
+
+  // 地方エリート騎手加点
+  if (NAR_ELITE_JOCKEYS.some(j => jockey.includes(j))) {
+    potential += 35;
+    tags.push("👑 地方ダート特注: コースのクセを熟知した地方トップジョッキー");
+  }
+
+  // JRA所属馬のダートグレード競走（Jpn格付け）における基礎能力差
+  if (race.raceName && race.raceName.match(/Jpn[1-3]/i)) {
+    if (horse.trainer && horse.trainer.includes('JRA')) { // もしくは馬の所属情報があれば判定
+      // 便宜上、栗東・美浦などの文字が含まれるかでJRA判定
+      potential += 50;
+      tags.push("👑 地方特注: ダート交流重賞におけるJRA所属馬の地力の違い");
+    }
+  }
+
+  // ==========================================
+  // 南関東4場（大井・川崎・船橋・浦和）の特化ロジック
+  // ==========================================
+
+  if (trackName.includes('浦和')) {
+    // 浦和特化1: 日本一の小回り・逃げ先行絶対有利
+    if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
+      potential += 45;
+      tags.push("👑 浦和特注: 日本一の小回りを制する『内枠×逃げ・先行』");
+    }
+    // 浦和特化2: 大外枠の差し・追込の絶望
+    if (frame >= 7 && (horse.style === '差し' || horse.style === '追込')) {
+      potential -= 50;
+      tags.push("⚠️ 浦和危険: コース形状的に物理的に届かない大外枠の差し・追込（消し）");
+    }
+  } 
+  else if (trackName.includes('大井')) {
+    // 大井特化1: 外回りの長い直線（差し・追込の台頭）
+    // 大井の外回りは右回りで直線が長いため、地方では珍しく差しが決まる
+    if ((dist === 1800 || dist === 2000) && (horse.style === '差し' || horse.style === '追込') && isNarSire) {
+      potential += 35;
+      tags.push("👑 大井特注: 外回りの長い直線で爆発するパワー型の差し・追込");
+    }
+    // 大井特化2: オーストラリア産白砂適性（タフな馬場での大型馬）
+    if (horse.weight && horse.weight >= 500) {
+      potential += 25;
+      tags.push("👑 大井特注: 極端に力のいる白砂をこなす大型馬の馬格");
+    }
+  } 
+  else if (trackName.includes('川崎')) {
+    // 川崎特化1: 非常にキツいコーナー（内枠有利・立ち回りの上手さ）
+    if (frame <= 3) {
+      potential += 35;
+      tags.push("👑 川崎特注: タイトなコーナーで圧倒的ロスを防げる『内枠』の絶対優位");
+    }
+    // 川崎の向正面スパート（マクリ実績）
+    const hasMakuri = horse.pastRaces?.some(pr => pr.cornerOuterCount >= 3 && pr.result <= 3); // 簡易的に外回し実績をマクリとみなす
+    if (hasMakuri) {
+      potential += 20;
+      tags.push("👑 川崎特注: 向正面からのロンスパ（マクリ）に対応できる機動力");
+    }
+  } 
+  else if (trackName.includes('船橋')) {
+    // 船橋特化1: スパイラルカーブ（外枠の差し・マクリ有利）
+    // 船橋はコーナーの出口が緩く、外から勢いをつけた馬が直線で伸びやすい
+    if (frame >= 6 && (horse.style === '差し' || horse.style === '先行')) {
+      potential += 40;
+      tags.push("👑 船橋特注: スパイラルカーブの遠心力を活かして加速する外枠");
+    }
+  }
+
+  // ==========================================
+  // ベースロジック（オッズ歪み等）
+  // ==========================================
+  if (odds >= 15.0) {
+    const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
+    if (prevRaceData && (prevRaceData.isStumbled || prevRaceData.cornerOuterCount >= 4)) {
+      potential += 30;
+      tags.push("💰 期待値爆発: 前走物理的不利(度外視) × 大穴オッズ");
+    }
+  }
+
+  // 学習パッチの適用（NAR用にも共通で適用）
+  for (const patch of learningPatches) {
+    let apply = true;
+    if (patch.targetCourse && !trackName.includes(patch.targetCourse)) apply = false;
+    if (patch.targetJockey && !jockey.includes(patch.targetJockey)) apply = false;
+    if (patch.targetBloodline && !bloodline.includes(patch.targetBloodline)) apply = false;
+
+    if (apply) {
+      potential += patch.weightAdjustment;
+      tags.push(`🛠️ 学習補正: ${patch.description} (${patch.weightAdjustment > 0 ? '+' : ''}${patch.weightAdjustment})`);
+    }
+  }
+
+  return {
+    horseName: horse.name,
+    horseNumber: horse.number,
+    score: Math.max(0, potential), // 最低0点
+    rank: 0,
+    tags,
+    odds,
+    popularity: horse.popularity
+  };
+}
