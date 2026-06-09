@@ -4634,6 +4634,53 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ===================================================
+  // 【追加】未使用データ（調教・馬体重・ブランド・特殊状態）ロジック
+  // ===================================================
+  
+  // 1. 調教評価ロジック
+  if (horse.trainingRating === 'S') {
+    potential += 35;
+    tags.push('🚀 究極仕上げ: 調教評価Sランク（一変のサイン）');
+  } else if (horse.trainingRating === 'A') {
+    potential += 15;
+    tags.push('💨 メイチ仕上げ: 調教評価A');
+  }
+
+  // 2. 馬体重の異常増減ロジック
+  if (horse.gender === '牝' && horse.weightChange <= -10) {
+    potential -= 30;
+    tags.push('⚠️ 危険信号: 牝馬の大幅馬体減（細化懸念）');
+  }
+  if (horse.isAfterRest && horse.weightChange >= 15) {
+    const penalty = horse.age <= 3 ? 10 : 20; // 3歳以下は成長分の可能性を考慮
+    potential -= penalty;
+    tags.push('⚠️ 危険信号: 休み明けの大幅馬体増（太め残り懸念）');
+  }
+
+  // 3. エリートブランド × トップ騎手
+  if (horse.breeder && horse.breeder.includes('ノーザンファーム')) {
+    const topEliteJockeys = ['ルメール', '川田', 'モレイラ'];
+    if (topEliteJockeys.some(j => horse.jockey.includes(j))) {
+      potential += 25;
+      tags.push('💎 エリート包囲網: ノーザンF × トップ騎手（勝負気配MAX）');
+    }
+  }
+
+  // 4. 前走の明確な不利からの巻き返し
+  if (prevRaceData && prevRaceData.incidents) {
+    if (prevRaceData.incidents.includes('前が壁') || prevRaceData.incidents.includes('詰まる') || prevRaceData.incidents.includes('不利')) {
+      potential += 30;
+      tags.push('🚨 巻き返し必至: 前走「前が壁・不利」による不完全燃焼');
+    }
+  }
+
+  // 5. 特殊馬具（ブリンカー着用）
+  if (horse.useBlinkers) {
+    potential += 10;
+    tags.push('🐴 ブリンカー着用（集中力UP）');
+  }
+
   // ---------------------------------------------------
   // 動的学習パッチの適用
   // ---------------------------------------------------

@@ -230,6 +230,35 @@ export function calculateNARScore(
     }
   }
 
+  // ===================================================
+  // 【追加】未使用データ（馬体重・特殊状態）ロジック（地方用）
+  // ===================================================
+
+  // 1. 馬体重の異常増減ロジック
+  if (horse.gender === '牝' && horse.weightChange <= -10) {
+    potential -= 30;
+    tags.push('⚠️ 危険信号: 牝馬の大幅馬体減（細化懸念）');
+  }
+  if (horse.isAfterRest && horse.weightChange >= 15) {
+    const penalty = horse.age <= 3 ? 10 : 20;
+    potential -= penalty;
+    tags.push('⚠️ 危険信号: 休み明けの大幅馬体増（太め残り懸念）');
+  }
+
+  // 2. 前走の明確な不利からの巻き返し
+  if (prevRaceData && prevRaceData.incidents) {
+    if (prevRaceData.incidents.includes('前が壁') || prevRaceData.incidents.includes('詰まる') || prevRaceData.incidents.includes('不利')) {
+      potential += 30;
+      tags.push('🚨 巻き返し必至: 前走「前が壁・不利」による不完全燃焼');
+    }
+  }
+
+  // 3. 特殊馬具（ブリンカー着用）
+  if (horse.useBlinkers) {
+    potential += 10;
+    tags.push('🐴 ブリンカー着用（集中力UP）');
+  }
+
   // ==========================================
   // 動的学習パッチの適用
   // ==========================================
