@@ -4767,13 +4767,14 @@ export async function generateAILearningPatch(race: Race, predictions: Predictio
 
         return {
           id: `patch_local_${Date.now()}`,
+          version: '1.0 (Local)',
           date: new Date().toISOString(),
-          raceId: race.id,
-          title: `ローカル自動学習: ${race.trackName} ${race.distance}m の敗因分析`,
-          description: reason,
-          ruleToApply: rule,
+          description: `[${race.trackName} ${race.distance}m] ${reason} (補正: ${rule})`,
+          track: race.trackName,
+          condition: race.condition,
+          adjustments: [], // ローカルフォールバックはテキスト分析のみとする
           active: true
-        };
+        } as unknown as LearningPatch;
       }
     }
   }
