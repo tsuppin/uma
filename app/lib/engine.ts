@@ -403,6 +403,41 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
+    // 【追加】函館マニアック特化プロトコル（ニッチな高回収率ロジック）
+    // ==========================================
+    if (trackName.includes('函館')) {
+      // マニアック1: 100%洋芝専用機「欧州型重戦車ブラッドの覚醒」
+      if (race.surface === '芝') {
+        const isEuroPower = ['ハービンジャー', 'バゴ', 'フランケル', 'キングカメハメハ', 'ルーラーシップ', 'ワークフォース', 'ノヴェリスト'].some(s => (horse.sire || '').includes(s));
+        if (isEuroPower) {
+          potential += 40;
+          tags.push("🔥 函館芝特注: 時計のかかる重厚な洋芝で覚醒する欧州型パワー血統");
+        }
+      }
+
+      // マニアック2: 函館ダート1000m専用「最内枠のロケットスタート」
+      if (race.surface === 'ダート' && dist === 1000 && frame <= 2 && (horse.style === '逃げ' || horse.style === '先行')) {
+        potential += 45;
+        tags.push("🔥 函館D1000特注: 最初のコーナーまでの短さを活かす最内枠ロケットスタート");
+      }
+
+      // マニアック3: 滞在競馬の恩恵「夏は牝馬（ストレスフリー理論）」
+      if (gender === '牝') {
+        potential += 20;
+        tags.push("🔥 函館特注: 長距離輸送のストレスがない滞在競馬で躍動する牝馬");
+      }
+
+      // マニアック4: 洋芝リンク理論「本州惨敗からの札幌・函館リンク」
+      if (prevRaceData && !prevRaceData.venue?.match(/(函館|札幌)/) && prevRaceData.result >= 4) {
+        const hasHokkaidoRecord = horse.pastRaces?.some(pr => pr.venue?.match(/(函館|札幌)/) && pr.result <= 3);
+        if (hasHokkaidoRecord) {
+          potential += 45;
+          tags.push("🔥 函館特注: 本州惨敗で人気落ちからの洋芝(北海道)適性大爆発");
+        }
+      }
+    }
+
+    // ==========================================
     // 【追加】宝塚記念（阪神2200m・グランプリ）特化プロトコル
     // ==========================================
     const isTakarazukaKinen = trackName.includes('阪神') && race.raceName && race.raceName.includes('宝塚記念');
