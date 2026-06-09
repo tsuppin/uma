@@ -84,10 +84,8 @@ export function calculateTsuchiyaScore(
   learningPatches: LearningPatch[],
   masterData: MasterData
 ): Prediction {
-  const trackName = race.trackName || '';
-  // 地方競馬（NAR）の判定
-  const isNAR = ['大井', '川崎', '船橋', '浦和', '盛岡', '水沢', '門別', '名古屋', '笠松', '園田', '姫路', '高知', '佐賀', '金沢'].some(t => trackName.includes(t));
-  if (isNAR) {
+  // 地方競馬（NAR）の判定（変数名の衝突を避けるため直接判定）
+  if (race.trackName && ['大井', '川崎', '船橋', '浦和', '盛岡', '水沢', '門別', '名古屋', '弥富', '笠松', '園田', '姫路', '高知', '佐賀', '金沢'].some(t => race.trackName!.includes(t))) {
     return calculateNARScore(horse, race, learningPatches, masterData);
   }
 
