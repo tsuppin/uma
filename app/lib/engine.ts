@@ -240,7 +240,7 @@ export function calculateTsuchiyaScore(
   // ==========================================
   if (trackName.includes('阪神')) {
     let hanshinScore = 0;
-    const isHanshinSire = ['キズナ', 'ホッコータルマエ', 'ハーツクライ', 'マジェスティックウォリアー', 'シュヴァルグラン', 'モズアスコット', 'Essential Quality'].some(s => sire.includes(s));
+    const isHanshinSire = ['キズナ', 'ホッコータルマエ', 'ハーツクライ', 'マジェスティックウォリアー', 'シュヴァルグラン', 'モズアスコット', 'Essential Quality'].some(s => (horse.sire || '').includes(s));
     const isHanshinJockey = ['西村 淳也', '鮫島 克駿', '小牧 加矢太', '森 一馬', '上野 翔', '西塚 洸二', '太宰 啓介', '角田 大和', '高倉 稜', '菱田 裕二'].some(j => jockey.includes(j));
 
     if (weight >= 480) hanshinScore += 10;
