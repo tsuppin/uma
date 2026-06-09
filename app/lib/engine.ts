@@ -1868,6 +1868,74 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【函館競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isHakodate = race.venue?.includes("函館") || race.trackName?.includes("函館") || race.raceName?.includes("函館");
+
+  if (isHakodate) {
+    tags.push("🦑 函館特化OMEGAエンジン適用中");
+
+    const isTurf = race.surface === "芝";
+    const isDirt = race.surface === "ダート";
+
+    // 1. 直線JRA最短(262m)の絶対的脚質バイアス
+    if (horse.style === "逃げ" || horse.style === "先行") {
+      potential += 25;
+      tags.push("🏃 函館最短直線の鉄則：前が絶対に止まらない逃げ・先行アドバンテージ");
+    } else if (horse.style === "追込") {
+      potential -= 30;
+      tags.push("⚠️ 函館危険：直線262mでは物理的に届かない追込（大幅割引）");
+    }
+
+    // 2. 芝1200m「距離短縮」のフレッシュ激走
+    if (isTurf && dist === 1200) {
+      const isDistanceShortened = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance >= 1400;
+      if (isDistanceShortened) {
+        potential += 25;
+        tags.push("🚀 函館芝1200m黄金ローテ：距離短縮によるスタミナ優位の激走");
+      }
+      
+      // 武豊騎手の芝1200mイン突き職人技
+      if (jockey.includes("武豊") && frame <= 4) {
+        potential += 30;
+        tags.push("👑 武豊×函館芝1200m内枠：遠心力に逆らう天才的なイン突き");
+      }
+    }
+
+    // 3. 芝2000m（コーナー6回）の「小型馬」機動力エッジ
+    if (isTurf && dist === 2000) {
+      if (weight > 0 && weight <= 450) {
+        potential += 20;
+        tags.push("🏎️ 函館芝2000m：コーナー6回をロスなく回る小型馬の機動力エッジ");
+      }
+    }
+
+    // 4. ダート2400mの「大幅距離延長」または「大外枠」
+    if (isDirt && dist === 2400) {
+      const isDistanceExtended = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance <= 1800;
+      if (isDistanceExtended || frame >= 7) {
+        potential += 25;
+        tags.push("📈 函館ダ2400m穴条件：大幅距離延長または砂を被らない外枠の激走");
+      }
+    }
+
+    // 5. 100%洋芝特注血統（野芝からのパフォーマンス急上昇）
+    if (isTurf) {
+      const sireUpper = horse.sire?.toUpperCase() || "";
+      if (sireUpper.includes("キズナ") || sireUpper.includes("モーリス") || sireUpper.includes("ミッキーアイル")) {
+        potential += 25;
+        tags.push("🧬 函館洋芝特注血統：100%洋芝で覚醒するパワー・スタミナ血統");
+      }
+    }
+
+    // 6. 函館マイスタージョッキー
+    if (jockey.includes("横山武史") || jockey.includes("佐々木大輔") || jockey.includes("丹内祐次")) {
+      potential += 15;
+      tags.push("🌟 函館マイスター騎手：コース熟知と積極策エッジ");
+    }
+  }
+
+  // ==========================================
   // 【阪神競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isHanshin = race.venue?.includes("阪神") || race.trackName?.includes("阪神") || race.raceName?.includes("阪神");
