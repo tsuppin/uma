@@ -218,12 +218,12 @@ export function calculateNARScore(
   }
 
   return {
+    horseId: horse.id,
     horseName: horse.name,
     horseNumber: horse.number,
-    score: Math.max(0, potential), // 最低0点
-    rank: 0,
-    tags,
-    odds,
-    popularity: horse.popularity
+    potential: Math.max(0, potential), // 最低0点
+    darkness: 0,
+    evIndex: 0,
+    aptitudeTags: tags
   };
 }
