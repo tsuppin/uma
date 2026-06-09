@@ -182,11 +182,51 @@ export function calculateNARScore(
   // ==========================================
   // ベースロジック（オッズ歪み等）
   // ==========================================
+  const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
+
   if (odds >= 15.0) {
-    const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
     if (prevRaceData && (prevRaceData.isStumbled || prevRaceData.cornerOuterCount >= 4)) {
       potential += 30;
       tags.push("💰 期待値爆発: 前走物理的不利(度外視) × 大穴オッズ");
+    }
+  }
+
+  // ===================================================
+  // 【追加】結果×出馬表のクロスロジック（期待値ハック）
+  // ===================================================
+  const frontRunnersCount = race.horses.filter(h => h.style === '逃げ').length;
+  
+  // 1. 展開（ペース）予測と脚質の逆転ロジック
+  if (frontRunnersCount >= 3) {
+    if (prevRaceData && prevRaceData.last3fTime) {
+      const prevLast3f = parseFloat(prevRaceData.last3fTime);
+      if ((horse.style === '差し' || horse.style === '追込') && prevRaceData.result >= 4 && !isNaN(prevLast3f) && prevLast3f <= 38.0) {
+        potential += 45;
+        tags.push("🔥 期待値クロス: 前走展開泣きの上がり上位馬（ハイペース必至で台頭）");
+      }
+    }
+  } else if (frontRunnersCount === 1) {
+    if (horse.style === '逃げ') {
+      potential += 40;
+      tags.push("🔥 期待値クロス: 競り掛ける馬が不在の単騎逃げ確定（マイペース絶対有利）");
+    }
+  }
+
+  // 2. 着順ではなく着差（タイム差）評価ロジック
+  if (prevRaceData && prevRaceData.result >= 6 && prevRaceData.timeDiff !== undefined) {
+    if (prevRaceData.timeDiff <= 0.6) {
+      potential += 35;
+      tags.push("🔥 期待値クロス: 前走6着以下だが着差0.6秒以内の実力馬（オッズ盲点）");
+    }
+  }
+
+  // 3. 陣営の勝負気配（トップ騎手への乗り替わり）検知
+  if (prevRaceData && prevRaceData.jockey) {
+    const prevWasTop = NAR_ELITE_JOCKEYS.some(j => prevRaceData.jockey.includes(j));
+    const nowIsTop = NAR_ELITE_JOCKEYS.some(j => horse.jockey.includes(j));
+    if (!prevWasTop && nowIsTop) {
+      potential += 40;
+      tags.push("🔥 期待値クロス: 前走非エリートからの地方トップ騎手手配（陣営の超勝負気配）");
     }
   }
 
