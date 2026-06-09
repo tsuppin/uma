@@ -4595,10 +4595,10 @@ export function calculateTsuchiyaScore(
   // ===================================================
   // 【追加】結果×出馬表のクロスロジック（期待値ハック）
   // ===================================================
-  const frontRunnersCount = race.horses.filter(h => h.style === '逃げ').length;
+  const escapeHorsesCount = race.horses.filter(h => h.style === '逃げ').length;
   
   // 1. 展開（ペース）予測と脚質の逆転ロジック
-  if (frontRunnersCount >= 3) {
+  if (escapeHorsesCount >= 3) {
     // ハイペース必至
     if (prevRaceData && prevRaceData.last3fTime) {
       const prevLast3f = parseFloat(prevRaceData.last3fTime);
@@ -4607,7 +4607,7 @@ export function calculateTsuchiyaScore(
         tags.push("🔥 期待値クロス: 前走展開泣きの上がり最速馬（ハイペース必至で台頭）");
       }
     }
-  } else if (frontRunnersCount === 1) {
+  } else if (escapeHorsesCount === 1) {
     // 単騎逃げ確定
     if (horse.style === '逃げ') {
       potential += 40;
