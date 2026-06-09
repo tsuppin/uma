@@ -278,6 +278,47 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
+    // 【追加】東京マニアック特化プロトコル（ニッチな高回収率ロジック）
+    // ==========================================
+    if (trackName.includes('東京')) {
+      // マニアック1: 東京ダート1600m専用「芝スタート×大外枠×米国血統」
+      if (race.surface === 'ダート' && dist === 1600 && frame >= 6 && (horse.style === '逃げ' || horse.style === '先行')) {
+        const isUsDirtSpeed = ['ヘニーヒューズ', 'ドレフォン', 'シニスターミニスター', 'マクフィ', 'アジアエクスプレス'].some(s => (horse.sire || '').includes(s));
+        if (isUsDirtSpeed) {
+          potential += 40;
+          tags.push("🔥 東京D1600特注: 芝スタートを活かす外枠×米国スピード血統");
+        }
+      }
+
+      // マニアック2: 雨の東京芝専用「不良馬場×内枠逃げ×重戦車血統」
+      if (race.surface === '芝' && ['重', '不良'].includes(condition) && frame <= 2 && horse.style === '逃げ') {
+        const isHeavyTank = ['バゴ', 'ハービンジャー', 'フランケル', 'ステイゴールド', 'オルフェーヴル', 'キズナ'].some(s => (horse.sire || '').includes(s));
+        if (isHeavyTank) {
+          potential += 45;
+          tags.push("🔥 雨の東京特注: キレ味無効化の泥んこ馬場を逃げ粘る重戦車");
+        }
+      }
+
+      // マニアック3: 左回りの天才（サウスポーの逆襲）
+      // 前走が右回りで敗北（4着以下）し、今回左回りの東京に変わる馬を狙う
+      if (prevRaceData && (prevRaceData.direction === '右' || ['中山', '阪神', '京都', '福島', '小倉', '函館', '札幌'].some(t => prevRaceData.venue?.includes(t)))) {
+        if (prevRaceData.result >= 4) {
+          potential += 35;
+          tags.push("🔥 東京特注: 右回り惨敗からの左回り替わり(サウスポーの逆襲)");
+        }
+      }
+
+      // マニアック4: ダービー＆JC専用「東京2400m×トニービン内包血統」
+      if (dist === 2400 && race.surface === '芝') {
+        const isTonyBinBlood = ['ハーツクライ', 'ルーラーシップ', 'ドゥラメンテ', 'ジャスタウェイ', 'スワーヴリチャード'].some(s => (horse.sire || '').includes(s) || (horse.bms || '').includes(s));
+        if (isTonyBinBlood) {
+          potential += 30;
+          tags.push("🔥 東京2400特注: 過酷な直線を登り切る底力(トニービン内包)");
+        }
+      }
+    }
+
+    // ==========================================
     // 【追加】東京重賞特化プロトコル（絶対能力と適性の極み）
     // ==========================================
     const isTokyoStakes = trackName.includes('東京') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
