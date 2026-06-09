@@ -539,6 +539,43 @@ export function calculateTsuchiyaScore(
         tags.push("👑 京都特注: 平坦な長い直線で爆発する『外回り特化の末脚』");
       }
     }
+
+    // ==========================================
+    // 【追加】新潟重賞特化プロトコル（日本一長い直線と千直の攻略）
+    // ==========================================
+    const isNiigataStakes = trackName.includes('新潟') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isNiigataStakes) {
+      // 新潟重賞1: 千直の絶対法則（1000m直線の大外枠）
+      // アイビスサマーダッシュなど、千直はラチ沿いを走れる大外枠が圧倒的有利
+      if (dist === 1000 && frame >= 7) {
+        potential += 50;
+        tags.push("👑 新潟特注: 千直(1000m)における大外枠(7〜8枠)の絶対的アドバンテージ");
+      }
+
+      // 新潟重賞2: 日本一長い直線の鬼脚（上がり33秒台前半の実績）
+      // 外回り（1600m・2000m）は直線が659mあり、究極の瞬発力と持続力が問われる
+      if ((dist === 1600 || dist === 2000) && prevRaceData && parseFloat(prevRaceData.last3fTime || '99') <= 33.5) {
+        potential += 45;
+        tags.push("👑 新潟特注: 日本一長い直線(659m)で爆発する究極の瞬発力(上がり33秒台前半)");
+      }
+
+      // 新潟重賞3: 平坦・長直線のスピード血統
+      const isNiigataSire = ['ディープインパクト', 'キズナ', 'ハーツクライ', 'スワーヴリチャード', 'エピファネイア', 'ロードカナロア', 'リアルスティール', 'サトノダイヤモンド'].some(s => (horse.sire || '').includes(s));
+      if (isNiigataSire && dist > 1000) {
+        potential += 35;
+        tags.push("👑 新潟特注: 長い直線と平坦コースに完璧に適合するスピード血統");
+      }
+
+      // 新潟重賞4: 新潟巧者（過去の新潟好走実績）
+      const hasNiigataExp = horse.pastRaces?.some(pr => 
+        pr.venue.includes('新潟') && pr.result <= 3
+      );
+      if (hasNiigataExp) {
+        potential += 30;
+        tags.push("👑 新潟特注: 独特の左回り超ロング直線に対するコース適性の証明");
+      }
+    }
   }
 
   // ==========================================
