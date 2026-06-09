@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { AppState, Race, RaceResult } from "../types";
-import { auth } from '../lib/firebase';
-import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import {
   loadStateFromServer,
   addRace,
@@ -20,9 +18,8 @@ import ResultInput from "./ResultInput";
 import LearningPanel from "./LearningPanel";
 import Win5Panel from "./Win5Panel";
 import StatsPanel from "./StatsPanel";
-import BulkProcessPanel from "./BulkProcessPanel";
 
-type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "bulk_process";
+type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats";
 
 export default function KeibaApp() {
   const [state, setState] = useState<AppState>(defaultState);
@@ -32,7 +29,6 @@ export default function KeibaApp() {
   const [view, setView] = useState<View>("dashboard");
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
 
   // サーバーからデータを読み込む
   useEffect(() => {
@@ -47,40 +43,6 @@ export default function KeibaApp() {
         setIsLoaded(true);
       });
   }, []);
-
-  // Firebase Auth の状態監視
-  useEffect(() => {
-    if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        // ログインしたらクラウドから最新データを取得
-        loadStateFromServer()
-          .then((loaded) => {
-            setState(loaded);
-          })
-          .catch(console.error);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogin = async () => {
-    if (!auth) {
-      alert('Firebaseが設定されていません。環境変数を確認してください。');
-      return;
-    }
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login Error:", error);
-    }
-  };
-
-  const handleLogout = () => {
-    if (auth) signOut(auth);
-  };
 
   // storage-save-error イベントをリッスン
   const handleStorageError = useCallback((e: Event) => {
@@ -220,17 +182,6 @@ export default function KeibaApp() {
         <div className="header-version">{state.modelVersion}</div>
         <div className="header-spacer" />
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '24px' }}>
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <img src={user.photoURL || ''} alt="User" style={{width: '28px', height: '28px', borderRadius: '50%'}} />
-              <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={handleLogout}>ログアウト</button>
-            </div>
-          ) : (
-            <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={handleLogin}>Googleでログイン</button>
-          )}
-        </div>
-
         <div className="header-stats">
           <div className="stat-badge">
             📊 <span>的中率:</span><span className="value">{(stats.hitRate * 100).toFixed(1)}%</span>
@@ -252,7 +203,6 @@ export default function KeibaApp() {
         {([
           ["dashboard", "🏠", "ダッシュボード"],
           ["new_race", "➕", "新規レース登録"],
-          ["bulk_process", "📅", "一括バックテスト"],
           ["win5", "🎯", "WIN5予想"],
           ["stats", "📈", "成績・統計"],
         ] as [View, string, string][]).map(([v, icon, label]) => (
@@ -297,7 +247,7 @@ export default function KeibaApp() {
         )}
 
         {view === "dashboard" && (
-          <Dashboard state={state} onSelectRace={(id) => { setSelectedRaceId(id); setView("prediction"); }} onNewRace={() => setView("new_race")} onDeleteRace={handleDeleteRace} onBulkProcess={() => setView("bulk_process")} />
+          <Dashboard state={state} onSelectRace={(id) => { setSelectedRaceId(id); setView("prediction"); }} onNewRace={() => setView("new_race")} onDeleteRace={handleDeleteRace} />
         )}
         {view === "new_race" && (
           <RaceForm onSubmit={handleNewRace} onCancel={() => setView("dashboard")} />
@@ -326,9 +276,6 @@ export default function KeibaApp() {
         {view === "stats" && (
           <StatsPanel state={state} />
         )}
-        {view === "bulk_process" && (
-          <BulkProcessPanel state={state} onStateChange={setState} onCancel={() => setView("dashboard")} />
-        )}
         {view === "prediction" && !selectedRace && (
           <div className="empty-state">
             <div className="empty-state-icon">🏇</div>
@@ -340,7 +287,7 @@ export default function KeibaApp() {
   );
 }
 
-function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace, onBulkProcess }: { state: AppState; onSelectRace: (id: string) => void; onNewRace: () => void; onDeleteRace: (id: string) => void; onBulkProcess: () => void }) {
+function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: AppState; onSelectRace: (id: string) => void; onNewRace: () => void; onDeleteRace: (id: string) => void }) {
   const { stats } = state;
   const pending = state.races.filter(r => !r.result);
   const completed = state.races.filter(r => r.result).slice(-24).reverse();
@@ -350,7 +297,6 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace, onBulkProcess
       <div className="section-header">
         <h1 className="section-title">🛰️ ダッシュボード</h1>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary" onClick={onBulkProcess}>📅 一括バックテスト</button>
           <button className="btn btn-primary" onClick={onNewRace}>➕ 新規レース登録</button>
         </div>
       </div>
