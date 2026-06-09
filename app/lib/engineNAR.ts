@@ -188,16 +188,32 @@ export function calculateNARScore(
     }
   }
 
-  // 学習パッチの適用（NAR用にも共通で適用）
+  // ==========================================
+  // 動的学習パッチの適用
+  // ==========================================
   for (const patch of learningPatches) {
-    let apply = true;
-    if (patch.targetCourse && !trackName.includes(patch.targetCourse)) apply = false;
-    if (patch.targetJockey && !jockey.includes(patch.targetJockey)) apply = false;
-    if (patch.targetBloodline && !bloodline.includes(patch.targetBloodline)) apply = false;
-
-    if (apply) {
-      potential += patch.weightAdjustment;
-      tags.push(`🛠️ 学習補正: ${patch.description} (${patch.weightAdjustment > 0 ? '+' : ''}${patch.weightAdjustment})`);
+    if (patch.active === false) continue;
+    if (patch.track && patch.track !== trackName) continue;
+    
+    // NARはコンディション（馬場状態）を一旦無視しても良いが、一応判定
+    // if (patch.condition && patch.condition !== condition) continue;
+    
+    for (const adj of patch.adjustments) {
+      const field = adj.field as keyof Horse;
+      const val = horse[field];
+      let applies = false;
+      if (typeof val === 'number') {
+        if (adj.operator === '>=' && val >= Number(adj.value)) applies = true;
+        else if (adj.operator === '<=' && val <= Number(adj.value)) applies = true;
+        else if (adj.operator === '==' && val === Number(adj.value)) applies = true;
+      } else if (typeof val === 'string' && typeof adj.value === 'string') {
+        if (adj.operator === 'includes' && val.includes(adj.value)) applies = true;
+        else if (adj.operator === '==' && val === adj.value) applies = true;
+      }
+      if (applies) { 
+        potential += adj.scoreAdjust; 
+        tags.push(`学習パッチ(${patch.version})`); 
+      }
     }
   }
 
