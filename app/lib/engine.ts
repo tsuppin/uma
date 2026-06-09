@@ -124,6 +124,41 @@ export function calculateTsuchiyaScore(
   // 機械学習の結果から導き出された最も重要な「物理・人間」要素を最優先評価
   // ==========================================
   
+  // 【追加】オッズの歪み（期待値）ロジック＆PCI（ペースチェンジインデックス）分析
+  const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
+  
+  if (odds >= 15.0) {
+    if (prevRaceData) {
+      if (prevRaceData.isStumbled || prevRaceData.cornerOuterCount >= 4) {
+        potential += 35;
+        tags.push("💰 期待値爆発: 前走物理的不利(度外視) × 大穴オッズ");
+      }
+      if (prevRaceData.halonPace) {
+        const paceParts = prevRaceData.halonPace.split('-');
+        if (paceParts.length === 2) {
+          const front3f = parseFloat(paceParts[0]);
+          const back3f = parseFloat(paceParts[1]);
+          if (front3f < back3f - 1.5 && (horse.style === '差し' || horse.style === '追込')) {
+            potential += 30;
+            tags.push("💰 期待値爆発: 前走ハイペース被害の差し馬 × 大穴");
+          }
+        }
+      }
+    }
+  } else if (odds <= 2.5 && popularity === 1) {
+    if (weight > 0) {
+      const kinryoWeightRatio = (kinryo / weight) * 100;
+      if (kinryoWeightRatio >= 12.0) {
+        potential -= 40;
+        tags.push("⚠️ 過剰人気トラップ: 1番人気 × 物理的過負荷(斤量比12%超)");
+      }
+    }
+    if (race.surface === 'ダート' && prevRaceData?.surface === '芝') {
+      potential -= 30;
+      tags.push("⚠️ 過剰人気トラップ: 1番人気 × 初ダートの不確実性");
+    }
+  }
+
   // 1. 斤量体重比（kinryo_weight_ratio）の最適化
   if (weight > 0) {
     const kinryoWeightRatio = (kinryo / weight) * 100;
@@ -4605,6 +4640,48 @@ export function sortPredictions(predictions: Prediction[]): Prediction[] {
 
 // AIを利用した非同期ラーニングパッチ生成
 export async function generateAILearningPatch(race: Race, predictions: Prediction[], actualResult: { rank: number; horseNumber: number; }[]): Promise<LearningPatch | null> {
+  // 【新設】ルールベースのローカル学習パッチ生成（APIキー不要のフォールバック）
+  if (predictions.length > 0 && actualResult.length > 0) {
+    // AIが1番手評価（本命）にした馬
+    const topPrediction = predictions[0];
+    // 実際の着順
+    const actualRank = actualResult.find(r => r.horseNumber === topPrediction.horseNumber)?.rank || 99;
+
+    // もし本命馬が6着以下に大敗した場合、弱点を学習
+    if (actualRank >= 6) {
+      const horse = race.horses.find(h => h.number === topPrediction.horseNumber);
+      if (horse) {
+        const isInner = horse.frame <= 3;
+        const isHeavy = race.condition === '重' || race.condition === '不良';
+        const isOvervalued = horse.popularity === 1 && (horse.odds || 0) <= 2.5;
+        
+        let reason = "";
+        let rule = "";
+        
+        if (isInner && isHeavy) {
+          reason = "本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。";
+          rule = `競馬場: ${race.trackName}, 馬場: ${race.condition}, 枠: ${horse.frame}枠 -> 評価を大きく下げる（マイナス30点）`;
+        } else if (isOvervalued && horse.weight > 0 && (horse.jockeyWeight || 55) / horse.weight * 100 >= 12.0) {
+          reason = "過剰人気の小柄馬が斤量負けしました。斤量体重比のペナルティを強化する必要があります。";
+          rule = "過剰人気（オッズ2.5倍以下）かつ斤量体重比12%以上の場合は絶対評価を下げる";
+        } else {
+          reason = `本命馬（${horse.name}）が${actualRank}着に大敗。展開や未知のバイアスによる敗因分析が必要です。`;
+          rule = `血統: ${horse.bloodline?.split('/')[0] || '不明'} の ${race.trackName} ${race.distance}m 適性を再評価する`;
+        }
+
+        return {
+          id: `patch_local_${Date.now()}`,
+          date: new Date().toISOString(),
+          raceId: race.id,
+          title: `ローカル自動学習: ${race.trackName} ${race.distance}m の敗因分析`,
+          description: reason,
+          ruleToApply: rule,
+          active: true
+        };
+      }
+    }
+  }
+
   try {
     const res = await fetch('/api/learning-patch', {
       method: 'POST',
