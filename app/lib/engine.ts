@@ -1412,27 +1412,61 @@ export function calculateTsuchiyaScore(
 
     // 1. 大型パワー馬加点（タフなオーストラリア産白砂対応）
     if (weight >= 500) {
-      potential += 25;
+      potential += 20;
       tags.push("💪 大井白砂パワー適合(500kg以上)");
     }
 
-    // 2. 距離別の脚質適性（大井の長い直線）
-    if (dist >= 1600) {
-      if (horse.style === "差し" || horse.style === "追込") {
+    // 2. 環境変化と血統の逆転（白砂の含水率バイナリ構造）
+    const sireUpper = horse.sire?.toUpperCase() || "";
+    const isDry = race.condition === "良" || race.condition === "稍重";
+    const isWet = race.condition === "重" || race.condition === "不良";
+    
+    if (isDry) {
+      if (sireUpper.includes("イスラボニータ") || sireUpper.includes("スクリーンヒーロー")) {
         potential += 25;
+        tags.push("🧬 大井良馬場特注：乾燥白砂の表面滑走(芝適性血統)");
+      }
+    } else if (isWet) {
+      if (sireUpper.includes("ゴールドアリュール") || sireUpper.includes("ドレフォン") || sireUpper.includes("クロフネ")) {
+        potential += 30;
+        tags.push("🌧️ 大井道悪特注：締まった砂を切り裂くパワー駆動血統");
+      }
+    }
+    // 環境不問の万能血統
+    if (sireUpper.includes("ダノンレジェンド") || sireUpper.includes("ヘニーヒューズ")) {
+      potential += 15;
+      tags.push("🧬 大井万能血統：環境不問のスピード＆パワー");
+    }
+
+    // 3. 海風のエアロダイナミクスと距離別脚質
+    const raceMonth = race.date ? parseInt(race.date.split("-")[1] || "0") : 0;
+    const isSummer = raceMonth >= 6 && raceMonth <= 8;
+    const isWinter = raceMonth === 12 || raceMonth <= 2;
+
+    if (dist >= 1600) {
+      if (horse.style === "差し" || horse.style === "追込" || horse.style === "マクリ") {
+        potential += 20;
         tags.push("🏹 外回り長距離・末脚特注");
+        if (isWinter) {
+          potential += 15;
+          tags.push("🌪️ 大井冬期特注：北風(向かい風)による先行崩れと外差しエッジ");
+        }
       }
     } else {
       if (horse.style === "逃げ" || horse.style === "先行") {
         potential += 20;
         tags.push("🏃 短距離・前残り優位");
+        if (isSummer) {
+          potential += 15;
+          tags.push("🌊 大井夏期特注：南風(追い風)による逃げ・先行アシスト");
+        }
       }
     }
 
-    // 3. 大井エリートジョッキー（御神本、矢野、笹川、森泰）
-    const isOhiEliteJ = ["御神本", "矢野", "笹川", "森泰"].some(j => jockey.includes(j));
+    // 4. 大井エリートジョッキー（御神本、矢野、笹川、森泰、吉原）
+    const isOhiEliteJ = ["御神本", "矢野", "笹川", "森泰", "吉原"].some(j => jockey.includes(j));
     if (isOhiEliteJ) {
-      potential += 30;
+      potential += 25;
       tags.push("👑 大井リーディングジョッキーエッジ");
     }
   }
