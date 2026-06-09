@@ -359,6 +359,50 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
+    // 【追加】阪神マニアック特化プロトコル（ニッチな高回収率ロジック）
+    // ==========================================
+    if (trackName.includes('阪神')) {
+      // マニアック1: 阪神ダート1400m専用「芝スタート×外枠×芝用スピード血統」
+      if (race.surface === 'ダート' && dist === 1400 && frame >= 6) {
+        const isTurfSpeed = ['ロードカナロア', 'キンシャサノキセキ', 'ダイワメジャー', 'ミッキーアイル', 'イスラボニータ'].some(s => (horse.sire || '').includes(s));
+        if (isTurfSpeed) {
+          potential += 40;
+          tags.push("🔥 阪神D1400特注: 芝スタートを活かす外枠×芝用スピード血統");
+        }
+      }
+
+      // マニアック2: 京都との真逆適性「平坦負けからの急坂替わり（パワーの逆襲）」
+      if (prevRaceData && prevRaceData.venue?.includes('京都') && prevRaceData.result >= 4) {
+        if (weight >= 500 || ['キズナ', 'エピファネイア', 'ルーラーシップ', 'ハービンジャー', 'オルフェーヴル'].some(s => (horse.sire || '').includes(s))) {
+          potential += 45;
+          tags.push("🔥 阪神特注: 前走京都(平坦)スピード負けからの急坂パワー替わり");
+        }
+      }
+
+      // マニアック3: 阪神内回り専用「ロンスパ特化型血統（マクリの美学）」
+      if (race.surface === '芝' && (dist === 2000 || dist === 2200)) {
+        if (horse.style === '差し' || horse.style === '後方' || horse.style === '中団') {
+          const isLongSpurt = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'エピファネイア', 'スクリーンヒーロー'].some(s => (horse.sire || '').includes(s));
+          if (isLongSpurt) {
+            potential += 35;
+            tags.push("🔥 阪神内回り特注: 3コーナーからマクり上げるロンスパ血統");
+          }
+        }
+      }
+
+      // マニアック4: 阪神外回り1600m専用「距離短縮組（タフペース経験）の優位性」
+      if (race.surface === '芝' && dist === 1600) {
+        if (prevRaceData && prevRaceData.distance <= 1400 && prevRaceData.last3fTime) {
+          const prevLast3f = parseFloat(prevRaceData.last3fTime);
+          if (!isNaN(prevLast3f) && prevLast3f <= 34.5) {
+            potential += 35;
+            tags.push("🔥 阪神外回り特注: ハイペース経験(距離短縮)のタフネスと末脚");
+          }
+        }
+      }
+    }
+
+    // ==========================================
     // 【追加】宝塚記念（阪神2200m・グランプリ）特化プロトコル
     // ==========================================
     const isTakarazukaKinen = trackName.includes('阪神') && race.raceName && race.raceName.includes('宝塚記念');
