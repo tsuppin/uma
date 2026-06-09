@@ -270,6 +270,46 @@ export function calculateTsuchiyaScore(
         tags.push("🔥 JRA極秘: 初ダート×ダート特化血統(覚醒の可能性大)");
       }
     }
+
+    // ==========================================
+    // 【追加】東京重賞特化プロトコル（絶対能力と適性の極み）
+    // ==========================================
+    const isTokyoStakes = trackName.includes('東京') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isTokyoStakes) {
+      // 東京重賞1: 東京の帝王（ルメール×ノーザン系馬主・有力血統）
+      const isNorthernOwner = ['サンデー', 'キャロット', 'シルク', '社台', 'ダノン', 'サトノ', '金子'].some(o => (horse.owner || '').includes(o));
+      if (jockey.includes('ルメール') && isNorthernOwner) {
+        potential += 50;
+        tags.push("👑 東京特注: 東京の帝王ルメール×ノーザン系勝負馬");
+      }
+
+      // 東京重賞2: 究極の瞬発力証明（上がり最速実績×距離延長）
+      if (prevRaceData && prevRaceData.last3fTime) {
+        const last3f = parseFloat(prevRaceData.last3fTime);
+        if (!isNaN(last3f) && last3f <= 33.9 && dist > prevRaceData.distance) {
+          potential += 40;
+          tags.push("👑 東京特注: 距離延長でさらに活きる究極の瞬発力");
+        }
+      }
+
+      // 東京重賞3: 格の違い（G1大敗からのG2/G3格下がり×差し馬）
+      const isG2orG3 = race.raceName.match(/G[23]/i) || race.raceName.match(/G(II|III)/i);
+      const isPrevG1 = prevRaceData?.raceClass?.match(/G[1I]/i) || prevRaceData?.raceName?.match(/G[1I]/i);
+      if (isG2orG3 && isPrevG1 && (horse.style === '差し' || horse.style === '追込')) {
+        potential += 45;
+        tags.push("👑 東京特注: G1揉まれ経験馬の格下がり(展開不問の差し)");
+      }
+
+      // 東京重賞4: 外枠のクリーンラン（多頭数×外枠×王道血統）
+      if (headCount >= 14 && frame >= 6) {
+        const isRoyalSire = ['キタサンブラック', 'エピファネイア', 'ロードカナロア', 'ディープインパクト', 'スワーヴリチャード', 'ドゥラメンテ', 'モーリス'].some(s => (horse.sire || '').includes(s));
+        if (isRoyalSire) {
+          potential += 35;
+          tags.push("👑 東京特注: 多頭数外枠のクリーンラン(王道血統)");
+        }
+      }
+    }
   }
 
   // ==========================================
