@@ -389,6 +389,43 @@ export function calculateTsuchiyaScore(
         tags.push("👑 阪神特注: ゴール前の急坂を苦にしないパワーと実績");
       }
     }
+
+    // ==========================================
+    // 【追加】中山重賞特化プロトコル（機動力と急坂パワーの極み）
+    // ==========================================
+    const isNakayamaStakes = trackName.includes('中山') && race.raceName && race.raceName.match(/G[1-3I-III]/i);
+    
+    if (isNakayamaStakes) {
+      // 中山重賞1: 究極の小回りアドバンテージ（内枠×逃げ先行）
+      if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
+        potential += 35;
+        tags.push("👑 中山特注: 短い直線と急坂を味方につける内枠先行絶対有利");
+      }
+
+      // 中山重賞2: ステイ・ロベルトの庭（急坂・小回り特化血統）
+      const isNakayamaSire = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'スクリーンヒーロー', 'エピファネイア', 'モーリス', 'バゴ', 'ルーラーシップ'].some(s => (horse.sire || '').includes(s));
+      if (isNakayamaSire) {
+        potential += 40;
+        tags.push("👑 中山特注: 中山重賞で無類の強さを誇るパワー＆タフネス血統");
+      }
+
+      // 中山重賞3: ローカル・小回り巧者の下剋上（ローカル競馬場での好走実績）
+      // 福島・小倉などの小回りコースで勝てる馬は、コーナーを加速しながら回る「機動力（まくり）」がある
+      const hasLocalExp = horse.pastRaces?.some(pr => 
+        ['福島', '小倉', '函館', '札幌'].some(t => pr.venue.includes(t)) && pr.result <= 2
+      );
+      if (hasLocalExp && (horse.style === '先行' || horse.style === '差し')) {
+        potential += 30; 
+        tags.push("👑 中山特注: 厳しい小回りコースで培われた圧倒的『機動力』");
+      }
+
+      // 中山重賞4: 直線一気の罠回避（極端な後方待機馬のペナルティ）
+      // 中山は直線が310mしかないため、後方からの直線一気は物理的にほぼ不可能
+      if (horse.style === '追込' && !isNakayamaSire) {
+        potential -= 35;
+        tags.push("⚠️ 中山危険: 短い直線で届かない『追込馬』の物理的絶望（消し）");
+      }
+    }
   }
 
   // ==========================================
