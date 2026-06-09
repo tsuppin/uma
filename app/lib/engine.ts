@@ -192,6 +192,49 @@ export function calculateTsuchiyaScore(
     tags.push("🔥 黄金コンボ: エリート騎手への勝負の乗り替わり");
   }
 
+  // ==========================================
+  // 【追加】JRA専用・最強の複合ファクター判定
+  // ==========================================
+  const isJRA = ['東京', '中山', '京都', '阪神', '中京', '新潟', '福島', '小倉', '函館', '札幌'].some(t => track.includes(t));
+
+  if (isJRA) {
+    // JRAコンボ1: 外厩帰り × トップ騎手 × 休み明け初戦
+    if (horse.isAfterRest && eliteJockeys.some(j => jockey.includes(j))) {
+      potential += 45;
+      tags.push("🔥 JRA極秘: トップ外厩仕上げ × エリート騎手の勝負気配");
+    }
+
+    // JRAコンボ2: 馬場改修（仮柵移動） × 内枠 × 先行馬
+    if (race.temporaryFencePosition && race.temporaryFencePosition !== 'A' && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+      potential += 40;
+      tags.push("🔥 JRA極秘: 仮柵移動(新品のイン) × 内枠先行絶対優位");
+    }
+
+    // JRAコンボ3: 上がり3F最速実績 × 直線の長いコース
+    const isLongStraight = ['東京', '新潟', '阪神'].some(t => track.includes(t));
+    if (isLongStraight && prevRaceData && prevRaceData.last3fTime) {
+      const last3f = parseFloat(prevRaceData.last3fTime);
+      if (!isNaN(last3f) && last3f <= 34.0) {
+        potential += 35;
+        tags.push("🔥 JRA極秘: 長い直線 × 鬼脚(上がり33秒台実績)");
+      }
+    }
+
+    // JRAコンボ4: 前走ハイペース被害馬 × 今回の「逃げ馬不在」
+    const frontRunnersCount = race.horses.filter(h => h.style === '逃げ').length;
+    if (horse.style === '逃げ' && frontRunnersCount <= 1 && prevRaceData && prevRaceData.halonPace) {
+      const paceParts = prevRaceData.halonPace.split('-');
+      if (paceParts.length === 2) {
+        const front3f = parseFloat(paceParts[0]);
+        const back3f = parseFloat(paceParts[1]);
+        if (front3f < back3f - 1.5) {
+          potential += 35;
+          tags.push("🔥 JRA極秘: 前走ハイペース被害馬の「単騎逃げ」濃厚");
+        }
+      }
+    }
+  }
+
   // 1. 斤量体重比（kinryo_weight_ratio）の最適化
   if (weight > 0) {
     const kinryoWeightRatio = (kinryo / weight) * 100;
