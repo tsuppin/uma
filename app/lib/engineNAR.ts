@@ -222,7 +222,7 @@ export function calculateNARScore(
 
   // 1-B. 「逃げ馬の隣の枠」スリップストリーム恩恵
   if (horse.style === '先行' || horse.style === '好位') {
-    const insideHorse = race.horses.find(h => h.horseNumber === horse.horseNumber - 1);
+    const insideHorse = race.horses.find(h => h.number === horse.number - 1);
     if (insideHorse && insideHorse.style === '逃げ') {
       potential += 15;
       tags.push("🛡️ 砂被り回避: 内側の逃げ馬を利用する絶好の特等席（スリップストリーム）");

@@ -232,5 +232,124 @@
       }
     ],
     "active": true
+  },
+  {
+    "id": "patch_local_1780983984779",
+    "version": "1.0 (Local)",
+    "date": "2026-06-09T05:46:24.779Z",
+    "description": "[東京 1400m] 本命馬（ワールズエンド）が99着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ロードカナロア  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ロードカナロア",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1780996080324",
+    "version": "1.0 (Local)",
+    "date": "2026-06-09T09:08:00.324Z",
+    "description": "[帯広ば 200m] 本命馬（ツカサキング）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: テルシゲ の 帯広ば 200m 適性を再評価する)",
+    "track": "帯広ば",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "テルシゲ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1780996162468",
+    "version": "1.0 (Local)",
+    "date": "2026-06-09T09:09:22.468Z",
+    "description": "[帯広ば 200m] 本命馬（ダイキチ）が6着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: レットダイヤ の 帯広ば 200m 適性を再評価する)",
+    "track": "帯広ば",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "レットダイヤ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1780996347289",
+    "version": "1.0 (Local)",
+    "date": "2026-06-09T09:12:27.289Z",
+    "description": "[帯広ば 200m] 本命馬（ジェイノアオイ）が8着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: レットダイヤ の 帯広ば 200m 適性を再評価する)",
+    "track": "帯広ば",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "レットダイヤ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1780996460974",
+    "version": "1.0 (Local)",
+    "date": "2026-06-09T09:14:20.974Z",
+    "description": "[東京 1400m] 本命馬（ルクリーシア）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ロードカナロア  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ロードカナロア",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781001649357",
+    "version": "1.0 (Local)",
+    "date": "2026-06-09T10:40:49.357Z",
+    "description": "[東京 1400m] 本命馬（ルクリーシア）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ロードカナロア  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ロードカナロア",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781001882963",
+    "version": "1.0 (Local)",
+    "date": "2026-06-09T10:44:42.963Z",
+    "description": "[大井 1200m] 本命馬（ヴェラージュコマチ）が8着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ダノンプレミアム の 大井 1200m 適性を再評価する)",
+    "track": "大井",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ダノンプレミアム",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
   }
 ]
