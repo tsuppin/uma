@@ -235,6 +235,26 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ==========================================
+  // 【追加】阪神専用バイアス（ローカル学習結果の反映）
+  // ==========================================
+  if (track.includes('阪神')) {
+    let hanshinScore = 0;
+    const isHanshinSire = ['キズナ', 'ホッコータルマエ', 'ハーツクライ', 'マジェスティックウォリアー', 'シュヴァルグラン', 'モズアスコット', 'Essential Quality'].some(s => sire.includes(s));
+    const isHanshinJockey = ['西村 淳也', '鮫島 克駿', '小牧 加矢太', '森 一馬', '上野 翔', '西塚 洸二', '太宰 啓介', '角田 大和', '高倉 稜', '菱田 裕二'].some(j => jockey.includes(j));
+
+    if (weight >= 480) hanshinScore += 10;
+    if (frame <= 2) hanshinScore += 15;
+    if (isHanshinSire) hanshinScore += 15;
+    if (isHanshinJockey) hanshinScore += 15;
+    if (horse.age === 3) hanshinScore += 15;
+
+    if (hanshinScore >= 25) {
+      potential += hanshinScore;
+      tags.push(`🔥 阪神特注馬: AI学習済み特化バイアス合致 (+${hanshinScore})`);
+    }
+  }
+
   // 1. 斤量体重比（kinryo_weight_ratio）の最適化
   if (weight > 0) {
     const kinryoWeightRatio = (kinryo / weight) * 100;
