@@ -13,9 +13,16 @@ export function analyzeRaceResultsAndLearn(
   const today = new Date().toISOString().split('T')[0];
 
   // 競馬場・芝ダートごとに結果をグルーピング
-  const trackGroups: Record<string, { venue: string, surface: string, results: Race[] }> = {};
+  const trackGroups: Record<string, { 
+    venue: string, 
+    surface: string, 
+    results: Race[], 
+    hugePayouts: number, 
+    top3WeightSum: number, 
+    top3WeightCount: number 
+  }> = {};
 
-  // 今日の騎手の勝利数をカウントする用（簡易版）
+  // 今日の騎手の勝利数をカウントする用
   const todaysJockeyWins: Record<string, number> = {};
 
   for (const race of races) {
@@ -23,9 +30,21 @@ export function analyzeRaceResultsAndLearn(
 
     const groupKey = `${race.trackName}_${race.surface}`;
     if (!trackGroups[groupKey]) {
-      trackGroups[groupKey] = { venue: race.trackName, surface: race.surface, results: [] };
+      trackGroups[groupKey] = { venue: race.trackName, surface: race.surface, results: [], hugePayouts: 0, top3WeightSum: 0, top3WeightCount: 0 };
     }
     trackGroups[groupKey].results.push(race);
+
+    // 上がり最速のタイムと馬名を記録
+    let fastest3FTime = 999.9;
+    let fastest3FHorse = "";
+    
+    // 万馬券（10000円以上）の発生をチェック
+    let isHugePayout = false;
+    if (race.result.refunds) {
+      if (race.result.refunds.trifecta && race.result.refunds.trifecta.some(t => t.payout >= 10000)) isHugePayout = true;
+      if (race.result.refunds.trio && race.result.refunds.trio.some(t => t.payout >= 10000)) isHugePayout = true;
+    }
+    if (isHugePayout) trackGroups[groupKey].hugePayouts++;
 
     // ==========================================
     // 1. MasterData Update (データベース自動蓄積)
@@ -58,10 +77,34 @@ export function analyzeRaceResultsAndLearn(
         horseData.incidents.push({ date: today, venue: race.trackName, note: "レース中不利" });
       }
 
+      // C. 上がり最速馬の特定
+      if (res.last3f) {
+        const timeNum = parseFloat(res.last3f);
+        if (!isNaN(timeNum) && timeNum < fastest3FTime) {
+          fastest3FTime = timeNum;
+          fastest3FHorse = res.horseName;
+        }
+      }
+
+      // 馬体重の集計（上位3頭）
+      if (res.rank <= 3 && res.weight) {
+        trackGroups[groupKey].top3WeightSum += res.weight;
+        trackGroups[groupKey].top3WeightCount++;
+      }
+
       // 騎手勝利数カウント
       if (res.jockey && res.rank === 1) {
         if (!todaysJockeyWins[res.jockey]) todaysJockeyWins[res.jockey] = 0;
         todaysJockeyWins[res.jockey] += 1;
+      }
+    }
+
+    // D. 上がり最速で負けた馬の記録（隠れ穴馬）
+    if (fastest3FHorse) {
+      const targetHorse = race.result.result.find(r => r.horseName === fastest3FHorse);
+      if (targetHorse && targetHorse.rank >= 4) { // 4着以下で負けている場合
+        const hData = updatedMasterData.horses[fastest3FHorse];
+        if (hData) hData.incidents!.push({ date: today, venue: race.trackName, note: "上がり最速で敗退" });
       }
     }
   }
@@ -89,7 +132,6 @@ export function analyzeRaceResultsAndLearn(
     }
 
     // A. 枠順バイアス（イン有利）
-    // 3着以内の半数以上(50%以上)が1〜3枠の場合（通常期待値は約37.5%）
     if (totalTop3 > 0 && innerFrameTop3 / totalTop3 >= 0.5) {
       newPatches.push({
         id: `auto-bias-inner-${groupKey}-${Date.now()}`,
@@ -105,7 +147,6 @@ export function analyzeRaceResultsAndLearn(
     }
 
     // B. 脚質バイアス（前残り有利）
-    // 3着以内の55%以上が逃げ・先行の場合
     if (totalTop3 > 0 && frontRunnerTop3 / totalTop3 >= 0.55) {
       newPatches.push({
         id: `auto-bias-front-${groupKey}-${Date.now()}`,
@@ -120,9 +161,43 @@ export function analyzeRaceResultsAndLearn(
         ]
       });
     }
+
+    // C. 波乱バイアス（万馬券多発による大穴ブースト）
+    if (group.hugePayouts >= 2) {
+      newPatches.push({
+        id: `auto-bias-volatile-${groupKey}-${Date.now()}`,
+        version: "1.0",
+        date: today,
+        description: `【自動検知】${group.venue} ${group.surface}: 波乱馬場（万馬券多発）による大穴ブースト`,
+        track: group.venue,
+        active: true,
+        adjustments: [
+          { field: "popularity", operator: "==", value: 1, scoreAdjust: -15 }, // 1番人気を減点
+          { field: "popularity", operator: ">=", value: 6, scoreAdjust: 15 }   // 6番人気以降を加点
+        ]
+      });
+    }
+
+    // D. パワー馬場バイアス（上位馬の平均馬体重が重い）
+    if (group.top3WeightCount > 0) {
+      const avgWeight = group.top3WeightSum / group.top3WeightCount;
+      if (avgWeight >= 490) {
+        newPatches.push({
+          id: `auto-bias-power-${groupKey}-${Date.now()}`,
+          version: "1.0",
+          date: today,
+          description: `【自動検知】${group.venue} ${group.surface}: 深い砂（タフな馬場）による大型馬ブースト`,
+          track: group.venue,
+          active: true,
+          adjustments: [
+            { field: "weight", operator: ">=", value: 500, scoreAdjust: 15 }
+          ]
+        });
+      }
+    }
   }
 
-  // C. 騎手のリアルタイム確変（今日の調子）パッチ
+  // E. 騎手のリアルタイム確変（今日の調子）パッチ
   for (const [jockeyName, wins] of Object.entries(todaysJockeyWins)) {
     if (wins >= 3) {
       newPatches.push({

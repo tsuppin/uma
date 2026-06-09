@@ -302,6 +302,7 @@ export function calculateNARScore(
     if (historicalIncidents && historicalIncidents.length > 0) {
       const hasHugeWin = historicalIncidents.some((inc: any) => inc.note === "大差圧勝");
       const hasBadLuck = historicalIncidents.some((inc: any) => inc.note === "レース中不利");
+      const hasFastest3fLoss = historicalIncidents.some((inc: any) => inc.note === "上がり最速で敗退");
       
       if (hasHugeWin) {
         potential += 20;
@@ -310,6 +311,10 @@ export function calculateNARScore(
       if (hasBadLuck) {
         potential += 15;
         tags.push('🧠 不利記憶: AIが記憶する過去のレース不利履歴からの巻き返し');
+      }
+      if (hasFastest3fLoss) {
+        potential += 20;
+        tags.push('🕵️ 隠れ穴馬記憶: 前走「上がり最速で敗退（展開不向き）」からの巻き返し激走');
       }
     }
   }
