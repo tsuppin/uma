@@ -438,6 +438,51 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
+    // 【追加】新潟マニアック特化プロトコル（ニッチな高回収率ロジック）
+    // ==========================================
+    if (trackName.includes('新潟')) {
+      // マニアック1: 新潟千直（芝1000m）専用「大外枠の絶対神」
+      if (race.surface === '芝' && dist === 1000) {
+        if (frame >= 7) {
+          potential += 50;
+          tags.push("🔥 新潟千直特注: 荒れていない外ラチ沿いを走れる大外枠の絶対神");
+        } else if (frame <= 2) {
+          potential -= 30; // 内枠は圧倒的不利
+        }
+      }
+
+      // マニアック2: 日本最長659mの直線「究極の上がり最速・大外一気」
+      if (race.surface === '芝' && dist > 1400) {
+        if (horse.style === '差し' || horse.style === '追込') {
+          if (prevRaceData && prevRaceData.last3fTime) {
+            const prevLast3f = parseFloat(prevRaceData.last3fTime);
+            if (!isNaN(prevLast3f) && prevLast3f <= 33.5) {
+              potential += 40;
+              tags.push("🔥 新潟外回り特注: 日本最長の直線を大外一気で突き抜ける鬼脚");
+            }
+          }
+        }
+      }
+
+      // マニアック3: 平坦サウスポー「急坂右回りからの平坦左回り替わり」
+      if (prevRaceData && prevRaceData.venue?.match(/(中山|阪神)/) && prevRaceData.result >= 4) {
+        const hasFlatSouthpawRecord = horse.pastRaces?.some(pr => pr.venue?.match(/(新潟|中京|東京)/) && pr.result <= 3);
+        if (hasFlatSouthpawRecord) {
+          potential += 35;
+          tags.push("🔥 新潟特注: 急坂右回り惨敗からの平坦左回り替わり(サウスポー)");
+        }
+      }
+
+      // マニアック4: 新潟ダート1200m専用「テンの速さ至上主義（内枠逃げ）」
+      if (race.surface === 'ダート' && dist === 1200) {
+        if (frame <= 3 && horse.style === '逃げ') {
+          potential += 40;
+          tags.push("🔥 新潟D1200特注: キツいコーナーをロスなく回る内枠の逃げ馬");
+        }
+      }
+    }
+
+    // ==========================================
     // 【追加】宝塚記念（阪神2200m・グランプリ）特化プロトコル
     // ==========================================
     const isTakarazukaKinen = trackName.includes('阪神') && race.raceName && race.raceName.includes('宝塚記念');
