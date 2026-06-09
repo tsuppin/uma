@@ -4734,6 +4734,26 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ===================================================
+  // 【追加】MasterDataの記憶（自己学習履歴）の活用
+  // ===================================================
+  if (masterData && masterData.horses && masterData.horses[horse.name]) {
+    const historicalIncidents = masterData.horses[horse.name].incidents;
+    if (historicalIncidents && historicalIncidents.length > 0) {
+      const hasHugeWin = historicalIncidents.some((inc: any) => inc.note === "大差圧勝");
+      const hasBadLuck = historicalIncidents.some((inc: any) => inc.note === "レース中不利");
+      
+      if (hasHugeWin) {
+        potential += 20;
+        tags.push('👑 怪物記憶: AIが記憶する過去の「大差圧勝」履歴（底なしポテンシャル）');
+      }
+      if (hasBadLuck) {
+        potential += 15;
+        tags.push('🧠 不利記憶: AIが記憶する過去のレース不利履歴からの巻き返し');
+      }
+    }
+  }
+
   // ---------------------------------------------------
   // 動的学習パッチの適用
   // ---------------------------------------------------
