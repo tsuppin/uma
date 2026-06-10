@@ -1478,13 +1478,36 @@ export function calculateTsuchiyaScore(
   if (isUrawa) {
     tags.push("📐 浦和特化OMEGAエンジン適用中");
 
-    // 1. 極端な内枠先行絶対有利
+    // 1. 空間物理と含水率の相乗効果（極小回り×馬場状態）
+    const isUrawaWet = race.condition === "重" || race.condition === "不良";
     if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
-      potential += 40;
-      tags.push("🚀 浦和極小回り・内枠先行絶対有利");
+      let boost = 40;
+      let msg = "🚀 浦和極小回り: 内枠先行絶対有利";
+      if (isUrawaWet) {
+        boost += 25; // 超高速馬場化による前残り鉄板化
+        msg = "🚀☔ 浦和道悪: 止まらない内枠先行の超高速エッジ(鉄板)";
+      }
+      potential += boost;
+      tags.push(msg);
     } else if (horse.style === "追込") {
       potential -= 30;
-      tags.push("❌ 浦和小回り追込困難割引");
+      tags.push("❌ 浦和小回り: 物理的に絶望的な追込困難割引");
+    }
+
+    // 2. 南関東ヒエラルキー（大井・船橋からの遠征馬優位）
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const cameFromBigTrack = horse.pastRaces.some(pr => pr.venue?.match(/(大井|船橋)/));
+      if (cameFromBigTrack) {
+        potential += 20;
+        tags.push("👑 南関ヒエラルキー: 大井・船橋からの格上参戦エッジ");
+      }
+    }
+
+    // 3. 浦和の特殊巧者・地元エリート騎手
+    const urawaEliteJ = ["森泰", "笹川", "繁田", "保園", "秋元", "福原"].some(j => jockey.includes(j));
+    if (urawaEliteJ) {
+      potential += 25;
+      tags.push("👑 浦和マイスター・トップジョッキー補正");
     }
   }
 
@@ -3170,18 +3193,36 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 4. 所属エリア・厩舎（勝負仕上げバイアス）
+    // 4. 南関東エリア・厩舎（ヒエラルキーと勝負仕上げバイアス）
     const isKawasakiHome = horse.stableLocation?.includes("川崎") || trainerName.includes("川崎") || (!horse.stableLocation && horse.belonging?.includes("川崎"));
     if (isKawasakiHome) {
-      potential += 40;
-      tags.push("🏠 川崎ホーム所属(圧倒的ホームエッジ)");
       if (trainerName.match(/(内田勝義|高月賢一|林隆之|山崎尋美|佐藤博紀|八木正喜)/)) {
-        potential += 25;
-        tags.push("🏰 川崎エリート厩舎:勝負メイチ仕上げ");
+        potential += 35;
+        tags.push("🏰 川崎エリート厩舎: 地元での勝負メイチ仕上げ");
+      } else {
+        potential += 10;
+        tags.push("🏠 川崎ホーム所属(コース慣れアドバンテージ)");
       }
     } else {
-      potential -= 15;
-      tags.push("⚠️ 川崎アウェイ遠征馬(割引)");
+      // 遠征馬の精査（大井・船橋からの遠征は格上）
+      const isOhiFunabashi = horse.stableLocation?.includes("大井") || trainerName.includes("大井") || (!horse.stableLocation && horse.belonging?.includes("大井")) ||
+                             horse.stableLocation?.includes("船橋") || trainerName.includes("船橋") || (!horse.stableLocation && horse.belonging?.includes("船橋"));
+      if (isOhiFunabashi) {
+        potential += 35;
+        tags.push("👑 南関ヒエラルキー: 大井・船橋からの格上参戦エッジ");
+      } else {
+        potential -= 15;
+        tags.push("⚠️ 川崎への遠征馬(浦和・他地区等からの挑戦で割引)");
+      }
+    }
+
+    // 4.5. 環境物理：川崎ナイターと馬場含水率シナジー
+    const isKawasakiWet = race.condition === "重" || race.condition === "不良";
+    if (isKawasakiWet && (hStyle === "逃げ" || hStyle === "先行")) {
+      if (frame <= 3) {
+        potential += 25;
+        tags.push("☔ 川崎道悪ナイター: 超特急イン前残りの物理法則");
+      }
     }
 
     // 5. 騎手パラメータ（ジョッキーファクター）
