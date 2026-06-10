@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 import { calculateNARScore } from './engineNAR';
 

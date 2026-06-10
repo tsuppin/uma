@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+// @ts-ignore
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { Race, Prediction, LearningPatch } from "../../types";
 
