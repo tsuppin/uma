@@ -6095,13 +6095,11 @@ export function calculateTsuchiyaScore(
 // フォーメーション生成・その他 (既存)
 // ==========================================
 export function generateFormation(predictions: Prediction[], raceType: Formation['type'] = 'trifecta'): Formation {
-  const sortedByPotential = [...predictions].sort((a, b) => b.potential - a.potential);
-  const top3 = sortedByPotential.slice(0, 3);
-  const axisNos = top3.map(p => p.horseNumber);
-  const others = predictions.filter(p => !axisNos.includes(p.horseNumber));
-  const sortedByDarkness = [...others].sort((a, b) => b.darkness - a.darkness);
-  const dark4 = sortedByDarkness.slice(0, 4);
-  const darkNos = dark4.map(p => p.horseNumber);
+  const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
+  const horses = sorted.map(p => p.horseNumber);
+
+  const axisNos = horses.slice(0, 3);
+  const darkNos = horses.slice(3, 7);
 
   let col1 = axisNos;
   let col2 = axisNos;
