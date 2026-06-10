@@ -120,10 +120,10 @@ export default function StatsPanel({ state }: { state: AppState }) {
                   <tr key={venue}>
                     <td className="fw-600">{venue}</td>
                     <td style={{ width: '36px', minWidth: '36px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px', fontSize: '11px' }}>{s.total}</td>
-                    <td>{(exactaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.exacta})</span></td>
-                    <td>{(quinellaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.quinella})</span></td>
-                    <td>{(trifectaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trifecta})</span></td>
-                    <td>{(trioRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trio})</span></td>
+                    <td style={{ color: exactaRate > 0.4 ? '#ff4d4f' : undefined }}>{(exactaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.exacta})</span></td>
+                    <td style={{ color: quinellaRate > 0.4 ? '#ff4d4f' : undefined }}>{(quinellaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.quinella})</span></td>
+                    <td style={{ color: trifectaRate > 0.4 ? '#ff4d4f' : undefined }}>{(trifectaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trifecta})</span></td>
+                    <td style={{ color: trioRate > 0.4 ? '#ff4d4f' : undefined }}>{(trioRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trio})</span></td>
                   </tr>
                 );
               })}

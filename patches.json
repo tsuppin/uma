@@ -351,5 +351,362 @@
       }
     ],
     "active": true
+  },
+  {
+    "id": "patch_local_1781002281657",
+    "version": "1.0 (Local)",
+    "date": "2026-06-09T10:51:21.657Z",
+    "description": "[阪神 1400m] 本命馬（ムーヴ）が8着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ラニ  の 阪神 1400m 適性を再評価する)",
+    "track": "阪神",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ラニ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781063758190",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T03:55:58.190Z",
+    "description": "[東京 1400m] 本命馬（ファイナルフォーム）が12着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: スピルバーグ  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "スピルバーグ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781063799832",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T03:56:39.832Z",
+    "description": "[東京 1400m] 本命馬（マテンロウアルカナ）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: キタサンブラック  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "キタサンブラック",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781063860577",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T03:57:40.577Z",
+    "description": "[東京 1400m] 本命馬（シュンポシオン）が15着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: アルアイン  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アルアイン",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781088330690",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:45:30.690Z",
+    "description": "[門別 1000m] 本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。 (補正: 競馬場: 門別, 馬場: 重, 枠: 1枠 -> 評価を大きく下げる（マイナス30点）)",
+    "track": "門別",
+    "condition": "重",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "==",
+        "value": 1,
+        "scoreAdjust": -30
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781088378074",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:46:18.074Z",
+    "description": "[門別 1000m] 本命馬（サザンザバロン）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: サンライズノヴァ の 門別 1000m 適性を再評価する)",
+    "track": "門別",
+    "condition": "重",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "サンライズノヴァ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781088410357",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:46:50.357Z",
+    "description": "[門別 1000m] 本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。 (補正: 競馬場: 門別, 馬場: 重, 枠: 3枠 -> 評価を大きく下げる（マイナス30点）)",
+    "track": "門別",
+    "condition": "重",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": -30
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781088591409",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:49:51.409Z",
+    "description": "[門別 1000m] 本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。 (補正: 競馬場: 門別, 馬場: 重, 枠: 2枠 -> 評価を大きく下げる（マイナス30点）)",
+    "track": "門別",
+    "condition": "重",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "==",
+        "value": 2,
+        "scoreAdjust": -30
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781088821919",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:53:41.919Z",
+    "description": "[東京 1400m] 本命馬（ルクリーシア）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ロードカナロア  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ロードカナロア",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781088950590",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:55:50.590Z",
+    "description": "[東京 1400m] 本命馬（ファイナルフォーム）が12着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: スピルバーグ  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "スピルバーグ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781088983259",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:56:23.259Z",
+    "description": "[東京 1400m] 本命馬（マテンロウアルカナ）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: キタサンブラック  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "キタサンブラック",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089021779",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:57:01.779Z",
+    "description": "[東京 1400m] 本命馬（シュンポシオン）が15着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: アルアイン  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "アルアイン",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089092214",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:58:12.214Z",
+    "description": "[東京 1400m] 本命馬（モティスフォント）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: モーリス  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モーリス",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089132300",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:58:52.300Z",
+    "description": "[東京 1400m] 本命馬（マルガイナルキッソス）が6着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: Caravaggio  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "Caravaggio",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089163745",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T10:59:23.745Z",
+    "description": "[東京 1400m] 本命馬（ビーオンザカバー）が6着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ハービンジャー  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ハービンジャー",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089279577",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:01:19.577Z",
+    "description": "[東京 1400m] 本命馬（トロヴァトーレ）が9着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: レイデオロ  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "レイデオロ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089345607",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:02:25.607Z",
+    "description": "[東京 1400m] 本命馬（アスゴッド）が15着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: モズアスコット  の 東京 1400m 適性を再評価する)",
+    "track": "東京",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モズアスコット",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089410874",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:03:30.874Z",
+    "description": "[阪神 1400m] 本命馬（スペイドアン）が11着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: カリフォルニアクローム  の 阪神 1400m 適性を再評価する)",
+    "track": "阪神",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "カリフォルニアクローム",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089522160",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:05:22.160Z",
+    "description": "[阪神 1400m] 本命馬（アンリミテッド）が6着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: キズナ  の 阪神 1400m 適性を再評価する)",
+    "track": "阪神",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "キズナ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089554991",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:05:54.991Z",
+    "description": "[阪神 1400m] 本命馬（スピークロウ）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: イスラボニータ  の 阪神 1400m 適性を再評価する)",
+    "track": "阪神",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "イスラボニータ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781089594679",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:06:34.679Z",
+    "description": "[阪神 1400m] 本命馬（クリムゾンバースト）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ポエティックフレア  の 阪神 1400m 適性を再評価する)",
+    "track": "阪神",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ポエティックフレア",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
   }
 ]
