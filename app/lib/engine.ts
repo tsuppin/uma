@@ -5322,6 +5322,144 @@ export function calculateTsuchiyaScore(
     tags.push('💎3連系:エピファネイア適性ブースト');
   }
 
+  // ==========================================
+  // 【中山競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isNakayama = race.venue?.includes("中山") || race.trackName?.includes("中山") || race.raceName?.includes("中山");
+  if (isNakayama) {
+    tags.push("⛰️ 中山特化OMEGAエンジン適用中");
+
+    // 1. 急坂パワー物理（巨大なすり鉢とJRA最大の急坂）
+    if (weight >= 500 && race.surface === 'ダート') {
+      potential += 25;
+      tags.push("💪 中山急坂物理: 500kg超の絶対的パワー優位");
+    } else if (weight > 0 && weight <= 430) {
+      potential -= 15;
+      tags.push("⚠️ 中山急坂物理: 軽量馬のパワー不足懸念");
+    }
+
+    // 2. コーナーリング力学と脚質バイアス
+    if (horse.style === "先行") {
+      potential += 20;
+      tags.push("🏃 中山力学: 4角先行・持続力押し切りエッジ");
+    } else if (horse.style === "追込") {
+      potential -= 25;
+      tags.push("❌ 中山追込困難: 短直線による物理的絶望");
+    }
+
+    // 3. 遠心力ロスと枠順
+    if (frame >= 7) {
+      potential -= 15;
+      tags.push("⚠️ 中山外枠: スパイラルカーブでの遠心力ロス(物理的負債)");
+    }
+  }
+
+  // ==========================================
+  // 【中京競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isChukyo = race.venue?.includes("中京") || race.trackName?.includes("中京") || race.raceName?.includes("中京");
+  if (isChukyo) {
+    tags.push("🎢 中京特化OMEGAエンジン適用中");
+
+    // 1. スパイラルカーブの遠心力回避（インベタ絶対優位）
+    if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
+      potential += 25;
+      tags.push("🎯 中京スパイラル力学: 内枠先行のロスなしインベタエッジ");
+    }
+
+    // 2. 芝1200mの道悪バイアス反転
+    const isWetChukyo = race.condition === "重" || race.condition === "不良";
+    if (race.surface === '芝' && dist === 1200 && isWetChukyo && frame >= 6) {
+      potential += 25;
+      tags.push("☔ 中京芝道悪: バイアス反転による外枠優位");
+    }
+
+    // 3. ダートの白い砂（珪砂）適性とマクリ
+    if (race.surface === 'ダート' && horse.style === "マクリ") {
+      potential += 20;
+      tags.push("🚀 中京ダート: 珪砂適性とマクリ強襲エッジ");
+    }
+  }
+
+  // ==========================================
+  // 【小倉競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isKokura = race.venue?.includes("小倉") || race.trackName?.includes("小倉") || race.raceName?.includes("小倉");
+  if (isKokura) {
+    tags.push("🏎️ 小倉特化OMEGAエンジン適用中");
+
+    // 1. スピード絶対主義（下り坂の慣性利用）
+    if (horse.style === "逃げ") {
+      potential += 30;
+      tags.push("🚀 小倉スピード主義: 下り坂慣性を活かす逃げ馬絶対優位");
+    }
+
+    // 2. 中距離マクリ物理
+    if (dist >= 1700 && horse.style === "マクリ") {
+      potential += 25;
+      tags.push("🌪️ 小倉中距離: 丘からの下り坂を利用したマクリ物理エッジ");
+    }
+
+    // 3. 芝スプリントの大型馬パワー
+    if (race.surface === '芝' && dist === 1200 && weight >= 500) {
+      potential += 20;
+      tags.push("💪 小倉スプリント: 激流を制する大型馬パワーエッジ");
+    }
+  }
+
+  // ==========================================
+  // 【札幌競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isSapporo = race.venue?.includes("札幌") || race.trackName?.includes("札幌") || race.raceName?.includes("札幌");
+  if (isSapporo) {
+    tags.push("❄️ 札幌特化OMEGAエンジン適用中");
+
+    // 1. 大回りの幾何学（減速不要のコーナーリング）
+    if (horse.style === "逃げ" || horse.style === "先行") {
+      potential += 20;
+      tags.push("🏃 札幌大回り幾何学: 緩いコーナーでの先行押し切りエッジ");
+    }
+
+    // 2. 減速不要のマクリ
+    if (dist >= 1700 && horse.style === "マクリ") {
+      potential += 30;
+      tags.push("🌪️ 札幌大回り幾何学: 減速不要の高速マクリエッジ(特注)");
+    }
+
+    // 3. ダート外枠の砂被り回避
+    if (race.surface === 'ダート' && frame >= 6) {
+      potential += 15;
+      tags.push("🛡️ 札幌ダート: 砂被り回避の外枠スムーズエッジ");
+    }
+  }
+
+  // ==========================================
+  // 【福島競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isFukushima = race.venue?.includes("福島") || race.trackName?.includes("福島") || race.raceName?.includes("福島");
+  if (isFukushima) {
+    tags.push("🎢 福島特化OMEGAエンジン適用中");
+
+    // 1. コンパクト設計の距離ロス計算
+    if (frame >= 6 && horse.style !== "逃げ") {
+      potential -= 15;
+      tags.push("⚠️ 福島遠心力ロス: 外回しによる3.9馬身の物理的負債");
+    }
+
+    // 2. マクリ優勢の起伏
+    if (race.surface === '芝' && horse.style === "マクリ") {
+      potential += 25;
+      tags.push("🌪️ 福島起伏力学: 早め仕掛けのマクリ絶対優位");
+    }
+
+    // 3. ダート1150mの異常バイアス（道悪の1枠）
+    const isWetFuku = race.condition === "重" || race.condition === "不良";
+    if (race.surface === 'ダート' && dist === 1150 && isWetFuku && frame === 1) {
+      potential += 40;
+      tags.push("🎯 福島ダ1150特注: 道悪1枠の異常バイアス鉄板フラグ");
+    }
+  }
+
   // ===================================================
   // 【新設】中央競馬10箇所（JRA）特化型オメガ・プロトコル推論エンジン
   // ===================================================
