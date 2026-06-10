@@ -6114,10 +6114,10 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
     const horses6 = sorted.slice(0, 6).map(p => p.horseNumber);
     
     // 2-4-6 フォーメーション
-    // 1着: A, B (2頭)
-    // 2着: A, B, [C, D] (4頭)
-    // 3着: A, B, C, D, [E, F] (6頭)
-    const t1 = horses6.slice(0, 2);
+    // 1着: A, C (1位, 3位)
+    // 2着: A, B, C, D (上位4頭)
+    // 3着: A, B, C, D, E, F (上位6頭)
+    const t1 = [horses6[0], horses6[2]].filter(x => x !== undefined);
     const t2 = horses6.slice(0, 4);
     const t3 = horses6.slice(0, 6);
 
