@@ -6178,9 +6178,21 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
       }
     }
   } else {
+    const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
+    const horses = sorted.map(p => p.horseNumber);
+    const customAxis = [horses[0], horses[2], horses[4]].filter(x => x !== undefined);
+    
+    col1 = customAxis;
+    col2 = customAxis;
+    col3 = [...new Set([...customAxis, ...darkNos])].sort((a, b) => a - b);
+
     const ticketSet = new Set<string>();
-    combinations(axisNos, 3).forEach(c => ticketSet.add(c.sort((a,b)=>a-b).join('-')));
-    combinations(axisNos, 2).forEach(p => darkNos.forEach(d => ticketSet.add([...p, d].sort((a,b)=>a-b).join('-'))));
+    combinations(customAxis, 3).forEach(c => ticketSet.add(c.sort((a,b)=>a-b).join('-')));
+    combinations(customAxis, 2).forEach(p => darkNos.forEach(d => {
+      if (!p.includes(d)) {
+        ticketSet.add([...p, d].sort((a,b)=>a-b).join('-'));
+      }
+    }));
     tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
   }
 
