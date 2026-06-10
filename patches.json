@@ -708,5 +708,73 @@
       }
     ],
     "active": true
+  },
+  {
+    "id": "patch_local_1781091629140",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:40:29.140Z",
+    "description": "[水沢 1400m] 本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。 (補正: 競馬場: 水沢, 馬場: 不良, 枠: 2枠 -> 評価を大きく下げる（マイナス30点）)",
+    "track": "水沢",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "==",
+        "value": 2,
+        "scoreAdjust": -30
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781091722952",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:42:02.952Z",
+    "description": "[水沢 850m] 本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。 (補正: 競馬場: 水沢, 馬場: 不良, 枠: 3枠 -> 評価を大きく下げる（マイナス30点）)",
+    "track": "水沢",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "==",
+        "value": 3,
+        "scoreAdjust": -30
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781091780015",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:43:00.015Z",
+    "description": "[水沢 1400m] 本命馬（バエル）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ホークビル の 水沢 1400m 適性を再評価する)",
+    "track": "水沢",
+    "condition": "不良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ホークビル",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781091856539",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T11:44:16.539Z",
+    "description": "[水沢 850m] 本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。 (補正: 競馬場: 水沢, 馬場: 重, 枠: 2枠 -> 評価を大きく下げる（マイナス30点）)",
+    "track": "水沢",
+    "condition": "重",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "==",
+        "value": 2,
+        "scoreAdjust": -30
+      }
+    ],
+    "active": true
   }
 ]
