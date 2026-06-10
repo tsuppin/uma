@@ -3203,6 +3203,56 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【佐賀競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isSaga = race.venue?.includes("佐賀") || race.trackName?.includes("佐賀") || race.raceName?.includes("佐賀");
+
+  if (isSaga) {
+    tags.push("🐎 佐賀特化OMEGAエンジン適用中");
+
+    // 1. 「佐賀のラチ沿い避け」トラックバイアス
+    // 内側の砂が極端に深いため、全馬が内を大きく開けて走る特殊馬場。外枠が圧倒的有利。
+    if (frame >= 6) {
+      potential += 25;
+      tags.push("📈 佐賀外枠エッジ: ラチ避け馬場の好位確保");
+    } else if (frame <= 2) {
+      potential -= 20;
+      tags.push("⚠️ 佐賀内枠ペナルティ: 深い砂によるスタミナロス");
+    }
+
+    // 2. 脚質バイアス（逃げ・先行の圧倒的優位）
+    // ラチ沿いを開けるため馬群が横に広がりやすく、後方からの差し・追込は物理的に届かない
+    if (horse.style === "逃げ" || horse.style === "先行") {
+      potential += 30;
+      tags.push("🏃 佐賀前残り: 砂の軽いポジションを先取する先行力");
+    } else if (horse.style === "追込") {
+      potential -= 25;
+      tags.push("❌ 佐賀追込困難: 横広がり馬群による大外ブン回しロス");
+    }
+
+    // 3. 佐賀の絶対的エリートジョッキー（山口勲・飛田愛斗・石川慎）
+    const isSagaEliteJ = ["山口勲", "飛田", "石川慎", "金山"].some(j => jockey.includes(j));
+    if (isSagaEliteJ) {
+      potential += 35;
+      tags.push("👑 佐賀トップジョッキー無双エッジ");
+      
+      // トップ騎手×人気馬は「鉄板」
+      if (popularity <= 2) {
+        potential += 25;
+        tags.push("🎯 佐賀鉄板: トップ騎手×上位人気");
+      }
+    }
+
+    // 4. 地元名門厩舎（真島元、九日、鮫島、東眞）
+    const trainerNameS = horse.trainer || "";
+    const isSagaEliteT = ["真島", "九日", "鮫島", "東眞"].some(t => trainerNameS.includes(t));
+    if (isSagaEliteT) {
+      potential += 20;
+      tags.push("🌟 佐賀名門厩舎: 完璧な仕上げと勝負気配");
+    }
+  }
+
+  // ==========================================
   // 【園田・姫路競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isSonoda = race.venue?.includes("園田") || race.trackName?.includes("園田") || race.raceName?.includes("園田") || 
