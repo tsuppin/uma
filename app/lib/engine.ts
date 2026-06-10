@@ -3397,11 +3397,10 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【盛岡競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
-  const isMorioka = race.venue?.includes("盛岡") || race.trackName?.includes("盛岡") || race.raceName?.includes("盛岡") ||
-                    race.venue?.includes("水沢") || race.trackName?.includes("水沢") || race.raceName?.includes("水沢");
+  const isMorioka = race.venue?.includes("盛岡") || race.trackName?.includes("盛岡") || race.raceName?.includes("盛岡");
 
   if (isMorioka) {
-    tags.push("🌾 盛岡・水沢特化OMEGAエンジン適用中");
+    tags.push("🌾 盛岡特化OMEGAエンジン適用中");
 
     const hStyle = horse.style || '中団';
     const trainerName = horse.trainer || '';
@@ -3470,6 +3469,62 @@ export function calculateTsuchiyaScore(
     if (race.raceNumber >= 11 && trainerName.includes('佐藤浩')) {
       potential += 25;
       tags.push('🎯岩手勝負厩舎:メイン競走特化');
+    }
+  }
+
+  // ==========================================
+  // 【水沢競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isMizusawa = race.venue?.includes("水沢") || race.trackName?.includes("水沢") || race.raceName?.includes("水沢");
+
+  if (isMizusawa) {
+    tags.push("🐎 水沢特化OMEGAエンジン適用中");
+
+    // 1. 超小回り（右回り）の物理バイアス
+    // 水沢はコーナーがきつく直線も短いため、圧倒的な「前残り・逃げ先行絶対有利」馬場
+    if (horse.style === "逃げ" || horse.style === "先行") {
+      potential += 30;
+      tags.push("🏃 水沢超小回り物理: 逃げ・先行の絶対的優位");
+    } else if (horse.style === "追込") {
+      potential -= 25;
+      tags.push("❌ 水沢追込困難: 直線が短く物理的に届かない");
+    }
+
+    // 2. 枠順バイアス（先行馬の内枠エッジ）
+    // コーナーが狭いため、ロスなく回れる内枠（1〜3枠）の先行馬が圧倒的に有利
+    if (frame <= 3) {
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 20;
+        tags.push("🎯 水沢鉄板: 内枠×先行のロスなしエッジ");
+      }
+    } else if (frame >= 7) {
+      potential -= 10;
+      tags.push("⚠️ 水沢外枠割引: 狭い1コーナーでの外回されロス");
+    }
+
+    // 3. 冬期特注・馬場凍結バイアス
+    const raceMonth = race.date ? parseInt(race.date.split("-")[1] || "0") : 0;
+    const isWinterMizusawa = raceMonth === 12 || raceMonth <= 3;
+    if (isWinterMizusawa) {
+      if (weight >= 500) {
+        potential += 15;
+        tags.push("⛄ 水沢冬期馬場: 凍結・重い砂をこなす大型パワー馬");
+      }
+      if (horse.style === "逃げ") {
+        potential += 15;
+        tags.push("⛄ 水沢冬期馬場: 前が止まらない冬の逃げ馬ボーナス");
+      }
+    }
+
+    // 4. 岩手リーディングジョッキー・シナジー
+    const isIwateEliteJ = ["山本聡", "村上忍", "高松亮", "菅原辰", "山本政"].some(j => jockey.includes(j));
+    if (isIwateEliteJ) {
+      potential += 25;
+      tags.push("👑 岩手トップジョッキー絶対信頼度");
+      if (popularity <= 2) {
+        potential += 15;
+        tags.push("🎯 水沢鉄板: 岩手トップ騎手×上位人気");
+      }
     }
   }
 
