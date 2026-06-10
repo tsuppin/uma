@@ -6135,15 +6135,15 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
       }
     }
   } else if (raceType === 'quinella') {
-    // 評価順にソートされた上位5頭を抽出（A, B, C, D, E）
+    // 評価順にソートされた上位5頭を抽出（1位〜5位）
     const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
     const horses5 = sorted.slice(0, 5).map(p => p.horseNumber);
     
-    // 2頭軸フォーメーション (2 x 3)
-    // 1頭目: A, B (2頭)
-    // 2頭目: C, D, E (3頭)
-    const t1 = horses5.slice(0, 2);
-    const t2 = horses5.slice(2, 5);
+    // フォーメーション (2 x 3)
+    // 1列目: 1位, 4位
+    // 2列目: 2位, 3位, 5位
+    const t1 = [horses5[0], horses5[3]].filter(x => x !== undefined);
+    const t2 = [horses5[1], horses5[2], horses5[4]].filter(x => x !== undefined);
 
     col1 = t1;
     col2 = t2;
@@ -6151,19 +6151,21 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
 
     const ticketSet = new Set<string>();
     t1.forEach(a => t2.forEach(b => {
-      ticketSet.add([a, b].sort((x, y) => x - y).join('-'));
+      if (a !== b) {
+        ticketSet.add([a, b].sort((x, y) => x - y).join('-'));
+      }
     }));
     tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
   } else if (raceType === 'exacta') {
-    // 評価順にソートされた上位5頭を抽出（A, B, C, D, E）
+    // 評価順にソートされた上位5頭を抽出（1位〜5位）
     const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
     const horses5 = sorted.slice(0, 5).map(p => p.horseNumber);
     
-    // 2頭軸フォーメーション (2 x 3)
-    // 1頭目: A, B (2頭)
-    // 2頭目: C, D, E (3頭)
-    const t1 = horses5.slice(0, 2);
-    const t2 = horses5.slice(2, 5);
+    // フォーメーション (2 x 3)
+    // 1列目: 1位, 4位
+    // 2列目: 2位, 3位, 5位
+    const t1 = [horses5[0], horses5[3]].filter(x => x !== undefined);
+    const t2 = [horses5[1], horses5[2], horses5[4]].filter(x => x !== undefined);
 
     col1 = t1;
     col2 = t2;
