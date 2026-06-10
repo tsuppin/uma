@@ -3012,6 +3012,60 @@ export function calculateTsuchiyaScore(
 
 
   // ==========================================
+  // 【船橋競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isFunabashi = race.venue?.includes("船橋") || race.trackName?.includes("船橋") || race.raceName?.includes("船橋");
+
+  if (isFunabashi) {
+    tags.push("🚢 船橋特化OMEGAエンジン適用中");
+
+    // 1. スパイラルカーブ物理（地方最大級の差し有利バイアス）
+    // 船橋はコーナー出口がキツく、遠心力で前が外に膨らむため、差し・追込が極めて決まりやすい
+    if (horse.style === "差し" || horse.style === "追込" || horse.style === "マクリ") {
+      potential += 25;
+      tags.push("🎯 船橋スパイラルカーブ: 外差し・追込の強襲エッジ");
+    }
+
+    // 2. オーストラリア産白砂のパワーと含水率変化
+    if (weight >= 500) {
+      potential += 20;
+      tags.push("💪 船橋白砂適合: 500kg以上の大型パワー馬");
+    }
+    const isWetF = race.condition === "重" || race.condition === "不良";
+    if (isWetF && (horse.style === "逃げ" || horse.style === "先行")) {
+      potential += 20;
+      tags.push("☔ 船橋道悪特注: 砂が締まった際の超高速前残り");
+    }
+
+    // 3. 左回り巧者の判別（過去走の左回り実績）
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const hasLeftHandAptitude = horse.pastRaces.some(pr => 
+        (pr.venue?.match(/(東京|中京|新潟|川崎|船橋|浦和|盛岡)/)) && pr.result <= 3
+      );
+      if (hasLeftHandAptitude) {
+        potential += 15;
+        tags.push("🔄 左回り巧者: 左回りコース好走実績");
+      }
+    }
+
+    // 4. 船橋名門「地元エリート」シナジー
+    const trainerNameF = horse.trainer || "";
+    const eliteJockeysF = ["森泰", "本田正", "張田", "笹川", "御神本", "吉原"];
+    const isEliteJockeyF = eliteJockeysF.some(j => jockey.includes(j));
+    const eliteTrainersF = ["川島正", "新井清", "張田京", "矢野義", "林正人"];
+    const isEliteTrainerF = eliteTrainersF.some(t => trainerNameF.includes(t));
+
+    if (isEliteJockeyF) {
+      potential += 20;
+      tags.push("👑 船橋トップジョッキー信頼度");
+      if (isEliteTrainerF) {
+        potential += 20;
+        tags.push("🌟 船橋地元名門シナジー: トップ騎手×地元名門厩舎");
+      }
+    }
+  }
+
+  // ==========================================
   // 【川崎競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isKawasaki = race.venue?.includes("川崎") || race.trackName?.includes("川崎") || race.raceName?.includes("川崎");
