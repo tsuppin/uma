@@ -267,11 +267,30 @@ export function calculateTsuchiyaScore(
       }
     }
     
-    // 好調血統
-    const isTrendingSire = ['モズアスコット', 'キズナ', 'ロードカナロア'].some(s => (horse.sire || '').includes(s));
-    if (isTrendingSire) {
-      potential += 45;
-      tags.push("🔥 東京最新トレンド: 高適性種牡馬(キズナ/モズ/カナロア)");
+    // ==========================================
+    // 【新設】東京開催・血統×馬場状態プロトコル
+    // ==========================================
+    const sireName = horse.sire || '';
+    
+    if (race.surface === 'ダート') {
+      if (condition === '良') {
+        if (['キズナ', 'モズアスコット'].some(s => sireName.includes(s))) {
+          potential += 40;
+          tags.push("👑 東京血統: ダート良馬場で無類の強さ(キズナ/モズパワー)");
+        }
+      } else if (['稍重', '重', '不良'].includes(condition)) {
+        if (['ロードカナロア', 'ダノンスマッシュ'].some(s => sireName.includes(s))) {
+          potential += 45;
+          tags.push("🔥 東京血統: 渋ったダートでスピード活きるカナロア系(穴馬サイン)");
+        }
+      }
+    } else if (race.surface === '芝') {
+      if (condition === '良') {
+        if (['キズナ', 'エピファネイア', 'エフフォーリア'].some(s => sireName.includes(s))) {
+          potential += 35;
+          tags.push("🎯 東京血統: 芝良馬場の王道適性(キズナ/ロベルト系)");
+        }
+      }
     }
     
     // ==========================================
