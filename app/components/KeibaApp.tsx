@@ -18,8 +18,9 @@ import ResultInput from "./ResultInput";
 import LearningPanel from "./LearningPanel";
 import Win5Panel from "./Win5Panel";
 import StatsPanel from "./StatsPanel";
+import BacktestPanel from "./BacktestPanel";
 
-type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats";
+type View = "dashboard" | "new_race" | "prediction" | "result" | "learning" | "win5" | "stats" | "backtest";
 
 export default function KeibaApp() {
   const [state, setState] = useState<AppState>(defaultState);
@@ -115,16 +116,58 @@ export default function KeibaApp() {
     const predictions = race?.predictions;
     if (!race || !predictions) return;
     setIsProcessing(true);
-    
+
     try {
       const actualResult = result.result.map(r => ({ rank: r.rank, horseNumber: r.horseNumber }));
       // APIを通じてAIによる自動学習・反省を実行
       const patch = await generateAILearningPatch(race, predictions, actualResult);
-      
+
       let newState = addResult(state, result);
       if (patch) {
         newState = addLearningPatch(newState, patch);
       }
+
+      // ==========================================
+      // タグ別バックテスト集計（NEW）
+      // 1着馬のタグを「win」、3着以内ならtop3としてカウント
+      // ==========================================
+      const topHorseNums = result.result.filter(r => r.rank <= 3).map(r => r.horseNumber);
+      const winHorseNum = result.result.find(r => r.rank === 1)?.horseNumber;
+      // スコア1位（◎本命）の予測を取得
+      const sortedPreds = [...predictions].sort((a, b) => b.potential - a.potential);
+      const topPred = sortedPreds[0];
+      const topPredTags = topPred?.tags || topPred?.aptitudeTags || [];
+
+      if (topPredTags.length > 0) {
+        const isTop3 = topHorseNums.includes(topPred.horseNumber);
+        const isWin = topPred.horseNumber === winHorseNum;
+
+        const prevTagStats: import("../types").TagStats[] = newState.tagStats || [];
+        const updatedTagStats = [...prevTagStats];
+
+        for (const tag of topPredTags) {
+          const existing = updatedTagStats.find(t => t.tag === tag);
+          if (existing) {
+            existing.fired += 1;
+            if (isWin) existing.win += 1;
+            if (isTop3) existing.top3 += 1;
+            existing.hitRate = existing.top3 / existing.fired;
+            existing.winRate = existing.win / existing.fired;
+          } else {
+            updatedTagStats.push({
+              tag,
+              fired: 1,
+              win: isWin ? 1 : 0,
+              top3: isTop3 ? 1 : 0,
+              hitRate: isTop3 ? 1 : 0,
+              winRate: isWin ? 1 : 0,
+            });
+          }
+        }
+
+        newState = { ...newState, tagStats: updatedTagStats };
+      }
+
       setState(newState);
     } catch (e) {
       console.error("AI Reflection failed:", e);
@@ -205,6 +248,7 @@ export default function KeibaApp() {
           ["new_race", "➕", "新規レース登録"],
           ["win5", "🎯", "WIN5予想"],
           ["stats", "📈", "成績・統計"],
+          ["backtest", "🔬", "バックテスト分析"],
         ] as [View, string, string][]).map(([v, icon, label]) => (
           <div key={v} className={`nav-item ${view === v ? "active" : ""}`} onClick={() => setView(v)}>
             <span className="nav-icon">{icon}</span>{label}
@@ -275,6 +319,9 @@ export default function KeibaApp() {
         )}
         {view === "stats" && (
           <StatsPanel state={state} />
+        )}
+        {view === "backtest" && (
+          <BacktestPanel state={state} />
         )}
         {view === "prediction" && !selectedRace && (
           <div className="empty-state">

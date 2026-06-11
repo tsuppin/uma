@@ -119,6 +119,7 @@ export interface Prediction {
   evIndex: number;         // EV指数
   aptitudeScore?: number;  // 適性スコア
   aptitudeTags?: string[]; // 適性タグ
+  tags?: string[];         // OMEGAエンジンが付与したすべてのタグ（バックテスト用）
   adjustedTime?: number;   // 補正タイム
   targetTag?: boolean;     // 物理的狙い馬タグ
   rank?: number;           // 予想順位
@@ -211,6 +212,15 @@ export interface LearningPatch {
   active: boolean;
 }
 
+export interface TagStats {
+  tag: string;       // タグ名（例: "👑 大井鉄板軸:..."）
+  fired: number;     // このタグが付いた馬が◎本命として推奨された回数
+  win: number;       // 1着になった回数
+  top3: number;      // 3着以内になった回数
+  hitRate: number;   // top3 / fired
+  winRate: number;   // win / fired
+}
+
 export interface AppState {
   races: Race[];
   win5Races?: Race[];
@@ -224,7 +234,8 @@ export interface AppState {
     totalReturn: number;
     roi: number;
   };
-  masterData: MasterData; // 蓄積されたエンティティデータ
+  tagStats?: TagStats[];       // タグ別バックテスト集計（NEW）
+  masterData: MasterData;      // 蓄積されたエンティティデータ
 }
 
 export interface MasterData {

@@ -6579,6 +6579,7 @@ export function calculateTsuchiyaScore(
     darkness: Math.round(darkness * 100) / 100,
     evIndex: potential,
     aptitudeTags: tags,
+    tags: tags,
     targetTag: isTargetYatomi || undefined,
     rank: 0,
   };
