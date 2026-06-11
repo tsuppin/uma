@@ -225,10 +225,46 @@ export function calculateTsuchiyaScore(
   // 【新設】東京最新トレンドプロトコル (2026/06抽出データ)
   // ==========================================
   if (trackName.includes('東京')) {
-    // 枠順と脚質
-    if ((frame === 2 || frame === 5) && (horse.style === '先行' || horse.style === '逃げ')) {
-      potential += 35;
-      tags.push("🔥 東京最新トレンド: 好調枠(2・5枠) × 前残り脚質");
+    // 1. 芝マイル以下（1400m・1600m）：「先行〜中団差し」×「圧倒的な内枠（2〜3枠）」
+    if (race.surface === '芝' && dist <= 1600) {
+      if ((frame === 2 || frame === 3) && ['逃げ', '先行', '差し'].includes(horse.style)) {
+        potential += 50;
+        tags.push("👑 東京TB特注: 芝マイル以下の圧倒的内枠(2・3枠)×先行〜差し");
+      } else if (frame >= 7) {
+        potential -= 20; // 外枠は割引
+        tags.push("⚠️ 東京TB危険: 芝マイル以下の不利な外枠");
+      }
+    }
+    
+    // 2. 芝中長距離（1800m以上）：「逃げ・先行押し切り」×「中枠（5〜6枠）＆内枠」
+    if (race.surface === '芝' && dist >= 1800) {
+      if (['逃げ', '先行'].includes(horse.style) && frame <= 6) {
+        potential += 45;
+        tags.push("🔥 東京TB特注: 芝中長距離の逃げ・先行×内〜中枠押し切り");
+      }
+    }
+    
+    // 3. ダート1600m：「圧倒的な前残り」×「内〜中枠」
+    if (race.surface === 'ダート' && dist === 1600) {
+      if (['逃げ', '先行'].includes(horse.style)) {
+        if (frame <= 5) {
+          potential += 50;
+          tags.push("👑 東京TB特注: D1600mの前残り絶対有利×ロスなし内〜中枠");
+        } else {
+          potential += 20; // 外枠でも前に行ければプラスだが内枠ほどではない
+        }
+      }
+    }
+    
+    // 4. ダート短距離（1300m・1400m）：「好位〜差し」×「揉まれない中〜外枠（5・6・8枠）」
+    if (race.surface === 'ダート' && dist <= 1400) {
+      if (['先行', '差し'].includes(horse.style) && (frame === 5 || frame === 6 || frame === 8)) {
+        potential += 45;
+        tags.push("🔥 東京TB特注: D短距離の揉まれない中外枠×差し・好位");
+      } else if (frame <= 2 && horse.style === '差し') {
+        potential -= 25; // 揉まれる内枠の差しは割引
+        tags.push("⚠️ 東京TB危険: D短距離の内枠×差し(揉まれるリスク大)");
+      }
     }
     
     // 好調血統
