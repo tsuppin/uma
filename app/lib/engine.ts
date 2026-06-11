@@ -200,6 +200,59 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【新設】堅いレース向け的中率アップ・プロトコル
+  // ==========================================
+  // 鉄板条件: トップ騎手 × 先行脚質
+  const topJockeys = ['ルメール', 'レーン', 'ゴンサルベス', 'ディー', '川田', '武豊', 'モレイラ'];
+  if (topJockeys.some(j => jockey.includes(j)) && (horse.style === '先行' || horse.style === '逃げ')) {
+    potential += 40;
+    tags.push("🎯 鉄板軸: トップ騎手 × 前残り有利脚質 (的中率重視)");
+  }
+
+  // 危険な人気馬排除
+  if (popularity <= 3) {
+    if (weightChange <= -10) {
+      potential -= 50;
+      tags.push("⚠️ 危険な人気馬: 当日の大幅マイナス体重(-10kg以下)");
+    }
+    if (race.surface === '芝' && dist === 2000 && frame >= 7) {
+      potential -= 40;
+      tags.push("⚠️ 危険な人気馬: 芝2000mの不利な大外枠");
+    }
+  }
+
+  // ==========================================
+  // 【新設】東京最新トレンドプロトコル (2026/06抽出データ)
+  // ==========================================
+  if (trackName.includes('東京')) {
+    // 枠順と脚質
+    if ((frame === 2 || frame === 5) && (horse.style === '先行' || horse.style === '逃げ')) {
+      potential += 35;
+      tags.push("🔥 東京最新トレンド: 好調枠(2・5枠) × 前残り脚質");
+    }
+    
+    // 好調血統
+    const isTrendingSire = ['モズアスコット', 'キズナ', 'ロードカナロア'].some(s => (horse.sire || '').includes(s));
+    if (isTrendingSire) {
+      potential += 45;
+      tags.push("🔥 東京最新トレンド: 高適性種牡馬(キズナ/モズ/カナロア)");
+    }
+    
+    // 馬体重と若駒
+    if (weightChange >= 10 && age <= 3) {
+      potential += 40;
+      tags.push("🔥 東京最新トレンド: 若駒の大幅プラス体重(成長と充実)");
+    }
+    
+    // 中穴メーカー騎手
+    const darkHorseJockeys = ['丹内祐次', '荻野極'];
+    if (darkHorseJockeys.some(j => jockey.includes(j)) && popularity >= 4) {
+      potential += 30;
+      tags.push("🔥 東京最新トレンド: 好調な中穴メーカー騎手の伏兵");
+    }
+  }
+
+  // ==========================================
   // 【追加】JRA専用・最強の複合ファクター判定
   // ==========================================
   const isJraCourse = ['東京', '中山', '京都', '阪神', '中京', '新潟', '福島', '小倉', '函館', '札幌'].some(t => trackName.includes(t));
