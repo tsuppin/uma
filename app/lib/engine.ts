@@ -485,6 +485,55 @@ export function calculateTsuchiyaScore(
           }
         }
       }
+
+      // ==========================================
+      // 【新設】阪神開催・最新トラックバイアス特化プロトコル
+      // ==========================================
+      // 1. 芝・マイル〜中長距離 (1600m〜2200m)：「内枠」 × 「逃げ・先行」が鉄板
+      if (race.surface === '芝' && dist >= 1600 && dist <= 2200) {
+        if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+          potential += 60; // 極端に高くする
+          tags.push("👑 阪神TB特注: 芝中長距離のイン前残り(絶対的有利)");
+        } else if (frame >= 6 && (horse.style === '差し' || horse.style === '追込')) {
+          potential -= 30; // 展開待ちになる外枠差しは減点
+          tags.push("⚠️ 阪神TB危険: 芝中長距離の外枠差し(展開不利)");
+        }
+      }
+
+      // 2. ダート中距離 (1800m)：「先行」できれば「枠順は不問」
+      if (race.surface === 'ダート' && dist === 1800) {
+        if (horse.style === '逃げ' || horse.style === '先行') {
+          potential += 50; // 先行力の比重を極端に上げる
+          tags.push("👑 阪神TB特注: ダート1800mは枠不問で先行力絶対優位");
+          // 外枠のマイナス評価を緩める（もし他に外枠減点があれば相殺するか、ここでさらに加点）
+          if (frame >= 6) {
+            potential += 15; // 砂を被らない外枠先行はさらにプラス
+            tags.push("🔥 阪神TB特注: 砂を被らない外枠先行(被せられずスムーズ)");
+          }
+        }
+      }
+
+      // 3. ダート短距離 (1200m・1400m)：「内〜中枠(1-4枠)」 × 「先行」が安定
+      if (race.surface === 'ダート' && dist <= 1400) {
+        if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
+          potential += 45;
+          tags.push("👑 阪神TB特注: ダ短距離の内〜中枠の先行(ロスなく好位)");
+        } else if (frame >= 7) {
+          potential -= 25; // 外枠はロスが生じやすい
+          tags.push("⚠️ 阪神TB危険: ダ短距離の大外枠ロス");
+        }
+      }
+
+      // 4. 芝・短距離 (1200m・1400m)：「内枠先行」or「外枠差し」
+      if (race.surface === '芝' && dist <= 1400) {
+        if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+          potential += 35;
+          tags.push("🔥 阪神TB特注: 芝短距離の内枠先行(基本セオリー)");
+        } else if (frame >= 6 && (horse.style === '差し' || horse.style === '追込')) {
+          potential += 30; // 展開次第で台頭
+          tags.push("🔥 阪神TB特注: 芝短距離のハイペースを突く外枠差し");
+        }
+      }
     }
 
     // ==========================================
