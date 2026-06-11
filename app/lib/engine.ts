@@ -3298,28 +3298,37 @@ export function calculateTsuchiyaScore(
     }
 
     // 5. 騎手・枠順のバイアス特徴量（1着と2・3着の分離）
-    // 1着勝率バイアス
-    if (jockey.includes("渡邊竜") || jockey.includes("渡辺竜") || jockey.includes("渡邊")) {
+    // 【アップデート】笠松特化・騎手×人気階層プロトコル
+    if (popularity === 1) {
+      potential += 20;
+      tags.push("🎯 笠松ベース安定: 単勝1番人気(複勝率75%)");
+    }
+
+    if ((jockey.includes("渡邊竜") || jockey.includes("渡辺竜") || jockey.includes("渡邊")) && popularity <= 2) {
+      potential += 45;
+      tags.push("👑 笠松鉄板軸: 渡邊竜也×上位人気(1着固定特注)");
+    } else if (jockey.includes("筒井") && popularity <= 3) {
+      potential += 35;
+      tags.push("🥈 笠松連対特注: 筒井勇×上位人気(高確率で2着確保)");
+    } else if (jockey.includes("松本一") && (popularity === 5 || popularity === 6)) {
       potential += 40;
-      tags.push("👑 笠松リーディング:渡邊竜也(1着固定特注)");
+      tags.push("💣 笠松波乱の使者: ☆松本一×中穴(ヒモ荒れ特注)");
     } else if (jockey.includes("塚本征")) {
       potential += 25;
       tags.push("🌟 笠松好調騎手:塚本征吾(1着バイアス)");
+    } else if (jockey.includes("望月")) {
+      potential += 20;
+      tags.push("⚡ 笠松ヒモ穴特注騎手(2・3着激走)");
     }
+
+    // 枠順バイアス
     if (frame === 5) {
       potential += 20;
       tags.push("📐 笠松勝率No.1の5枠");
     } else if (frame === 6) {
       potential += 15;
       tags.push("📐 万能枠順の6枠");
-    }
-
-    // 2・3着複勝率バイアス
-    if (jockey.includes("松本一") || jockey.includes("筒井") || jockey.includes("望月")) {
-      potential += 20;
-      tags.push("⚡ 笠松ヒモ穴特注騎手(2・3着激走)");
-    }
-    if (frame === 1) {
+    } else if (frame === 1) {
       potential += 20;
       tags.push("📐 最内枠ロス軽減イン差し枠");
     } else if (frame === 8) {
