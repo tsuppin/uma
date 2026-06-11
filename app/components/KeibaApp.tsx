@@ -141,12 +141,14 @@ export default function KeibaApp() {
       if (topPredTags.length > 0) {
         const isTop3 = topHorseNums.includes(topPred.horseNumber);
         const isWin = topPred.horseNumber === winHorseNum;
+        const raceVenue = race.venue || race.trackName || "不明";
 
         const prevTagStats: import("../types").TagStats[] = newState.tagStats || [];
         const updatedTagStats = [...prevTagStats];
 
         for (const tag of topPredTags) {
-          const existing = updatedTagStats.find(t => t.tag === tag);
+          // 同じタグでも競馬場別に別エントリとして集計
+          const existing = updatedTagStats.find(t => t.tag === tag && t.venue === raceVenue);
           if (existing) {
             existing.fired += 1;
             if (isWin) existing.win += 1;
@@ -156,6 +158,7 @@ export default function KeibaApp() {
           } else {
             updatedTagStats.push({
               tag,
+              venue: raceVenue,
               fired: 1,
               win: isWin ? 1 : 0,
               top3: isTop3 ? 1 : 0,

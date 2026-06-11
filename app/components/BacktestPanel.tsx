@@ -6,18 +6,40 @@ export default function BacktestPanel({ state }: { state: AppState }) {
   const tagStats: TagStats[] = state.tagStats || [];
   const [sortBy, setSortBy] = useState<"fired" | "hitRate" | "winRate">("fired");
   const [minFired, setMinFired] = useState(3);
+  const [selectedVenue, setSelectedVenue] = useState<string>("全競馬場");
 
+  // 競馬場一覧を動的に取得
+  const venues = ["全競馬場", ...Array.from(new Set(tagStats.map(t => t.venue || "不明"))).sort()];
+
+  // フィルタリング
   const filtered = tagStats
     .filter(t => t.fired >= minFired)
+    .filter(t => selectedVenue === "全競馬場" || (t.venue || "不明") === selectedVenue)
     .sort((a, b) => {
       if (sortBy === "fired") return b.fired - a.fired;
       if (sortBy === "hitRate") return b.hitRate - a.hitRate;
       return b.winRate - a.winRate;
     });
 
-  const totalFired = tagStats.reduce((s, t) => s + t.fired, 0);
-  const avgHitRate = tagStats.length > 0
-    ? tagStats.reduce((s, t) => s + t.hitRate * t.fired, 0) / Math.max(totalFired, 1)
+  // 競馬場別サマリーを集計
+  const venueMap: Record<string, { fired: number; win: number; top3: number; tagCount: number }> = {};
+  for (const t of tagStats) {
+    const v = t.venue || "不明";
+    if (!venueMap[v]) venueMap[v] = { fired: 0, win: 0, top3: 0, tagCount: 0 };
+    venueMap[v].fired += t.fired;
+    venueMap[v].win += t.win;
+    venueMap[v].top3 += t.top3;
+    venueMap[v].tagCount += 1;
+  }
+
+  const totalFired = (selectedVenue === "全競馬場"
+    ? tagStats
+    : tagStats.filter(t => (t.venue || "不明") === selectedVenue)
+  ).reduce((s, t) => s + t.fired, 0);
+
+  const avgHitRate = totalFired > 0
+    ? (selectedVenue === "全競馬場" ? tagStats : tagStats.filter(t => (t.venue || "不明") === selectedVenue))
+        .reduce((s, t) => s + t.hitRate * t.fired, 0) / totalFired
     : 0;
 
   const getHitColor = (rate: number) => {
@@ -37,40 +59,126 @@ export default function BacktestPanel({ state }: { state: AppState }) {
   return (
     <div className="fade-in">
       <div className="section-header">
-        <h2 className="section-title">📊 バックテスト分析</h2>
+        <h2 className="section-title">🔬 バックテスト分析</h2>
         <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
           AIの各ルール（タグ）が実際の結果でどれだけ有効だったか検証します
         </div>
       </div>
 
-      {/* サマリーカード */}
+      {/* 競馬場別サマリーカード */}
+      {Object.keys(venueMap).length > 0 && (
+        <div className="card" style={{ marginBottom: "16px" }}>
+          <div className="card-header"><div className="card-title">🏟️ 競馬場別 複勝率サマリー</div></div>
+          <div style={{ overflowX: "auto" }}>
+            <table className="horse-table" style={{ fontSize: "12px" }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left" }}>競馬場</th>
+                  <th style={{ textAlign: "center" }}>タグ数</th>
+                  <th style={{ textAlign: "center" }}>発動回数</th>
+                  <th style={{ textAlign: "center" }}>複勝率</th>
+                  <th style={{ textAlign: "center" }}>勝率</th>
+                  <th style={{ minWidth: "100px" }}>バー</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(venueMap)
+                  .sort((a, b) => (b[1].top3 / Math.max(b[1].fired, 1)) - (a[1].top3 / Math.max(a[1].fired, 1)))
+                  .map(([venue, s]) => {
+                    const hr = s.fired > 0 ? s.top3 / s.fired : 0;
+                    const wr = s.fired > 0 ? s.win / s.fired : 0;
+                    return (
+                      <tr
+                        key={venue}
+                        onClick={() => setSelectedVenue(venue === selectedVenue ? "全競馬場" : venue)}
+                        style={{ cursor: "pointer", background: selectedVenue === venue ? "rgba(59,130,246,0.1)" : undefined }}
+                      >
+                        <td className="fw-600" style={{ color: selectedVenue === venue ? "var(--accent-blue)" : undefined }}>
+                          {selectedVenue === venue ? "▶ " : ""}{venue}
+                        </td>
+                        <td style={{ textAlign: "center", color: "var(--text-muted)" }}>{s.tagCount}</td>
+                        <td style={{ textAlign: "center" }}>{s.fired}</td>
+                        <td style={{ textAlign: "center", fontWeight: 700, color: getHitColor(hr) }}>
+                          {(hr * 100).toFixed(1)}%
+                          <span style={{ fontSize: "10px", color: "var(--text-muted)", display: "block" }}>{s.top3}/{s.fired}</span>
+                        </td>
+                        <td style={{ textAlign: "center", color: getHitColor(wr) }}>
+                          {(wr * 100).toFixed(1)}%
+                        </td>
+                        <td>
+                          <div style={{ background: "var(--bg-elevated)", borderRadius: "4px", height: "8px", overflow: "hidden" }}>
+                            <div style={{
+                              width: `${Math.min(hr * 100, 100)}%`,
+                              height: "100%",
+                              background: getHitColor(hr),
+                              borderRadius: "4px",
+                            }} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+            <div style={{ padding: "8px 12px", fontSize: "11px", color: "var(--text-muted)" }}>
+              ※ 競馬場名をクリックすると下のタグ一覧がその競馬場に絞り込まれます
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 全体サマリーカード */}
       <div className="stats-grid" style={{ marginBottom: "16px" }}>
         <div className="stat-card">
-          <div className="stat-card-value" style={{ color: "var(--accent-blue)" }}>{tagStats.length}</div>
-          <div className="stat-card-label">記録済みタグ数</div>
+          <div className="stat-card-value" style={{ color: "var(--accent-blue)" }}>
+            {filtered.length}
+          </div>
+          <div className="stat-card-label">{selectedVenue === "全競馬場" ? "全タグ数" : `${selectedVenue}のタグ数`}</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value" style={{ color: "var(--accent-gold)" }}>{totalFired}</div>
-          <div className="stat-card-label">タグ発動総数</div>
+          <div className="stat-card-label">発動総数</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value" style={{ color: getHitColor(avgHitRate) }}>
             {(avgHitRate * 100).toFixed(1)}%
           </div>
-          <div className="stat-card-label">加重平均複勝率</div>
+          <div className="stat-card-label">平均複勝率</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value" style={{ color: "var(--accent-green)" }}>
-            {tagStats.filter(t => t.hitRate >= 0.5 && t.fired >= 3).length}
+            {filtered.filter(t => t.hitRate >= 0.5).length}
           </div>
-          <div className="stat-card-label">有効ルール数（複勝率50%+）</div>
+          <div className="stat-card-label">有効ルール（50%+）</div>
         </div>
       </div>
 
       {/* フィルター・ソートUI */}
       <div className="card" style={{ marginBottom: "16px" }}>
         <div className="card-header"><div className="card-title">🔍 フィルター・並び替え</div></div>
-        <div className="p-16" style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
+        <div className="p-16" style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "flex-end" }}>
+          {/* 競馬場フィルター */}
+          <div>
+            <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+              競馬場
+            </label>
+            <select
+              value={selectedVenue}
+              onChange={e => setSelectedVenue(e.target.value)}
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border)",
+                color: "var(--text-primary)",
+                padding: "6px 10px",
+                borderRadius: "6px",
+                fontSize: "13px",
+              }}
+            >
+              {venues.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+
+          {/* 最低発動回数 */}
           <div>
             <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
               最低発動回数
@@ -93,6 +201,8 @@ export default function BacktestPanel({ state }: { state: AppState }) {
               <option value={10}>10回以上</option>
             </select>
           </div>
+
+          {/* ソート */}
           <div>
             <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
               並び替え
@@ -117,6 +227,24 @@ export default function BacktestPanel({ state }: { state: AppState }) {
               ))}
             </div>
           </div>
+
+          {/* リセット */}
+          {selectedVenue !== "全競馬場" && (
+            <button
+              onClick={() => setSelectedVenue("全競馬場")}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                fontSize: "12px",
+                cursor: "pointer",
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border)",
+                color: "var(--text-muted)",
+              }}
+            >
+              ✕ 絞り込み解除
+            </button>
+          )}
         </div>
       </div>
 
@@ -126,12 +254,12 @@ export default function BacktestPanel({ state }: { state: AppState }) {
           <div className="empty-state-title">
             {tagStats.length === 0
               ? "まだバックテストデータがありません"
-              : `発動回数${minFired}回以上のタグがありません`}
+              : `条件に一致するタグがありません`}
           </div>
           <div className="empty-state-desc">
             {tagStats.length === 0
               ? "出馬表を入力→AI予想→結果入力を繰り返すことでデータが蓄積されます"
-              : "フィルターを「1回以上」に変更してみてください"}
+              : "フィルターを変更してみてください"}
           </div>
         </div>
       )}
@@ -139,18 +267,21 @@ export default function BacktestPanel({ state }: { state: AppState }) {
       {filtered.length > 0 && (
         <div className="card">
           <div className="card-header">
-            <div className="card-title">🏷️ タグ別 的中率ランキング（{filtered.length}件）</div>
+            <div className="card-title">
+              🏷️ {selectedVenue === "全競馬場" ? "全競馬場" : `【${selectedVenue}】`} タグ別的中率（{filtered.length}件）
+            </div>
           </div>
           <div style={{ overflowX: "auto" }}>
             <table className="horse-table" style={{ fontSize: "12px" }}>
               <thead>
                 <tr>
                   <th style={{ textAlign: "left", minWidth: "200px" }}>タグ名（AIルール）</th>
-                  <th style={{ textAlign: "center", width: "60px" }}>発動回数</th>
+                  {selectedVenue === "全競馬場" && <th style={{ textAlign: "center", width: "70px" }}>競馬場</th>}
+                  <th style={{ textAlign: "center", width: "60px" }}>発動</th>
                   <th style={{ textAlign: "center", width: "80px" }}>複勝率</th>
                   <th style={{ textAlign: "center", width: "80px" }}>勝率</th>
                   <th style={{ textAlign: "center", width: "80px" }}>判定</th>
-                  <th style={{ minWidth: "120px" }}>複勝バー</th>
+                  <th style={{ minWidth: "100px" }}>バー</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +292,11 @@ export default function BacktestPanel({ state }: { state: AppState }) {
                       <td style={{ fontFamily: "monospace", fontSize: "11px", maxWidth: "240px", wordBreak: "break-all" }}>
                         {t.tag}
                       </td>
+                      {selectedVenue === "全競馬場" && (
+                        <td style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)" }}>
+                          {t.venue || "不明"}
+                        </td>
+                      )}
                       <td style={{ textAlign: "center", fontWeight: 600 }}>{t.fired}</td>
                       <td style={{ textAlign: "center", fontWeight: 700, color: getHitColor(t.hitRate) }}>
                         {(t.hitRate * 100).toFixed(1)}%
@@ -195,7 +331,6 @@ export default function BacktestPanel({ state }: { state: AppState }) {
                             height: "100%",
                             background: getHitColor(t.hitRate),
                             borderRadius: "4px",
-                            transition: "width 0.5s ease",
                           }} />
                         </div>
                         <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>

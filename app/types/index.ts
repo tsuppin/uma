@@ -219,6 +219,7 @@ export interface TagStats {
   top3: number;      // 3着以内になった回数
   hitRate: number;   // top3 / fired
   winRate: number;   // win / fired
+  venue?: string;    // 競馬場名（競馬場別集計用）
 }
 
 export interface AppState {
