@@ -274,10 +274,25 @@ export function calculateTsuchiyaScore(
       tags.push("🔥 東京最新トレンド: 高適性種牡馬(キズナ/モズ/カナロア)");
     }
     
-    // 馬体重と若駒
-    if (weightChange >= 10 && age <= 3) {
-      potential += 40;
-      tags.push("🔥 東京最新トレンド: 若駒の大幅プラス体重(成長と充実)");
+    // ==========================================
+    // 【新設】東京開催・年齢別馬体重（成長と完成）プロトコル
+    // ==========================================
+    if (age <= 3) {
+      if (weightChange >= 10) {
+        potential += 40;
+        tags.push("🔥 東京馬体重: 3歳馬の大幅プラス(成長・筋肉量UP)");
+      }
+    } else if (age >= 4) {
+      if (weightChange >= -4 && weightChange <= 4) {
+        potential += 35;
+        tags.push("👑 東京馬体重: 古馬の微増減(ベスト体重での仕上がり鉄板)");
+      } else if (weightChange >= 10) {
+        potential -= 30;
+        tags.push("⚠️ 東京馬体重: 古馬の大幅プラス(太め残りの危険大)");
+      } else if (weightChange <= -10) {
+        potential -= 30;
+        tags.push("⚠️ 東京馬体重: 古馬の大幅マイナス(調子落ち・細化の危険)");
+      }
     }
     
     // ==========================================
