@@ -1803,11 +1803,30 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 4. 大井エリートジョッキー（御神本、矢野、笹川、森泰、吉原）
-    const isOhiEliteJ = ["御神本", "矢野", "笹川", "森泰", "吉原"].some(j => jockey.includes(j));
-    if (isOhiEliteJ) {
-      potential += 25;
-      tags.push("👑 大井リーディングジョッキーエッジ");
+    // ==========================================
+    // 【新設】大井最新トレンド：騎手×人気×前走着順プロトコル
+    // ==========================================
+    const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : null;
+    const prevResult = prevRaceData ? prevRaceData.result : 99; // 99 means no past race or undefined
+
+    // 1. 【鉄板軸馬】トップ騎手 × 1〜2番人気 × 前走3着以内
+    const isTopJockey = ["矢野", "笹川", "吉井", "戸崎"].some(j => jockey.includes(j));
+    if (isTopJockey && popularity <= 2 && prevResult <= 3) {
+      potential += 45;
+      tags.push("👑 大井鉄板: トップ騎手×上位人気×前走好走(軸不動)");
+    }
+
+    // 2. 【巻き返しの激走】1〜3番人気 × 前走大敗（8着以下）
+    if (popularity >= 1 && popularity <= 3 && prevResult >= 8 && prevResult !== 99) {
+      potential += 40;
+      tags.push("🔥 大井勝負気配: 前走大敗でも上位人気(巻き返し濃厚)");
+    }
+
+    // 3. 【ヒモ荒れの使者】中堅・ベテラン騎手 × 6番人気以下 × 前走6着以下
+    const isBombJockey = ["吉井", "和田", "菅原", "高橋"].some(j => jockey.includes(j));
+    if (isBombJockey && popularity >= 6 && prevResult >= 6 && prevResult !== 99) {
+      potential += 50;
+      tags.push("💣 大井大穴爆弾: ベテラン騎手×大敗馬の一変(ヒモ荒れ特注)");
     }
 
     // ==========================================
