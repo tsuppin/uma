@@ -280,11 +280,53 @@ export function calculateTsuchiyaScore(
       tags.push("🔥 東京最新トレンド: 若駒の大幅プラス体重(成長と充実)");
     }
     
-    // 中穴メーカー騎手
-    const darkHorseJockeys = ['丹内祐次', '荻野極'];
-    if (darkHorseJockeys.some(j => jockey.includes(j)) && popularity >= 4) {
-      potential += 30;
-      tags.push("🔥 東京最新トレンド: 好調な中穴メーカー騎手の伏兵");
+    // ==========================================
+    // 【新設】東京開催・騎手×人気×前走成績の必勝パターン
+    // ==========================================
+    const isLemaireLane = ['ルメール', 'レーン'].some(j => jockey.includes(j));
+    const isTokyoTopJockey = ['ゴンサルベス', '岩田望', '松山', '荻野極', '横山武', 'モレイラ', '川田', '武豊', 'ディー'].some(j => jockey.includes(j)) || isLemaireLane;
+    const isTannai = jockey.includes('丹内');
+    
+    if (prevRaceData) {
+      const prevResult = prevRaceData.result;
+      const isPrev2nd = prevResult === 2;
+      const isPrev3to5 = prevResult >= 3 && prevResult <= 5;
+      const isPrev1st = prevResult === 1;
+
+      // 1. ルメール・レーン × 1番人気 × 前走2着
+      if (isLemaireLane && popularity === 1 && isPrev2nd) {
+        potential += 30;
+        tags.push("🎯 東京鉄板: ルメール/レーン×1番人気×前走2着の確勝級");
+      }
+      
+      // 2. 【最も頻出する勝ちパターン】上位騎手 × 1〜5番人気 × 前走3〜5着
+      if (isTokyoTopJockey && popularity >= 1 && popularity <= 5 && isPrev3to5) {
+        potential += 40;
+        tags.push("👑 東京必勝: 上位騎手×上位人気×前走惜敗(勝ち上がり濃厚)");
+      }
+      
+      // 3. 【中穴・波乱の使者】丹内祐次 × 3〜6番人気 × 前走大敗も含む
+      if (isTannai && popularity >= 3 && popularity <= 6) {
+        potential += 45;
+        tags.push("🔥 東京妙味: 丹内騎手の中位人気は前走着順不問で買い");
+      }
+
+      // 4. 【昇級の壁を突破】上位騎手 × 2〜3番人気 × 前走1着
+      if (isTokyoTopJockey && (popularity === 2 || popularity === 3) && isPrev1st) {
+        potential += 35;
+        tags.push("🔥 東京上昇: 上位騎手×2〜3番人気×前走1着の連勝期待");
+      }
+    } else {
+      // 1. ルメール・レーン × 1番人気 × 新馬
+      if (isLemaireLane && popularity === 1) {
+        potential += 30;
+        tags.push("🎯 東京鉄板: ルメール/レーン×1番人気×新馬戦の確勝級");
+      }
+      // 3. 丹内騎手の新馬
+      if (isTannai && popularity >= 3 && popularity <= 6) {
+        potential += 45;
+        tags.push("🔥 東京妙味: 丹内騎手の中位人気は買い");
+      }
     }
   }
 
