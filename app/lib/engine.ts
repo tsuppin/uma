@@ -253,6 +253,37 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【新設】最新開催の絶対的軸馬抽出プロトコル（4条件複合）
+  // ==========================================
+  // 条件: ① 前走先行 ② 馬体重増減少ない ③ 血統適性 ④ 前走上位
+  if (prevRaceData) {
+    const prevPositionFront = horse.style === '先行' || horse.style === '逃げ';
+    const stableWeight = weightChange >= -8 && weightChange <= 2;
+    const prevTopFinish = prevRaceData.result === 2 || prevRaceData.result === 3;
+    
+    // 血統適性 (芝は王道、ダートは米国型)
+    let goodSire = false;
+    if (race.surface === '芝') {
+      goodSire = ['キズナ', 'コントレイル', 'キタサンブラック'].some(s => (horse.sire || '').includes(s));
+    } else if (race.surface === 'ダート') {
+      goodSire = ['ドレフォン', 'パイロ', 'マインドユアビスケッツ'].some(s => (horse.sire || '').includes(s));
+    }
+    
+    // 複合チェック
+    if (prevPositionFront && stableWeight && prevTopFinish) {
+      potential += 40;
+      tags.push("🎯 最新開催トレンド: 前走先行×安定体重×前走上位の鉄板ローテ");
+      if (goodSire) {
+        potential += 30; // さらに血統適性も合致で大幅加点
+        tags.push("🔥 最新開催トレンド: コース適性ドンピシャ血統");
+      }
+    } else if (goodSire && stableWeight) {
+      potential += 25;
+      tags.push("🔥 最新開催トレンド: 適性血統×安定体重");
+    }
+  }
+
+  // ==========================================
   // 【追加】JRA専用・最強の複合ファクター判定
   // ==========================================
   const isJraCourse = ['東京', '中山', '京都', '阪神', '中京', '新潟', '福島', '小倉', '函館', '札幌'].some(t => trackName.includes(t));
