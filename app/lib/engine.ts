@@ -6107,9 +6107,7 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
 
   let tickets: number[][] = [];
   if (raceType === 'trifecta_exact') {
-    // 評価順にソートされた上位6頭を抽出（A, B, C, D, E, F）
-    const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
-    const horses6 = sorted.slice(0, 6).map(p => p.horseNumber);
+    const horses6 = horses.slice(0, 6);
     
     // 2-4-6 フォーメーション
     // 1着: A, C (1位, 3位)
@@ -6133,9 +6131,7 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
       }
     }
   } else if (raceType === 'quinella') {
-    // 評価順にソートされた上位5頭を抽出（1位〜5位）
-    const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
-    const horses5 = sorted.slice(0, 5).map(p => p.horseNumber);
+    const horses5 = horses.slice(0, 5);
     
     // フォーメーション (2 x 3)
     // 1列目: 1位, 4位
@@ -6155,9 +6151,7 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
     }));
     tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
   } else if (raceType === 'exacta') {
-    // 評価順にソートされた上位5頭を抽出（1位〜5位）
-    const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
-    const horses5 = sorted.slice(0, 5).map(p => p.horseNumber);
+    const horses5 = horses.slice(0, 5);
     
     // フォーメーション (2 x 3)
     // 1列目: 1位, 4位
@@ -6176,8 +6170,7 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
       }
     }
   } else {
-    const sorted = [...predictions].sort((a, b) => b.potential - a.potential || b.darkness - a.darkness || a.horseNumber - b.horseNumber);
-    const horses = sorted.map(p => p.horseNumber);
+
     const customAxis = [horses[0], horses[2], horses[4]].filter(x => x !== undefined);
     
     col1 = customAxis;
