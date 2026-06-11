@@ -1809,6 +1809,49 @@ export function calculateTsuchiyaScore(
       potential += 25;
       tags.push("👑 大井リーディングジョッキーエッジ");
     }
+
+    // ==========================================
+    // 【新設】大井最新トレンド：重馬場特化の前残り＆距離別枠順バイアス
+    // ==========================================
+    const isHeavyOrYielding = race.condition === "重" || race.condition === "不良" || race.condition === "稍重";
+    
+    // 1. 重馬場の絶対的前残り（逃げ・先行）
+    if (isHeavyOrYielding) {
+      if (horse.style === "逃げ" || horse.style === "先行") {
+        potential += 30;
+        tags.push("👑 大井重馬場TB: 圧倒的前残り(逃げ・先行絶対有利)");
+      }
+    }
+
+    // 2. 距離別の枠順×脚質の極端なバイアス
+    if (dist === 1200) {
+      // 1200m: 内〜中枠(1〜4枠) × 逃げ・先行
+      if (frame <= 4 && (horse.style === "逃げ" || horse.style === "先行")) {
+        potential += 35;
+        tags.push("🔥 大井1200m特注: 内〜中枠のロスなし先行抜け出し");
+      }
+    } else if (dist === 1400) {
+      // 1400m: 内枠(1〜3枠)先行 or 中枠(4〜6枠)差し・好位
+      if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
+        potential += 30;
+        tags.push("🔥 大井1400m特注: 内枠の先行好位抜け出し");
+      } else if (frame >= 4 && frame <= 6 && (horse.style === "差し" || horse.style === "先行")) {
+        potential += 30;
+        tags.push("🔥 大井1400m特注: 中枠からの差し・好位撃ち");
+      }
+    } else if (dist === 1600) {
+      // 1600m(内回り): 中〜外枠(4〜8枠) × 逃げ・先行
+      if (frame >= 4 && (horse.style === "逃げ" || horse.style === "先行")) {
+        potential += 35;
+        tags.push("🔥 大井1600m特注: 中〜外枠から揉まれず先行押し切り");
+      }
+    } else if (dist >= 2000) {
+      // 2000m: 外枠(6〜8枠) × 逃げ・先行・マクリ
+      if (frame >= 6 && (horse.style === "逃げ" || horse.style === "先行" || horse.style === "マクリ")) {
+        potential += 35;
+        tags.push("🔥 大井2000m特注: 外枠からの先行・マクリ(前残り馬場)");
+      }
+    }
   }
 
   // ==========================================
