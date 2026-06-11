@@ -578,6 +578,27 @@ export function calculateTsuchiyaScore(
           }
         }
       }
+
+      // ==========================================
+      // 【新設】阪神開催・年齢別馬体重（成長度・仕上がり）プロトコル
+      // ==========================================
+      if (age === 3) {
+        if (weightChange >= 8) {
+          potential += 35;
+          tags.push("🔥 阪神馬体重: 3歳馬の大幅プラス(成長分として高く評価)");
+        } else if (weightChange <= 0 && weightChange >= -4) {
+          potential += 15;
+          tags.push("👍 阪神馬体重: 3歳馬の維持・マイナス(仕上がり良し)");
+        }
+      } else if (age >= 4) {
+        if (weightChange >= -4 && weightChange <= 4) {
+          potential += 30;
+          tags.push("👑 阪神馬体重: 古馬の微増減(ベスト体重での仕上がり鉄板)");
+        } else if (weightChange >= 8) {
+          potential -= 30;
+          tags.push("⚠️ 阪神馬体重: 古馬の大幅プラス(太め残り・調整不足の懸念)");
+        }
+      }
     }
 
     // ==========================================
