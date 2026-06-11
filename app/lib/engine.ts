@@ -3891,6 +3891,21 @@ export function calculateTsuchiyaScore(
         tags.push("⚠️ 交流重賞:地元兵庫所属馬ディスカウント");
       }
     }
+
+    // ==========================================
+    // 【新設】園田特化・究極ナレッジデータ 統合フラグ判定
+    // ==========================================
+    // 【統合】園田絶対軸コンボ
+    // 条件: 馬体重(-6kg〜+4kg) × 枠順(4枠or6枠) × 騎手(田野豊or小牧太or下原理) × 人気(1番人気or3番人気)
+    const isWeightStable = weightChange >= -6 && weightChange <= 4;
+    const isGoodFrame = frame === 4 || frame === 6;
+    const isTargetJockey = ['田野豊', '小牧太', '下原理', '下原'].some(j => jockey.includes(j));
+    const isTargetPopularity = popularity === 1 || popularity === 3;
+
+    if (isWeightStable && isGoodFrame && isTargetJockey && isTargetPopularity) {
+      potential += 60;
+      tags.push("🎯 【統合】園田絶対軸: 体重・枠・騎手・人気の黄金条件コンプリート");
+    }
   }
 
   // ==========================================
