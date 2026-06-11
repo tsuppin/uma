@@ -321,17 +321,19 @@ export function calculateTsuchiyaScore(
     const isTokyoTopJockey = ['ゴンサルベス', '岩田望', '松山', '荻野極', '横山武', 'モレイラ', '川田', '武豊', 'ディー'].some(j => jockey.includes(j)) || isLemaireLane;
     const isTannai = jockey.includes('丹内');
     
+    // 1. ルメール・レーン × 1番人気 × (新馬 または 前走2着)
+    const isNewHorse = !prevRaceData || horse.pastRaces?.length === 0;
+    const prevResult = prevRaceData ? prevRaceData.result : 99;
+    const isPrev2nd = prevResult === 2;
+
+    if (isLemaireLane && popularity === 1 && (isNewHorse || isPrev2nd)) {
+      potential += 30;
+      tags.push("🎯 東京鉄板: ルメール/レーン×1番人気×新馬・前走2着(確勝級)");
+    }
+    
     if (prevRaceData) {
-      const prevResult = prevRaceData.result;
-      const isPrev2nd = prevResult === 2;
       const isPrev3to5 = prevResult >= 3 && prevResult <= 5;
       const isPrev1st = prevResult === 1;
-
-      // 1. ルメール・レーン × 1番人気 × 前走2着
-      if (isLemaireLane && popularity === 1 && isPrev2nd) {
-        potential += 30;
-        tags.push("🎯 東京鉄板: ルメール/レーン×1番人気×前走2着の確勝級");
-      }
       
       // 2. 【最も頻出する勝ちパターン】上位騎手 × 1〜5番人気 × 前走3〜5着
       if (isTokyoTopJockey && popularity >= 1 && popularity <= 5 && isPrev3to5) {
