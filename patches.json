@@ -776,5 +776,192 @@
       }
     ],
     "active": true
+  },
+  {
+    "id": "patch_local_1781135439027",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T23:50:39.027Z",
+    "description": "[門別 1100m] 本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。 (補正: 競馬場: 門別, 馬場: 重, 枠: 1枠 -> 評価を大きく下げる（マイナス30点）)",
+    "track": "門別",
+    "condition": "重",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "==",
+        "value": 1,
+        "scoreAdjust": -30
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781135481029",
+    "version": "1.0 (Local)",
+    "date": "2026-06-10T23:51:21.029Z",
+    "description": "[笠松 1400m] 本命馬（インカー）が8着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: インカンテーション の 笠松 1400m 適性を再評価する)",
+    "track": "笠松",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "インカンテーション",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781168117925",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T08:55:17.925Z",
+    "description": "[笠松 1400m] 本命馬（インカー）が8着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: インカンテーション の 笠松 1400m 適性を再評価する) ※patch_local_1781135481029と重複のため無効化",
+    "track": "笠松",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "インカンテーション",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": false
+  },
+  {
+    "id": "patch_local_1781174344488",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:39:04.488Z",
+    "description": "[門別 1000m] 本命馬（キタノシュナイダー）が12着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: エスポワールシチー の 門別 1000m 適性を再評価する)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "エスポワールシチー",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781174441412",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:40:41.412Z",
+    "description": "[門別 1000m] 本命馬（マドンナブルー）が8着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: グランプリボス の 門別 1000m 適性を再評価する)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "グランプリボス",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781174498561",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:41:38.561Z",
+    "description": "[門別 1100m] 本命馬（ヨシノトップラン）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ホッコータルマエ の 門別 1100m 適性を再評価する)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ホッコータルマエ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781174871368",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:47:51.368Z",
+    "description": "[門別 1700m] 本命馬（アルマブレイド）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ヴィクトワールピサ の 門別 1700m 適性を再評価する)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ヴィクトワールピサ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781174945733",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:49:05.733Z",
+    "description": "[園田 1400m] 本命馬（ウルティマン）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: コパノリッキー の 園田 1400m 適性を再評価する)",
+    "track": "園田",
+    "condition": "稍重",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "コパノリッキー",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781175060533",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:51:00.533Z",
+    "description": "[園田 1400m] 本命馬（ヨシノリッキー）が9着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: コパノリッキー の 園田 1400m 適性を再評価する) ※patch_local_1781174945733と重複のため無効化",
+    "track": "園田",
+    "condition": "稍重",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "コパノリッキー",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": false
+  },
+  {
+    "id": "patch_local_1781175088033",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:51:28.033Z",
+    "description": "[園田 1400m] 本命馬（デーモンスレイヤー）が10着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ヘニーヒューズ の 園田 1400m 適性を再評価する)",
+    "track": "園田",
+    "condition": "稍重",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ヘニーヒューズ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781175111617",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:51:51.617Z",
+    "description": "[園田 1400m] 本命馬（クリスプレミアム）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ダノンプレミアム の 園田 1400m 適性を再評価する)",
+    "track": "園田",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ダノンプレミアム",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
   }
 ]
