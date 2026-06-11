@@ -1827,29 +1827,40 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
-    // 【新設】大井最新トレンド：騎手×人気×前走着順プロトコル
+    // ==========================================
+    // 【アップデート】大井特化・究極ナレッジ「最強の買い方」統合プロトコル
     // ==========================================
     const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : null;
-    const prevResult = prevRaceData ? prevRaceData.result : 99; // 99 means no past race or undefined
+    const prevResult = prevRaceData ? prevRaceData.result : 99;
+    const prevPassing = prevRaceData?.passingPositions || "";
+    const prevLast4 = parseInt(prevPassing.split("-").pop() || "0");
 
-    // 1. 【鉄板軸馬】トップ騎手 × 1〜2番人気 × 前走3着以内
-    const isTopJockey = ["矢野", "笹川", "吉井", "戸崎"].some(j => jockey.includes(j));
+    // 1. 【1着固定の絶対軸】上位騎手 × 1〜2番人気 × 前走3着以内
+    const isTopJockey = ["矢野", "藤田", "笹川", "吉井", "戸崎"].some(j => jockey.includes(j));
     if (isTopJockey && popularity <= 2 && prevResult <= 3) {
-      potential += 45;
-      tags.push("👑 大井鉄板: トップ騎手×上位人気×前走好走(軸不動)");
+      potential += 50;
+      tags.push("👑 大井鉄板軸: 上位騎手×1〜2番人気×前走好走(1着固定)");
     }
 
-    // 2. 【巻き返しの激走】1〜3番人気 × 前走大敗（8着以下）
-    if (popularity >= 1 && popularity <= 3 && prevResult >= 8 && prevResult !== 99) {
-      potential += 40;
-      tags.push("🔥 大井勝負気配: 前走大敗でも上位人気(巻き返し濃厚)");
+    // 2. 【2着・相手筆頭】前走1〜3番手先行 × 距離適性枠順
+    const isPrevFront = prevLast4 > 0 && prevLast4 <= 3;
+    if (isPrevFront) {
+      // 1200m: 内〜中枠(1〜6枠)
+      if (dist === 1200 && frame <= 6) {
+        potential += 35;
+        tags.push("🎯 大井好走バイアス: 1200m×内中枠×前走先行力");
+      // 1600m〜2000m: 中〜外枠(5〜8枠)
+      } else if (dist >= 1600 && frame >= 5) {
+        potential += 35;
+        tags.push("🎯 大井好走バイアス: 1600m以上×外枠×前走先行力");
+      }
     }
 
-    // 3. 【ヒモ荒れの使者】中堅・ベテラン騎手 × 6番人気以下 × 前走6着以下
+    // 3. 【ヒモ穴の使者（3着候補）】実力派騎手 × 6番人気以下 × 前走大敗（6着以下）
     const isBombJockey = ["吉井", "和田", "菅原", "高橋"].some(j => jockey.includes(j));
     if (isBombJockey && popularity >= 6 && prevResult >= 6 && prevResult !== 99) {
-      potential += 50;
-      tags.push("💣 大井大穴爆弾: ベテラン騎手×大敗馬の一変(ヒモ荒れ特注)");
+      potential += 45;
+      tags.push("💣 大井ヒモ穴爆弾: 実力派騎手×前走大敗馬の一変");
     }
 
     // ==========================================
@@ -1896,26 +1907,34 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
-    // 【新設】大井最新トレンド：年齢別・馬体重（成長と完成）プロトコル
+    // 【アップデート】大井特化・究極ナレッジ：年齢別馬体重フィルター
     // ==========================================
     if (age <= 3) {
+      // 3歳馬はプラス体重を狙う（成長分として好走に直結）
       if (weightChange >= 10) {
         potential += 40;
-        tags.push("🔥 大井馬体重: 3歳馬の大幅プラス(成長・筋力アップ)");
+        tags.push("📈 大井仕上がり特注: 3歳馬大幅プラス体重(成長・筋力アップ)");
       } else if (weightChange > 0) {
-        potential += 15;
-        tags.push("📈 大井馬体重: 3歳馬のプラス体重(順調な成長)");
+        potential += 20;
+        tags.push("📈 大井仕上がり特注: 3歳馬プラス体重(順調な成長)");
+      } else if (weightChange < 0) {
+        potential -= 10;
+        tags.push("⚠️ 大井3歳馬マイナス体重(成長曲線に逆行・要注意)");
       }
     } else if (age >= 4) {
-      if (weightChange >= -5 && weightChange <= 5) {
-        potential += 30;
-        tags.push("👑 大井馬体重: 古馬の微増減(ベスト体重での究極仕上げ)");
+      // 古馬は絞れている馬（マイナス〜0kg）を狙う（究極仕上げ）
+      if (weightChange >= -5 && weightChange <= 0) {
+        potential += 40;
+        tags.push("👑 大井仕上がり特注: 古馬マイナス体重(究極仕上げ)");
+      } else if (weightChange > 0 && weightChange <= 5) {
+        potential += 20;
+        tags.push("📈 大井仕上がり特注: 古馬微増(許容範囲内の維持)");
       } else if (weightChange >= 10) {
         potential -= 30;
-        tags.push("⚠️ 大井馬体重: 古馬の大幅プラス(太め残りの危険大)");
+        tags.push("⚠️ 大井古馬大幅プラス体重(太め残りの危険大)");
       } else if (weightChange <= -10) {
         potential -= 20;
-        tags.push("⚠️ 大井馬体重: 古馬の大幅マイナス(細化・調子落ち警戒)");
+        tags.push("⚠️ 大井古馬大幅マイナス体重(細化・調子落ち警戒)");
       }
     }
   }
