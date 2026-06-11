@@ -3180,23 +3180,25 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 4. レース条件（前半・後半）による堅実/波乱モデル切り替え
-    if (race.raceNumber <= 6) {
-      // 前半レース（1R〜6R）: 若馬・下級戦の堅実モード（1番人気高信頼度）
-      if (popularity === 1) {
-        potential += 35;
-        tags.push("📐 門別前半戦:実力・人気堅実モード");
-      }
-    } else {
-      // 後半レース（7R〜12R）: 古馬混合戦 of 波乱モード
-      if (popularity === 1) {
-        potential -= 25;
-        tags.push("⚠️ 門別後半戦:1番人気過剰被り割引");
-      } else if (popularity >= 6 && odds >= 15.0) {
-        // 下位人気の激走
-        potential += 35;
-        tags.push("⚡ 門別後半戦:波乱モード期待値エッジ");
-      }
+    // ==========================================
+    // 【アップデート】門別特化・究極ナレッジデータ 統合フラグ判定
+    // ==========================================
+    // 1. 【1着固定の絶対軸】落合玄騎手 × 上位人気（1〜2番人気）
+    if (jockey.includes("落合玄") && popularity <= 2) {
+      potential += 50;
+      tags.push("👑 門別絶対軸: 落合玄×上位人気(連対率100%コンボ)");
+    }
+
+    // 2. 【ベースの安定感】単勝1番人気馬
+    if (popularity === 1) {
+      potential += 30;
+      tags.push("🎯 門別ベース安定: 単勝1番人気(連対率83%)");
+    }
+
+    // 3. 【ヒモ（相手）の最適解】3番人気〜5番人気馬
+    if (popularity >= 3 && popularity <= 5) {
+      potential += 25;
+      tags.push("🥈 門別相手最適解: 3〜5番人気のヒモ妙味");
     }
   }
 
