@@ -599,6 +599,35 @@ export function calculateTsuchiyaScore(
           tags.push("⚠️ 阪神馬体重: 古馬の大幅プラス(太め残り・調整不足の懸念)");
         }
       }
+
+      // ==========================================
+      // 【新設】阪神開催・馬場状態×血統（血統の逆転現象）プロトコル
+      // ==========================================
+      // 血統タイプのカテゴライズ
+      const isMainstreamTurf = ['キズナ', 'キタサンブラック', 'ジャスタウェイ', 'リオンディーズ', 'コントレイル'].some(s => (horse.sire || '').includes(s));
+      const isUSDirt = ['パイロ', 'ドレフォン', 'シニスターミニスター', 'ナダル'].some(s => (horse.sire || '').includes(s));
+      const isDualPower = ['マインドユアビスケッツ', 'ブリックスアンドモルタル'].some(s => (horse.sire || '').includes(s));
+
+      const isGoodTrack = race.trackCondition === '良';
+      const isYieldingOrSoft = race.trackCondition === '稍重' || race.trackCondition === '重' || race.trackCondition === '不良';
+
+      if (race.surface === 'ダート') {
+        if (isGoodTrack && isUSDirt) {
+          potential += 25;
+          tags.push("👑 阪神血統: ダート良馬場は米国型パワー血統の独壇場");
+        } else if (isYieldingOrSoft && isMainstreamTurf) {
+          potential += 45; // 穴馬サインとして高く評価
+          tags.push("🌟 阪神激アツ: ダート渋り馬場での芝主流血統(ダートの芝化・穴馬サイン)");
+        }
+      } else if (race.surface === '芝') {
+        if (isGoodTrack && isMainstreamTurf) {
+          potential += 20;
+          tags.push("🎯 阪神血統: 芝良馬場は順当に王道スピード血統");
+        } else if (isYieldingOrSoft && isDualPower) {
+          potential += 40; // 穴馬サインとして高く評価
+          tags.push("🔥 阪神激アツ: 芝渋り馬場でのダート兼用パワー血統(タフ馬場適性)");
+        }
+      }
     }
 
     // ==========================================
