@@ -1871,6 +1871,30 @@ export function calculateTsuchiyaScore(
         tags.push("🔥 大井2000m特注: 外枠からの先行・マクリ(前残り馬場)");
       }
     }
+
+    // ==========================================
+    // 【新設】大井最新トレンド：年齢別・馬体重（成長と完成）プロトコル
+    // ==========================================
+    if (age <= 3) {
+      if (weightChange >= 10) {
+        potential += 40;
+        tags.push("🔥 大井馬体重: 3歳馬の大幅プラス(成長・筋力アップ)");
+      } else if (weightChange > 0) {
+        potential += 15;
+        tags.push("📈 大井馬体重: 3歳馬のプラス体重(順調な成長)");
+      }
+    } else if (age >= 4) {
+      if (weightChange >= -5 && weightChange <= 5) {
+        potential += 30;
+        tags.push("👑 大井馬体重: 古馬の微増減(ベスト体重での究極仕上げ)");
+      } else if (weightChange >= 10) {
+        potential -= 30;
+        tags.push("⚠️ 大井馬体重: 古馬の大幅プラス(太め残りの危険大)");
+      } else if (weightChange <= -10) {
+        potential -= 20;
+        tags.push("⚠️ 大井馬体重: 古馬の大幅マイナス(細化・調子落ち警戒)");
+      }
+    }
   }
 
   // ==========================================
