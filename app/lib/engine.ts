@@ -742,6 +742,27 @@ export function calculateTsuchiyaScore(
           tags.push("🔥 阪神激アツ: 芝渋り馬場でのダート兼用パワー血統(タフ馬場適性)");
         }
       }
+
+      // ==========================================
+      // 【新設】阪神特化・究極ナレッジデータ 統合フラグ判定
+      // ==========================================
+      // 【統合】的中率特化フラグ（※1）
+      // 条件: 内〜中枠(1〜5枠) × 前走好走(3着以内) × 上位人気(1〜3番人気) × トップ騎手or減量若手
+      if (frame <= 5 && prevRaceData && prevRaceData.result <= 3 && popularity <= 3) {
+        const isTopOrYoungJockey = ['ルメール', '川田', '武豊', '松山', 'モレイラ', '岩田望'].some(j => jockey.includes(j)) ||
+                                   jockey.includes('▲') || jockey.includes('☆') || jockey.includes('△') || jockey.includes('★');
+        if (isTopOrYoungJockey) {
+          potential += 50;
+          tags.push("🎯 【統合】的中率特化: 鉄板条件コンプリート(勝率極大)");
+        }
+      }
+
+      // 【統合】回収率特化フラグ（※2）
+      // 条件: 前走中位・大敗(4着以下) × 今回上位人気(1〜3番人気)
+      if (prevRaceData && prevRaceData.result >= 4 && popularity <= 3) {
+        potential += 50;
+        tags.push("💰 【統合】回収率特化: 前走凡走からの不自然な上位人気(陣営の隠れ勝負気配)");
+      }
     }
 
     // ==========================================
