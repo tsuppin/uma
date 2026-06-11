@@ -534,6 +534,50 @@ export function calculateTsuchiyaScore(
           tags.push("🔥 阪神TB特注: 芝短距離のハイペースを突く外枠差し");
         }
       }
+
+      // ==========================================
+      // 【新設】阪神開催・オッズ×騎手×前走成績の歪み狙いプロトコル
+      // ==========================================
+      const isHanshinTopJockey = ['川田', '坂井', '武豊', 'ルメール'].some(j => jockey.includes(j));
+      const isHanshinYoungJockey = ['吉村', '西塚', '田口', '永島', '古川奈', '今村'].some(j => jockey.includes(j));
+      const isHanshinGeneralJockey = !isHanshinTopJockey && !isHanshinYoungJockey;
+      
+      const isTopPop = popularity >= 1 && popularity <= 3;
+      const isMidPop = popularity >= 4 && popularity <= 7;
+      
+      if (prevRaceData) {
+        const isPrevGood = prevRaceData.result >= 1 && prevRaceData.result <= 3;
+        const isPrevBad = prevRaceData.result >= 4;
+        const isPrevTerrible = prevRaceData.result >= 10;
+        
+        // 1. 【鉄板軸馬】「トップ騎手」×「上位人気」×「前走好走」
+        if (isHanshinTopJockey && isTopPop && isPrevGood) {
+          potential += 20;
+          tags.push("🎯 阪神鉄板: トップ騎手×上位人気×前走好走の勝負気配");
+        }
+        
+        // 4. 【過信禁物】「トップ騎手」×「中位人気」×「前走好走」
+        if (isHanshinTopJockey && isMidPop && isPrevGood) {
+          potential -= 30; // 何らかの不安要素あり
+          tags.push("⚠️ 阪神危険: トップ騎手で前走好走なのにオッズが甘い(過信禁物)");
+        }
+        
+        // 2. 【オッズ妙味・勝ち切り】「減量・若手騎手」×「上位〜中位人気」×「前走好走」
+        if (isHanshinYoungJockey && (isTopPop || isMidPop) && isPrevGood) {
+          potential += 45; // 期待値が高いため強めに加点
+          tags.push("🔥 阪神妙味: 若手・減量騎手×前走好走の期待値大(勝ち切り注意)");
+        }
+        
+        // 3. 【隠れ勝負気配】「一般・中堅騎手」×「上位人気」×「前走大敗・中位」
+        if (isHanshinGeneralJockey && isTopPop && isPrevBad) {
+          potential += 50; // オッズの歪み（インサイダー情報等）を突く
+          tags.push("🔥 阪神勝負: 前走大敗なのに今回上位人気の隠れ勝負気配");
+          if (isPrevTerrible) {
+            potential += 10; // 二桁着順からの巻き返しは更に妙味
+            tags.push("🌟 阪神激アツ: 前走二桁着順からの不可解な上位人気");
+          }
+        }
+      }
     }
 
     // ==========================================
