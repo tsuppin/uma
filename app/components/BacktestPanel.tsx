@@ -11,10 +11,25 @@ export default function BacktestPanel({ state }: { state: AppState }) {
   // 競馬場一覧を動的に取得
   const venues = ["全競馬場", ...Array.from(new Set(tagStats.map(t => t.venue || "不明"))).sort()];
 
+  // タグの集計（全競馬場の場合はタグ名でグループ化）
+  const aggregatedTags = selectedVenue === "全競馬場"
+    ? Object.values(tagStats.reduce((acc, t) => {
+        if (!acc[t.tag]) {
+          acc[t.tag] = { ...t, venue: "全競馬場" };
+        } else {
+          acc[t.tag].fired += t.fired;
+          acc[t.tag].win += t.win;
+          acc[t.tag].top3 += t.top3;
+          acc[t.tag].hitRate = acc[t.tag].top3 / acc[t.tag].fired;
+          acc[t.tag].winRate = acc[t.tag].win / acc[t.tag].fired;
+        }
+        return acc;
+      }, {} as Record<string, import("../types").TagStats>))
+    : tagStats.filter(t => (t.venue || "不明") === selectedVenue);
+
   // フィルタリング
-  const filtered = tagStats
+  const filtered = aggregatedTags
     .filter(t => t.fired >= minFired)
-    .filter(t => selectedVenue === "全競馬場" || (t.venue || "不明") === selectedVenue)
     .sort((a, b) => {
       if (sortBy === "fired") return b.fired - a.fired;
       if (sortBy === "hitRate") return b.hitRate - a.hitRate;
@@ -32,14 +47,10 @@ export default function BacktestPanel({ state }: { state: AppState }) {
     venueMap[v].tagCount += 1;
   }
 
-  const totalFired = (selectedVenue === "全競馬場"
-    ? tagStats
-    : tagStats.filter(t => (t.venue || "不明") === selectedVenue)
-  ).reduce((s, t) => s + t.fired, 0);
+  const totalFired = aggregatedTags.reduce((s, t) => s + t.fired, 0);
 
   const avgHitRate = totalFired > 0
-    ? (selectedVenue === "全競馬場" ? tagStats : tagStats.filter(t => (t.venue || "不明") === selectedVenue))
-        .reduce((s, t) => s + t.hitRate * t.fired, 0) / totalFired
+    ? aggregatedTags.reduce((s, t) => s + t.hitRate * t.fired, 0) / totalFired
     : 0;
 
   const getHitColor = (rate: number) => {
@@ -274,8 +285,7 @@ export default function BacktestPanel({ state }: { state: AppState }) {
           <div style={{ overflowX: "auto" }}>
             <table className="horse-table" style={{ fontSize: "12px", tableLayout: "fixed", width: "100%" }}>
               <colgroup>
-                <col style={{ width: selectedVenue === "全競馬場" ? "calc(100% - 420px)" : "calc(100% - 350px)" }} />
-                {selectedVenue === "全競馬場" && <col style={{ width: "70px" }} />}
+                <col style={{ width: "calc(100% - 350px)" }} />
                 <col style={{ width: "55px" }} />
                 <col style={{ width: "75px" }} />
                 <col style={{ width: "75px" }} />
@@ -285,7 +295,6 @@ export default function BacktestPanel({ state }: { state: AppState }) {
               <thead>
                 <tr>
                   <th style={{ textAlign: "left" }}>タグ名（AIルール）</th>
-                  {selectedVenue === "全競馬場" && <th style={{ textAlign: "center" }}>競馬場</th>}
                   <th style={{ textAlign: "center" }}>発動</th>
                   <th style={{ textAlign: "center" }}>複勝率</th>
                   <th style={{ textAlign: "center" }}>勝率</th>
@@ -318,12 +327,9 @@ export default function BacktestPanel({ state }: { state: AppState }) {
                           {t.tag}
                         </div>
                       </td>
-                      {selectedVenue === "全競馬場" && (
-                        <td style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)" }}>
-                          {t.venue || "不明"}
-                        </td>
-                      )}
-                      <td style={{ textAlign: "center", fontWeight: 600 }}>{t.fired}</td>
+                      <td style={{ textAlign: "center", fontWeight: "bold" }}>
+                        {t.fired}
+                      </td>
                       <td style={{ textAlign: "center", fontWeight: 700, color: getHitColor(t.hitRate) }}>
                         {(t.hitRate * 100).toFixed(1)}%
                         <span style={{ fontSize: "10px", color: "var(--text-muted)", display: "block" }}>
