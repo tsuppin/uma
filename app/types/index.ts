@@ -81,6 +81,13 @@ export interface PastRace {
   courseStage?: string;     // 前走仮柵コース（"A", "B", "C", "D"など）
 }
 
+export interface UnifiedWaveLevel {
+  score: number;      // 0〜100
+  level: 1 | 2 | 3 | 4 | 5; // 5段階
+  category: "鉄板" | "堅実" | "中波乱" | "波乱" | "大波乱";
+  factors: string[];  // 変動理由
+}
+
 export interface Race {
   id: string;
   date: string;      // 開催日
@@ -104,6 +111,7 @@ export interface Race {
   cushionValue?: number; // クッション値
   moistureContent?: number; // 含水率 (%)
   temporaryFencePosition?: string; // 仮柵位置（例: "A", "B", "C"）
+  waveLevel?: UnifiedWaveLevel; // 統一波乱度
   horses: Horse[];
   predictions?: Prediction[];
   result?: RaceResult;

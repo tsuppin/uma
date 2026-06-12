@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 import { calculateNARScore } from './engineNAR';
+import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
 
 // モジュール共通のエリート騎手リスト
 const ELITE_JOCKEYS = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ", "松山弘平", "川田", "坂井", "戸崎", "笹川翼", "御神本訓", "吉村智洋", "渡邊竜也", "岡部誠"];
@@ -4701,36 +4702,38 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
-  // 【刷新】レース・フェーズ別 人気信頼度 & 波乱度解析
+  // 【刷新】レース・フェーズ別 人気信頼度 & 波乱度解析（統一波乱度対応）
   // ==========================================
-  if (race.raceNumber <= 6) {
-    // 前半レース：1番人気が極めて強力（勝率66%超）な「堅実」フェーズ
+  const wave = race.waveLevel || calculateUnifiedWaveLevel(race);
+  
+  if (wave.level <= 2) {
+    // 波乱度低（鉄板・堅実）フェーズ：上位人気が強力
     if (popularity === 1) {
       potential += 45; 
-      tags.push('👑前半戦:鉄板の1番人気(高信頼度)');
+      tags.push(`👑堅実フェーズ:1番人気信頼 (${wave.category})`);
     } else if (popularity >= 2 && popularity <= 3) {
       potential += 15;
-      tags.push('🎯前半戦:上位人気順当');
+      tags.push(`🎯堅実フェーズ:上位人気順当 (${wave.category})`);
     } else {
       potential -= 20;
     }
-  } else if (race.raceNumber >= 7) {
-    // 後半レース：1番人気が崩れ、中穴（6-7番人気）が台頭する「波乱」フェーズ
+  } else if (wave.level >= 4) {
+    // 波乱度高（波乱・大波乱）フェーズ：1番人気が崩れ、中穴が台頭
     if (popularity === 1) {
-      potential -= 5; // 的中率向上のため-15から-5へ緩和
-      tags.push('⚠️後半戦:1番人気過信禁物(波乱含み)');
+      potential -= 5;
+      tags.push(`⚠️波乱フェーズ:1番人気過信禁物 (${wave.category})`);
     } else if (popularity >= 5 && popularity <= 8) {
       potential += 25;
-      distortionBoost += 1.2; // 期待値の闇を大幅強化
-      tags.push('💎後半戦:激走の伏兵(6-7番人気評価)');
+      distortionBoost += 1.2;
+      tags.push(`💎波乱の使者:激走の伏兵 (${wave.category})`);
     }
-
-    // 後半の波乱期における「減量騎手」の一発評価
+    
+    // 波乱期における「減量騎手」の一発評価
     const isWeightReduced = kinryo <= 53 || horse.prevJockey?.match(/[▲△☆]/);
     if (isWeightReduced) {
       potential += 30;
       distortionBoost += 0.5;
-      tags.push('⚡後半戦:減量騎手の爆発力');
+      tags.push(`⚡波乱警戒:減量騎手の爆発力 (${wave.category})`);
     }
   }
 

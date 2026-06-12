@@ -1,4 +1,5 @@
 import { Horse, Prediction, Race, LearningPatch, MasterData } from '../types';
+import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
 
 // 地方特化のエリート騎手リスト（南関東を中心とした地方トップジョッキー）
 const NAR_ELITE_JOCKEYS = ["森泰斗", "御神本訓史", "矢野貴之", "笹川翼", "吉原寛人", "和田譲治", "山崎誠士", "吉村智洋", "赤岡修次", "山口勲"];
@@ -373,6 +374,34 @@ export function calculateNARScore(
         potential += adj.scoreAdjust; 
         tags.push(`学習パッチ(${patch.version})`); 
       }
+    }
+  }
+
+  // ==========================================
+  // 【刷新】レース・フェーズ別 人気信頼度 & 波乱度解析（統一波乱度対応）
+  // ==========================================
+  const wave = race.waveLevel || calculateUnifiedWaveLevel(race);
+  const popularity = horse.popularity || 99;
+  
+  if (wave.level <= 2) {
+    // 地方ダートの堅いレースは上位人気がより信頼できる
+    if (popularity === 1) {
+      potential += 40; 
+      tags.push(`👑堅実フェーズ:1番人気信頼 (${wave.category})`);
+    } else if (popularity >= 2 && popularity <= 3) {
+      potential += 15;
+      tags.push(`🎯堅実フェーズ:上位人気順当 (${wave.category})`);
+    } else {
+      potential -= 20;
+    }
+  } else if (wave.level >= 4) {
+    // 地方特有のヒモ荒れ・前残り波乱
+    if (popularity === 1) {
+      potential -= 10;
+      tags.push(`⚠️波乱フェーズ:1番人気過信禁物 (${wave.category})`);
+    } else if (popularity >= 4 && popularity <= 8) {
+      potential += 25;
+      tags.push(`💎波乱の使者:激走の伏兵 (${wave.category})`);
     }
   }
 
