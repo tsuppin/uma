@@ -272,16 +272,25 @@ export default function BacktestPanel({ state }: { state: AppState }) {
             </div>
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table className="horse-table" style={{ fontSize: "12px" }}>
+            <table className="horse-table" style={{ fontSize: "12px", tableLayout: "fixed", width: "100%" }}>
+              <colgroup>
+                <col style={{ width: selectedVenue === "全競馬場" ? "calc(100% - 420px)" : "calc(100% - 350px)" }} />
+                {selectedVenue === "全競馬場" && <col style={{ width: "70px" }} />}
+                <col style={{ width: "55px" }} />
+                <col style={{ width: "75px" }} />
+                <col style={{ width: "75px" }} />
+                <col style={{ width: "75px" }} />
+                <col style={{ width: "75px" }} />
+              </colgroup>
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", minWidth: "200px" }}>タグ名（AIルール）</th>
-                  {selectedVenue === "全競馬場" && <th style={{ textAlign: "center", width: "70px" }}>競馬場</th>}
-                  <th style={{ textAlign: "center", width: "60px" }}>発動</th>
-                  <th style={{ textAlign: "center", width: "80px" }}>複勝率</th>
-                  <th style={{ textAlign: "center", width: "80px" }}>勝率</th>
-                  <th style={{ textAlign: "center", width: "80px" }}>判定</th>
-                  <th style={{ minWidth: "100px" }}>バー</th>
+                  <th style={{ textAlign: "left" }}>タグ名（AIルール）</th>
+                  {selectedVenue === "全競馬場" && <th style={{ textAlign: "center" }}>競馬場</th>}
+                  <th style={{ textAlign: "center" }}>発動</th>
+                  <th style={{ textAlign: "center" }}>複勝率</th>
+                  <th style={{ textAlign: "center" }}>勝率</th>
+                  <th style={{ textAlign: "center" }}>判定</th>
+                  <th>バー</th>
                 </tr>
               </thead>
               <tbody>
@@ -289,8 +298,25 @@ export default function BacktestPanel({ state }: { state: AppState }) {
                   const label = getHitLabel(t.hitRate);
                   return (
                     <tr key={i}>
-                      <td style={{ fontFamily: "monospace", fontSize: "11px", maxWidth: "240px", wordBreak: "break-all" }}>
-                        {t.tag}
+                      <td style={{
+                        fontSize: "11px",
+                        wordBreak: "break-all",
+                        whiteSpace: "normal",
+                        lineHeight: "1.4",
+                        overflow: "hidden",
+                        display: "table-cell",
+                        verticalAlign: "middle",
+                        paddingRight: "8px",
+                      }}>
+                        <div style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          wordBreak: "break-all",
+                        }} title={t.tag}>
+                          {t.tag}
+                        </div>
                       </td>
                       {selectedVenue === "全競馬場" && (
                         <td style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)" }}>
