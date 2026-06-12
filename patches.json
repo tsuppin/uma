@@ -963,5 +963,90 @@
       }
     ],
     "active": true
+  },
+  {
+    "id": "patch_local_1781175253498",
+    "version": "1.0 (Local)",
+    "date": "2026-06-11T10:54:13.498Z",
+    "description": "[園田 1230m] 本命馬（クリニエールグラス）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ザファクター の 園田 1230m 適性を再評価する)",
+    "track": "園田",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ザファクター",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781233176587",
+    "version": "1.0 (Local)",
+    "date": "2026-06-12T02:59:36.587Z",
+    "description": "[園田 1400m] 本命馬（ウルティマン）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: コパノリッキー の 園田 1400m 適性を再評価する)",
+    "track": "園田",
+    "condition": "稍重",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "コパノリッキー",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781248961969",
+    "version": "1.0 (Local)",
+    "date": "2026-06-12T07:22:41.969Z",
+    "description": "[大井 1600m] 本命馬（フローラルロマンス）が9着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ラニ の 大井 1600m 適性を再評価する)",
+    "track": "大井",
+    "condition": "稍重",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ラニ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781248992262",
+    "version": "1.0 (Local)",
+    "date": "2026-06-12T07:23:12.262Z",
+    "description": "[大井 1200m] 本命馬（ソニックサンライズ）が7着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: モーリス の 大井 1200m 適性を再評価する)",
+    "track": "大井",
+    "condition": "稍重",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "モーリス",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1781249084782",
+    "version": "1.0 (Local)",
+    "date": "2026-06-12T07:24:44.782Z",
+    "description": "[大井 1400m] 本命馬（バルトロ）が9着に大敗。展開や未知のバイアスによる敗因分析が必要です。 (補正: 血統: ホッコータルマエ の 大井 1400m 適性を再評価する)",
+    "track": "大井",
+    "condition": "稍重",
+    "adjustments": [
+      {
+        "field": "sire",
+        "operator": "includes",
+        "value": "ホッコータルマエ",
+        "scoreAdjust": -20
+      }
+    ],
+    "active": true
   }
 ]
