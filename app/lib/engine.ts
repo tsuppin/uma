@@ -1407,7 +1407,7 @@ export function calculateTsuchiyaScore(
     const kinryoWeightRatio = (kinryo / weight) * 100;
     if (kinryoWeightRatio < 11.5) {
       // [減点方式] potential += 30;
-      tags.push("👑 物理黄金比:負担極小・圧倒的パワーアドバンテージ");
+      // [要見直し] tags.push("👑 物理黄金比:負担極小・圧倒的パワーアドバンテージ");
     } else if (kinryoWeightRatio >= 12.5) {
       potential -= 30;
       tags.push("⚠️ 物理的過負荷:小柄馬の斤量負担ペナルティ");
@@ -1417,7 +1417,7 @@ export function calculateTsuchiyaScore(
   // 2. 馬格（馬体重ベース）の絶対評価
   if (weight >= 500) {
     // [減点方式] potential += 15;
-    tags.push("💪 大型馬パワーボーナス(500kg以上)");
+    // [要見直し] tags.push("💪 大型馬パワーボーナス(500kg以上)");
   } else if (weight > 0 && weight <= 440) {
     potential -= 15;
     tags.push("⚠️ 小型馬パワー不足ペナルティ(440kg以下)");
@@ -2467,7 +2467,7 @@ export function calculateTsuchiyaScore(
   const isHanshin = race.venue?.includes("阪神") || race.trackName?.includes("阪神") || race.raceName?.includes("阪神");
 
   if (isHanshin) {
-    tags.push("🐅 阪神特化OMEGAエンジン適用中");
+    // [要見直し] tags.push("🐅 阪神特化OMEGAエンジン適用中");
 
     const isTurf = race.surface === "芝";
     const isDirt = race.surface === "ダート";
@@ -4490,7 +4490,7 @@ export function calculateTsuchiyaScore(
   // PMR (Physical Mass Ratio) 解析
   // ==========================================
   if (dist <= 1400) {
-    if (460 <= weight && weight <= 490) { /* [減点方式] potential += 15; */ tags.push('PMR最適（短距離）'); }
+    if (460 <= weight && weight <= 490) { /* [減点方式] potential += 15; */ // [要見直し] tags.push('PMR最適（短距離）'); }
     else if (weight > 510) { potential -= 10; }
     else if (weight < 440) { potential -= 15; }
   } else if (dist <= 2000) {
@@ -4509,7 +4509,7 @@ export function calculateTsuchiyaScore(
   // 統計的に勝ち馬の多くがこの範囲に集中（安定した仕上げ）
   if (Math.abs(weightChange) <= 8) {
     // [減点方式] potential += 35;
-    tags.push('🏹安定馬体(1着候補:±8kg内)');
+    // [要見直し] tags.push('🏹安定馬体(1着候補:±8kg内)');
     
     // 後半レース（8R〜12R）でのマイナス体重は「究極の仕上げ」としてさらに評価
     if (race.raceNumber >= 8 && weightChange < 0) {
@@ -4556,7 +4556,7 @@ export function calculateTsuchiyaScore(
     // 前半レース（若駒戦）：2〜3歳の若い馬が主役
     if (age <= 3) {
       // [減点方式] potential += 30;
-      tags.push('🚀若駒フェーズ適合(2-3歳期待)');
+      // [要見直し] tags.push('🚀若駒フェーズ適合(2-3歳期待)');
     } else {
       potential -= 15;
     }
@@ -4594,7 +4594,7 @@ export function calculateTsuchiyaScore(
     // ① ダート若駒×ブリンカー：砂被り・キックバック克服
     if (race.surface === 'ダート' && age <= 3) {
       blinkerBonus += 30;
-      tags.push('🚀若駒ダート×ブリンカー(集中力UP)');
+      // [要見直し] tags.push('🚀若駒ダート×ブリンカー(集中力UP)');
     }
     
     // ② 人気上位×ブリンカー：陣営の「確勝を期した」勝負サイン
@@ -4653,7 +4653,7 @@ export function calculateTsuchiyaScore(
   if (trackName !== '東京' && race.venue !== '東京') {
     if (horse.stableLocation === '栗東') {
       // [減点方式] potential += 15;
-      tags.push('🏰西高東低(栗東所属)');
+      // [要見直し] tags.push('🏰西高東低(栗東所属)');
     } else if (horse.stableLocation === '美浦') {
       // [減点方式] potential += 5;
     }
@@ -5079,7 +5079,7 @@ export function calculateTsuchiyaScore(
       // ダート差し・追込：通常は割引だが、前半の3歳戦(JRA移籍等)は例外
       if (age <= 3 || race.raceNumber <= 7) {
         /* [減点方式] potential += 15; */ // 差し切りのポテンシャルを評価
-        tags.push('🚀若駒ダート:末脚一閃期待(差し切り)');
+        // [要見直し] tags.push('🚀若駒ダート:末脚一閃期待(差し切り)');
       } else {
         potential -= 15;
         tags.push('⚠️ダート差し・追込:展開不備注意');
@@ -5125,7 +5125,7 @@ export function calculateTsuchiyaScore(
     tags.push('💪斤量比率10%台(パワー無双)');
   } else if (jockWeightRatio <= 12.5) {
     /* [減点方式] potential += 20; */ // 450-490kg前後の適正サイズ
-    tags.push('💪斤量比率適正(勝ちきり期待)');
+    // [要見直し] tags.push('💪斤量比率適正(勝ちきり期待)');
   } else if (jockWeightRatio >= 14.0) {
     potential -= 20; // 小柄な馬の1着は厳しい
     tags.push('⚠️斤量高負荷(2-3着ヒモ穴特化)');
@@ -5423,7 +5423,7 @@ export function calculateTsuchiyaScore(
     // 前半：差し・追い込み展開利 ＆ 中穴（7-8人気）の台頭
     if (horse.style === '中団' || horse.style === '後方') {
       // [減点方式] potential += 20;
-      tags.push('前半:差し・追い込み波乱警戒');
+      // [要見直し] tags.push('前半:差し・追い込み波乱警戒');
     }
     if (popularity >= 6 && popularity <= 8) {
       // [減点方式] potential += 25;
@@ -5479,7 +5479,7 @@ export function calculateTsuchiyaScore(
     });
     if (hasSharpLast3f) {
       // [減点方式] potential += 30;
-      tags.push('🌃後半フェーズ:鋭い末脚(上がり重視)');
+      // [要見直し] tags.push('🌃後半フェーズ:鋭い末脚(上がり重視)');
     }
     
     // 重要な局面（特別・メイン）でのリーディング上位騎手への期待値
@@ -5584,7 +5584,7 @@ export function calculateTsuchiyaScore(
   // 5. 特殊馬具（ブリンカー着用）
   if (horse.useBlinkers) {
     // [減点方式] potential += 10;
-    tags.push('🐴 ブリンカー着用（集中力UP）');
+    // [要見直し] tags.push('🐴 ブリンカー着用（集中力UP）');
   }
 
   // ===================================================
@@ -5701,7 +5701,7 @@ export function calculateTsuchiyaScore(
     const hasSynergyTrigger = tags.some(t => t.match(/(ブリンカー|極限の仕上げ|一変トリガー|激走フラグ)/));
     if (hasSynergyTrigger) {
       // [減点方式] potential += 45;
-      tags.push('🚀期待値シナジー(歪み×一変トリガー)');
+      // [要見直し] tags.push('🚀期待値シナジー(歪み×一変トリガー)');
     }
   }
 
@@ -5932,7 +5932,7 @@ export function calculateTsuchiyaScore(
   const isJRA = /(東京|中山|京都|阪神|中京|新潟|小倉|福島|函館|札幌)/.test(race.venue || race.trackName || race.raceName || '');
 
   if (isJRA) {
-    tags.push("JRA特化OMEGAエンジン適用中");
+    // [要見直し] tags.push("JRA特化OMEGAエンジン適用中");
 
     // ---------------------------------------------------
     // ① 【要素1】今回レース環境（Race）の新要因評価
@@ -6075,7 +6075,7 @@ export function calculateTsuchiyaScore(
     // 初ブリンカー変心判定
     if (horse.useBlinkers) {
       // [減点方式] potential += 25;
-      tags.push("🎯 初ブリンカー装着による集中力激変期待");
+      // [要見直し] tags.push("🎯 初ブリンカー装着による集中力激変期待");
     }
 
     // オッズ偏差値信頼度判定

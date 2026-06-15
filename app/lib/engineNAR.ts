@@ -38,7 +38,7 @@ export function calculateNARScore(
   const isNarSire = NAR_POWER_SIRES.some(s => (horse.sire || bloodline).includes(s));
   if (isNarSire) {
     // [減点方式] potential += 40;
-    tags.push("👑 地方ダート特注: 深い砂を力でねじ伏せる圧倒的パワー血統");
+    // [要見直し] tags.push("👑 地方ダート特注: 深い砂を力でねじ伏せる圧倒的パワー血統");
   }
 
   // 地方エリート騎手加点
@@ -285,7 +285,7 @@ export function calculateNARScore(
   // 3. 特殊馬具（ブリンカー着用）
   if (horse.useBlinkers) {
     // [減点方式] potential += 10;
-    tags.push('🐴 ブリンカー着用（集中力UP）');
+    // [要見直し] tags.push('🐴 ブリンカー着用（集中力UP）');
   }
   // ==========================================
   // 【追加】NAR未使用データ（転入・泥・斤量・遠征）完全活用ロジック
@@ -294,10 +294,10 @@ export function calculateNARScore(
   // 1. JRA転入初戦（クラスの壁）の無双ロジック
   if (horse.transferFrom === 'JRA') {
     // [減点方式] potential += 30;
-    tags.push('🚀 中央からの刺客: JRA転入初戦の絶対的能力上位');
+    // [要見直し] tags.push('🚀 中央からの刺客: JRA転入初戦の絶対的能力上位');
   } else if (prevRaceData && prevRaceData.venue && prevRaceData.venue.match(/(東京|中山|京都|阪神|中京|新潟|福島|小倉|札幌|函館)/)) {
     // [減点方式] potential += 30;
-    tags.push('🚀 中央からの刺客: JRA転入初戦の絶対的能力上位');
+    // [要見直し] tags.push('🚀 中央からの刺客: JRA転入初戦の絶対的能力上位');
   }
 
   // 2. 雨の日の「高速泥ダート」前残りバイアス
