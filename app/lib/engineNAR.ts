@@ -244,67 +244,67 @@ export function calculateNARScore(
     }
   }
   else if (trackName.includes('門別')) {
+    // ==========================================
+    // 【完全減点方式】門別特化・最新トレンドプロトコル（2026/06抽出）
+    // ==========================================
     const popularity = horse.popularity || 99;
     const prevRace = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : null;
 
-    // ルール1：1着候補（アタマ）は圧倒的に有利な「外枠（5〜8枠）」から選ぶ
-    if (frame >= 5) {
-      potential += 25;
-      tags.push("🔥 門別特注: 圧倒的有利な外枠(5〜8枠)からの好走");
+    let mombetsuPenalty = 0;
+
+    // Rule 1: 枠順ペナルティ（内枠）
+    if (frame >= 1 && frame <= 4) {
+      mombetsuPenalty += 15;
+      tags.push("❌ 門別減点: 不利な内枠(1〜4枠)ペナルティ");
     }
 
-    // ルール2：相手や中穴候補には「前走5着以内（掲示板）」の馬を必ず組み込む
-    if (popularity >= 4 && popularity <= 9 && prevRace && prevRace.result <= 5) {
-      potential += 20;
-      tags.push("🌟 門別特注: 前走掲示板確保の好調な中穴(ヒモ必須)");
+    // Rule 2: 前走成績ペナルティ（大敗）
+    if (prevRace && prevRace.result >= 6) {
+      mombetsuPenalty += 20;
+      tags.push("❌ 門別減点: 前走6着以下(大敗)ペナルティ");
     }
 
-    // ルール3：絶対的軸として「落合玄騎手 × 上位人気（1〜2番人気）」を信頼する
-    if (horse.jockey && horse.jockey.includes('落合') && (popularity === 1 || popularity === 2)) {
-      potential += 40;
-      tags.push("👑 門別鉄板: 落合玄騎手×上位人気(連対率100%の絶対軸)");
-    }
-
-    // 騎手ルール2：2〜3着の相手（ヒモ）には「減量騎手（☆、△、▲）」を積極的に狙う
-    const isApprentice = horse.jockey && horse.jockey.match(/[☆▲△◇]/);
-    if (isApprentice) {
-      // 1着候補にはなりにくいため頭抜けた加点は避けるが、確実なヒモとして評価
-      potential += 10;
-      tags.push("🌟 門別特注: 減量騎手(☆△▲)の軽斤量を活かした2〜3着粘り込み(ヒモ必須)");
-    }
-
-    // 騎手ルール3：服部茂騎手と岩橋勇騎手は「2〜3着付け」で組み合わせる
-    const isHimoJockey = horse.jockey && (horse.jockey.includes('服部茂') || horse.jockey.includes('岩橋勇'));
-    if (isHimoJockey) {
-      // 勝ちきれない（1着にならない）傾向があるため、あえて少し減点して頭候補から外しヒモ枠に入れる
-      potential -= 10;
-      tags.push("🌟 門別特注: 確実に2〜3着に持ってくるベテラン・中堅(服部・岩橋)");
-    }
-
-    // 調教師ルール1：「小国博計厩舎 × 1〜2番人気」は無条件で信頼する
-    if (horse.trainer && horse.trainer.includes('小国') && (popularity === 1 || popularity === 2)) {
-      potential += 35;
-      tags.push("👑 門別鉄板: 小国厩舎×上位人気(複勝率100%の絶対軸)");
-    }
-
-    // 脚質ルール2：「上がり最速」の差し馬は1着ではなく「2〜3着（ヒモ）」にする
+    // Rule 3: 脚質・上がりペナルティ（差し・追込）
     if (horse.style === '差し' || horse.style === '追込') {
-      // 1着候補からは外しつつ、ヒモとして拾うために少しポテンシャルを落とす
-      potential -= 15;
-      tags.push("⚠️ 門別特注: 差し・追込は届かず2〜3着まで(頭固定危険・ヒモ必須)");
+      mombetsuPenalty += 10;
+      tags.push("❌ 門別減点: 前残り馬場における差し・追込ペナルティ(ヒモ推奨)");
     }
 
-    // ローテルール3：1着候補は「前走と同距離」を走る馬から選ぶ
-    if (prevRace && prevRace.distance === race.distance) {
-      potential += 20;
-      tags.push("🔥 門別特注: 信頼の前走同距離ローテーション");
+    // Rule 4: ローテーションペナルティ（距離変更）
+    if (prevRace && prevRace.distance !== race.distance) {
+      mombetsuPenalty += 10;
+      tags.push("❌ 門別減点: 距離変更(ローテーション)ペナルティ");
     }
 
-    // マニアック: 地方屈指の大箱コース（直線が長く差しが届く）
-    if ((horse.style === '差し' || horse.style === '追込') && isNarSire) {
-      potential += 15;
-      tags.push(`🔥 ${trackName.replace(/競馬場/g, '')}マニアック: 地方屈指の大箱コースで末脚が爆発するパワー型差し馬`);
+    // 特例3: 相手候補限定の騎手特例（減量騎手、服部茂、岩橋勇）
+    const isApprentice = horse.jockey && horse.jockey.match(/[☆▲△◇]/);
+    const isHimoJockey = horse.jockey && (horse.jockey.includes('服部茂') || horse.jockey.includes('岩橋勇'));
+    
+    if (isApprentice || isHimoJockey) {
+      // 2〜3着候補（ヒモ）としての評価を保つため、枠と脚質の減点を免除する
+      if (frame >= 1 && frame <= 4) mombetsuPenalty -= 15;
+      if (horse.style === '差し' || horse.style === '追込') mombetsuPenalty -= 10;
+      
+      // 頭（1着）候補からは外すため、ベースポテンシャルをわずかに削る
+      potential -= 5;
+      tags.push("🌟 門別特例: ヒモ職人(服部/岩橋/減量騎手)による枠・脚質ペナルティ免除");
     }
+
+    // 特例1 & 2: 落合玄騎手・小国博計厩舎の特例オーバーライド
+    if (popularity === 1 || popularity === 2) {
+      if (horse.jockey && horse.jockey.includes('落合')) {
+        mombetsuPenalty = 0; // すべての減点を免除
+        potential += 30; // 確定軸としての絶対的ボーナス加点
+        tags.push("👑 門別特例: 落合玄騎手×上位人気の絶対的信頼(全減点免除)");
+      } else if (horse.trainer && horse.trainer.includes('小国')) {
+        mombetsuPenalty = Math.floor(mombetsuPenalty / 2); // 減点を半減
+        potential += 15; // 信頼軸としてのボーナス加点
+        tags.push("👑 門別特例: 小国博計厩舎×上位人気の安定感(減点半減)");
+      }
+    }
+
+    // 最終的なペナルティをポテンシャルから減算
+    potential -= Math.max(0, mombetsuPenalty);
   }
   else if (trackName.includes('盛岡')) {
     // マニアック: 地方屈指の大箱コース（直線が長く差しが届く）
