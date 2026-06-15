@@ -94,6 +94,7 @@ export interface Race {
   venue: string;     // 競馬場
   raceNumber: number; // レース番号
   raceName: string;  // レース名
+  raceClass?: string; // レースクラス（A級、B級など）
   distance: number;  // 距離
   surface: 'ダート' | '芝'; // 馬場種別
   condition: '良' | '稍重' | '重' | '不良'; // 馬場状態
