@@ -324,7 +324,7 @@ export default function KeibaApp() {
           <StatsPanel state={state} />
         )}
         {view === "backtest" && (
-          <BacktestPanel state={state} />
+          <BacktestPanel state={state} onResetStats={() => setState({ ...state, tagStats: [] })} />
         )}
         {view === "prediction" && !selectedRace && (
           <div className="empty-state">

@@ -2,7 +2,7 @@
 import { AppState, TagStats } from "../types";
 import { useState } from "react";
 
-export default function BacktestPanel({ state }: { state: AppState }) {
+export default function BacktestPanel({ state, onResetStats }: { state: AppState; onResetStats?: () => void }) {
   const tagStats: TagStats[] = state.tagStats || [];
   const [sortBy, setSortBy] = useState<"fired" | "hitRate" | "winRate" | "evaluation">("fired");
   const [minFired, setMinFired] = useState(3);
@@ -70,11 +70,33 @@ export default function BacktestPanel({ state }: { state: AppState }) {
 
   return (
     <div className="fade-in">
-      <div className="section-header">
-        <h2 className="section-title">🔬 バックテスト分析</h2>
-        <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-          AIの各ルール（タグ）が実際の結果でどれだけ有効だったか検証します
+      <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h2 className="section-title">🔬 バックテスト分析</h2>
+          <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            AIの各ルール（タグ）が実際の結果でどれだけ有効だったか検証します
+          </div>
         </div>
+        {onResetStats && (
+          <button
+            onClick={() => {
+              if (confirm("バックテストのデータをすべてリセットしますか？\n(過去のレース記録は消えませんが、集計データが初期化されます)")) {
+                onResetStats();
+              }
+            }}
+            style={{
+              padding: "6px 12px",
+              background: "var(--accent-red)",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            データクリア
+          </button>
+        )}
       </div>
 
       {/* 競馬場別サマリーカード */}
