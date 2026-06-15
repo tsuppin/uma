@@ -74,165 +74,93 @@ export function calculateNARScore(
   } 
   else if (trackName.includes('大井')) {
     // ==========================================
-    // 【新設】大井特化・最新トレンドプロトコル（2026/06抽出）
+    // 【完全減点方式】大井特化・最新トレンドプロトコル（2026/06抽出）
     // ==========================================
     const popularity = horse.popularity || 99;
-    
-    // ルール1: 1番人気・2番人気の勝率が極めて高い（頭固定推奨）
-    if (popularity === 1 || popularity === 2) {
-      potential += 40; // 勝率75%の鉄板データとして加点
-      tags.push("🎯 大井特注: 1・2番人気の頭固定推奨(勝率75%データ)");
-    }
-    
-    // ルール2: 圧倒的な「外枠（5〜8枠）」有利の傾向
-    if (frame >= 5) {
-      potential += 30; // 1着の67%、連対の17/24が5〜8枠
-      tags.push("🔥 大井特注: 圧倒的有利な外枠(5〜8枠)からの好走");
-    } else if (race.condition === '重') {
-      potential -= 20; // 重馬場の内枠は不利
-      tags.push("⚠️ 大井危険: 重馬場の不利な内枠(1〜4枠)");
-    }
-    
-    // ルール1(改): 馬体重の増減が「-4kg〜+5kg」の馬が圧倒的有利
     const weightChange = horse.weightChange || 0;
-    if (weightChange >= -4 && weightChange <= 5) {
-      potential += 25;
-      tags.push("👑 大井特注: 馬体重安定(-4kg〜+5kg)の圧倒的勝負気配");
-    } else if (weightChange >= 10 || weightChange <= -10) {
-      potential -= 20;
-      tags.push("⚠️ 大井危険: 大幅な馬体重増減は割引(状態不安定)");
-    }
-    
-    // ルール4(改): 3着に穴馬が飛び込む「ヒモ荒れ」に注意
-    if (popularity >= 10) {
-      tags.push("🌟 大井特注: ヒモ荒れ候補の二桁人気伏兵");
-    }
-
-    // ==========================================
-    // 【追加】大井特化・馬の属性プロトコル（2026/06抽出）
-    // ==========================================
-    
-    // 新ルール2: ダートグレード競走（交流重賞）は「JRA所属馬」が上位を独占
+    const prevRace = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : null;
     const isJpnGrade = race.raceName && race.raceName.match(/Jpn[1-3I-III]/i);
-    if (isJpnGrade) {
-      const isJRAHorse = horse.belonging?.includes('JRA') || horse.stableLocation?.match(/(美浦|栗東)/) || (horse.jockey && ['ルメール', '川田', '武豊', '戸崎', '松山', '坂井', '横山武'].some(j => horse.jockey.includes(j)));
-      if (isJRAHorse) {
-        potential += 40;
-        tags.push("👑 大井Jpn特注: 交流重賞におけるJRA所属馬の圧倒的実力");
-      } else {
-        potential -= 30;
-        tags.push("⚠️ 大井Jpn危険: 交流重賞における地方所属馬の能力差");
-      }
-    }
-
-    // 新ルール3: 古馬戦は「4歳馬」、若駒戦(3歳戦)は「牝馬」が活躍
     const is3yoRace = race.raceName && race.raceName.includes('3歳');
     const isKobaRace = !is3yoRace && !isJpnGrade && race.raceClass && race.raceClass.match(/[ABC]級/i);
     
-    if (isKobaRace && horse.age === 4) {
-      potential += 20;
-      tags.push("🔥 大井特注: 古馬戦(C・B級)で勢いのある4歳馬");
-    } else if (is3yoRace && !isJpnGrade && horse.gender === '牝') {
-      potential += 25;
-      tags.push("🔥 大井特注: 3歳戦における仕上がりの早い牝馬");
+    // AI予想（馬券構築）ロジックにおける制限事項
+    // 1. 1着予想の制限（人気ロジック）: 3番人気以下は1着固定に推奨しない（大幅減点）
+    if (popularity >= 3) {
+      potential -= 50;
+      tags.push("⚠️ 大井AI制限: 1・2番人気勝率75%のため、3番人気以下の1着評価を大幅減点");
     }
 
-    // 新ルール4: 毛色は「鹿毛」と「黒鹿毛」が優勢(勝率67%)
-    const isGoodColor = horse.coatColor && (horse.coatColor === '鹿毛' || horse.coatColor === '黒鹿毛');
-    if (isGoodColor) {
-      potential += 10;
-      tags.push(`💎 大井特注: 大井で優勢な毛色(${horse.coatColor})`);
-    }
-
-    // ==========================================
-    // 【追加】大井特化・騎手＆負担重量プロトコル（2026/06抽出）
-    // ==========================================
-    
-    // 第3弾ルール1: 前走から「継続騎乗」しているコンビを積極的に狙う(勝率67%)
-    const prevRaceJockey = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0].jockey : horse.prevJockey;
-    if (prevRaceJockey && horse.jockey && horse.jockey.includes(prevRaceJockey.replace(/[☆▲△◇]/g, ''))) {
-      potential += 25;
-      tags.push("🏇 大井特注: 呼吸の合う継続騎乗コンビ(勝率67%)");
-    }
-
-    // 第3弾ルール2: 「トップジョッキー」と序盤の「減量騎手」の活躍
-    const isOhiTopJockey = horse.jockey && ['矢野', '笹川', '森泰斗', '御神本', '和田譲', '西啓太'].some(j => horse.jockey.includes(j));
-    const isApprentice = horse.jockey && horse.jockey.match(/[☆▲△◇]/);
-    const isEarlyRace = race.raceNumber && race.raceNumber <= 4;
-    
-    if (isOhiTopJockey) {
-      potential += 15;
-      tags.push("👑 大井特注: 信頼のトップジョッキー");
-    } else if (isApprentice && isEarlyRace) {
-      potential += 20;
-      tags.push("🔥 大井特注: 序盤レース(1〜4R)での減量騎手の積極策");
-    }
-
-    // 第3弾ルール3: 交流重賞（メインレース）は「JRA所属騎手」が上位を独占
-    if (isJpnGrade) {
-      const isJraTopJockey = horse.jockey && ['戸崎', '岩田望', '坂井', '西村淳', 'ルメール', '川田', '武豊', '松山'].some(j => horse.jockey.includes(j));
-      if (isJraTopJockey) {
-        potential += 20; // 以前のJRA所属馬加点と併せてさらにプラス
-        tags.push("👑 大井Jpn特注: 交流重賞におけるJRAトップジョッキーの技術");
-      }
-    }
-
-    // 第3弾ルール4: 重い「負担重量（56.0kg以上）」を苦にしない
-    const currentWeight = horse.jockeyWeight || 55;
-    if (currentWeight >= 56.0) {
-      potential += 10;
-      tags.push("💪 大井特注: 56kg以上の重斤量を苦にしない馬力");
-    }
-
-    // ==========================================
-    // 【追加】大井特化・展開＆実績＆厩舎プロトコル（2026/06抽出）
-    // ==========================================
-    
-    // 第4弾ルール1: 前走で「逃げ・先行（最終コーナー2番手以内）」だった馬がそのまま押し切る
-    const prevRace = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : null;
-    if (prevRace && prevRace.corner4Position >= 1 && prevRace.corner4Position <= 2) {
-      potential += 25;
-      tags.push("🏇 大井特注: 前走4角2番手以内の前残り(展開絶対有利)");
-    }
-
-    // 第4弾ルール2: 後方からの「上がり最速」の馬は頭（1着固定）では狙いにくい
+    // 2. 1着予想の制限（脚質ロジック）: 差し・追込馬は1着固定除外（ヒモ評価）
     if (horse.style === '差し' || horse.style === '追込') {
-      // 1着を取りこぼしやすいのでポテンシャルをわずかに下げて連下（ヒモ）に留める
+      potential -= 30;
+      tags.push("⚠️ 大井AI制限: 差し・追込馬は前を捕まえきれないため1着候補から除外(ヒモ狙い)");
+    }
+
+    // 4. 3着ヒモ穴の無作為抽出ロジック（darkness補正）
+    if (popularity >= 10) {
+      // 外部のdarkness計算で拾われやすくするためタグを付与
+      tags.push("🌟 大井AIヒモ荒れ枠: 二桁人気の伏兵を強制ピックアップ");
+    }
+
+    // ■ 共通減点基準（全レース対象）
+    // 1. 馬体重変動ペナルティ: 【-20点】
+    if (weightChange <= -5 || weightChange >= 6) {
+      potential -= 20;
+      tags.push("❌ 大井減点: 馬体重異常変動(-5kg以下or+6kg以上)ペナルティ");
+    }
+
+    // 2. 枠順（内枠）ペナルティ: 【-15点】
+    if (frame >= 1 && frame <= 4) {
       potential -= 15;
-      tags.push("⚠️ 大井特注: 重馬場の差し・追込は届かず2〜3着まで(頭狙い危険)");
+      tags.push("❌ 大井減点: 不利な内枠(1〜4枠)ペナルティ");
     }
 
-    // 第4弾ルール3: メイン級のレース（後半戦）は「前走1着馬」の連勝に逆らわない
+    // 3. 非・継続騎乗（乗り替わり）ペナルティ: 【-10点】
+    const prevRaceJockey = prevRace ? prevRace.jockey : horse.prevJockey;
+    if (!prevRaceJockey || !horse.jockey || !horse.jockey.includes(prevRaceJockey.replace(/[☆▲△◇]/g, ''))) {
+      potential -= 10;
+      tags.push("❌ 大井減点: 乗り替わり(非・継続騎乗)ペナルティ");
+    }
+
+    // 4. 展開（後方待機）ペナルティ: 【-10点】
+    if (prevRace && prevRace.corner4Position >= 3) {
+      potential -= 10;
+      tags.push("❌ 大井減点: 前走4角3番手以下の後方待機ペナルティ");
+    }
+
+    // 5. 毛色ペナルティ: 【-5点】
+    if (horse.coatColor && horse.coatColor !== '鹿毛' && horse.coatColor !== '黒鹿毛') {
+      potential -= 5;
+      tags.push(`❌ 大井減点: 優勢毛色以外の毛色(${horse.coatColor})ペナルティ`);
+    }
+
+    // ■ 条件別・レース別減点基準
+    // 6. 古馬戦における「年齢」ペナルティ: 【-10点】
+    if (isKobaRace && horse.age >= 5) {
+      potential -= 10;
+      tags.push("❌ 大井減点: 古馬戦における5歳以上の高齢馬ペナルティ");
+    }
+
+    // 7. 若駒戦における「性別」ペナルティ: 【-10点】
+    if (is3yoRace && (horse.gender === '牡' || horse.gender === 'セン')) {
+      potential -= 10;
+      tags.push("❌ 大井減点: 3歳戦における牡馬・セン馬ペナルティ(牝馬優勢)");
+    }
+
+    // 8. 後半レースにおける「前走敗退」ペナルティ: 【-15点】
     const isLatterHalf = race.raceNumber && race.raceNumber >= 6;
-    if (isLatterHalf && prevRace && prevRace.result === 1) {
-      potential += 30;
-      tags.push("👑 大井特注: 後半戦(6R以降)は前走1着馬の勢いを素直に評価");
+    if (isLatterHalf && prevRace && prevRace.result >= 2) {
+      potential -= 15;
+      tags.push("❌ 大井減点: 後半レースにおける前走2着以下の敗退馬ペナルティ");
     }
 
-    // 第4弾ルール4: 「絶好調な調教師（厩舎）」の所属馬に注目する
-    const isTopTrainer = horse.trainer && ['阪本一', '的場直', '藤田輝', '荒山勝', '森下淳', '荒木英'].some(t => horse.trainer.includes(t));
-    if (isTopTrainer) {
-      potential += 15;
-      tags.push("🔥 大井特注: 当日絶好調・リーディング上位の強力な厩舎力");
-    }
-
-    // マニアック1: 外回りの長い直線（差し・追込の台頭）
-    if ((dist === 1800 || dist === 2000) && (horse.style === '差し' || horse.style === '追込') && isNarSire) {
-      // [減点方式] potential += 45;
-      tags.push("🔥 大井マニアック: 地方唯一の長い直線で末脚が爆発するパワー型差し馬");
-    }
-    // マニアック2: シニスターミニスター等の大井巧者（大井D2000特注）
-    if (dist === 2000) {
-      const isOhiMaster = ['シニスターミニスター', 'パイロ', 'マジェスティックウォリアー'].some(s => (horse.sire || bloodline).includes(s));
-      if (isOhiMaster) {
-        // [減点方式] potential += 40;
-        tags.push("🔥 大井マニアック: 大井の中距離を力でねじ伏せる大井巧者血統");
+    // 9. 交流重賞における「地方所属」ペナルティ: 【-30点】
+    if (isJpnGrade) {
+      const isJRAHorse = horse.belonging?.includes('JRA') || horse.stableLocation?.match(/(美浦|栗東)/) || (horse.jockey && ['ルメール', '川田', '武豊', '戸崎', '松山', '坂井', '横山武', '岩田望', '西村淳'].some(j => horse.jockey.includes(j)));
+      if (!isJRAHorse) {
+        potential -= 30;
+        tags.push("❌ 大井Jpn減点: 交流重賞における地方所属馬(致命的ペナルティ)");
       }
-    }
-    // マニアック3: オーストラリア産白砂適性（タフな馬場での大型馬）
-    if (horse.weight && horse.weight >= 520) {
-      // [減点方式] potential += 25;
-      tags.push("🔥 大井特注: 極端に力のいる白砂をこなす520kg以上の大型馬格");
     }
   } 
   else if (trackName.includes('川崎')) {
@@ -452,7 +380,7 @@ export function calculateNARScore(
   }
 
   // 3. 減量騎手（軽斤量）の逃げ残り物理アドバンテージ
-  if (horse.jockeyWeight && horse.jockeyWeight <= 53 && (horse.style === '逃げ' || horse.style === '先行')) {
+  if (!trackName.includes('大井') && horse.jockeyWeight && horse.jockeyWeight <= 53 && (horse.style === '逃げ' || horse.style === '先行')) {
     // [減点方式] potential += 20;
     tags.push(`🪽 裸同然の軽斤量(${horse.jockeyWeight}kg): 減量騎手×先行力によるアドバンテージ`);
   }
