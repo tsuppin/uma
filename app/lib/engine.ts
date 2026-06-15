@@ -1397,8 +1397,8 @@ export function calculateTsuchiyaScore(
     if (horse.age === 3) hanshinScore += 15;
 
     if (hanshinScore >= 25) {
-      potential += hanshinScore;
-      tags.push(`🔥 阪神特注馬: AI学習済み特化バイアス合致 (+${hanshinScore})`);
+      /* [要見直し2] */ potential += hanshinScore;
+      // [要見直し2] tags.push(`🔥 阪神特注馬: AI学習済み特化バイアス合致 (+${hanshinScore})`);
     }
   }
 
@@ -3096,8 +3096,8 @@ export function calculateTsuchiyaScore(
     // 期待値最大の大穴（単勝50倍〜100倍超）あぶり出し（人気に対する逆数・動的期待値ブースト）
     if (potential >= 520 && odds >= 30.0) {
       const dynamicBoost = Math.min(15, Math.floor(odds / 4)); // 大穴過剰評価を防ぐため最大15点に制限
-      potential += dynamicBoost;
-      tags.push(`⚡ 東京特選:オッズ逆数期待値ブースト(+${dynamicBoost})`);
+      /* [要見直し2] */ potential += dynamicBoost;
+      // [要見直し2] tags.push(`⚡ 東京特選:オッズ逆数期待値ブースト(+${dynamicBoost})`);
     }
   }
 
