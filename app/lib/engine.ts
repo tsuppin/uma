@@ -6706,10 +6706,10 @@ export function calculateTsuchiyaScore(
   // ─────────────────────────────────────────
   // 【C-1】血統不適性ペナルティ
   // ─────────────────────────────────────────
-  const sireName = horse.sire || '';
+  const penaltySireName = horse.sire || '';
 
   // 芝特化血統 × ダート重賞
-  const isTurfOnlySire = ['ディープインパクト', 'ハーツクライ', 'コントレイル', 'エフフォーリア'].some(s => sireName.includes(s));
+  const isTurfOnlySire = ['ディープインパクト', 'ハーツクライ', 'コントレイル', 'エフフォーリア'].some(s => penaltySireName.includes(s));
   const isDirtStakes = race.surface === 'ダート' && race.raceName && race.raceName.match(/G[1-3I-III]|重賞|特別ステークス/);
   if (isTurfOnlySire && isDirtStakes) {
     potential -= 20;
@@ -6717,7 +6717,7 @@ export function calculateTsuchiyaScore(
   }
 
   // ダート特化血統 × 芝重賞
-  const isDirtOnlySire = ['シニスターミニスター', 'ヘニーヒューズ', 'パイロ', 'ゴールドアリュール'].some(s => sireName.includes(s));
+  const isDirtOnlySire = ['シニスターミニスター', 'ヘニーヒューズ', 'パイロ', 'ゴールドアリュール'].some(s => penaltySireName.includes(s));
   const isTurfStakes = race.surface === '芝' && race.raceName && race.raceName.match(/G[1-3I-III]|重賞|特別ステークス/);
   if (isDirtOnlySire && isTurfStakes) {
     potential -= 20;
@@ -6725,7 +6725,7 @@ export function calculateTsuchiyaScore(
   }
 
   // 洋芝不向き軽量スピード血統 × 函館・札幌の芝
-  const isSpeedOnlySire = ['ロードカナロア', 'ダイワメジャー', 'キンシャサノキセキ', 'ミッキーアイル'].some(s => sireName.includes(s));
+  const isSpeedOnlySire = ['ロードカナロア', 'ダイワメジャー', 'キンシャサノキセキ', 'ミッキーアイル'].some(s => penaltySireName.includes(s));
   const isYoshibaCourse = trackName && (trackName.includes('函館') || trackName.includes('札幌')) && race.surface === '芝';
   if (isSpeedOnlySire && isYoshibaCourse) {
     potential -= 20;
