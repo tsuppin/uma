@@ -44,7 +44,7 @@ export function calculateNARScore(
   // 地方エリート騎手加点
   if (NAR_ELITE_JOCKEYS.some(j => jockey.includes(j))) {
     // [減点方式] potential += 35;
-    tags.push("👑 地方ダート特注: コースのクセを熟知した地方トップジョッキー");
+    // [要見直し2] tags.push("👑 地方ダート特注: コースのクセを熟知した地方トップジョッキー");
   }
 
   // JRA所属馬のダートグレード競走（Jpn格付け）における基礎能力差
@@ -211,13 +211,13 @@ export function calculateNARScore(
       const prevLast3f = parseFloat(prevRaceData.last3fTime);
       if ((horse.style === '差し' || horse.style === '追込') && prevRaceData.result >= 4 && !isNaN(prevLast3f) && prevLast3f <= 38.0) {
         // [減点方式] potential += 45;
-        tags.push("🔥 期待値クロス: 前走展開泣きの上がり上位馬（ハイペース必至で台頭）");
+        // [要見直し2] tags.push("🔥 期待値クロス: 前走展開泣きの上がり上位馬（ハイペース必至で台頭）");
       }
     }
   } else if (frontRunnersCount === 1) {
     if (horse.style === '逃げ') {
       // [減点方式] potential += 40;
-      tags.push("🔥 期待値クロス: 競り掛ける馬が不在の単騎逃げ確定（マイペース絶対有利）");
+      // [要見直し2] tags.push("🔥 期待値クロス: 競り掛ける馬が不在の単騎逃げ確定（マイペース絶対有利）");
     }
   }
 
@@ -401,7 +401,7 @@ export function calculateNARScore(
       tags.push(`⚠️波乱フェーズ:1番人気過信禁物 (${wave.category})`);
     } else if (popularity >= 4 && popularity <= 8) {
       // [減点方式] potential += 25;
-      tags.push(`💎波乱の使者:激走の伏兵 (${wave.category})`);
+      // [要見直し2] tags.push(`💎波乱の使者:激走の伏兵 (${wave.category})`);
     }
   }
 
