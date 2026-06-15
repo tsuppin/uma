@@ -122,7 +122,7 @@ export function calculateTsuchiyaScore(
   const jockey = horse.jockey || '';
   const headCount = race.headCount || 10;
   
-  let potential = 500;
+  let potential = 1000;  // [減点方式] 初期値を1000に変更
   let distortionBoost = 1.0;
   let isTargetYatomi = false;
   const tags: string[] = [];
@@ -138,7 +138,7 @@ export function calculateTsuchiyaScore(
   if (odds >= 15.0) {
     if (prevRaceData) {
       if (prevRaceData.isStumbled || prevRaceData.cornerOuterCount >= 4) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("💰 期待値爆発: 前走物理的不利(度外視) × 大穴オッズ");
       }
       if (prevRaceData.halonPace) {
@@ -147,7 +147,7 @@ export function calculateTsuchiyaScore(
           const front3f = parseFloat(paceParts[0]);
           const back3f = parseFloat(paceParts[1]);
           if (front3f < back3f - 1.5 && (horse.style === '差し' || horse.style === '追込')) {
-            potential += 30;
+            // [減点方式] potential += 30;
             tags.push("💰 期待値爆発: 前走ハイペース被害の差し馬 × 大穴");
           }
         }
@@ -174,13 +174,13 @@ export function calculateTsuchiyaScore(
   // コンボ1: 物理的絶対優位（小回り × 内枠 × 先行）
   const isTightCourse = ['浦和', '函館', '福島', '小倉', '高知'].some(t => trackName.includes(t));
   if (isTightCourse && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
-    potential += 45;
+    // [減点方式] potential += 45;
     tags.push("🔥 黄金コンボ: 小回り × 内枠 × 逃げ先行 (絶対物理優位)");
   }
 
   // コンボ2: 期待値の爆発（前走の不利 × 枠順の好転）
   if (prevRaceData && prevRaceData.cornerOuterCount >= 4 && frame <= 4) {
-    potential += 40;
+    // [減点方式] potential += 40;
     tags.push("🔥 黄金コンボ: 前走大外ロス度外視 × 今回好枠替わり");
   }
 
@@ -196,7 +196,7 @@ export function calculateTsuchiyaScore(
   // コンボ4: 陣営の勝負気配（エリート騎手への乗り替わり）
   const eliteJockeys = ['ルメール', '川田', '武豊', 'モレイラ', 'レーン', '御神本', '吉村', '赤岡'];
   if (prevRaceData && prevRaceData.jockey !== jockey && eliteJockeys.some(j => jockey.includes(j))) {
-    potential += 35;
+    // [減点方式] potential += 35;
     tags.push("🔥 黄金コンボ: エリート騎手への勝負の乗り替わり");
   }
 
@@ -206,7 +206,7 @@ export function calculateTsuchiyaScore(
   // 鉄板条件: トップ騎手 × 先行脚質
   const topJockeys = ['ルメール', 'レーン', 'ゴンサルベス', 'ディー', '川田', '武豊', 'モレイラ'];
   if (topJockeys.some(j => jockey.includes(j)) && (horse.style === '先行' || horse.style === '逃げ')) {
-    potential += 40;
+    // [減点方式] potential += 40;
     tags.push("🎯 鉄板軸: トップ騎手 × 前残り有利脚質 (的中率重視)");
   }
 
@@ -229,7 +229,7 @@ export function calculateTsuchiyaScore(
     // 1. 芝マイル以下（1400m・1600m）：「先行〜中団差し」×「圧倒的な内枠（2〜3枠）」
     if (race.surface === '芝' && dist <= 1600) {
       if ((frame === 2 || frame === 3) && ['逃げ', '先行', '差し'].includes(horse.style)) {
-        potential += 50;
+        // [減点方式] potential += 50;
         tags.push("👑 東京TB特注: 芝マイル以下の圧倒的内枠(2・3枠)×先行〜差し");
       } else if (frame >= 7) {
         potential -= 20; // 外枠は割引
@@ -240,7 +240,7 @@ export function calculateTsuchiyaScore(
     // 2. 芝中長距離（1800m以上）：「逃げ・先行押し切り」×「中枠（5〜6枠）＆内枠」
     if (race.surface === '芝' && dist >= 1800) {
       if (['逃げ', '先行'].includes(horse.style) && frame <= 6) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("🔥 東京TB特注: 芝中長距離の逃げ・先行×内〜中枠押し切り");
       }
     }
@@ -249,10 +249,10 @@ export function calculateTsuchiyaScore(
     if (race.surface === 'ダート' && dist === 1600) {
       if (['逃げ', '先行'].includes(horse.style)) {
         if (frame <= 5) {
-          potential += 50;
+          // [減点方式] potential += 50;
           tags.push("👑 東京TB特注: D1600mの前残り絶対有利×ロスなし内〜中枠");
         } else {
-          potential += 20; // 外枠でも前に行ければプラスだが内枠ほどではない
+          /* [減点方式] potential += 20; */ // 外枠でも前に行ければプラスだが内枠ほどではない
         }
       }
     }
@@ -260,7 +260,7 @@ export function calculateTsuchiyaScore(
     // 4. ダート短距離（1300m・1400m）：「好位〜差し」×「揉まれない中〜外枠（5・6・8枠）」
     if (race.surface === 'ダート' && dist <= 1400) {
       if (['先行', '差し'].includes(horse.style) && (frame === 5 || frame === 6 || frame === 8)) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("🔥 東京TB特注: D短距離の揉まれない中外枠×差し・好位");
       } else if (frame <= 2 && horse.style === '差し') {
         potential -= 25; // 揉まれる内枠の差しは割引
@@ -276,19 +276,19 @@ export function calculateTsuchiyaScore(
     if (race.surface === 'ダート') {
       if (condition === '良') {
         if (['キズナ', 'モズアスコット'].some(s => sireName.includes(s))) {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("👑 東京血統: ダート良馬場で無類の強さ(キズナ/モズパワー)");
         }
       } else if (['稍重', '重', '不良'].includes(condition)) {
         if (['ロードカナロア', 'ダノンスマッシュ'].some(s => sireName.includes(s))) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("🔥 東京血統: 渋ったダートでスピード活きるカナロア系(穴馬サイン)");
         }
       }
     } else if (race.surface === '芝') {
       if (condition === '良') {
         if (['キズナ', 'エピファネイア', 'エフフォーリア'].some(s => sireName.includes(s))) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("🎯 東京血統: 芝良馬場の王道適性(キズナ/ロベルト系)");
         }
       }
@@ -299,12 +299,12 @@ export function calculateTsuchiyaScore(
     // ==========================================
     if (age <= 3) {
       if (weightChange >= 10) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("🔥 東京馬体重: 3歳馬の大幅プラス(成長・筋肉量UP)");
       }
     } else if (age >= 4) {
       if (weightChange >= -4 && weightChange <= 4) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 東京馬体重: 古馬の微増減(ベスト体重での仕上がり鉄板)");
       } else if (weightChange >= 10) {
         potential -= 30;
@@ -328,7 +328,7 @@ export function calculateTsuchiyaScore(
     const isPrev2nd = prevResult === 2;
 
     if (isLemaireLane && popularity === 1 && (isNewHorse || isPrev2nd)) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🎯 東京鉄板: ルメール/レーン×1番人気×新馬・前走2着(確勝級)");
     }
     
@@ -338,30 +338,30 @@ export function calculateTsuchiyaScore(
       
       // 2. 【最も頻出する勝ちパターン】上位騎手 × 1〜5番人気 × 前走3〜5着
       if (isTokyoTopJockey && popularity >= 1 && popularity <= 5 && isPrev3to5) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 東京必勝: 上位騎手×上位人気×前走惜敗(勝ち上がり濃厚)");
       }
       
       // 3. 【中穴・波乱の使者】丹内祐次 × 3〜6番人気 × 前走大敗も含む
       if (isTannai && popularity >= 3 && popularity <= 6) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("🔥 東京妙味: 丹内騎手の中位人気は前走着順不問で買い");
       }
 
       // 4. 【昇級の壁を突破】上位騎手 × 2〜3番人気 × 前走1着
       if (isTokyoTopJockey && (popularity === 2 || popularity === 3) && isPrev1st) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 東京上昇: 上位騎手×2〜3番人気×前走1着の連勝期待");
       }
     } else {
       // 1. ルメール・レーン × 1番人気 × 新馬
       if (isLemaireLane && popularity === 1) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🎯 東京鉄板: ルメール/レーン×1番人気×新馬戦の確勝級");
       }
       // 3. 丹内騎手の新馬
       if (isTannai && popularity >= 3 && popularity <= 6) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("🔥 東京妙味: 丹内騎手の中位人気は買い");
       }
     }
@@ -386,14 +386,14 @@ export function calculateTsuchiyaScore(
     
     // 複合チェック
     if (prevPositionFront && stableWeight && prevTopFinish) {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push("🎯 最新開催トレンド: 前走先行×安定体重×前走上位の鉄板ローテ");
       if (goodSire) {
-        potential += 30; // さらに血統適性も合致で大幅加点
+        /* [減点方式] potential += 30; */ // さらに血統適性も合致で大幅加点
         tags.push("🔥 最新開催トレンド: コース適性ドンピシャ血統");
       }
     } else if (goodSire && stableWeight) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🔥 最新開催トレンド: 適性血統×安定体重");
     }
   }
@@ -406,13 +406,13 @@ export function calculateTsuchiyaScore(
   if (isJraCourse) {
     // JRAコンボ1: 外厩帰り × トップ騎手 × 休み明け初戦
     if (horse.isAfterRest && eliteJockeys.some(j => jockey.includes(j))) {
-      potential += 45;
+      // [減点方式] potential += 45;
       tags.push("🔥 JRA極秘: トップ外厩仕上げ × エリート騎手の勝負気配");
     }
 
     // JRAコンボ2: 馬場改修（仮柵移動） × 内枠 × 先行馬
     if (race.temporaryFencePosition && race.temporaryFencePosition !== 'A' && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push("🔥 JRA極秘: 仮柵移動(新品のイン) × 内枠先行絶対優位");
     }
 
@@ -421,7 +421,7 @@ export function calculateTsuchiyaScore(
     if (isLongStraight && prevRaceData && prevRaceData.last3fTime) {
       const last3f = parseFloat(prevRaceData.last3fTime);
       if (!isNaN(last3f) && last3f <= 34.0) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 JRA極秘: 長い直線 × 鬼脚(上がり33秒台実績)");
       }
     }
@@ -434,7 +434,7 @@ export function calculateTsuchiyaScore(
         const front3f = parseFloat(paceParts[0]);
         const back3f = parseFloat(paceParts[1]);
         if (front3f < back3f - 1.5) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("🔥 JRA極秘: 前走ハイペース被害馬の「単騎逃げ」濃厚");
         }
       }
@@ -449,7 +449,7 @@ export function calculateTsuchiyaScore(
       const isPowerSire = ['ルーラーシップ', 'ドレフォン', 'ヘニーヒューズ', 'ステイゴールド', 'オルフェーヴル', 'キズナ'].some(s => (horse.sire || '').includes(s));
       const isRepeater = horse.pastRaces?.some(pr => pr.venue.includes('中山') && pr.result <= 3);
       if (isPowerSire && isRepeater) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("🔥 JRA極秘: 中山マイスター(リピーター×急坂適性血統)");
       }
     }
@@ -458,13 +458,13 @@ export function calculateTsuchiyaScore(
     const isLocalStayTrack = ['札幌', '函館', '小倉'].some(t => trackName.includes(t));
     const raceMonth = new Date(race.date).getMonth() + 1;
     if (isLocalStayTrack && (raceMonth >= 7 && raceMonth <= 9) && gender === '牝') {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("🔥 JRA極秘: 夏の滞在競馬における牝馬の激走");
     }
 
     // JRAアドバンスコンボ3: 距離短縮ショック
     if (prevRaceData && prevRaceData.distance > dist && (horse.style === '差し' || horse.style === '追込')) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🔥 JRA極秘: 距離短縮ショック(豊富なスタミナ×末脚爆発)");
     }
 
@@ -472,7 +472,7 @@ export function calculateTsuchiyaScore(
     if (race.surface === 'ダート' && prevRaceData?.surface === '芝') {
       const isUsDirtSire = ['シニスターミニスター', 'マジェスティックウォリアー', 'ヘニーヒューズ', 'パイロ', 'マクフィ', 'ダノンレジェンド', 'キンシャサノキセキ', 'エスポワールシチー'].some(s => (horse.sire || '').includes(s));
       if (isUsDirtSire) {
-        potential += 50; // オッズが落ちやすいため期待値が跳ね上がる
+        /* [減点方式] potential += 50; */ // オッズが落ちやすいため期待値が跳ね上がる
         tags.push("🔥 JRA極秘: 初ダート×ダート特化血統(覚醒の可能性大)");
       }
     }
@@ -485,7 +485,7 @@ export function calculateTsuchiyaScore(
       if (race.surface === 'ダート' && dist === 1600 && frame >= 6 && (horse.style === '逃げ' || horse.style === '先行')) {
         const isUsDirtSpeed = ['ヘニーヒューズ', 'ドレフォン', 'シニスターミニスター', 'マクフィ', 'アジアエクスプレス'].some(s => (horse.sire || '').includes(s));
         if (isUsDirtSpeed) {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("🔥 東京D1600特注: 芝スタートを活かす外枠×米国スピード血統");
         }
       }
@@ -494,7 +494,7 @@ export function calculateTsuchiyaScore(
       if (race.surface === '芝' && ['重', '不良'].includes(condition) && frame <= 2 && horse.style === '逃げ') {
         const isHeavyTank = ['バゴ', 'ハービンジャー', 'フランケル', 'ステイゴールド', 'オルフェーヴル', 'キズナ'].some(s => (horse.sire || '').includes(s));
         if (isHeavyTank) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("🔥 雨の東京特注: キレ味無効化の泥んこ馬場を逃げ粘る重戦車");
         }
       }
@@ -503,7 +503,7 @@ export function calculateTsuchiyaScore(
       // 前走が右回りで敗北（4着以下）し、今回左回りの東京に変わる馬を狙う
       if (prevRaceData && (prevRaceData.direction === '右' || ['中山', '阪神', '京都', '福島', '小倉', '函館', '札幌'].some(t => prevRaceData.venue?.includes(t)))) {
         if (prevRaceData.result >= 4) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("🔥 東京特注: 右回り惨敗からの左回り替わり(サウスポーの逆襲)");
         }
       }
@@ -512,7 +512,7 @@ export function calculateTsuchiyaScore(
       if (dist === 2400 && race.surface === '芝') {
         const isTonyBinBlood = ['ハーツクライ', 'ルーラーシップ', 'ドゥラメンテ', 'ジャスタウェイ', 'スワーヴリチャード'].some(s => (horse.sire || '').includes(s) || (horse.bms || '').includes(s));
         if (isTonyBinBlood) {
-          potential += 30;
+          // [減点方式] potential += 30;
           tags.push("🔥 東京2400特注: 過酷な直線を登り切る底力(トニービン内包)");
         }
       }
@@ -527,7 +527,7 @@ export function calculateTsuchiyaScore(
       // 東京重賞1: 東京の帝王（ルメール×ノーザン系馬主・有力血統）
       const isNorthernOwner = ['サンデー', 'キャロット', 'シルク', '社台', 'ダノン', 'サトノ', '金子'].some(o => (horse.owner || '').includes(o));
       if (jockey.includes('ルメール') && isNorthernOwner) {
-        potential += 50;
+        // [減点方式] potential += 50;
         tags.push("👑 東京特注: 東京の帝王ルメール×ノーザン系勝負馬");
       }
 
@@ -535,7 +535,7 @@ export function calculateTsuchiyaScore(
       if (prevRaceData && prevRaceData.last3fTime) {
         const last3f = parseFloat(prevRaceData.last3fTime);
         if (!isNaN(last3f) && last3f <= 33.9 && dist > prevRaceData.distance) {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("👑 東京特注: 距離延長でさらに活きる究極の瞬発力");
         }
       }
@@ -544,7 +544,7 @@ export function calculateTsuchiyaScore(
       const isG2orG3 = race.raceName.match(/G[23]/i) || race.raceName.match(/G(II|III)/i);
       const isPrevG1 = prevRaceData?.raceClass?.match(/G[1I]/i) || prevRaceData?.raceName?.match(/G[1I]/i);
       if (isG2orG3 && isPrevG1 && (horse.style === '差し' || horse.style === '追込')) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("👑 東京特注: G1揉まれ経験馬の格下がり(展開不問の差し)");
       }
 
@@ -552,7 +552,7 @@ export function calculateTsuchiyaScore(
       if (headCount >= 14 && frame >= 6) {
         const isRoyalSire = ['キタサンブラック', 'エピファネイア', 'ロードカナロア', 'ディープインパクト', 'スワーヴリチャード', 'ドゥラメンテ', 'モーリス'].some(s => (horse.sire || '').includes(s));
         if (isRoyalSire) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("👑 東京特注: 多頭数外枠のクリーンラン(王道血統)");
         }
       }
@@ -566,7 +566,7 @@ export function calculateTsuchiyaScore(
       if (race.surface === 'ダート' && dist === 1400 && frame >= 6) {
         const isTurfSpeed = ['ロードカナロア', 'キンシャサノキセキ', 'ダイワメジャー', 'ミッキーアイル', 'イスラボニータ'].some(s => (horse.sire || '').includes(s));
         if (isTurfSpeed) {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("🔥 阪神D1400特注: 芝スタートを活かす外枠×芝用スピード血統");
         }
       }
@@ -574,7 +574,7 @@ export function calculateTsuchiyaScore(
       // マニアック2: 京都との真逆適性「平坦負けからの急坂替わり（パワーの逆襲）」
       if (prevRaceData && prevRaceData.venue?.includes('京都') && prevRaceData.result >= 4) {
         if (weight >= 500 || ['キズナ', 'エピファネイア', 'ルーラーシップ', 'ハービンジャー', 'オルフェーヴル'].some(s => (horse.sire || '').includes(s))) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("🔥 阪神特注: 前走京都(平坦)スピード負けからの急坂パワー替わり");
         }
       }
@@ -584,7 +584,7 @@ export function calculateTsuchiyaScore(
         if (horse.style === '差し' || horse.style === '後方' || horse.style === '中団') {
           const isLongSpurt = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'エピファネイア', 'スクリーンヒーロー'].some(s => (horse.sire || '').includes(s));
           if (isLongSpurt) {
-            potential += 35;
+            // [減点方式] potential += 35;
             tags.push("🔥 阪神内回り特注: 3コーナーからマクり上げるロンスパ血統");
           }
         }
@@ -595,7 +595,7 @@ export function calculateTsuchiyaScore(
         if (prevRaceData && prevRaceData.distance <= 1400 && prevRaceData.last3fTime) {
           const prevLast3f = parseFloat(prevRaceData.last3fTime);
           if (!isNaN(prevLast3f) && prevLast3f <= 34.5) {
-            potential += 35;
+            // [減点方式] potential += 35;
             tags.push("🔥 阪神外回り特注: ハイペース経験(距離短縮)のタフネスと末脚");
           }
         }
@@ -607,7 +607,7 @@ export function calculateTsuchiyaScore(
       // 1. 芝・マイル〜中長距離 (1600m〜2200m)：「内枠」 × 「逃げ・先行」が鉄板
       if (race.surface === '芝' && dist >= 1600 && dist <= 2200) {
         if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
-          potential += 60; // 極端に高くする
+          /* [減点方式] potential += 60; */ // 極端に高くする
           tags.push("👑 阪神TB特注: 芝中長距離のイン前残り(絶対的有利)");
         } else if (frame >= 6 && (horse.style === '差し' || horse.style === '追込')) {
           potential -= 30; // 展開待ちになる外枠差しは減点
@@ -618,11 +618,11 @@ export function calculateTsuchiyaScore(
       // 2. ダート中距離 (1800m)：「先行」できれば「枠順は不問」
       if (race.surface === 'ダート' && dist === 1800) {
         if (horse.style === '逃げ' || horse.style === '先行') {
-          potential += 50; // 先行力の比重を極端に上げる
+          /* [減点方式] potential += 50; */ // 先行力の比重を極端に上げる
           tags.push("👑 阪神TB特注: ダート1800mは枠不問で先行力絶対優位");
           // 外枠のマイナス評価を緩める（もし他に外枠減点があれば相殺するか、ここでさらに加点）
           if (frame >= 6) {
-            potential += 15; // 砂を被らない外枠先行はさらにプラス
+            /* [減点方式] potential += 15; */ // 砂を被らない外枠先行はさらにプラス
             tags.push("🔥 阪神TB特注: 砂を被らない外枠先行(被せられずスムーズ)");
           }
         }
@@ -631,7 +631,7 @@ export function calculateTsuchiyaScore(
       // 3. ダート短距離 (1200m・1400m)：「内〜中枠(1-4枠)」 × 「先行」が安定
       if (race.surface === 'ダート' && dist <= 1400) {
         if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("👑 阪神TB特注: ダ短距離の内〜中枠の先行(ロスなく好位)");
         } else if (frame >= 7) {
           potential -= 25; // 外枠はロスが生じやすい
@@ -642,10 +642,10 @@ export function calculateTsuchiyaScore(
       // 4. 芝・短距離 (1200m・1400m)：「内枠先行」or「外枠差し」
       if (race.surface === '芝' && dist <= 1400) {
         if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("🔥 阪神TB特注: 芝短距離の内枠先行(基本セオリー)");
         } else if (frame >= 6 && (horse.style === '差し' || horse.style === '追込')) {
-          potential += 30; // 展開次第で台頭
+          /* [減点方式] potential += 30; */ // 展開次第で台頭
           tags.push("🔥 阪神TB特注: 芝短距離のハイペースを突く外枠差し");
         }
       }
@@ -667,7 +667,7 @@ export function calculateTsuchiyaScore(
         
         // 1. 【鉄板軸馬】「トップ騎手」×「上位人気」×「前走好走」
         if (isHanshinTopJockey && isTopPop && isPrevGood) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("🎯 阪神鉄板: トップ騎手×上位人気×前走好走の勝負気配");
         }
         
@@ -679,16 +679,16 @@ export function calculateTsuchiyaScore(
         
         // 2. 【オッズ妙味・勝ち切り】「減量・若手騎手」×「上位〜中位人気」×「前走好走」
         if (isHanshinYoungJockey && (isTopPop || isMidPop) && isPrevGood) {
-          potential += 45; // 期待値が高いため強めに加点
+          /* [減点方式] potential += 45; */ // 期待値が高いため強めに加点
           tags.push("🔥 阪神妙味: 若手・減量騎手×前走好走の期待値大(勝ち切り注意)");
         }
         
         // 3. 【隠れ勝負気配】「一般・中堅騎手」×「上位人気」×「前走大敗・中位」
         if (isHanshinGeneralJockey && isTopPop && isPrevBad) {
-          potential += 50; // オッズの歪み（インサイダー情報等）を突く
+          /* [減点方式] potential += 50; */ // オッズの歪み（インサイダー情報等）を突く
           tags.push("🔥 阪神勝負: 前走大敗なのに今回上位人気の隠れ勝負気配");
           if (isPrevTerrible) {
-            potential += 10; // 二桁着順からの巻き返しは更に妙味
+            /* [減点方式] potential += 10; */ // 二桁着順からの巻き返しは更に妙味
             tags.push("🌟 阪神激アツ: 前走二桁着順からの不可解な上位人気");
           }
         }
@@ -699,15 +699,15 @@ export function calculateTsuchiyaScore(
       // ==========================================
       if (age === 3) {
         if (weightChange >= 8) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("🔥 阪神馬体重: 3歳馬の大幅プラス(成長分として高く評価)");
         } else if (weightChange <= 0 && weightChange >= -4) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("👍 阪神馬体重: 3歳馬の維持・マイナス(仕上がり良し)");
         }
       } else if (age >= 4) {
         if (weightChange >= -4 && weightChange <= 4) {
-          potential += 30;
+          // [減点方式] potential += 30;
           tags.push("👑 阪神馬体重: 古馬の微増減(ベスト体重での仕上がり鉄板)");
         } else if (weightChange >= 8) {
           potential -= 30;
@@ -728,18 +728,18 @@ export function calculateTsuchiyaScore(
 
       if (race.surface === 'ダート') {
         if (isGoodTrack && isUSDirt) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("👑 阪神血統: ダート良馬場は米国型パワー血統の独壇場");
         } else if (isYieldingOrSoft && isMainstreamTurf) {
-          potential += 45; // 穴馬サインとして高く評価
+          /* [減点方式] potential += 45; */ // 穴馬サインとして高く評価
           tags.push("🌟 阪神激アツ: ダート渋り馬場での芝主流血統(ダートの芝化・穴馬サイン)");
         }
       } else if (race.surface === '芝') {
         if (isGoodTrack && isMainstreamTurf) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("🎯 阪神血統: 芝良馬場は順当に王道スピード血統");
         } else if (isYieldingOrSoft && isDualPower) {
-          potential += 40; // 穴馬サインとして高く評価
+          /* [減点方式] potential += 40; */ // 穴馬サインとして高く評価
           tags.push("🔥 阪神激アツ: 芝渋り馬場でのダート兼用パワー血統(タフ馬場適性)");
         }
       }
@@ -753,7 +753,7 @@ export function calculateTsuchiyaScore(
         const isTopOrYoungJockey = ['ルメール', '川田', '武豊', '松山', 'モレイラ', '岩田望'].some(j => jockey.includes(j)) ||
                                    jockey.includes('▲') || jockey.includes('☆') || jockey.includes('△') || jockey.includes('★');
         if (isTopOrYoungJockey) {
-          potential += 50;
+          // [減点方式] potential += 50;
           tags.push("🎯 【統合】的中率特化: 鉄板条件コンプリート(勝率極大)");
         }
       }
@@ -761,7 +761,7 @@ export function calculateTsuchiyaScore(
       // 【統合】回収率特化フラグ（※2）
       // 条件: 前走中位・大敗(4着以下) × 今回上位人気(1〜3番人気)
       if (prevRaceData && prevRaceData.result >= 4 && popularity <= 3) {
-        potential += 50;
+        // [減点方式] potential += 50;
         tags.push("💰 【統合】回収率特化: 前走凡走からの不自然な上位人気(陣営の隠れ勝負気配)");
       }
     }
@@ -774,20 +774,20 @@ export function calculateTsuchiyaScore(
       if (race.surface === '芝') {
         const isEuroPower = ['ハービンジャー', 'バゴ', 'フランケル', 'キングカメハメハ', 'ルーラーシップ', 'ワークフォース', 'ノヴェリスト'].some(s => (horse.sire || '').includes(s));
         if (isEuroPower) {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("🔥 函館芝特注: 時計のかかる重厚な洋芝で覚醒する欧州型パワー血統");
         }
       }
 
       // マニアック2: 函館ダート1000m専用「最内枠のロケットスタート」
       if (race.surface === 'ダート' && dist === 1000 && frame <= 2 && (horse.style === '逃げ' || horse.style === '先行')) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("🔥 函館D1000特注: 最初のコーナーまでの短さを活かす最内枠ロケットスタート");
       }
 
       // マニアック3: 滞在競馬の恩恵「夏は牝馬（ストレスフリー理論）」
       if (gender === '牝') {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🔥 函館特注: 長距離輸送のストレスがない滞在競馬で躍動する牝馬");
       }
 
@@ -795,7 +795,7 @@ export function calculateTsuchiyaScore(
       if (prevRaceData && !prevRaceData.venue?.match(/(函館|札幌)/) && prevRaceData.result >= 4) {
         const hasHokkaidoRecord = horse.pastRaces?.some(pr => pr.venue?.match(/(函館|札幌)/) && pr.result <= 3);
         if (hasHokkaidoRecord) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("🔥 函館特注: 本州惨敗で人気落ちからの洋芝(北海道)適性大爆発");
         }
       }
@@ -808,7 +808,7 @@ export function calculateTsuchiyaScore(
       // マニアック1: 新潟千直（芝1000m）専用「大外枠の絶対神」
       if (race.surface === '芝' && dist === 1000) {
         if (frame >= 7) {
-          potential += 50;
+          // [減点方式] potential += 50;
           tags.push("🔥 新潟千直特注: 荒れていない外ラチ沿いを走れる大外枠の絶対神");
         } else if (frame <= 2) {
           potential -= 30; // 内枠は圧倒的不利
@@ -821,7 +821,7 @@ export function calculateTsuchiyaScore(
           if (prevRaceData && prevRaceData.last3fTime) {
             const prevLast3f = parseFloat(prevRaceData.last3fTime);
             if (!isNaN(prevLast3f) && prevLast3f <= 33.5) {
-              potential += 40;
+              // [減点方式] potential += 40;
               tags.push("🔥 新潟外回り特注: 日本最長の直線を大外一気で突き抜ける鬼脚");
             }
           }
@@ -832,7 +832,7 @@ export function calculateTsuchiyaScore(
       if (prevRaceData && prevRaceData.venue?.match(/(中山|阪神)/) && prevRaceData.result >= 4) {
         const hasFlatSouthpawRecord = horse.pastRaces?.some(pr => pr.venue?.match(/(新潟|中京|東京)/) && pr.result <= 3);
         if (hasFlatSouthpawRecord) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("🔥 新潟特注: 急坂右回り惨敗からの平坦左回り替わり(サウスポー)");
         }
       }
@@ -840,7 +840,7 @@ export function calculateTsuchiyaScore(
       // マニアック4: 新潟ダート1200m専用「テンの速さ至上主義（内枠逃げ）」
       if (race.surface === 'ダート' && dist === 1200) {
         if (frame <= 3 && horse.style === '逃げ') {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("🔥 新潟D1200特注: キツいコーナーをロスなく回る内枠の逃げ馬");
         }
       }
@@ -854,7 +854,7 @@ export function calculateTsuchiyaScore(
       if (race.surface === '芝' && (horse.style === '差し' || horse.style === '追込' || horse.style === '後方')) {
         const isStayGold = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'ナカヤマフェスタ', 'ドリームジャーニー'].some(s => (horse.sire || '').includes(s));
         if (isStayGold) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("🔥 福島芝特注: 小回りで長く良い脚を持続させるステイゴールド系(マクリ)");
         }
       }
@@ -863,7 +863,7 @@ export function calculateTsuchiyaScore(
       if (race.surface === '芝' && ['稍重', '重', '不良'].includes(condition)) {
         const hasHokkaidoRecord = horse.pastRaces?.some(pr => pr.venue?.match(/(函館|札幌)/) && pr.result <= 3);
         if (hasHokkaidoRecord) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("🔥 福島特注: 荒れて時計のかかる馬場で覚醒する洋芝(北海道)適性馬");
         }
       }
@@ -871,14 +871,14 @@ export function calculateTsuchiyaScore(
       // マニアック3: 福島ダート1150m専用「芝スタート×スピード絶対主義」
       if (race.surface === 'ダート' && dist === 1150) {
         if (frame >= 6 && horse.style === '逃げ') {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("🔥 福島D1150特注: 芝スタートを活かしてハナを奪いきる外枠の逃げ馬");
         }
       }
 
       // マニアック4: 小回りの先行力「内枠・逃げ先行のインベタ」
       if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🔥 福島特注: コーナーのキツい小回りをロスなく立ち回る内枠先行馬");
       }
     }
@@ -891,7 +891,7 @@ export function calculateTsuchiyaScore(
       if (prevRaceData && prevRaceData.venue?.includes('東京') && prevRaceData.result >= 4) {
         const isPowerSire = ['キズナ', 'エピファネイア', 'ルーラーシップ', 'ハービンジャー', 'モーリス', 'スクリーンヒーロー'].some(s => (horse.sire || '').includes(s));
         if (isPowerSire) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("🔥 中山特注: 東京(直線キレ負け)からの急坂パワー替わり大逆転");
         }
       }
@@ -899,7 +899,7 @@ export function calculateTsuchiyaScore(
       // マニアック2: 中山ダート1200m専用「芝スタート・急坂下り×大外枠の暴力」
       if (race.surface === 'ダート' && dist === 1200) {
         if (frame >= 7 && (horse.style === '逃げ' || horse.style === '先行')) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("🔥 中山D1200特注: 芝スタートの急坂下りを活かして制圧する大外枠");
         }
       }
@@ -908,7 +908,7 @@ export function calculateTsuchiyaScore(
       if (race.surface === '芝' && ['稍重', '重', '不良'].includes(condition)) {
         const isRoberto = ['エピファネイア', 'スクリーンヒーロー', 'モーリス', 'シンボリクリスエス', 'ストロングリターン'].some(s => (horse.sire || '').includes(s) || (horse.bms || '').includes(s));
         if (isRoberto) {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("🔥 中山荒れ馬場特注: 時計のかかるタフな馬場で他を圧倒するロベルト系");
         }
       }
@@ -918,7 +918,7 @@ export function calculateTsuchiyaScore(
         if (frame <= 3) {
           const isNonRootStamina = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'エピファネイア', 'スクリーンヒーロー'].some(s => (horse.sire || '').includes(s));
           if (isNonRootStamina) {
-            potential += 45;
+            // [減点方式] potential += 45;
             tags.push("🔥 中山2500特注: コーナー6回をロスなく回る内枠と非根幹スタミナ");
           }
         }
@@ -935,20 +935,20 @@ export function calculateTsuchiyaScore(
       if (race.surface === '芝') {
         const isKyotoMaster = ['ディープインパクト', 'キタサンブラック', 'ロードカナロア', 'ダイワメジャー'].some(s => (horse.sire || '').includes(s));
         if (isKyotoMaster && (horse.style === '先行' || horse.style === '差し')) {
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("🔥 京都芝特注: 淀の下り坂を利用して末脚を伸ばす京都巧者");
         }
       }
       // マニアック2: 急坂負けからの平坦スピード替わり
       if (prevRaceData && prevRaceData.venue?.match(/(中山|阪神)/) && prevRaceData.result >= 4) {
         if (weight <= 480) { // 比較的軽い馬（スピード型）
-          potential += 40;
+          // [減点方式] potential += 40;
           tags.push("🔥 京都特注: 急坂パワー負けからの平坦スピード勝負替わり");
         }
       }
       // マニアック3: 京都ダート1800m特注（内枠逃げ先行）
       if (race.surface === 'ダート' && dist === 1800 && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 京都D1800特注: 平坦ダートをロスなく立ち回る内枠先行馬");
       }
     }
@@ -960,13 +960,13 @@ export function calculateTsuchiyaScore(
       if (hasSouthpawRecord) {
         const isPower = ['キングカメハメハ', 'ルーラーシップ', 'エピファネイア', 'ハービンジャー'].some(s => (horse.sire || '').includes(s)) || weight >= 500;
         if (isPower) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("🔥 中京特注: 左回りが得意なパワー型(急坂対応サウスポー)");
         }
       }
       // マニアック2: 中京ダート1400m（芝スタート・外枠優位）
       if (race.surface === 'ダート' && dist === 1400 && frame >= 6 && horse.style === '逃げ') {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("🔥 中京D1400特注: 芝スタートの恩恵をフルに受ける外枠逃げ馬");
       }
     }
@@ -975,17 +975,17 @@ export function calculateTsuchiyaScore(
     if (trackName.includes('札幌')) {
       // マニアック1: 洋芝マクリ（コーナー加速）
       if (race.surface === '芝' && horse.style === 'マクリ') {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("🔥 札幌芝特注: 直線がほぼ無い丸いコースを制圧するコーナーマクリ");
       }
       // マニアック2: 函館からの洋芝完全リンク
       if (prevRaceData && prevRaceData.venue?.includes('函館') && prevRaceData.result <= 3) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 札幌特注: 函館好走からの洋芝完全リンク(北海道滞在)");
       }
       // マニアック3: 滞在競馬の牝馬
       if (gender === '牝') {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🔥 札幌特注: 長距離輸送のストレスがない滞在競馬で躍動する牝馬");
       }
     }
@@ -994,17 +994,17 @@ export function calculateTsuchiyaScore(
     if (trackName.includes('小倉')) {
       // マニアック1: 小倉芝1200mの絶対的テンの速さ
       if (race.surface === '芝' && dist === 1200 && frame <= 3 && horse.style === '逃げ') {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("🔥 小倉芝1200特注: 超高速馬場を最短距離で逃げ切る内枠スプリンター");
       }
       // マニアック2: 夏の滞在牝馬
       if (gender === '牝') {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🔥 小倉特注: 小倉滞在競馬でストレスなく走れる牝馬");
       }
       // マニアック3: 急坂負けからの平坦スピード替わり
       if (prevRaceData && prevRaceData.venue?.match(/(中山|阪神)/) && prevRaceData.result >= 4) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("🔥 小倉特注: 急坂パワー負けからの平坦超高速馬場替わり");
       }
     }
@@ -1017,10 +1017,10 @@ export function calculateTsuchiyaScore(
       // 宝塚特注1: 梅雨の非根幹タフネス（ステイゴールド系・ロベルト系・欧州系 × 牝馬）
       const isToughSire = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'ナカヤマフェスタ', 'バゴ', 'ルーラーシップ', 'エピファネイア', 'スクリーンヒーロー', 'モーリス', 'ハービンジャー'].some(s => (horse.sire || '').includes(s));
       if (isToughSire) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 宝塚特注: 梅雨の荒れ馬場に強いタフネス血統");
         if (gender === '牝') {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("👑 宝塚特注: 荒れ馬場・非根幹距離で覚醒する牝馬 (+20)");
         }
       }
@@ -1031,13 +1031,13 @@ export function calculateTsuchiyaScore(
         pr.distance >= 2000 && pr.result <= 3 && (pr.raceClass?.match(/G[12]/i) || pr.raceName?.match(/G[12]/i))
       );
       if (hasGrandPrixExp) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 宝塚特注: 阪神・中山で証明済みの小回りグランプリ適性");
       }
 
       // 宝塚特注3: スタミナ証明（前走・天皇賞春組からの距離短縮）
       if (prevRaceData?.raceName?.includes('天皇賞') && prevRaceData?.distance >= 3000) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 宝塚特注: 天皇賞(春)経由の絶対的スタミナ証明(距離短縮)");
       }
 
@@ -1056,7 +1056,7 @@ export function calculateTsuchiyaScore(
     if (isHanshinStakes) {
       // 阪神重賞1: 川田将雅の庭（阪神重賞×川田×上位人気）
       if (jockey.includes('川田') && popularity <= 3) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 阪神特注: 阪神重賞における川田将雅の鉄板騎乗");
       }
 
@@ -1064,7 +1064,7 @@ export function calculateTsuchiyaScore(
       if (dist === 1600 || dist === 2400) {
         const isHanshinOuterSire = ['ディープインパクト', 'キズナ', 'エピファネイア', 'ロードカナロア', 'ドゥラメンテ'].some(s => (horse.sire || '').includes(s));
         if (isHanshinOuterSire && prevRaceData && parseFloat(prevRaceData.last3fTime || '99') <= 34.0) {
-          potential += 45;
+          // [減点方式] potential += 45;
           tags.push("👑 阪神特注: 外回りコース特有の究極の瞬発力と王道血統");
         }
       }
@@ -1072,7 +1072,7 @@ export function calculateTsuchiyaScore(
       // 阪神重賞3: 内回り（2000m・2200m）の先行力（大阪杯など）
       if (dist === 2000 || dist === 2200) {
         if ((horse.style === '逃げ' || horse.style === '先行') && frame <= 5) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("👑 阪神特注: ごまかしの利かない内回り重賞での内枠先行力");
         }
       }
@@ -1083,7 +1083,7 @@ export function calculateTsuchiyaScore(
         pr.result <= 3 && (pr.raceClass?.match(/G[1-3]/i) || pr.raceName?.match(/G[1-3I-III]/i))
       );
       if (hasHillExp) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 阪神特注: ゴール前の急坂を苦にしないパワーと実績");
       }
     }
@@ -1096,14 +1096,14 @@ export function calculateTsuchiyaScore(
     if (isNakayamaStakes) {
       // 中山重賞1: 究極の小回りアドバンテージ（内枠×逃げ先行）
       if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 中山特注: 短い直線と急坂を味方につける内枠先行絶対有利");
       }
 
       // 中山重賞2: ステイ・ロベルトの庭（急坂・小回り特化血統）
       const isNakayamaSire = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'スクリーンヒーロー', 'エピファネイア', 'モーリス', 'バゴ', 'ルーラーシップ'].some(s => (horse.sire || '').includes(s));
       if (isNakayamaSire) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 中山特注: 中山重賞で無類の強さを誇るパワー＆タフネス血統");
       }
 
@@ -1113,7 +1113,7 @@ export function calculateTsuchiyaScore(
         ['福島', '小倉', '函館', '札幌'].some(t => pr.venue.includes(t)) && pr.result <= 2
       );
       if (hasLocalExp && (horse.style === '先行' || horse.style === '差し')) {
-        potential += 30; 
+        // [減点方式] potential += 30;
         tags.push("👑 中山特注: 厳しい小回りコースで培われた圧倒的『機動力』");
       }
 
@@ -1134,13 +1134,13 @@ export function calculateTsuchiyaScore(
       // 函館重賞1: 100%洋芝適性（欧州・パワー型血統）
       const isYoshibaSire = ['ハービンジャー', 'バゴ', 'ルーラーシップ', 'キングカメハメハ', 'クロフネ', 'ヘニーヒューズ', 'ステイゴールド', 'フランケル', 'Frankel', 'ロベルト'].some(s => (horse.sire || '').includes(s));
       if (isYoshibaSire) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 函館特注: 重い洋芝をパワーでねじ伏せる欧州・タフネス血統");
       }
 
       // 函館重賞2: 日本一短い直線の絶対法則（逃げ・先行）
       if (horse.style === '逃げ' || horse.style === '先行') {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 函館特注: JRA最短の直線(262m)を活かす絶対的な前残り");
       }
 
@@ -1149,7 +1149,7 @@ export function calculateTsuchiyaScore(
         (pr.venue.includes('函館') || pr.venue.includes('札幌')) && pr.result <= 3
       );
       if (hasHokkaidoExp) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 函館特注: 特殊な100%洋芝環境（北海道）での実績証明");
       }
 
@@ -1170,23 +1170,23 @@ export function calculateTsuchiyaScore(
       // 小倉重賞1: 超高速野芝の絶対スピード（スプリント・スピード血統）
       const isKokuraSpeedSire = ['ロードカナロア', 'ビッグアーサー', 'ミッキーアイル', 'ダイワメジャー', 'キンシャサノキセキ', 'ディープインパクト', 'サクラバクシンオー', 'ファインニードル', 'マクフィ'].some(s => (horse.sire || '').includes(s));
       if (isKokuraSpeedSire) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 小倉特注: 超高速馬場に適合する絶対的なスピード血統");
       }
 
       // 小倉重賞2: 平坦・小回りの逃げ切り（テンの速さと内枠先行）
       if (frame <= 5 && (horse.style === '逃げ' || horse.style === '先行')) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 小倉特注: 小回り＆平坦コースでの止まらない逃げ・先行");
       }
 
       // 小倉重賞3: 軽量馬の平坦コース無双（軽斤量の恩恵）
       // 小倉記念や北九州記念などハンデ戦が多い。平坦なため軽い馬がスイスイ走る
       if (kinryo <= 53 && horse.gender === '牝') {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 小倉特注: 坂のない平坦コースで躍動する軽斤量の牝馬");
       } else if (kinryo <= 54) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("👑 小倉特注: 平坦コースの軽斤量アドバンテージ");
       }
 
@@ -1195,7 +1195,7 @@ export function calculateTsuchiyaScore(
         pr.venue.includes('小倉') && pr.result <= 3
       );
       if (hasKokuraExp) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 小倉特注: 独特の高速小回りコースに対する完全なコース適性");
       }
     }
@@ -1210,7 +1210,7 @@ export function calculateTsuchiyaScore(
       // ディープ系やハーツクライ系など、下り坂から惰性でキレる血統
       const isKyotoSire = ['ディープインパクト', 'キズナ', 'コントレイル', 'ハーツクライ', 'スワーヴリチャード', 'ダイワメジャー', 'エピファネイア', 'ジャスタウェイ'].some(s => (horse.sire || '').includes(s));
       if (isKyotoSire) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 京都特注: 淀の軽い芝に完璧に適合する究極のスピード・キレ血統");
       }
 
@@ -1219,13 +1219,13 @@ export function calculateTsuchiyaScore(
         pr.venue.includes('京都') && pr.result <= 3 && parseFloat(pr.last3fTime || '99') <= 34.5
       );
       if (hasKyotoAgility) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 京都特注: 3コーナーの「淀の坂」を器用に下るバランスとコース実績");
       }
 
       // 京都重賞3: 長距離G1の絶対セオリー（天皇賞春・菊花賞の内枠ロスなし）
       if (dist >= 3000 && frame <= 4) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("👑 京都特注: 3000m超えの長距離戦における『内枠』の絶対的スタミナ温存有利");
       }
 
@@ -1233,7 +1233,7 @@ export function calculateTsuchiyaScore(
       // 京都外回り（1600, 1800, 2200, 2400, 3000, 3200）は平坦な直線を長く使える
       const isOuterCourseDist = [1600, 1800, 2200, 2400, 3000, 3200].includes(dist);
       if (isOuterCourseDist && (horse.style === '差し' || horse.style === '追込') && isKyotoSire) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 京都特注: 平坦な長い直線で爆発する『外回り特化の末脚』");
       }
     }
@@ -1247,21 +1247,21 @@ export function calculateTsuchiyaScore(
       // 新潟重賞1: 千直の絶対法則（1000m直線の大外枠）
       // アイビスサマーダッシュなど、千直はラチ沿いを走れる大外枠が圧倒的有利
       if (dist === 1000 && frame >= 7) {
-        potential += 50;
+        // [減点方式] potential += 50;
         tags.push("👑 新潟特注: 千直(1000m)における大外枠(7〜8枠)の絶対的アドバンテージ");
       }
 
       // 新潟重賞2: 日本一長い直線の鬼脚（上がり33秒台前半の実績）
       // 外回り（1600m・2000m）は直線が659mあり、究極の瞬発力と持続力が問われる
       if ((dist === 1600 || dist === 2000) && prevRaceData && parseFloat(prevRaceData.last3fTime || '99') <= 33.5) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("👑 新潟特注: 日本一長い直線(659m)で爆発する究極の瞬発力(上がり33秒台前半)");
       }
 
       // 新潟重賞3: 平坦・長直線のスピード血統
       const isNiigataSire = ['ディープインパクト', 'キズナ', 'ハーツクライ', 'スワーヴリチャード', 'エピファネイア', 'ロードカナロア', 'リアルスティール', 'サトノダイヤモンド'].some(s => (horse.sire || '').includes(s));
       if (isNiigataSire && dist > 1000) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 新潟特注: 長い直線と平坦コースに完璧に適合するスピード血統");
       }
 
@@ -1270,7 +1270,7 @@ export function calculateTsuchiyaScore(
         pr.venue.includes('新潟') && pr.result <= 3
       );
       if (hasNiigataExp) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 新潟特注: 独特の左回り超ロング直線に対するコース適性の証明");
       }
     }
@@ -1284,17 +1284,17 @@ export function calculateTsuchiyaScore(
       // 札幌重賞1: 100%洋芝適性（欧州・タフネス血統）
       const isYoshibaSire = ['ハービンジャー', 'バゴ', 'ルーラーシップ', 'キングカメハメハ', 'クロフネ', 'スクリーンヒーロー', 'ステイゴールド', 'ゴールドシップ', 'オルフェーヴル'].some(s => (horse.sire || '').includes(s));
       if (isYoshibaSire) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 札幌特注: 力のいる洋芝をねじ伏せる欧州・タフネス血統");
       }
 
       // 札幌重賞2: 大回り・平坦コースの持続力（コーナーでの機動力）
       // 札幌は函館と違い、コーナーが大きくて緩やかなため、外から長く良い脚を使う「マクリ」や「差し」が決まりやすい
       if (horse.style === '差し' && isYoshibaSire) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 札幌特注: 大きなコーナーで失速しない洋芝適性馬の長く良い脚（マクリ・差し）");
       } else if (horse.style === '先行') {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("👑 札幌特注: 大回り平坦コースでしぶとく粘り込む先行力");
       }
 
@@ -1303,7 +1303,7 @@ export function calculateTsuchiyaScore(
         (pr.venue.includes('函館') || pr.venue.includes('札幌')) && pr.result <= 3
       );
       if (hasHokkaidoExp) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 札幌特注: 特殊な100%洋芝環境（北海道）に対する完全な適性証明");
       }
 
@@ -1312,7 +1312,7 @@ export function calculateTsuchiyaScore(
       const isSapporoKinen = race.raceName.includes('札幌記念');
       const hasG1Class = horse.pastRaces?.some(pr => (pr.raceClass?.match(/G[1I]/i) || pr.raceName?.match(/G[1I]/i)) && pr.result <= 5);
       if (isSapporoKinen && hasG1Class) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("👑 札幌特注: スーパーG2(札幌記念)における『G1級』の絶対的な地力の違い");
       }
     }
@@ -1326,14 +1326,14 @@ export function calculateTsuchiyaScore(
       // 中京重賞1: 魔の左回り・タフネス血統（坂と長い直線に耐えるパワー）
       const isChukyoSire = ['キングカメハメハ', 'ロードカナロア', 'エピファネイア', 'モーリス', 'ルーラーシップ', 'ハーツクライ', 'ドゥラメンテ'].some(s => (horse.sire || '').includes(s));
       if (isChukyoSire) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 中京特注: 長い直線と急坂を耐え抜くタフなパワー系血統");
       }
 
       // 中京重賞2: 中京の絶対セオリー（内枠・先行有利）
       // 直線は長いが、馬場が渋ったりコーナーの形状上、内枠の逃げ先行が非常に残る
       if (frame <= 4 && (horse.style === '逃げ' || horse.style === '先行')) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 中京特注: コース形状がもたらす『内枠×先行』の絶対的有利");
       }
 
@@ -1342,7 +1342,7 @@ export function calculateTsuchiyaScore(
         (pr.venue.includes('東京') || pr.venue.includes('中京') || pr.venue.includes('新潟')) && pr.result <= 3
       );
       if (hasLeftTurnExp) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 中京特注: ごまかしの利かない左回りコースの好走実績");
       }
     }
@@ -1356,21 +1356,21 @@ export function calculateTsuchiyaScore(
       // 福島重賞1: ローカル小回りの鬼（ステイゴールド・ロベルト系）
       const isFukushimaSire = ['ステイゴールド', 'オルフェーヴル', 'ゴールドシップ', 'スクリーンヒーロー', 'エピファネイア', 'ナカヤマフェスタ'].some(s => (horse.sire || '').includes(s));
       if (isFukushimaSire) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 福島特注: 荒れた小回りを捲り切るローカル特化のタフネス血統");
       }
 
       // 福島重賞2: 直線292mの機動力（マクリ・先行）
       // 直線が極端に短いため、4コーナーで前列にいないと物理的に届かない
       if (horse.style === '逃げ' || horse.style === '先行') {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 福島特注: 直線292mの絶望を回避する先行力");
       }
 
       // 福島重賞3: 荒れるハンデ戦のセオリー（軽斤量）
       // 七夕賞や福島記念など、斤量が軽い逃げ馬が波乱を起こす
       if (kinryo <= 54) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 福島特注: 波乱のハンデ戦における軽斤量アドバンテージ");
       }
 
@@ -1406,7 +1406,7 @@ export function calculateTsuchiyaScore(
   if (weight > 0) {
     const kinryoWeightRatio = (kinryo / weight) * 100;
     if (kinryoWeightRatio < 11.5) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("👑 物理黄金比:負担極小・圧倒的パワーアドバンテージ");
     } else if (kinryoWeightRatio >= 12.5) {
       potential -= 30;
@@ -1416,7 +1416,7 @@ export function calculateTsuchiyaScore(
 
   // 2. 馬格（馬体重ベース）の絶対評価
   if (weight >= 500) {
-    potential += 15;
+    // [減点方式] potential += 15;
     tags.push("💪 大型馬パワーボーナス(500kg以上)");
   } else if (weight > 0 && weight <= 440) {
     potential -= 15;
@@ -1427,7 +1427,7 @@ export function calculateTsuchiyaScore(
   const cleanJockey = jockey.replace(/[▲△☆◇]/g, '').trim();
   const isEliteJockey = ELITE_JOCKEYS.some(ej => cleanJockey.includes(ej));
   if (isEliteJockey) {
-    potential += 40;
+    // [減点方式] potential += 40;
     tags.push("👑 トップジョッキー絶対値ブースト(最重要人間ファクター)");
   }
 
@@ -1446,7 +1446,7 @@ export function calculateTsuchiyaScore(
       const longTermDiff = weight - avgRecentWeight;
 
       if (age <= 4 && longTermDiff >= 10 && longTermDiff <= 25) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push(`💪 成長期・本格化(長期馬体増 +${Math.round(longTermDiff)}kg)`);
       } else if (longTermDiff <= -15) {
         potential -= 25;
@@ -1473,26 +1473,26 @@ export function calculateTsuchiyaScore(
       const overall = timeNumbers[0];
       const last1f = timeNumbers[timeNumbers.length - 1];
       if (overall <= 50.5 && last1f <= 11.8) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 坂路超抜時計(極上の仕上がり)");
       } else if (overall <= 52.5 && last1f <= 12.2) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("⚡ 坂路好時計(スピード十分)");
       } else if (overall <= 54.0 && last1f <= 12.5) {
-        potential += 10;
+        // [減点方式] potential += 10;
         tags.push("📈 坂路順調(及第点の動き)");
       }
     } else if (isWood && timeNumbers.length >= 2) {
       const overall = timeNumbers[0];
       const last1f = timeNumbers[timeNumbers.length - 1];
       if (overall <= 64.5 && last1f <= 11.0) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 ウッド超抜時計(極限のキレ)");
       } else if (overall <= 66.5 && last1f <= 11.5) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("⚡ ウッド好調教(推進力十分)");
       } else if (overall <= 69.0 && last1f <= 12.0) {
-        potential += 10;
+        // [減点方式] potential += 10;
         tags.push("📈 ウッド順調(推進力十分)");
       }
     }
@@ -1502,13 +1502,13 @@ export function calculateTsuchiyaScore(
   if (horse.trainingRating) {
     const rating = horse.trainingRating.toUpperCase();
     if (rating === "S") {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🌟 調教S評価(超絶状態)");
     } else if (rating === "A") {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("⭐ 調教A評価(好仕上がり)");
     } else if (rating === "B+") {
-      potential += 10;
+      // [減点方式] potential += 10;
       tags.push("👍 調教B+評価(状態良好)");
     }
   }
@@ -1522,10 +1522,10 @@ export function calculateTsuchiyaScore(
 
     if (breederName.includes("ノーザンファーム")) {
       if (isGradeOrSpecial) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 ノーザンファーム生産(大舞台エリート)");
       } else {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("👑 ノーザンファーム生産(育成力抜群)");
       }
     } else if (
@@ -1534,10 +1534,10 @@ export function calculateTsuchiyaScore(
       breederName.includes("追分ファーム")
     ) {
       if (isGradeOrSpecial) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🏰 社台グループ生産(高水準ブランド)");
       } else {
-        potential += 8;
+        // [減点方式] potential += 8;
         tags.push("🏰 社台グループ生産(好気配)");
       }
     } else if (
@@ -1550,7 +1550,7 @@ export function calculateTsuchiyaScore(
       breederName.includes("千代田牧場") ||
       breederName.includes("ケイアイファーム")
     ) {
-      potential += 8;
+      // [減点方式] potential += 8;
       tags.push(`🐎 有名実力牧場生産(${breederName.replace(/牧場|ファーム/g, '')})`);
     }
   }
@@ -1565,14 +1565,14 @@ export function calculateTsuchiyaScore(
 
   if (cleanCurrentJockey && cleanPrevJockey) {
     if (cleanCurrentJockey === cleanPrevJockey) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("🤝 継続騎乗(人馬一体の絆)");
     } else {
       const isCurrentElite = ELITE_JOCKEYS.some(ej => cleanCurrentJockey.includes(ej));
       const isPrevElite = ELITE_JOCKEYS.some(ej => cleanPrevJockey.includes(ej));
 
       if (isCurrentElite && !isPrevElite) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("⚡ 鞍上強化：リーディングへの勝負乗り替え");
       } else if (!isCurrentElite && isPrevElite) {
         potential -= 10;
@@ -1592,7 +1592,7 @@ export function calculateTsuchiyaScore(
 
   if (temporaryFence === 'C' || temporaryFence === 'D') {
     if (frame <= 3 && (horse.style === '逃げ' || horse.style === '先行' || horse.style === '好位')) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🧬 仮柵移動バイアス適合(内有利)");
     }
   }
@@ -1602,14 +1602,14 @@ export function calculateTsuchiyaScore(
       const softBlood = ['キズナ', 'エピファネイア', 'ハービンジャー', 'オルフェーヴル', 'ゴールドシップ', 'モーリス'];
       const hasSoftBlood = softBlood.some(sb => bloodline.includes(sb));
       if (hasSoftBlood) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push(`☔ クッション値低馬場適合(${bloodline.split(' / ')[0]})`);
       }
     }
   } else if (race.surface === 'ダート') {
     if (moisture !== undefined && moisture >= 12.0) {
       if (horse.style === '逃げ' || horse.style === '先行') {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("☔ 高含水率ダート: 前残りスピードバイアス適合");
       }
     }
@@ -1624,7 +1624,7 @@ export function calculateTsuchiyaScore(
     
     if (wasOuterRun && isCloseMatch) {
       if (frame <= 4) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("📐 前走外回しロス克服(好枠替わり)");
       }
     }
@@ -1634,7 +1634,7 @@ export function calculateTsuchiyaScore(
     const isReasonableDiff = prevRace.timeDiff !== undefined && prevRace.timeDiff <= 0.6;
 
     if (didStumble && isFastest3f && isReasonableDiff) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🚀 前走出遅れ度外視(末脚極上)");
     }
   }
@@ -1653,10 +1653,10 @@ export function calculateTsuchiyaScore(
         const isSlowPace = front3f > back3f + 1.0;
 
         if (isHighPace && (horse.style === '逃げ' || horse.style === '先行')) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("⏱️ 緩ペース替わりで持続力発揮");
         } else if (isSlowPace && dist < prevRace.distance) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("⏱️ 持続力勝負への条件好転");
         }
       }
@@ -1684,22 +1684,22 @@ export function calculateTsuchiyaScore(
 
       if (trainerName.includes("中内田")) {
         if (isSlope && last1f <= 11.8) {
-          potential += 30;
+          // [減点方式] potential += 30;
           tags.push("🎯 中内田×勝負坂路仕上げ");
         }
       } else if (trainerName.includes("矢作")) {
         if (isWood && overall <= 64.5 && last1f <= 11.2) {
-          potential += 30;
+          // [減点方式] potential += 30;
           tags.push("🎯 矢作×極限ウッド仕上げ");
         }
       } else if (trainerName.includes("友道")) {
         if (isWood && overall <= 65.5 && last1f <= 11.5) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("🎯 友道×本気ウッド仕上げ");
         }
       } else if (trainerName.includes("木村") || trainerName.includes("国枝")) {
         if (isWood && overall <= 65.0 && last1f <= 11.3) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("🎯 関東エリート×本気ウッド仕上げ");
         }
       }
@@ -1717,14 +1717,14 @@ export function calculateTsuchiyaScore(
       const dirtSires = ['ヘニーヒューズ', 'シニスターミニスター', 'ホッコータルマエ', 'パイロ', 'ドレフォン', 'マジェスティックウォリアー', 'キズナ', 'ルーラーシップ', 'ロードカナロア'];
       const isDirtSire = dirtSires.some(ds => bloodline.includes(ds));
       if (isDirtSire) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🌀 砂替わり変心警戒(ダート強力血統)");
       }
     } else if (race.surface === '芝' && hasOnlyRunDirt) {
       const grassSires = ['ディープインパクト', 'ハーツクライ', 'ロードカナロア', 'エピファネイア', 'モーリス', 'キタサンブラック', 'ドゥラメンテ', 'ハービンジャー'];
       const isGrassSire = grassSires.some(gs => bloodline.includes(gs));
       if (isGrassSire) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🌱 芝替わり変心警戒(芝エリート血統)");
       }
     }
@@ -1739,7 +1739,7 @@ export function calculateTsuchiyaScore(
 
     // 1. 枠順バイアス（イン荒れ・外枠外伸び）
     if (frame >= 7) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("📈 高知外枠アドバンテージ(砂厚・イン避け)");
     } else if (frame <= 2) {
       potential -= 25;
@@ -1751,7 +1751,7 @@ export function calculateTsuchiyaScore(
     if (isFinalRace) {
       tags.push("🔥 一発逆転ファイナルレース・波乱モード");
       if (popularity >= 6 || odds >= 15.0) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("⚡ ファイナル激走穴馬エッジ");
       } else if (popularity === 1) {
         potential -= 20; // 最終レースの1番人気信頼度低下
@@ -1762,7 +1762,7 @@ export function calculateTsuchiyaScore(
     // 3. 高知リーディングジョッキーバイアス（赤岡、宮川、多田羅）
     const isKochiEliteJ = ["赤岡", "宮川", "多田羅"].some(j => jockey.includes(j));
     if (isKochiEliteJ) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("👑 高知トップジョッキー補正");
     }
   }
@@ -1776,7 +1776,7 @@ export function calculateTsuchiyaScore(
 
     // 1. 大型パワー馬加点（タフなオーストラリア産白砂対応）
     if (weight >= 500) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("💪 大井白砂パワー適合(500kg以上)");
     }
 
@@ -1787,18 +1787,18 @@ export function calculateTsuchiyaScore(
     
     if (isDry) {
       if (sireUpper.includes("イスラボニータ") || sireUpper.includes("スクリーンヒーロー")) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🧬 大井良馬場特注：乾燥白砂の表面滑走(芝適性血統)");
       }
     } else if (isWet) {
       if (sireUpper.includes("ゴールドアリュール") || sireUpper.includes("ドレフォン") || sireUpper.includes("クロフネ")) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🌧️ 大井道悪特注：締まった砂を切り裂くパワー駆動血統");
       }
     }
     // 環境不問の万能血統
     if (sireUpper.includes("ダノンレジェンド") || sireUpper.includes("ヘニーヒューズ")) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("🧬 大井万能血統：環境不問のスピード＆パワー");
     }
 
@@ -1809,19 +1809,19 @@ export function calculateTsuchiyaScore(
 
     if (dist >= 1600) {
       if (horse.style === "差し" || horse.style === "追込" || horse.style === "マクリ") {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🏹 外回り長距離・末脚特注");
         if (isWinter) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("🌪️ 大井冬期特注：北風(向かい風)による先行崩れと外差しエッジ");
         }
       }
     } else {
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🏃 短距離・前残り優位");
         if (isSummer) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("🌊 大井夏期特注：南風(追い風)による逃げ・先行アシスト");
         }
       }
@@ -1839,7 +1839,7 @@ export function calculateTsuchiyaScore(
     // 1. 【1着固定の絶対軸】上位騎手 × 1〜2番人気 × 前走3着以内
     const isTopJockey = ["矢野", "藤田", "笹川", "吉井", "戸崎"].some(j => jockey.includes(j));
     if (isTopJockey && popularity <= 2 && prevResult <= 3) {
-      potential += 50;
+      // [減点方式] potential += 50;
       tags.push("👑 大井鉄板軸: 上位騎手×1〜2番人気×前走好走(1着固定)");
     }
 
@@ -1848,11 +1848,11 @@ export function calculateTsuchiyaScore(
     if (isPrevFront) {
       // 1200m: 内〜中枠(1〜6枠)
       if (dist === 1200 && frame <= 6) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🎯 大井好走バイアス: 1200m×内中枠×前走先行力");
       // 1600m〜2000m: 中〜外枠(5〜8枠)
       } else if (dist >= 1600 && frame >= 5) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🎯 大井好走バイアス: 1600m以上×外枠×前走先行力");
       }
     }
@@ -1860,7 +1860,7 @@ export function calculateTsuchiyaScore(
     // 3. 【ヒモ穴の使者（3着候補）】実力派騎手 × 6番人気以下 × 前走大敗（6着以下）
     const isBombJockey = ["吉井", "和田", "菅原", "高橋"].some(j => jockey.includes(j));
     if (isBombJockey && popularity >= 6 && prevResult >= 6 && prevResult !== 99) {
-      potential += 45;
+      // [減点方式] potential += 45;
       tags.push("💣 大井ヒモ穴爆弾: 実力派騎手×前走大敗馬の一変");
     }
 
@@ -1872,7 +1872,7 @@ export function calculateTsuchiyaScore(
     // 1. 重馬場の絶対的前残り（逃げ・先行）
     if (isHeavyOrYielding) {
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 大井重馬場TB: 圧倒的前残り(逃げ・先行絶対有利)");
       }
     }
@@ -1881,28 +1881,28 @@ export function calculateTsuchiyaScore(
     if (dist === 1200) {
       // 1200m: 内〜中枠(1〜4枠) × 逃げ・先行
       if (frame <= 4 && (horse.style === "逃げ" || horse.style === "先行")) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 大井1200m特注: 内〜中枠のロスなし先行抜け出し");
       }
     } else if (dist === 1400) {
       // 1400m: 内枠(1〜3枠)先行 or 中枠(4〜6枠)差し・好位
       if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🔥 大井1400m特注: 内枠の先行好位抜け出し");
       } else if (frame >= 4 && frame <= 6 && (horse.style === "差し" || horse.style === "先行")) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🔥 大井1400m特注: 中枠からの差し・好位撃ち");
       }
     } else if (dist === 1600) {
       // 1600m(内回り): 中〜外枠(4〜8枠) × 逃げ・先行
       if (frame >= 4 && (horse.style === "逃げ" || horse.style === "先行")) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 大井1600m特注: 中〜外枠から揉まれず先行押し切り");
       }
     } else if (dist >= 2000) {
       // 2000m: 外枠(6〜8枠) × 逃げ・先行・マクリ
       if (frame >= 6 && (horse.style === "逃げ" || horse.style === "先行" || horse.style === "マクリ")) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🔥 大井2000m特注: 外枠からの先行・マクリ(前残り馬場)");
       }
     }
@@ -1913,10 +1913,10 @@ export function calculateTsuchiyaScore(
     if (age <= 3) {
       // 3歳馬はプラス体重を狙う（成長分として好走に直結）
       if (weightChange >= 10) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("📈 大井仕上がり特注: 3歳馬大幅プラス体重(成長・筋力アップ)");
       } else if (weightChange > 0) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📈 大井仕上がり特注: 3歳馬プラス体重(順調な成長)");
       } else if (weightChange < 0) {
         potential -= 10;
@@ -1925,10 +1925,10 @@ export function calculateTsuchiyaScore(
     } else if (age >= 4) {
       // 古馬は絞れている馬（マイナス〜0kg）を狙う（究極仕上げ）
       if (weightChange >= -5 && weightChange <= 0) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 大井仕上がり特注: 古馬マイナス体重(究極仕上げ)");
       } else if (weightChange > 0 && weightChange <= 5) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📈 大井仕上がり特注: 古馬微増(許容範囲内の維持)");
       } else if (weightChange >= 10) {
         potential -= 30;
@@ -1967,7 +1967,7 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces && horse.pastRaces.length > 0) {
       const cameFromBigTrack = horse.pastRaces.some(pr => pr.venue?.match(/(大井|船橋)/));
       if (cameFromBigTrack) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("👑 南関ヒエラルキー: 大井・船橋からの格上参戦エッジ");
       }
     }
@@ -1975,7 +1975,7 @@ export function calculateTsuchiyaScore(
     // 3. 浦和の特殊巧者・地元エリート騎手
     const urawaEliteJ = ["森泰", "笹川", "繁田", "保園", "秋元", "福原"].some(j => jockey.includes(j));
     if (urawaEliteJ) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("👑 浦和マイスター・トップジョッキー補正");
     }
   }
@@ -1989,7 +1989,7 @@ export function calculateTsuchiyaScore(
 
     // 1. 大型馬絶対優位（ソリを引く圧倒的パワー）
     if (weight >= 900) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("💪 ばんえい規格外パワー馬(900kg以上)");
     } else if (weight < 850) {
       potential -= 20;
@@ -1999,7 +1999,7 @@ export function calculateTsuchiyaScore(
     // 2. ばんえいリーディング騎手（西将太、鈴木恵、阿部など）
     const isBaneiEliteJ = ["西将", "鈴木恵", "阿部"].some(j => jockey.includes(j));
     if (isBaneiEliteJ) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("👑 ばんえいエリートジョッキー補正");
     }
   }
@@ -2024,7 +2024,7 @@ export function calculateTsuchiyaScore(
           pr.result <= 3
         );
         if (hasChokuGood) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("👑 千直マイスター: 新潟直線1000mでの好走実績あり(適性抜群)");
         }
 
@@ -2037,7 +2037,7 @@ export function calculateTsuchiyaScore(
         });
 
         if (hasFastDash) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("⚡ 千直ダッシュ力: 過去走でテン3番手以内の先行力あり(スピード優位)");
         }
       } 
@@ -2048,7 +2048,7 @@ export function calculateTsuchiyaScore(
           pr.result <= 3
         ).length;
         if (niigataTop3Count > 0) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push(`🐎 新潟リピーターエッジ: 過去に新潟での好走実績あり(${niigataTop3Count}回)`);
         }
       }
@@ -2086,7 +2086,7 @@ export function calculateTsuchiyaScore(
       });
 
       if (hasFastTimeRecord) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("⚡ 高速時計エッジ: 新潟高速芝に適した持ち時計実績あり(スピード証明)");
       }
     }
@@ -2107,10 +2107,10 @@ export function calculateTsuchiyaScore(
       const isMixed = !race.raceName?.includes("牝");
       if (isMixed && gender === "牝") {
         if (dist <= 1400) {
-          potential += 12; // 二重加算を廃止し、短距離混合戦では+12の適正値に統合
+          /* [減点方式] potential += 12; */ // 二重加算を廃止し、短距離混合戦では+12の適正値に統合
           tags.push("🎯 短距離混合戦 of 牝馬エッジ");
         } else {
-          potential += 8;
+          // [減点方式] potential += 8;
           tags.push("🎯 混合戦 of 牝馬(期待値エッジ)");
         }
       }
@@ -2118,25 +2118,25 @@ export function calculateTsuchiyaScore(
     
     // 重賞における高齢馬（7歳以上）の復活期待値加点（的中率重視で抑制）
     if (isGradeOrSpecial && age >= 7) {
-      potential += 8;
+      // [減点方式] potential += 8;
       tags.push("🔥 高齢実績馬の補正");
     }
 
     // 新潟直線1000m（千直）における圧倒的有利な「外枠（6枠〜8枠）」の物理エッジと激走条件
     if (dist === 1000 && isTurf) {
       if (frame >= 6) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("⚡ 千直外枠の圧倒的物理アドバンテージ");
         
         // 【激走】「前走ダート」×「7・8枠」の芝スタートスピード恩恵
         if (prevRace && prevRace.surface === "ダート" && frame >= 7) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("⚡ 千直適性：前走ダートダッシュ力×外枠黄金シナジー");
         }
       } else if (frame <= 2) {
         // 【激走】「1〜2枠」×「追込馬」: 意図的に下げてから外へ出す戦術トレンド
         if (horse.style === "追込") {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("🎯 千直内枠追込：大外ラチ沿いトラバース急襲エッジ");
         } else {
           potential -= 20;
@@ -2148,10 +2148,10 @@ export function calculateTsuchiyaScore(
       if (prevRace && prevRace.distance >= 1500) {
         const prevJockeyWeight = prevRace.jockeyWeight || 55;
         if (prevJockeyWeight - kinryo >= 1) {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("⚡ 新潟千直：大幅距離短縮ローテ×斤量減エッジ");
         } else if (kinryo < prevJockeyWeight) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("⚡ 千直激変：大幅距離短縮ローテ×斤量減エッジ");
         }
       }
@@ -2176,7 +2176,7 @@ export function calculateTsuchiyaScore(
     // ① 新潟芝・内回り（直線353m）の小回り先行バイアス
     if (isNiigataInnerTurf) {
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("📐 新潟内回りエッジ: 小回り先行の展開アドバンテージ");
       }
     }
@@ -2185,20 +2185,20 @@ export function calculateTsuchiyaScore(
     if (isNiigataOuterTurf) {
       // 芝外回り直線658.7mにおける「差し・追込・中団」の極限瞬発力ブースト
       if (horse.style === "差し" || horse.style === "追込" || horse.style === "中団") {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🚀 新潟外回りエッジ: 直線658mの極限瞬発力ブースト");
       }
 
       // 開催最終週（重賞）における内枠イン突き逆張りエッジ
       const isFinalWeekStakes = race.raceName?.match(/(新潟記念|新潟２歳|新潟2歳)/) !== null;
       if (isFinalWeekStakes && frame <= 3) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("📐 新潟最終週外回り：全車外出しの逆張りイン突きエッジ");
       }
 
       // 芝外回りにおける「人気薄の逃げ馬」の過小評価補正
       if (horse.style === "逃げ" && (popularity >= 6 || odds >= 12.0)) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🏃 新潟芝外回り：人気薄逃げ馬スロー逃げ残りエッジ");
       }
     }
@@ -2210,13 +2210,13 @@ export function calculateTsuchiyaScore(
         if (race.raceNumber <= 6) {
           // 前半レース：内枠有利
           if (frame <= 3) {
-            potential += 15;
+            // [減点方式] potential += 15;
             tags.push("📐 前半芝レースの内枠優位");
           }
         } else {
           // 後半レース：外枠有利
           if (frame >= 6) {
-            potential += 25;
+            // [減点方式] potential += 25;
             tags.push("📈 後半荒れ馬場の外枠バイアス");
           }
         }
@@ -2225,7 +2225,7 @@ export function calculateTsuchiyaScore(
       if (dist === 1200) {
         // 新潟ダート1200m：芝スタートにより長く芝を走れる外枠が圧倒的有利
         if (frame >= 6) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("⚡ 新潟ダ1200m：芝スタート外枠ダッシュエッジ");
         } else if (frame <= 2) {
           potential -= 15;
@@ -2235,10 +2235,10 @@ export function calculateTsuchiyaScore(
         // 【激走】新潟ダ1200m「牝馬の逃げ」（超平坦直線恩恵）
         if (gender === "牝" && horse.style === "逃げ") {
           if (frame >= 6) {
-            potential += 40;
+            // [減点方式] potential += 40;
             tags.push("⚡ 新潟ダ1200m：芝スタート外枠×快速牝馬逃げの最強スピードシナジー");
           } else {
-            potential += 25;
+            // [減点方式] potential += 25;
             tags.push("⚡ 新潟ダ1200m牝馬逃げ：超平坦路盤スピード持続エッジ");
           }
         }
@@ -2251,10 +2251,10 @@ export function calculateTsuchiyaScore(
         if (isSummer && condition === "良") {
           // 夏の良馬場：さらさら砂で高いスタミナ・キックバック回避が求められる
           if (prevRace && prevRace.distance < 1800 && frame >= 6) {
-            potential += 30;
+            // [減点方式] potential += 30;
             tags.push("🌾 新潟ダ1800m夏良馬場：スタミナ要求さらさら砂×距離延長・外枠エッジ");
           } else if (frame >= 6) {
-            potential += 15;
+            // [減点方式] potential += 15;
             tags.push("📈 ダート戦：砂被り回避の外枠優位");
           } else if (frame <= 2) {
             potential -= 10;
@@ -2263,11 +2263,11 @@ export function calculateTsuchiyaScore(
         } else if (condition !== "良" || raceMonth === 10 || raceMonth === 11) {
           // 雨での含水率上昇時、または秋開催の砂細粒化（粘性泥濘馬場）：スピード減少のためパワー先行優位
           if (horse.style === "逃げ" || horse.style === "先行") {
-            potential += 30;
+            // [減点方式] potential += 30;
             tags.push("🌾 新潟ダ1800m粘性泥濘馬場：パワー型前残り先行エッジ");
           }
           if (frame >= 6) {
-            potential += 15;
+            // [減点方式] potential += 15;
             tags.push("📈 ダート戦：砂被り回避の外枠優位");
           } else if (frame <= 2) {
             potential -= 10;
@@ -2276,7 +2276,7 @@ export function calculateTsuchiyaScore(
         } else {
           // 一般ダート：外枠のキックバック回避優位
           if (frame >= 6) {
-            potential += 15;
+            // [減点方式] potential += 15;
             tags.push("📈 ダート戦：砂被り回避の外枠優位");
           } else if (frame <= 2) {
             potential -= 10;
@@ -2286,13 +2286,13 @@ export function calculateTsuchiyaScore(
 
         // 【激走】新潟ダ1800m「距離延長×外枠」（ストレスフリー追走）
         if (prevRace && prevRace.distance < 1800 && frame >= 6 && !(isSummer && condition === "良")) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("📈 新潟ダ1800m：砂被り回避外枠×距離延長エッジ");
         }
       } else {
         // その他のダート
         if (frame >= 6) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("📈 ダート戦：砂被り回避の外枠優位");
         } else if (frame <= 2) {
           potential -= 10;
@@ -2306,7 +2306,7 @@ export function calculateTsuchiyaScore(
       if (race.raceNumber <= 5) {
         // 前半レース（1R〜5R）: 先行馬（前残り）絶対有利加点
         if (horse.style === "逃げ" || horse.style === "先行") {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("🏃 前半戦 of 先行・前残りアドバンテージ");
         }
       } else {
@@ -2314,16 +2314,16 @@ export function calculateTsuchiyaScore(
         if (isStrongHeadwind) {
           // 直線向かい風強風：差し馬は風の壁で届かず、スリップストリームを利用できる先行・好位馬が有利
           if (horse.style === "先行" || horse.style === "好位") {
-            potential += 30;
+            // [減点方式] potential += 30;
             tags.push("🌬️ 強風向かい風直線：風よけ先行・好位エッジ");
           } else if (horse.style === "差し" || horse.style === "追込") {
-            potential += 10; // 大幅に加点を減退
+            /* [減点方式] potential += 10; */ // 大幅に加点を減退
             tags.push("⚠️ 強風向かい風直線：差し馬風の壁リスク割引");
           }
         } else {
           // 通常時または追い風：長い直線を活かしたキレ味優遇
           if (horse.style === "差し" || horse.style === "追込") {
-            potential += 30;
+            // [減点方式] potential += 30;
             tags.push("🏹 後半戦 of 外差し・末脚特注");
           }
         }
@@ -2333,16 +2333,16 @@ export function calculateTsuchiyaScore(
       if (condition === "稍重" || condition === "重") {
         // 湿潤時（脚抜きの良い高速馬場）：スピードを活かした差し馬の成績向上
         if (horse.style === "逃げ" || horse.style === "先行") {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("🏃 新潟ダート：前残り先行アドバンテージ");
         } else if (horse.style === "差し" || horse.style === "追込") {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("⚡ 湿潤新潟ダート：脚抜き良高速適性(差し追込バフ)");
         }
       } else {
         // 乾燥時（良）または泥濘時（不良）：粘り気や摩擦が激しく「パワー型前残り」が極端化
         if (horse.style === "逃げ" || horse.style === "先行") {
-          potential += 35;
+          // [減点方式] potential += 35;
           tags.push("💪 新潟ダート粘性馬場：パワー型前残り先行エッジ強化");
         } else if (horse.style === "差し" || horse.style === "追込") {
           potential -= 10;
@@ -2354,16 +2354,16 @@ export function calculateTsuchiyaScore(
     // 4. 馬体重変動の「トレンド」読み取り（勝ち切り安定と紐穴の分離による的中率強化）
     const absWeightChange = Math.abs(weightChange);
     if (weightChange >= 0 && weightChange <= 6) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🏆 新潟勝ち切り条件：馬体重安定ゾーン（±0〜+6kg）");
     } else if (absWeightChange <= 8) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("📈 新潟馬体重安定トレンド（±8kg以内）");
     } else if (absWeightChange >= 10) {
-      potential += 10; // 大幅増減は1着率低下のため小加点に抑制（紐穴）
+      /* [減点方式] potential += 10; */ // 大幅増減は1着率低下のため小加点に抑制（紐穴）
       tags.push("⚠️ 大幅馬体重増減（2・3着激走の紐穴期待値）");
       if (popularity >= 6 || odds >= 12.0) {
-        potential += 10;
+        // [減点方式] potential += 10;
         tags.push("⚡ 大幅増減・妙味穴馬補正");
       }
     }
@@ -2371,7 +2371,7 @@ export function calculateTsuchiyaScore(
     // 5. 人間系シナジー・陣営パラメータ（特注騎手と勝負所の陣営評価）
     // 減量特注騎手「舟山瑠泉」騎手への適正な斤量恩恵補正
     if (jockey.includes("舟山") || jockey.includes("瑠泉")) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("🌟 新潟減量ジョッキー:舟山瑠泉");
     }
 
@@ -2380,14 +2380,14 @@ export function calculateTsuchiyaScore(
       // 栗東（関西馬）所属
       const isRitto = horse.stableLocation?.includes("栗東") || horse.trainer?.includes("栗東") || horse.trainer?.includes("美浦") === false;
       if (isRitto) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("✈️ メイン戦遠征関西馬(栗東)エッジ");
       }
       // エリート騎手
       const eliteJockeys = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ"];
       const isElite = eliteJockeys.some(ej => jockey.includes(ej));
       if (isElite) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 メイン戦トップジョッキーバイアス");
       }
     }
@@ -2406,7 +2406,7 @@ export function calculateTsuchiyaScore(
 
     // 1. 直線JRA最短(262m)の絶対的脚質バイアス
     if (horse.style === "逃げ" || horse.style === "先行") {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🏃 函館最短直線の鉄則：前が絶対に止まらない逃げ・先行アドバンテージ");
     } else if (horse.style === "追込") {
       potential -= 30;
@@ -2417,13 +2417,13 @@ export function calculateTsuchiyaScore(
     if (isTurf && dist === 1200) {
       const isDistanceShortened = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance >= 1400;
       if (isDistanceShortened) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🚀 函館芝1200m黄金ローテ：距離短縮によるスタミナ優位の激走");
       }
       
       // 武豊騎手の芝1200mイン突き職人技
       if (jockey.includes("武豊") && frame <= 4) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 武豊×函館芝1200m内枠：遠心力に逆らう天才的なイン突き");
       }
     }
@@ -2431,7 +2431,7 @@ export function calculateTsuchiyaScore(
     // 3. 芝2000m（コーナー6回）の「小型馬」機動力エッジ
     if (isTurf && dist === 2000) {
       if (weight > 0 && weight <= 450) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🏎️ 函館芝2000m：コーナー6回をロスなく回る小型馬の機動力エッジ");
       }
     }
@@ -2440,7 +2440,7 @@ export function calculateTsuchiyaScore(
     if (isDirt && dist === 2400) {
       const isDistanceExtended = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance <= 1800;
       if (isDistanceExtended || frame >= 7) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("📈 函館ダ2400m穴条件：大幅距離延長または砂を被らない外枠の激走");
       }
     }
@@ -2449,14 +2449,14 @@ export function calculateTsuchiyaScore(
     if (isTurf) {
       const sireUpper = horse.sire?.toUpperCase() || "";
       if (sireUpper.includes("キズナ") || sireUpper.includes("モーリス") || sireUpper.includes("ミッキーアイル")) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🧬 函館洋芝特注血統：100%洋芝で覚醒するパワー・スタミナ血統");
       }
     }
 
     // 6. 函館マイスタージョッキー
     if (jockey.includes("横山武史") || jockey.includes("佐々木大輔") || jockey.includes("丹内祐次")) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("🌟 函館マイスター騎手：コース熟知と積極策エッジ");
     }
   }
@@ -2478,13 +2478,13 @@ export function calculateTsuchiyaScore(
     // 1. ダート1400mの「芝スタート×外枠」特注
     if (isDirt && dist === 1400) {
       if (frame >= 7) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("⚡ 阪神ダ1400m黄金条件：芝スタート外枠の圧倒的エッジ");
       }
       
       // 距離短縮ローテの優遇（追走が楽になり急坂で粘る）
       if (horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance >= 1800) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📈 阪神ダ1400m：中距離からの距離短縮によるスタミナ優位性");
       }
     }
@@ -2496,10 +2496,10 @@ export function calculateTsuchiyaScore(
       if (isFlatTrack && prevRace.result >= 6) {
         // 特にダート2000mなどのスタミナ戦での逆襲
         if (isDirt && dist === 2000) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("🚀 阪神ダ2000m特注：平坦大敗からの急坂スタミナ勝負一変");
         } else {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("🚀 阪神替わり一変：平坦スピード負けからの急坂パワー逆襲期待");
         }
       }
@@ -2509,13 +2509,13 @@ export function calculateTsuchiyaScore(
     if (race.raceNumber <= 5 || (!isGradeOrSpecial && race.raceNumber <= 8)) {
       // 下級条件：前残り（逃げ・先行）有利
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🏃 下級条件の鉄則：急坂でも止まらない先行前残りアドバンテージ");
       }
     } else {
       // 上級条件（OP・重賞）：差し・マクリ有利
       if (horse.style === "差し" || horse.style === "追込" || horse.style === "マクリ") {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🏹 上級条件の鉄則：過酷な消耗戦を斬り裂く底力の差し・マクリ");
       }
     }
@@ -2523,15 +2523,15 @@ export function calculateTsuchiyaScore(
     // 4. 川田将雅・田口貫太騎手の特注バイアス
     if (jockey.includes("川田")) {
       if (isDirt && (horse.style === "逃げ" || horse.style === "先行")) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 川田将雅×阪神ダート先行：最強の鉄板バイアス");
       } else {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("👑 川田将雅×阪神：絶対的コース相性");
       }
     }
     if (jockey.includes("田口") && isDirt && dist === 1400) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🌟 田口貫太×阪神ダ1400m：減量特典を活かした穴の使者エッジ");
     }
 
@@ -2539,20 +2539,20 @@ export function calculateTsuchiyaScore(
     const sireUpper = horse.sire?.toUpperCase() || "";
     if (isDirt) {
       if (sireUpper.includes("ヘニーヒューズ") && dist === 1400) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🧬 阪神ダ1400m特注血統：ヘニーヒューズ産駒の極限適性");
       }
       if ((sireUpper.includes("シニスターミニスター") || sireUpper.includes("ドレフォン")) && frame >= 6) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🧬 阪神ダ外枠特注血統：パワーとスピードの融合(シニミニ/ドレフォン)");
       }
       if (sireUpper.includes("キングカメハメハ") || sireUpper.includes("ルーラーシップ")) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🧬 阪神急坂特注血統：急坂を苦にしないキンカメ系パワー");
       }
     } else if (isInnerTrack) {
       if (sireUpper.includes("ロードカナロア") || sireUpper.includes("エピファネイア") || sireUpper.includes("キズナ")) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🧬 阪神内回り特注血統：機動力とパワーを兼ね備えた持続力");
       }
     }
@@ -2575,41 +2575,41 @@ export function calculateTsuchiyaScore(
     // 1. 人間系シナジーと特定の乗り替わり・騎乗適正
     // ② 岩田康誠騎手の「イン突き」エッジ (特別・重賞×1〜4枠)
     if (jockey.includes("岩田康") && frame <= 4 && isGradeOrSpecial) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("👑 岩田康×京都イン突きエッジ");
     } else if (jockey.includes("岩田康") && frame <= 4) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("👑 岩田康誠×京都内枠：必殺イン突きバイアス適合");
     }
 
     // ③ 川田将雅騎手の「剛腕先行押し切り」エッジ (芝2200m外回り)
     if (jockey.includes("川田") && isTurf && dist === 2200 && 
         (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位" || horse.style === "差し")) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("👑 川田将雅×京都芝2200m先行押し切りエッジ");
     } else if (jockey.includes("川田") && isTurf && dist === 2200) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("👑 川田将雅×京都芝2200m：先行持続・淀の坂下り最適化");
     }
 
     // 2. 馬体重のマイナス変動（究極の勝負気配と夏負け・輸送減りリスクのバランス）
     if (weightChange < 0 && weightChange >= -8) {
-      potential += 8; // 的中率向上のため過剰加点を+15から+8へ抑制
+      /* [減点方式] potential += 8; */ // 的中率向上のため過剰加点を+15から+8へ抑制
       tags.push("🔥 京都絞り込み仕上げ");
       
       // オッズ偏差値が高い（人気薄の穴馬）場合、さらなる期待値ブースト
       if (popularity >= 6 || odds >= 10.0) {
-        potential += 10; // +25から+10へ適正化
+        /* [減点方式] potential += 10; */ // +25から+10へ適正化
         tags.push("⚡ 京都仕上げ穴馬補正");
       }
     }
 
     // ① 馬体重減少（-4kg以上）× 内枠（1〜4枠）の「淀の坂越え」機動力補正 (芝内回り)
     if (isInnerTrack && weightChange <= -4 && frame <= 4) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("⛰️ 淀の坂越え：馬体絞りイン立ち回り");
     } else if (weightChange <= -4 && frame <= 4) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("📈 京都登坂物理:馬体絞り(-4kg以上)×内枠アドバンテージ");
     }
 
@@ -2617,13 +2617,13 @@ export function calculateTsuchiyaScore(
     // 前半戦（1R〜6R）：内枠復活バイアス
     if (race.raceNumber <= 6) {
       if (frame <= 3) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📐 京都前半戦の内枠復活バイアス");
       }
     } else {
       // 後半戦（7R〜12R）：荒れ馬場外差し外枠バイアス
       if (frame >= 6) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📈 京都後半戦の外枠・イン避けバイアス");
       }
     }
@@ -2632,7 +2632,7 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces && horse.pastRaces.length > 0) {
       const kyotoTop3 = horse.pastRaces.filter(pr => pr.venue?.includes("京都") && pr.result <= 3).length;
       if (kyotoTop3 > 0) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push(`🐎 京都実績馬リピートエッジ(${kyotoTop3}回)`);
       }
     }
@@ -2641,7 +2641,7 @@ export function calculateTsuchiyaScore(
     const sireUpper = horse.sire?.toUpperCase() || "";
     const bloodlineUpper = horse.bloodline?.toUpperCase() || "";
     if (sireUpper.includes("キタサンブラック") && isTurf && dist === 1400) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🧬 京都芝1400m適性：キタサンブラック産駒スタミナエッジ");
     }
 
@@ -2650,10 +2650,10 @@ export function calculateTsuchiyaScore(
         (sireUpper.includes("キズナ") || sireUpper.includes("サンダースノー") || sireUpper.includes("シニスターミニスター") || sireUpper.includes("ドレフォン") ||
          bloodlineUpper.includes("キズナ") || bloodlineUpper.includes("サンダースノー") || bloodlineUpper.includes("シニスターミニスター") || bloodlineUpper.includes("ドレフォン")) &&
         (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位")) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🧬 改修後タフダート：スタミナ・パワー血統エッジ");
     } else if ((sireUpper.includes("サンダースノー") || sireUpper.includes("キズナ")) && isDirt && dist === 1800) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🧬 京都ダ1800m適性：改修後タフダート適合血統(サンダースノー/キズナ)");
     }
 
@@ -2666,10 +2666,10 @@ export function calculateTsuchiyaScore(
 
     if (isHandicap && isTurf && dist === 2400) {
       if (kinryo <= 55 && (age === 4 || age === 5)) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("⚖️ 軽量若駒ハンデ優遇(55kg以下)");
       } else if (kinryo <= 55) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⚖️ 京都芝2400mハンデ戦：軽量馬(55kg以下)絶対優位");
       } else if (kinryo >= 57 && !hasG1Record) {
         potential -= 35;
@@ -2683,7 +2683,7 @@ export function calculateTsuchiyaScore(
     // 芝外回りコースにおけるスリングショット効果（好位差し適合）と大外一気（追込届かず）の判定
     if (isOuterTrack) {
       if (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位" || horse.style === "差し") {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("📐 京都外回り物理:スリングショット効果好位差し適合");
       } else if (horse.style === "追込") {
         potential -= 25;
@@ -2699,14 +2699,14 @@ export function calculateTsuchiyaScore(
     }
     // スコア上位かつオッズ偏差値乖離（大衆軽視の極上大穴）の検知
     if (potential >= 530 && odds >= 25.0) {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push("⚡ 京都特選:超大穴妙味期待値");
     }
 
     // 5. ベースライン補正（特殊馬具・ブリンカー＆栗東所属ホームアドバンテージと「関東(美浦)エリート遠征馬」の再評価）
     // 特殊馬具（ブリンカー着用）激変期待値
     if (horse.useBlinkers) {
-      potential += 10; // 的中率向上のため+30から+10へ適正化（自滅リスク考慮）
+      /* [減点方式] potential += 10; */ // 的中率向上のため+30から+10へ適正化（自滅リスク考慮）
       tags.push("🎯 京都ブリンカー着用適正化");
     }
 
@@ -2714,11 +2714,11 @@ export function calculateTsuchiyaScore(
     const isRittoKyoto = horse.stableLocation?.includes("栗東") || horse.trainer?.includes("栗東") || horse.trainer?.includes("美浦") === false;
 
     if (isRittoKyoto) {
-      potential += 20; // +35から+20へバランス調整
+      /* [減点方式] potential += 20; */ // +35から+20へバランス調整
       tags.push("🏰 京都本家:栗東所属馬ホームエッジ");
     } else {
       if (isGradeOrSpecial) {
-        potential += 15; // 特別・重賞に遠征してくる美浦の有力馬は逆にプラス評価（ルメール等の勝負遠征）
+        /* [減点方式] potential += 15; */ // 特別・重賞に遠征してくる美浦の有力馬は逆にプラス評価（ルメール等の勝負遠征）
         tags.push("✈️ 京都遠征美浦精鋭馬エッジ");
       } else {
         potential -= 5; // 的中率低下防止のためアウェイ減点を-15から-5へ大幅緩和
@@ -2744,13 +2744,13 @@ export function calculateTsuchiyaScore(
     // 馬具ブースト（ブリンカー着用）の評価適正化（芝・ダートと脚質の考慮）
     if (horse.useBlinkers) {
       if (isDirt && dist <= 1400) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🎯 東京ダート短距離：ブリンカー集中力バフ");
       } else if (isTurf && (horse.style === "逃げ" || horse.style === "先行")) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🔥 東京芝先行：ブリンカー勝負仕上げ");
       } else {
-        potential += 5; // 差し・追込や芝長距離は自滅リスクを考慮して微加点
+        /* [減点方式] potential += 5; */ // 差し・追込や芝長距離は自滅リスクを考慮して微加点
         tags.push("🎯 ブリンカー着用（自滅リスク考慮の微加点）");
       }
     }
@@ -2759,11 +2759,11 @@ export function calculateTsuchiyaScore(
     const isDistanceShortened = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance > dist;
     if (jockey.includes("ルメー")) {
       if (frame === 8) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("👑 東京ルメール×8枠大外：抜群のコース取りエッジ");
       }
       if (isDistanceShortened) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("👑 東京ルメール×距離短縮：スタミナを活かす絶妙なペース配分");
       }
     }
@@ -2773,10 +2773,10 @@ export function calculateTsuchiyaScore(
     const isRitto = horse.stableLocation?.includes("栗東") || horse.trainer?.includes("栗東") || (!isMiho && horse.stableLocation === "栗東");
 
     if (isMiho && race.raceNumber <= 8 && !isGradeOrSpecial) {
-      potential += 10;
+      // [減点方式] potential += 10;
       tags.push("🏠 東京下級条件：美浦ホームアドバンテージ");
     } else if (isRitto && (race.raceNumber >= 9 || isGradeOrSpecial)) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("✈️ メイン戦遠征関西馬(栗東)エッジ");
     }
 
@@ -2784,14 +2784,14 @@ export function calculateTsuchiyaScore(
     const sireUpper = horse.sire?.toUpperCase() || "";
     if (sireUpper.includes("キタサンブラック")) {
       if (isDirt) {
-        potential += 30; // ダートで極めて強い
+        /* [減点方式] potential += 30; */ // ダートで極めて強い
         tags.push("🧬 東京ダート適性：キタサンブラック産駒の圧倒的パフォーマンス");
       } else {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🧬 東京適性：キタサンブラック産駒エッジ");
       }
     } else if (sireUpper.includes("パイロ") || sireUpper.includes("ジャスタウェイ")) {
-      potential += 10;
+      // [減点方式] potential += 10;
       tags.push(`🧬 東京適性：${horse.sire}産駒穴期待(タフな展開に強い)`);
     }
 
@@ -2800,7 +2800,7 @@ export function calculateTsuchiyaScore(
       if (race.raceNumber <= 5) {
         // 前半レース（下級条件）：前残り（逃げ・先行）有利
         if (horse.style === "逃げ" || horse.style === "先行") {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("📐 前半芝戦の先行・前残りアドバンテージ");
         }
       } else {
@@ -2808,23 +2808,23 @@ export function calculateTsuchiyaScore(
         if (isStrongHeadwind) {
           // 強風の直線向かい風：差し馬は風の壁で失速するリスクあり、先行・好位を優遇
           if (horse.style === "先行" || horse.style === "好位") {
-            potential += 30;
+            // [減点方式] potential += 30;
             tags.push("🌬️ 強風向かい風直線：風よけ先行・好位エッジ");
           } else if (horse.style === "差し" || horse.style === "追込") {
-            potential += 10; // 大幅削減
+            /* [減点方式] potential += 10; */ // 大幅削減
             tags.push("⚠️ 強風向かい風直線：外差し風の壁リスク割引");
           }
         } else {
           // 通常時または追い風：セオリー通りの末脚優遇
           if (horse.style === "差し" || horse.style === "追込") {
-            potential += 30;
+            // [減点方式] potential += 30;
             tags.push("🏹 後半芝戦の極上外差し・末脚特注");
           }
           // 推定上がり3F of 補正（前走で速い上がりを繰り出した馬の加点）
           if (horse.pastRaces && horse.pastRaces[0]) {
             const last3fNum = parseFloat(horse.pastRaces[0].last3fTime || "36.0");
             if (last3fNum > 0 && last3fNum <= 34.5) {
-              potential += 15;
+              // [減点方式] potential += 15;
               tags.push(`⚡ 前走極上の末脚を計測(3F:${last3fNum}秒)`);
             }
           }
@@ -2833,10 +2833,10 @@ export function calculateTsuchiyaScore(
     } else if (isDirt) {
       // ダート戦は一貫して先行力を最重視
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🏃 東京ダート：前残り先行アドバンテージ");
       } else if (horse.style === "差し" || horse.style === "追込") {
-        potential += 5;
+        // [減点方式] potential += 5;
         tags.push("⚠️ 東京ダート：差し届かずリスク割引");
       }
     }
@@ -2845,7 +2845,7 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces && horse.pastRaces[0]) {
       const prevRace = horse.pastRaces[0];
       if (prevRace.surface === "芝") {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🚀 東京ダート替わり：芝スタート芝ダッシュ期待馬");
       }
     }
@@ -2854,7 +2854,7 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces && horse.pastRaces[0]) {
       const prevRace = horse.pastRaces[0];
       if (prevRace.distance > dist) {
-        potential += 12;
+        // [減点方式] potential += 12;
         tags.push("📈 距離短縮ローテ：タフな流れへのスタミナ適合");
       }
     }
@@ -2864,7 +2864,7 @@ export function calculateTsuchiyaScore(
       if (dist === 2000) {
         // 東京芝2000mの罠（内枠過剰人気と外枠の物理的絶望）
         if (frame >= 4 && frame <= 6) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("🎯 東京芝2000m：客観的期待値の中枠エッジ");
         } else if (frame <= 2) {
           potential -= 5;
@@ -2876,12 +2876,12 @@ export function calculateTsuchiyaScore(
       } else {
         if (race.raceNumber <= 6) {
           if (frame <= 3) {
-            potential += 15;
+            // [減点方式] potential += 15;
             tags.push("📐 前半芝レースの内枠ロスなしバイアス");
           }
         } else {
           if (frame >= 6) {
-            potential += 20;
+            // [減点方式] potential += 20;
             tags.push("📈 後半芝レースの馬場荒れ外伸びバイアス");
           }
         }
@@ -2890,11 +2890,11 @@ export function calculateTsuchiyaScore(
       if (dist === 1600) {
         // 東京ダート1600m（芝スタート外枠有利）
         if (frame >= 6) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("⚡ 東ダ1600m：芝スタート外枠ダッシュエッジ");
           // 外枠かつ「逃げ・先行」脚質への超強力シナジー補正
           if (frame >= 7 && (horse.style === "逃げ" || horse.style === "先行")) {
-            potential += 20;
+            // [減点方式] potential += 20;
             tags.push("⚡ 東ダ1600m：芝スタート外枠×逃げ先行の黄金エッジ");
           }
         } else if (frame <= 2) {
@@ -2904,7 +2904,7 @@ export function calculateTsuchiyaScore(
       } else {
         // 一般的なダート：キックバック回避の外枠有利
         if (frame >= 6) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("📈 ダート戦：砂被り回避の外枠優位");
         } else if (frame <= 2) {
           potential -= 10;
@@ -2916,13 +2916,13 @@ export function calculateTsuchiyaScore(
       if (condition === "良" || condition === "稍重") {
         // 乾燥馬場：キック力が吸い取られるため、パワーのある大型馬を優遇
         if (weight >= 490) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("💪 乾燥東京ダート：大型パワー馬スタミナエッジ");
         }
       } else if (condition === "重" || condition === "不良") {
         // 水分を含んだ高速馬場：スピードタイプの軽量馬・快速馬を優遇
         if (weight > 0 && weight < 460) {
-          potential += 12;
+          // [減点方式] potential += 12;
           tags.push("⚡ 湿潤東京ダート：脚抜き良高速適性(軽量快速馬)");
         }
       }
@@ -2932,7 +2932,7 @@ export function calculateTsuchiyaScore(
     const isBCourse = race.raceName?.includes("Bコース") || race.trackName?.includes("Bコース") || race.raceName?.includes("B枠");
     if (isBCourse && isTurf) {
       if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位")) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📐 Bコース物理：急激な内伸び回帰バイアス適合");
       }
     }
@@ -2941,7 +2941,7 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces && horse.pastRaces.length > 0) {
       const tokyoTop3 = horse.pastRaces.filter(pr => pr.venue?.includes("東京") && pr.result <= 3).length;
       if (tokyoTop3 > 0) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push(`🐎 東京実績馬リピートエッジ(${tokyoTop3}回)`);
       }
     }
@@ -2953,7 +2953,7 @@ export function calculateTsuchiyaScore(
     const isDStage = race.raceName?.includes("Dコース") || race.trackName?.includes("Dコース") || race.raceName?.includes("D枠");
     if (isDStage) {
       if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行" || horse.style === "好位")) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("📐 東京Dコース物理:極小インラチ沿い最短経路アドバンテージ");
       } else if (frame >= 7 && (horse.style === "差し" || horse.style === "追込")) {
         potential -= 25;
@@ -2968,11 +2968,11 @@ export function calculateTsuchiyaScore(
       const isPrevBad = prevRace.result >= 6 && (prevRace.timeDiff !== undefined && prevRace.timeDiff >= 1.0);
       
       if (isShortTrack && isPrevBad) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🚀 コース替わり一変:小回り大外ロス → 広大な東京の直線解放期待");
         // 今走外枠の場合はさらなる解放ブースト
         if (frame >= 7) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("🚀 外枠解放ブースト:揉まれず直線大外一気の期待");
         }
       }
@@ -2981,15 +2981,15 @@ export function calculateTsuchiyaScore(
     // ③ 「東京マイスター」騎手 × 脚質・枠の黄金シナジー
     if (isTurf) {
       if (jockey.includes("ルメー") && (horse.style === "差し" || horse.style === "追込")) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("👑 東京マイスター:ルメール極上末脚エッジ(仕掛けタイミング最適)");
       } else if (jockey.match(/(戸崎|菅原明|横山武)/) && (horse.style === "先行" || horse.style === "好位")) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🎯 東京マイスター:好位イン差し抜け出しエッジ");
       }
     } else if (isDirt) {
       if (jockey.match(/(川田|坂井)/) && (horse.style === "逃げ" || horse.style === "先行")) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("⚡ 東京ダートマイスター:先行押し切りエッジ(前残り加速)");
       }
     }
@@ -2997,16 +2997,16 @@ export function calculateTsuchiyaScore(
     // 4. 馬体重変動の「トレンド」読み取り（勝ち切り安定と紐穴の分離）
     const absWeightChange = Math.abs(weightChange);
     if (weightChange >= 0 && weightChange <= 6) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🏆 東京勝ち切り条件：馬体重安定ゾーン（±0〜+6kg）");
     } else if (absWeightChange <= 8) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("📈 東京馬体重安定トレンド（±8kg以内）");
     } else if (absWeightChange >= 10) {
-      potential += 10; // 大幅増減は1着率低下のため小加点に抑制（紐穴）
+      /* [減点方式] potential += 10; */ // 大幅増減は1着率低下のため小加点に抑制（紐穴）
       tags.push("⚠️ 大幅馬体重増減（2・3着激走の紐穴期待値）");
       if (popularity >= 6 || odds >= 12.0) {
-        potential += 10;
+        // [減点方式] potential += 10;
         tags.push("⚡ 大幅増減・妙味穴馬補正");
       }
     }
@@ -3081,7 +3081,7 @@ export function calculateTsuchiyaScore(
     }
 
     if (hasSlopeAptitude) {
-      potential += 20;
+      // [減点方式] potential += 20;
       if (!tags.some(t => t.includes("だんだら坂しぶとさ"))) {
         tags.push("⛰️ 急坂実績・だんだら坂勾配適性あり");
       }
@@ -3112,10 +3112,10 @@ export function calculateTsuchiyaScore(
     // 1. 空間・展開バイアスの学習（外枠＆先行力重視）
     // 外枠（特に8枠）特注加点
     if (frame >= 5) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🌾 門別外枠アドバンテージ");
       if (frame === 8) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⚡ 門別大外8枠・大爆撃エッジ");
       }
     }
@@ -3123,7 +3123,7 @@ export function calculateTsuchiyaScore(
     // 先行力（前走の4角通過順位）の最大重視（上がりタイムより先行力）
     const isFrontRunner = horse.style === "逃げ" || horse.style === "先行";
     if (isFrontRunner) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🏃 門別前残り・極限先行アドバンテージ");
     }
     // 前走4角位置の補正
@@ -3132,7 +3132,7 @@ export function calculateTsuchiyaScore(
       const passing = pr.passingPositions || "";
       const lastPos = parseInt(passing.split("-").pop() || "0");
       if (lastPos > 0 && lastPos <= 4) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push(`⚡ 門別特選:前走4角4番手以内キープ(4角:${lastPos}番手)`);
       }
     }
@@ -3145,10 +3145,10 @@ export function calculateTsuchiyaScore(
     const isEliteTrainerM = eliteTrainersM.some(et => trainerName.includes(et));
 
     if (isEliteJockeyM) {
-      potential += 25; // 騎手単体でも強力に加点
+      /* [減点方式] potential += 25; */ // 騎手単体でも強力に加点
       tags.push("👑 門別トップジョッキー信頼度");
       if (isEliteTrainerM) {
-        potential += 20; // コンビで合計+45
+        /* [減点方式] potential += 20; */ // コンビで合計+45
         tags.push("🌟 門別黄金コンビ:トップジョッキー×有力厩舎");
       }
     } else {
@@ -3159,11 +3159,11 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces && horse.pastRaces[0]) {
       const pr = horse.pastRaces[0];
       if (pr.result <= 3) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📈 門別実績: 前走好走の堅実性");
       }
       if (pr.venue?.includes("門別") && pr.result <= 2) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🥇 門別適性: 同コース連続好走の鉄板度");
       }
     }
@@ -3171,12 +3171,12 @@ export function calculateTsuchiyaScore(
     // 3. 馬券種マルチタスク学習（仕上がり安定とヒモ大穴激走）
     // 仕上がり安定馬
     if (Math.abs(weightChange) <= 8) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("📈 門別仕上がり安定(馬体重増減なし・微小)");
     }
     // 牝馬ボーナス（適正化）
     if (gender === "牝") {
-      potential += 5; // 20から5に減らして過剰評価を防ぐ
+      /* [減点方式] potential += 5; */ // 20から5に減らして過剰評価を防ぐ
       tags.push("🐎 門別牝馬エッジ(微加点)");
     }
 
@@ -3184,7 +3184,7 @@ export function calculateTsuchiyaScore(
     const absWeightChange = Math.abs(weightChange);
     if (absWeightChange >= 10) {
       if (popularity >= 6 || odds >= 12.0) {
-        potential += 15; // 25から15へ
+        /* [減点方式] potential += 15; */ // 25から15へ
         tags.push("⚡ 門別特選:大幅馬体重変則仕上げ妙味");
       }
     }
@@ -3192,7 +3192,7 @@ export function calculateTsuchiyaScore(
     const isApprentice = jockey.match(/^[▲△☆◇]/) || jockey.includes("減量") || jockey.includes("▲") || jockey.includes("△");
     if (isApprentice) {
       if (isFrontRunner) {
-        potential += 10; // 30から10へ
+        /* [減点方式] potential += 10; */ // 30から10へ
         tags.push("🏃 門別減量騎手×先行力");
       } else {
         potential -= 15; // 差し追込の減量騎手は割引
@@ -3205,19 +3205,19 @@ export function calculateTsuchiyaScore(
     // ==========================================
     // 1. 【1着固定の絶対軸】落合玄騎手 × 上位人気（1〜2番人気）
     if (jockey.includes("落合玄") && popularity <= 2) {
-      potential += 50;
+      // [減点方式] potential += 50;
       tags.push("👑 門別絶対軸: 落合玄×上位人気(連対率100%コンボ)");
     }
 
     // 2. 【ベースの安定感】単勝1番人気馬
     if (popularity === 1) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🎯 門別ベース安定: 単勝1番人気(連対率83%)");
     }
 
     // 3. 【ヒモ（相手）の最適解】3番人気〜5番人気馬
     if (popularity >= 3 && popularity <= 5) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🥈 門別相手最適解: 3〜5番人気のヒモ妙味");
     }
   }
@@ -3234,13 +3234,13 @@ export function calculateTsuchiyaScore(
     if (race.raceNumber <= 5) {
       // 前半レース（1R〜5R／下位条件）：差し・追込（末脚）有利
       if (horse.style === "差し" || horse.style === "追込") {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("📐 前半戦の上がり末脚特化バイアス");
       }
     } else {
       // 後半レース（6R〜10R／上位クラス）：前残り（逃げ・先行）絶対有利
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🏃 後半戦の先行・前残りアドバンテージ");
       }
     }
@@ -3248,16 +3248,16 @@ export function calculateTsuchiyaScore(
     // 2. 馬の基本属性・状態特徴量
     // 牝馬および4歳馬の圧倒的勝率
     if (gender === "牝") {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🐎 笠松牝馬エッジ");
     }
     if (age === 4) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("📈 笠松4歳馬成長エッジ");
     }
     // 馬体重マイナス変動（絞り仕上げ肯定）
     if (weightChange < 0) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("🔥 笠松絞り込み勝負仕上げ(マイナス体重差)");
     }
 
@@ -3267,24 +3267,24 @@ export function calculateTsuchiyaScore(
     
     // 1着（本命）候補
     if (kinryo === 55) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🎯 笠松黄金斤量55kg(勝率トップ)");
     }
     if (loadRatio >= 10.0 && loadRatio <= 12.5) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push(`📐 黄金斤量比率クリア(比率:${loadRatio.toFixed(1)}%)`);
     }
     if (kinryo === 57 && race.raceNumber >= 6) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("💪 上級戦57kg実績馬アドバンテージ");
     }
     // 2・3着（ヒモ穴）候補
     if (kinryo <= 54) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("⚡ 門前軽量斤量(複勝率バイアス)");
     }
     if (loadRatio >= 13.5 && loadRatio <= 15.5) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push(`⚡ 軽量小柄馬・2/3着激走フラグ(比率:${loadRatio.toFixed(1)}%)`);
     }
 
@@ -3294,19 +3294,19 @@ export function calculateTsuchiyaScore(
       
       // アタマ候補の条件
       if (pr.result > 0 && pr.result <= 3) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🏆 前走3着以内・堅実能力値");
       }
       // タイム差1.0秒未満
       if (pr.timeDiff !== undefined && pr.timeDiff < 1.0) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📐 前走僅差仕上げ期待値");
       }
 
       // 他地区・JRAからの転入馬補正（大敗の無効化と転入ボーナス）
       const hasAwayRace = horse.pastRaces.some(p => p.venue?.match(/(JRA|東京|中山|京都|阪神|新潟|中京|小倉|福島|函館|札幌|大井|川崎|船橋|浦和|門別)/));
       if (hasAwayRace) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🏹 中央・他地区からの転入ボーナス");
       }
 
@@ -3314,7 +3314,7 @@ export function calculateTsuchiyaScore(
       const isRecentBad = pr.result >= 6;
       const hasTop2Past = horse.pastRaces.slice(0, 5).some(p => p.result > 0 && p.result <= 2);
       if (isRecentBad && hasTop2Past) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("⚡ 過去5走内好走馬の巻き返し激走期待値");
       }
     }
@@ -3322,39 +3322,39 @@ export function calculateTsuchiyaScore(
     // 5. 騎手・枠順のバイアス特徴量（1着と2・3着の分離）
     // 【アップデート】笠松特化・騎手×人気階層プロトコル
     if (popularity === 1) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🎯 笠松ベース安定: 単勝1番人気(複勝率75%)");
     }
 
     if ((jockey.includes("渡邊竜") || jockey.includes("渡辺竜") || jockey.includes("渡邊")) && popularity <= 2) {
-      potential += 45;
+      // [減点方式] potential += 45;
       tags.push("👑 笠松鉄板軸: 渡邊竜也×上位人気(1着固定特注)");
     } else if (jockey.includes("筒井") && popularity <= 3) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("🥈 笠松連対特注: 筒井勇×上位人気(高確率で2着確保)");
     } else if (jockey.includes("松本一") && (popularity === 5 || popularity === 6)) {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push("💣 笠松波乱の使者: ☆松本一×中穴(ヒモ荒れ特注)");
     } else if (jockey.includes("塚本征")) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🌟 笠松好調騎手:塚本征吾(1着バイアス)");
     } else if (jockey.includes("望月")) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("⚡ 笠松ヒモ穴特注騎手(2・3着激走)");
     }
 
     // 枠順バイアス
     if (frame === 5) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("📐 笠松勝率No.1の5枠");
     } else if (frame === 6) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("📐 万能枠順の6枠");
     } else if (frame === 1) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("📐 最内枠ロス軽減イン差し枠");
     } else if (frame === 8) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("📐 大外8枠・2着確保バイアス");
     }
 
@@ -3364,7 +3364,7 @@ export function calculateTsuchiyaScore(
     // ① 800m戦（電撃スプリント）における全天候外枠絶対優位と内枠自滅リスク
     if (dist === 800) {
       if (frame >= 7) {
-        potential += (condition === '重' || condition === '不良') ? 40 : 25;
+        // [減点方式] potential += (condition === '重' || condition === '不良') ? 40 : 25;
         tags.push("🚀 笠松800m:外枠スムーズ加速アドバンテージ(砂被りなし)");
       } else if (frame === 1) {
         potential -= (condition === '重' || condition === '不良') ? 45 : 30;
@@ -3375,7 +3375,7 @@ export function calculateTsuchiyaScore(
     // ② 雨・重・不良馬場（泥馬場）時の「砂流出イン高速伸び」バイアス
     if (condition === '重' || condition === '不良') {
       if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("☔ 笠松道悪物理:内ラチ沿い砂流出による高速イン伸びアドバンテージ");
       }
     }
@@ -3385,7 +3385,7 @@ export function calculateTsuchiyaScore(
     if (isExchange) {
       const isJRA = horse.transferFrom === 'JRA' || horse.stableLocation?.match(/(栗東|美浦)/) || horse.trainer?.match(/(栗東|美浦)/);
       if (isJRA) {
-        potential += 50;
+        // [減点方式] potential += 50;
         tags.push("🚀 笠松交流戦:JRA所属の圧倒的レベル差優位(確勝気配)");
       } else if (horse.belonging?.includes("笠松") || horse.trainer?.includes("笠松")) {
         potential -= 25;
@@ -3397,10 +3397,10 @@ export function calculateTsuchiyaScore(
     const trainerName = horse.trainer || '';
     if (trainerName.includes("笹野") && (jockey.includes("渡邊") || jockey.includes("渡辺"))) {
       if (popularity <= 2) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("👑 笠松最強黄金タッグ:笹野×渡邊(勝負ヤリ1着固定)");
       } else {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("👑 笠松最強黄金タッグ:笹野×渡邊(実力信頼)");
       }
     }
@@ -3418,18 +3418,18 @@ export function calculateTsuchiyaScore(
 
     // 1. 馬体重・成長バイアス（フィジカルパラメータ）
     if (weightChange <= -10 && weightChange >= -20) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('金沢:極限の仕上げ(激走フラグ)');
     } else if (weightChange > 16) {
       potential -= 25;
       tags.push('⚠️金沢:過剰な馬体増(割引)');
     } else if (age <= 3 && weightChange >= 10 && weightChange <= 14) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('金沢:若駒成長シナジー(大幅増)');
     }
 
     if (gender === "牝") {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🐎 金沢牝馬エッジ");
     }
 
@@ -3444,13 +3444,13 @@ export function calculateTsuchiyaScore(
         potential -= 25;
         tags.push("⚠️ 金沢:2枠イン砂深割引");
       } else if (frame === 8) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("📈 金沢特有:大外8枠スムーズ外伸びアドバンテージ");
       } else if (frame === 7) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("📈 金沢:7枠外伸びエッジ");
       } else if (frame === 5 || frame === 6) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📈 金沢:中外枠アドバンテージ");
       } else if (frame === 4) {
         potential -= 15;
@@ -3459,7 +3459,7 @@ export function calculateTsuchiyaScore(
     } else {
       // 重・不良：逆にインラチ沿いの砂が固まり、一時的に高速イン伸び化
       if (frame <= 2 && (hStyle === "逃げ" || hStyle === "先行")) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("☔ 金沢道悪物理:泥馬場イン締まり高速イン逃げエッジ");
       }
     }
@@ -3471,27 +3471,27 @@ export function calculateTsuchiyaScore(
         tags.push('⚠️危険な人気馬(内枠×先行 of 罠)');
       }
     } else if ((hStyle === '中団' || hStyle === '後方') && (frame >= 5 && frame <= 7)) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🚀金沢シナジー(外枠×差し)');
     }
 
     // 3. 「金沢の絶対神」吉原寛人騎手 ＆ リーディングトップ勢 of 圧倒的支配力
     if (jockey.includes("吉原")) {
       if (popularity <= 2) {
-        potential += 50;
+        // [減点方式] potential += 50;
         tags.push("👑 金沢の絶対神:吉原寛人(勝負ヤリ1着固定)");
       } else {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 金沢の絶対神:吉原寛人(異次元技術バフ)");
       }
     } else if (jockey.match(/(青柳|中島龍|栗原)/)) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🌟 金沢リーディング上位騎手(1着バイアス)");
     }
 
     // 4. 逃げ・先行圧倒的有利のワンターン超小回りバイアス
     if (hStyle === "逃げ" || hStyle === "先行") {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("🏃 金沢超小回り:前残り先行絶対有利");
     } else if (hStyle === "追込") {
       potential -= 25;
@@ -3501,13 +3501,13 @@ export function calculateTsuchiyaScore(
     // 5. 他地区・JRAからの転入格上＆超有力厩舎勝負仕上げ
     const trainerName = horse.trainer || '';
     if (trainerName.match(/(中川雅|金田一)/)) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🏰 金沢超エリート厩舎:勝負メイチ仕上げ");
     }
 
     const hasAwayExp = horse.pastRaces && horse.pastRaces.some(p => p.venue?.match(/(JRA|大井|川崎|船橋|浦和|門別)/));
     if (hasAwayExp && horse.pastRaces && horse.pastRaces[0] && (horse.pastRaces[0].venue?.includes("金沢") === false)) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🚀 転入エッジ:他地区・中央からの格上スピード能力差");
     }
   }
@@ -3525,18 +3525,18 @@ export function calculateTsuchiyaScore(
     // 1. スパイラルカーブ物理（地方最大級の差し有利バイアス）
     // 船橋はコーナー出口がキツく、遠心力で前が外に膨らむため、差し・追込が極めて決まりやすい
     if (horse.style === "差し" || horse.style === "追込" || horse.style === "マクリ") {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🎯 船橋スパイラルカーブ: 外差し・追込の強襲エッジ");
     }
 
     // 2. オーストラリア産白砂のパワーと含水率変化
     if (weight >= 500) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("💪 船橋白砂適合: 500kg以上の大型パワー馬");
     }
     const isWetF = race.condition === "重" || race.condition === "不良";
     if (isWetF && (horse.style === "逃げ" || horse.style === "先行")) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("☔ 船橋道悪特注: 砂が締まった際の超高速前残り");
     }
 
@@ -3546,7 +3546,7 @@ export function calculateTsuchiyaScore(
         (pr.venue?.match(/(東京|中京|新潟|川崎|船橋|浦和|盛岡)/)) && pr.result <= 3
       );
       if (hasLeftHandAptitude) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🔄 左回り巧者: 左回りコース好走実績");
       }
     }
@@ -3559,10 +3559,10 @@ export function calculateTsuchiyaScore(
     const isEliteTrainerF = eliteTrainersF.some(t => trainerNameF.includes(t));
 
     if (isEliteJockeyF) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("👑 船橋トップジョッキー信頼度");
       if (isEliteTrainerF) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🌟 船橋地元名門シナジー: トップ騎手×地元名門厩舎");
       }
     }
@@ -3581,13 +3581,13 @@ export function calculateTsuchiyaScore(
 
     // 1. 馬体重・成長バイアス・馬格（フィジカルパラメータ）
     if (weightChange <= -10 && weightChange >= -20) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('川崎:極限の仕上げ(激走フラグ)');
     } else if (weightChange <= -25) {
       potential -= 25;
       tags.push('❌川崎:過剰な馬体減(消耗懸念)');
     } else if (age <= 3 && weightChange >= 10 && weightChange <= 14) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('川崎:若駒成長シナジー(大幅増)');
     } else if (weightChange > 16) {
       potential -= 25;
@@ -3595,17 +3595,17 @@ export function calculateTsuchiyaScore(
     }
 
     if (weight >= 500) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("💪 川崎タフ良馬場・大型パワー馬アドバンテージ");
     }
 
     // 2. 基本属性
     if (gender === "牝") {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🐎 川崎牝馬アドバンテージ(ダート割引無効化)");
     }
     if (age <= 4) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("📈 川崎ヤングジェネレーションエッジ");
     }
 
@@ -3613,27 +3613,27 @@ export function calculateTsuchiyaScore(
     const isSpecialSire = bloodline.includes("ミスターメロディ") || bloodline.includes("エスポワールシチー");
     const isRecommendedSire = bloodline.includes("パイロ") || bloodline.includes("ホッコータルマエ") || bloodline.includes("ダノンレジェンド") || bloodline.includes("ゴールドドリーム");
     if (isSpecialSire) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🧬 川崎特注ダート血統(勝負気配)");
     } else if (isRecommendedSire) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🧬 川崎ダート実績血統補正");
     }
 
     // 3. 空間物理と脚質シナジー（枠順バイアスの一元化）
     // 枠順バイアス
     if (frame === 8) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("⚠️ 川崎8枠:外目スムーズ加速エッジ");
       if (popularity >= 6 || odds >= 12.0) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("⚡ 大外8枠・複勝ヒモ穴エッジ");
       }
     } else if (frame === 7) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("📐 川崎7枠:好走バイアス");
     } else if (frame === 4 || frame === 5 || frame === 6) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("📐 川崎勝率No.1 of 中枠エッジ");
     } else if (frame === 2) {
       potential -= 25;
@@ -3650,25 +3650,25 @@ export function calculateTsuchiyaScore(
         tags.push('⚠️危険な人気馬(内枠×先行 of 罠)');
       }
     } else if ((hStyle === '中団' || hStyle === '後方') && (frame >= 5 && frame <= 7)) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🚀川崎シナジー(外枠×差し)');
     }
 
     // 後半戦（6R〜12R）の内枠（1,2枠）インラチ復活バイアス
     if (race.raceNumber >= 6 && (frame === 1 || frame === 2) && !tags.some(t => t.includes("割引") || t.includes("リスク"))) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("📐 川崎後半戦 of イン復活ロスなし補正");
     }
 
     // 距離別ペース予想
     if (dist <= 900) {
       if (hStyle === "逃げ" || hStyle === "先行") {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🏃 川崎900m電撃スプリント補正");
       }
     } else if (dist >= 1400) {
       if (hStyle === "差し" || hStyle === "追込") {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("💪 川崎1400m以上タフな持久戦補正");
       }
     }
@@ -3677,10 +3677,10 @@ export function calculateTsuchiyaScore(
     const isKawasakiHome = horse.stableLocation?.includes("川崎") || trainerName.includes("川崎") || (!horse.stableLocation && horse.belonging?.includes("川崎"));
     if (isKawasakiHome) {
       if (trainerName.match(/(内田勝義|高月賢一|林隆之|山崎尋美|佐藤博紀|八木正喜)/)) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🏰 川崎エリート厩舎: 地元での勝負メイチ仕上げ");
       } else {
-        potential += 10;
+        // [減点方式] potential += 10;
         tags.push("🏠 川崎ホーム所属(コース慣れアドバンテージ)");
       }
     } else {
@@ -3688,7 +3688,7 @@ export function calculateTsuchiyaScore(
       const isOhiFunabashi = horse.stableLocation?.includes("大井") || trainerName.includes("大井") || (!horse.stableLocation && horse.belonging?.includes("大井")) ||
                              horse.stableLocation?.includes("船橋") || trainerName.includes("船橋") || (!horse.stableLocation && horse.belonging?.includes("船橋"));
       if (isOhiFunabashi) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("👑 南関ヒエラルキー: 大井・船橋からの格上参戦エッジ");
       } else {
         potential -= 15;
@@ -3700,7 +3700,7 @@ export function calculateTsuchiyaScore(
     const isKawasakiWet = race.condition === "重" || race.condition === "不良";
     if (isKawasakiWet && (hStyle === "逃げ" || hStyle === "先行")) {
       if (frame <= 3) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("☔ 川崎道悪ナイター: 超特急イン前残りの物理法則");
       }
     }
@@ -3708,17 +3708,17 @@ export function calculateTsuchiyaScore(
     // 5. 騎手パラメータ（ジョッキーファクター）
     const isEliteKawasakiJ = ["野畑", "笹川", "矢野", "町田", "御神本", "新原"].some(j => jockey.includes(j));
     if (isEliteKawasakiJ && popularity <= 2) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("👑 川崎エリートジョッキー×上位人気高信頼度");
     }
     const isDarkJ = ["古岡", "藤江", "藤本"].some(j => jockey.includes(j));
     if (isDarkJ && (popularity >= 6 || odds >= 12.0)) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("⚡ 川崎大穴メーカー騎手特注フラグ");
     }
     const isVisitorJ = jockey.match(/(ルメール|川田|武豊|レーン|モレイラ|シャペル|デムーロ)/);
     if (isVisitorJ) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("✈️ 川崎スポット・JRA遠征エリート補正");
     }
   }
@@ -3734,7 +3734,7 @@ export function calculateTsuchiyaScore(
     // 1. 「佐賀のラチ沿い避け」トラックバイアス
     // 内側の砂が極端に深いため、全馬が内を大きく開けて走る特殊馬場。外枠が圧倒的有利。
     if (frame >= 6) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("📈 佐賀外枠エッジ: ラチ避け馬場の好位確保");
     } else if (frame <= 2) {
       potential -= 20;
@@ -3744,7 +3744,7 @@ export function calculateTsuchiyaScore(
     // 2. 脚質バイアス（逃げ・先行の圧倒的優位）
     // ラチ沿いを開けるため馬群が横に広がりやすく、後方からの差し・追込は物理的に届かない
     if (horse.style === "逃げ" || horse.style === "先行") {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🏃 佐賀前残り: 砂の軽いポジションを先取する先行力");
     } else if (horse.style === "追込") {
       potential -= 25;
@@ -3754,12 +3754,12 @@ export function calculateTsuchiyaScore(
     // 3. 佐賀の絶対的エリートジョッキー（山口勲・飛田愛斗・石川慎）
     const isSagaEliteJ = ["山口勲", "飛田", "石川慎", "金山"].some(j => jockey.includes(j));
     if (isSagaEliteJ) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("👑 佐賀トップジョッキー無双エッジ");
       
       // トップ騎手×人気馬は「鉄板」
       if (popularity <= 2) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🎯 佐賀鉄板: トップ騎手×上位人気");
       }
     }
@@ -3768,7 +3768,7 @@ export function calculateTsuchiyaScore(
     const trainerNameS = horse.trainer || "";
     const isSagaEliteT = ["真島", "九日", "鮫島", "東眞"].some(t => trainerNameS.includes(t));
     if (isSagaEliteT) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🌟 佐賀名門厩舎: 完璧な仕上げと勝負気配");
     }
   }
@@ -3784,10 +3784,10 @@ export function calculateTsuchiyaScore(
 
     // 1. 単勝人気ファクター（本命・対抗超重視モデル）
     if (popularity <= 3) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("🎯 園田本命・対抗信頼度エッジ");
       if (popularity === 1) {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push("👑 園田1番人気絶対軸補正");
       }
     } else {
@@ -3797,7 +3797,7 @@ export function calculateTsuchiyaScore(
 
     // 2. レースクラス別 ＆ 「魔の3〜4コーナー超急カーブ物理」
     if (horse.style === "逃げ" || horse.style === "先行") {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("🏃 園田超急カーブ物理:前残り先行絶対有利");
     } else if (horse.style === "追込") {
       potential -= 25;
@@ -3807,20 +3807,20 @@ export function calculateTsuchiyaScore(
     if (race.raceNumber <= 6) {
       // 前半レース（1R〜6R）：先行力（前残り）最重視
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 15; // 先行絶対有利をさらに上乗せ
+        /* [減点方式] potential += 15; */ // 先行絶対有利をさらに上乗せ
         tags.push("📐 園田前半戦:先行・前残りアドバンテージ");
       }
     } else {
       // 後半レース（7R〜12R）：上がり3ハロン（極上末脚）最重視
       if (horse.style === "差し" || horse.style === "追込") {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🏹 園田後半戦:極上末脚特化バイアス");
       }
       // 上がりタイムの実績補正
       if (horse.pastRaces && horse.pastRaces[0]) {
         const last3fNum = parseFloat(horse.pastRaces[0].last3fTime || "40.0");
         if (last3fNum > 0 && last3fNum <= 37.5) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push(`⚡ 園田後半戦:前走好末脚を計測(3F:${last3fNum}秒)`);
         }
       }
@@ -3829,15 +3829,15 @@ export function calculateTsuchiyaScore(
     // 3. 枠順バイアス（有利枠・不利枠 ＆ 泥馬場イン高速伸び）
     const isHeavyMud = condition === '重' || condition === '不良';
     if (isHeavyMud && frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("☔ 園田道悪物理:イン砂流出・超高速イン逃げアドバンテージ");
     }
 
     if (frame === 3 || frame === 4) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("📐 園田安定の3・4枠バイアス");
     } else if (frame === 8) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("📈 園田勝率・複勝率トップの8枠");
     } else if (frame === 1) {
       potential -= 30; // 最内枠極度不振ペナルティ（買い目排除）
@@ -3846,17 +3846,17 @@ export function calculateTsuchiyaScore(
 
     // 4. 馬体重変動ファクター
     if (weightChange < 0 && weightChange >= -9) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🔥 園田馬体重絞り勝負仕上げ");
     } else if (weightChange === 0) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("📈 園田馬体重維持・安定トレンド");
     } else if (weightChange <= -10) {
       potential -= 40; // 極度の細化・体調不良リスク排除
       tags.push("❌ 園田馬体重二桁急減ペナルティ");
     } else if (weightChange >= 10) {
       if (potential >= 520) {
-        potential += 10;
+        // [減点方式] potential += 10;
         tags.push("⚡ 園田実績馬の馬体成長・リフレッシュボーナス");
       }
     }
@@ -3864,24 +3864,24 @@ export function calculateTsuchiyaScore(
     // 5. ヒューマンファクター（吉村智洋の勝負ヤリ ＆ リーディングトップ連鎖）
     if (jockey.includes("吉村智")) {
       if (popularity <= 2) {
-        potential += 50;
+        // [減点方式] potential += 50;
         tags.push("👑 園田の絶対王者:吉村智洋(勝負ヤリ1着固定)");
       } else {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("👑 園田の絶対王者:吉村智洋(無比の進路取り)");
       }
     } else if (jockey.match(/(下原|廣瀬|田中学|大山真)/)) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🌟 園田トップエリート騎手(1着バイアス)");
     } else if (jockey.includes("小牧太") || jockey.includes("川原")) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🌟 園田ベテランジョッキー複勝バイアス");
     }
     
     // 好調厩舎（調教師）
     const isEliteTrainerS = ["山口浩", "永島", "盛本", "長倉"].some(t => horse.trainer?.includes(t));
     if (isEliteTrainerS) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🏰 園田名門・好調厩舎固め打ちバイアス");
     }
 
@@ -3890,10 +3890,10 @@ export function calculateTsuchiyaScore(
     if (isNishiwaki) {
       const isGradeOrSpecial = race.raceName?.match(/(特別|重賞|選抜|ステークス|カップ)/);
       if (dist >= 1400 || isGradeOrSpecial) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🏰 西脇エッジ:広大トレセン仕上げ(長距離/上級条件強襲)");
       } else {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🏰 西脇所属馬(スタミナ十分)");
       }
     }
@@ -3906,7 +3906,7 @@ export function calculateTsuchiyaScore(
       const isHyogo = stableName.includes("園田") || stableName.includes("西脇") || trainerName.includes("園田") || trainerName.includes("西脇");
       
       if (!isHyogo && (stableName.match(/(大井|川崎|船橋|浦和|門別|北海道|南関)/) || trainerName.match(/(大井|川崎|船橋|浦和|門別|北海道|南関)/))) {
-        potential += 50;
+        // [減点方式] potential += 50;
         tags.push("✈️ 交流重賞:他地区エリート遠征馬エッジ");
       } else {
         potential -= 25;
@@ -3925,7 +3925,7 @@ export function calculateTsuchiyaScore(
     const isTargetPopularity = popularity === 1 || popularity === 3;
 
     if (isWeightStable && isGoodFrame && isTargetJockey && isTargetPopularity) {
-      potential += 60;
+      // [減点方式] potential += 60;
       tags.push("🎯 【統合】園田絶対軸: 体重・枠・騎手・人気の黄金条件コンプリート");
     }
   }
@@ -3943,23 +3943,23 @@ export function calculateTsuchiyaScore(
 
     // 1. 馬体重・成長バイアス（フィジカルパラメータ）
     if (Math.abs(weightChange) <= 3) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🏹岩手:馬体安定(状態キープ)');
     } else if (weightChange <= -4) {
       potential -= 35;
       tags.push('⚠️岩手:馬体減少リスク(消耗・ストレス懸念)');
     } else if (weightChange >= 7 && popularity <= 3) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🚀岩手:成長・立て直し(実力馬 of 馬体増)');
     }
 
     // 2. 空間物理と脚質シナジー（枠順バイアスの一元化）
     // 枠順バイアス
     if (frame >= 7) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("盛岡:外枠絶対優位(砂被りなし)");
     } else if (frame === 1) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("盛岡:最内枠健闘");
     } else if (frame === 2 || frame === 4) {
       potential -= 25;
@@ -3973,37 +3973,37 @@ export function calculateTsuchiyaScore(
         tags.push('⚠️危険な人気馬(内枠×先行 of 罠)');
       }
     } else if ((hStyle === '中団' || hStyle === '後方') && (frame >= 5 && frame <= 7)) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🚀盛岡シナジー(外枠×差し)');
     }
 
     // 後半戦（6R〜12R）の極端枠バイアス
     if (race.raceNumber >= 6) {
       if (frame === 1 || (frame >= 6 && frame <= 8)) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🌃盛岡後半:内外極端枠有利");
       }
     }
 
     // 3. 騎手・厩舎（ヒューマンファクター）
     if (jockey.includes('高松') || jockey.includes('高橋悠') || jockey.includes('山本聡')) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('盛岡:特効上位騎手(頭候補)');
     } else if (jockey.includes('塚本涼') || jockey.includes('坂井瑛') || /[☆△▲◇]/.test(jockey)) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push('盛岡:ヒモ穴警戒(減量/若手)');
     }
 
     if (trainerName.match(/(佐藤雅彦|板垣吉則|菅原右吉)/)) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🔥岩手好調厩舎:勝利量産フェーズ');
     } else if (trainerName.match(/(小林俊彦|及川良春|佐々木由則)/)) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push('🛡️岩手安定厩舎:馬券圏内（ヒモ）軸');
     }
 
     if (race.raceNumber >= 11 && trainerName.includes('佐藤浩')) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🎯岩手勝負厩舎:メイン競走特化');
     }
   }
@@ -4019,7 +4019,7 @@ export function calculateTsuchiyaScore(
     // 1. 超小回り（右回り）の物理バイアス
     // 水沢はコーナーがきつく直線も短いため、圧倒的な「前残り・逃げ先行絶対有利」馬場
     if (horse.style === "逃げ" || horse.style === "先行") {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🏃 水沢超小回り物理: 逃げ・先行の絶対的優位");
     } else if (horse.style === "追込") {
       potential -= 25;
@@ -4030,7 +4030,7 @@ export function calculateTsuchiyaScore(
     // コーナーが狭いため、ロスなく回れる内枠（1〜3枠）の先行馬が圧倒的に有利
     if (frame <= 3) {
       if (horse.style === "逃げ" || horse.style === "先行") {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🎯 水沢鉄板: 内枠×先行のロスなしエッジ");
       }
     } else if (frame >= 7) {
@@ -4043,11 +4043,11 @@ export function calculateTsuchiyaScore(
     const isWinterMizusawa = raceMonth === 12 || raceMonth <= 3;
     if (isWinterMizusawa) {
       if (weight >= 500) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⛄ 水沢冬期馬場: 凍結・重い砂をこなす大型パワー馬");
       }
       if (horse.style === "逃げ") {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⛄ 水沢冬期馬場: 前が止まらない冬の逃げ馬ボーナス");
       }
     }
@@ -4055,10 +4055,10 @@ export function calculateTsuchiyaScore(
     // 4. 岩手リーディングジョッキー・シナジー
     const isIwateEliteJ = ["山本聡", "村上忍", "高松亮", "菅原辰", "山本政"].some(j => jockey.includes(j));
     if (isIwateEliteJ) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("👑 岩手トップジョッキー絶対信頼度");
       if (popularity <= 2) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("🎯 水沢鉄板: 岩手トップ騎手×上位人気");
       }
     }
@@ -4076,7 +4076,7 @@ export function calculateTsuchiyaScore(
     // 1. 鞍上強化（リーディング上位騎手エッジ）
     const topJockeys = ['岡部誠', '今井貴大', '大畑雅章', '加藤聡一', '丸野勝虎'];
     if (topJockeys.some(j => jockey.includes(j))) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('名古屋:鞍上強化・リーディングエリート');
     }
 
@@ -4092,7 +4092,7 @@ export function calculateTsuchiyaScore(
     );
 
     if (physicsResult === 1) {
-      potential += 45; // 物理的アドバンテージを持つ狙い馬として加点
+      /* [減点方式] potential += 45; */ // 物理的アドバンテージを持つ狙い馬として加点
       isTargetYatomi = true;
       tags.push("⚡ 弥富物理エッジ適合馬(風速・外回し・馬格パワー・インバイアス総合判定)");
     }
@@ -4104,13 +4104,13 @@ export function calculateTsuchiyaScore(
     // コース実績加点
     const courseWins = hm.results.filter(r => r.venue === race.venue && r.rank === 1).length;
     if (courseWins > 0) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push(`コース実績馬(${courseWins}勝)`);
     }
     // 距離実績
     const distTop3 = hm.results.filter(r => Math.abs(r.distance - race.distance) <= 100 && r.rank <= 3).length;
     if (distTop3 > 0) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push(`距離・近接適性(${distTop3}回)`);
     }
 
@@ -4122,41 +4122,10 @@ export function calculateTsuchiyaScore(
       const bestTimeStr = hm.bestTime[key];
       // ※ 今回の出走馬全体との相対比較はコンテキストがないため、絶対的なスピード加点として機能させる
       // クラス基準タイムや直近5走の最速タイムと比べても遜色ない場合は底力として評価
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push(`⌚ 生涯ベスト時計保有(${bestTimeStr})`);
     }
   }
-
-  // ==========================================
-  // 【新設】直近の走績（Form）解析 - 1,2,3着を当てる核
-  // ==========================================
-  if (horse.pastRaces && horse.pastRaces.length > 0) {
-    const validPastRaces = horse.pastRaces.filter(pr => pr.result > 0);
-    const recent5 = validPastRaces.slice(0, 5);
-    
-    // 近5走での好走（連対・3着以内）
-    const top3Count = recent5.filter(pr => pr.result <= 3).length;
-    const winsCount = recent5.filter(pr => pr.result === 1).length;
-    
-    if (winsCount >= 2) { potential += 40; tags.push(`近5走で${winsCount}勝`); }
-    if (top3Count >= 3) { potential += 35; tags.push('近5走安定勢(50%超)'); }
-    else if (top3Count >= 1) { potential += 15; tags.push('近走好走実績あり'); }
-
-    // 掲示板（5着以内）確保
-    const top5Count = recent5.filter(pr => pr.result <= 5).length;
-    if (top5Count >= 4) { potential += 20; tags.push('入着率エリート'); }
-
-    // 上昇気配（直近3走の着順が改善傾向）
-    if (recent5.length >= 3 && recent5[0].result < recent5[1].result && recent5[1].result < recent5[2].result) {
-      potential += 25;
-      tags.push('3走連続上昇');
-    }
-  }
-
-  // ==========================================
-  // 【新設】人脈・相性・陣営の思惑 (Human Network & Intention)
-  // ==========================================
-  // isEliteJockey は冒頭（150行目付近）で定義済みのため、ここでは再宣言しない
 
   // 1. 馬と騎手の相性（主戦騎手ボーナス）
   if (horse.pastRaces && horse.pastRaces.length > 0) {
@@ -4166,16 +4135,16 @@ export function calculateTsuchiyaScore(
     const pastTop3 = pastRides.filter(pr => pr.result <= 3).length;
 
     if (pastWins > 0) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('🤝主戦騎手(勝利実績)');
     } else if (pastTop3 > 0) {
-      potential += 10;
+      // [減点方式] potential += 10;
       tags.push('🤝主戦騎手(好走実績)');
     } else if (pastRides.length === 0) {
       // 初騎乗（乗り替わり）
       // 陣営の思惑：前走負けていて、今回エリート騎手に乗り替わりなら「勝負気配（ヤリ）」
       if (horse.pastRaces[0].result > 3 && isEliteJockey) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push('🔥勝負気配(エリート乗り替わり)');
       }
     }
@@ -4185,17 +4154,17 @@ export function calculateTsuchiyaScore(
   const trainer = horse.trainer || '';
   if (trainer && jockey) {
     if (trainer.includes('笹野') && jockey.includes('渡邊')) {
-      potential += 30; tags.push('🌟黄金ライン(笹野×渡邊)');
+      // [減点方式] potential += 30; tags.push('🌟黄金ライン(笹野×渡邊)');
     } else if (trainer.includes('友道') && (jockey.includes('川田') || jockey.includes('ルメール') || jockey.includes('武豊'))) {
-      potential += 25; tags.push('🌟勝負ライン(友道×エリート)');
+      // [減点方式] potential += 25; tags.push('🌟勝負ライン(友道×エリート)');
     } else if (trainer.includes('矢作') && jockey.includes('坂井')) {
-      potential += 30; tags.push('🌟黄金ライン(矢作×坂井)');
+      // [減点方式] potential += 30; tags.push('🌟黄金ライン(矢作×坂井)');
     } else if (trainer.includes('木村') && jockey.includes('ルメール')) {
-      potential += 30; tags.push('🌟黄金ライン(木村×ルメール)');
+      // [減点方式] potential += 30; tags.push('🌟黄金ライン(木村×ルメール)');
     } else if (trainer.includes('中内田') && jockey.includes('川田')) {
-      potential += 30; tags.push('🌟黄金ライン(中内田×川田)');
+      // [減点方式] potential += 30; tags.push('🌟黄金ライン(中内田×川田)');
     } else if (trainer.includes('打越') && jockey.includes('吉村')) {
-      potential += 25; tags.push('🌟黄金ライン(打越×吉村)');
+      // [減点方式] potential += 25; tags.push('🌟黄金ライン(打越×吉村)');
     }
   }
 
@@ -4205,7 +4174,7 @@ export function calculateTsuchiyaScore(
   // ① 園田・好調厩舎（実績に基づく固め打ち警戒）
   const sonodaHotStables = /(山口浩幸|永島太郎|盛本信尋|長倉功|高馬元昭|諏訪貴正)/;
   if (trainer.match(sonodaHotStables)) {
-    potential += 25;
+    // [減点方式] potential += 25;
     tags.push('🔥園田好調厩舎:固め打ち警戒');
   }
 
@@ -4216,7 +4185,7 @@ export function calculateTsuchiyaScore(
   
   if (isExchangeRace) {
     if (horse.stableLocation?.match(eliteAwayRegions)) {
-      potential += 50; // エリート地区のレベル差を最重視
+      /* [減点方式] potential += 50; */ // エリート地区のレベル差を最重視
       tags.push(`🏹交流戦エッジ:他地区遠征馬(${horse.stableLocation})`);
     } else if (horse.stableLocation?.match(/(兵庫|園田|西脇)/)) {
       potential -= 25; // 地元勢の劣勢を反映（Sランク相当の能力差）
@@ -4227,7 +4196,7 @@ export function calculateTsuchiyaScore(
   // 3. 陣営の思惑（仕上げ・叩き）
   // 前走大敗からしっかり絞ってきた場合
   if (weightChange < 0 && weightChange >= -10 && horse.pastRaces && horse.pastRaces.length > 0 && horse.pastRaces[0].result > 5) {
-    potential += 15;
+    // [減点方式] potential += 15;
     tags.push('🔥メイチ仕上げ推測(馬体重絞り)');
   }
 
@@ -4242,7 +4211,7 @@ export function calculateTsuchiyaScore(
   // 【全場共通】鞍上（騎手）エリート補正
   // ==========================================
   if (isEliteJockey) {
-    potential += 25;
+    // [減点方式] potential += 25;
     tags.push('👑エリート鞍上');
   }
 
@@ -4253,8 +4222,8 @@ export function calculateTsuchiyaScore(
       if (vs.total >= 3) {
         const winRate = vs.wins / vs.total;
         const top3Rate = vs.top3 / vs.total;
-        if (winRate > 0.20) { potential += 25; tags.push('会場勝率エリート'); }
-        else if (top3Rate > 0.40) { potential += 20; tags.push('会場安定勢'); }
+        if (winRate > 0.20) { /* [減点方式] potential += 25; */ tags.push('会場勝率エリート'); }
+        else if (top3Rate > 0.40) { /* [減点方式] potential += 20; */ tags.push('会場安定勢'); }
       }
     }
 
@@ -4264,7 +4233,7 @@ export function calculateTsuchiyaScore(
     if (jm.totalRaces >= 10) {
       const nationwideWinRate = jm.wins / jm.totalRaces;
       if (nationwideWinRate >= 0.15) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push(`👑 全国トップジョッキー(勝率${(nationwideWinRate*100).toFixed(1)}%)`);
       }
     }
@@ -4289,10 +4258,10 @@ export function calculateTsuchiyaScore(
     // 1000m以下の超短距離（川崎900m、船橋1000mなど）
     // 逃げ・先行脚質への圧倒的加点
     if (horse.style === '逃げ') {
-      potential += 45;
+      // [減点方式] potential += 45;
       tags.push('🚀超スプリント逃げ(絶対有利)');
     } else if (horse.style === '先行') {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🚀超スプリント先行(展開利)');
     } else if (horse.style === '差し' || horse.style === '追込') {
       potential -= 25;
@@ -4301,7 +4270,7 @@ export function calculateTsuchiyaScore(
 
     // 内枠有利（川崎900m等）
     if (frame <= 3) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('🎯超スプリント内枠エッジ');
     } else if (frame >= 7) {
       potential -= 10;
@@ -4322,13 +4291,13 @@ export function calculateTsuchiyaScore(
     if (isLeftTurnRace) {
       const leftGoodRaces = leftTurnRaces.filter(pr => pr.result <= 3);
       if (leftGoodRaces.length >= 2) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push(`🔄サウスポー適性(左回り好走${leftGoodRaces.length}回)`);
       }
     } else {
       const rightGoodRaces = rightTurnRaces.filter(pr => pr.result <= 3);
       if (rightGoodRaces.length >= 2) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push(`🔄右回り好走実績あり(${rightGoodRaces.length}回)`);
       }
     }
@@ -4336,7 +4305,7 @@ export function calculateTsuchiyaScore(
 
   // 地元所属ボーナス（例：川崎開催で川崎所属）
   if (horse.belonging && trackName.includes(horse.belonging)) {
-    potential += 20;
+    // [減点方式] potential += 20;
     tags.push(`🏠地元自場アドバンテージ(${horse.belonging})`);
   }
 
@@ -4361,7 +4330,7 @@ export function calculateTsuchiyaScore(
 
     if (hasSeriousDisadvantage) {
       // 不利による度外視。次走での巻き返し期待値激増
-      potential += 40;
+      // [減点方式] potential += 40;
       distortionBoost += 0.5;
       tags.push('🔥度外視:前走不利巻き返し期待');
     }
@@ -4402,7 +4371,7 @@ export function calculateTsuchiyaScore(
 
         if (isHighPace) {
           if (horse.style === '差し' || horse.style === '追込') {
-            potential += 25;
+            // [減点方式] potential += 25;
             tags.push('⚡前傾ハイペース適合(差し追込有利)');
           } else if (horse.style === '逃げ') {
             potential -= 15;
@@ -4410,7 +4379,7 @@ export function calculateTsuchiyaScore(
           }
         } else {
           if (horse.style === '逃げ' || horse.style === '先行') {
-            potential += 30;
+            // [減点方式] potential += 30;
             tags.push('🚀後傾スローペース適合(逃げ先行有利)');
           } else if (horse.style === '追込') {
             potential -= 20;
@@ -4428,23 +4397,23 @@ export function calculateTsuchiyaScore(
   if (race.surface === 'ダート') {
     const dirtEliteSires = /(ドレフォン|シニスターミニスタ|ヘニーヒューズ|マジェスティックウォリアー|パイロ|ミッキーアイル)/;
     if (sireName.match(dirtEliteSires)) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push(`🧬ダート黄金血統(${sireName})`);
     }
 
     const eliteDirtBreeders = /(カタオカフアーム|ノーザンファーム|社台|グランド牧場|ヤナガワ牧場)/;
     if (breederName.match(eliteDirtBreeders)) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push(`🏡ダート優秀牧場(${breederName})`);
     }
   } else if (race.surface === '芝') {
     const turfEliteSires = /(ディープインパクト|ロードカナロア|キタサンブラック|エピファネイア|モーリス|ハーツクライ)/;
     if (sireName.match(turfEliteSires)) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push(`🧬芝クラシック血統(${sireName})`);
     }
     if (breederName.match(/(ノーザンファーム|社台ファーム|追分ファーム)/)) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🏡芝エリート生産牧場');
     }
   }
@@ -4456,7 +4425,7 @@ export function calculateTsuchiyaScore(
     if (race.surface === 'ダート') {
       const dirtEliteBMS = /(クロフネ|フレンチデピュティ|ゴールドアリュール|ブライアンズタイム|シンボリクリスエス|ワイルドラッシュ|エンドスウィープ)/;
       if (bmsName.match(dirtEliteBMS)) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push(`💪 砂のスタミナ(母父): ダート適性に優れたBMS血統エッジ(${bmsName})`);
       }
     }
@@ -4465,7 +4434,7 @@ export function calculateTsuchiyaScore(
     if (race.condition === '重' || race.condition === '不良') {
       const mudEliteBMS = /(クロフネ|フレンチデピュティ|キングカメハメハ|シンボリクリスエス|メジロマックイーン|スペシャルウィーク|アグネスタキオン)/;
       if (bmsName.match(mudEliteBMS)) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push(`🌧️ 道悪の鬼(母父): 雨天馬場に適したBMS適性(${bmsName})`);
       }
     }
@@ -4483,10 +4452,10 @@ export function calculateTsuchiyaScore(
       const isAway = !trackName.includes(horseBelonging);
       if (isAway) {
         if (horseBelonging === '大井' && (trackName.includes('川崎') || trackName.includes('浦和'))) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push(`🏹南関他場遠征エッジ(${horseBelonging}→${trackName})`);
         } else if (horseBelonging === '船橋' && trackName.includes('川崎')) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push(`🏹遠征シナジー(${horseBelonging}→川崎)`);
         }
       }
@@ -4495,7 +4464,7 @@ export function calculateTsuchiyaScore(
     // 2. 地方競馬の「先行脚質」と「内枠」の小回り適合エッジ
     if (horse.style === '逃げ' || horse.style === '先行') {
       if (horse.number >= 1 && horse.number <= 4) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push('🎯地方内枠逃げ先行アドバンテージ');
       }
     }
@@ -4512,7 +4481,7 @@ export function calculateTsuchiyaScore(
     }
 
     if (hasSprintRecord) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('⏱️超短距離スピード実績値あり');
     }
   }
@@ -4521,16 +4490,16 @@ export function calculateTsuchiyaScore(
   // PMR (Physical Mass Ratio) 解析
   // ==========================================
   if (dist <= 1400) {
-    if (460 <= weight && weight <= 490) { potential += 15; tags.push('PMR最適（短距離）'); }
+    if (460 <= weight && weight <= 490) { /* [減点方式] potential += 15; */ tags.push('PMR最適（短距離）'); }
     else if (weight > 510) { potential -= 10; }
     else if (weight < 440) { potential -= 15; }
   } else if (dist <= 2000) {
-    if (480 <= weight && weight <= 520) { potential += 20; tags.push('PMR黄金帯域'); }
-    else if (weight > 520) { potential += 15; tags.push('大型馬パワー'); }
-    else if (weight < 450) { potential += 5; }
+    if (480 <= weight && weight <= 520) { /* [減点方式] potential += 20; */ tags.push('PMR黄金帯域'); }
+    else if (weight > 520) { /* [減点方式] potential += 15; */ tags.push('大型馬パワー'); }
+    else if (weight < 450) { /* [減点方式] potential += 5; */ }
   } else {
-    if (460 <= weight && weight <= 480) { potential += 15; tags.push('PMR最適（長距離）'); }
-    else if (weight >= 530) { potential += 15; tags.push('スタミナ型質量'); }
+    if (460 <= weight && weight <= 480) { /* [減点方式] potential += 15; */ tags.push('PMR最適（長距離）'); }
+    else if (weight >= 530) { /* [減点方式] potential += 15; */ tags.push('スタミナ型質量'); }
   }
 
   // ==========================================
@@ -4539,12 +4508,12 @@ export function calculateTsuchiyaScore(
   // ① 1着候補パターン：小幅な変動（±8kg以内）
   // 統計的に勝ち馬の多くがこの範囲に集中（安定した仕上げ）
   if (Math.abs(weightChange) <= 8) {
-    potential += 35;
+    // [減点方式] potential += 35;
     tags.push('🏹安定馬体(1着候補:±8kg内)');
     
     // 後半レース（8R〜12R）でのマイナス体重は「究極の仕上げ」としてさらに評価
     if (race.raceNumber >= 8 && weightChange < 0) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('🔥後半戦マイナス体重(メイチ絞り)');
     }
   } 
@@ -4559,10 +4528,10 @@ export function calculateTsuchiyaScore(
     if (weightChange >= 10) {
       // 大幅増（成長分または休養明け）
       if (age <= 3 && weightChange <= 35) {
-        potential += 20; // 若駒は成長分として一定の勝機も残す
+        /* [減点方式] potential += 20; */ // 若駒は成長分として一定の勝機も残す
         tags.push('🚀若駒成長分(3着内期待)');
       } else if (weightChange <= 16) {
-        potential += 10;
+        // [減点方式] potential += 10;
         tags.push('🚀馬体充実(ヒモ警戒)');
       } else {
         potential -= 20;
@@ -4571,7 +4540,7 @@ export function calculateTsuchiyaScore(
     } else if (weightChange <= -10) {
       // 大幅減（絞り込みまたは消耗）
       if (weightChange >= -18) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push('🎯究極の絞り(ヒモ荒れ注意)');
       } else {
         potential -= 30;
@@ -4586,7 +4555,7 @@ export function calculateTsuchiyaScore(
   if (race.raceNumber <= 6) {
     // 前半レース（若駒戦）：2〜3歳の若い馬が主役
     if (age <= 3) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🚀若駒フェーズ適合(2-3歳期待)');
     } else {
       potential -= 15;
@@ -4594,7 +4563,7 @@ export function calculateTsuchiyaScore(
   } else if (race.raceNumber >= 7) {
     // 後半レース（古馬戦）：4歳以上の経験豊富なベテランが台頭
     if (age >= 4) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🛡️古馬・ベテランフェーズ適合(実績重視)');
     } else {
       potential -= 10;
@@ -4655,20 +4624,20 @@ export function calculateTsuchiyaScore(
   // 独自算出の「枠順バイアススコア」に基づく補正
   if (frame === 1) {
     // 1枠：スコア1位(1.08) 複勝率50%の最強軸
-    potential += 40;
+    // [減点方式] potential += 40;
     tags.push('🏹1枠:黄金期待値(軸信頼度1位)');
   } else if (frame === 7) {
     // 7枠：スコア2位(0.93) 勝率26.7%の勝ち切りバイアス
-    potential += 35;
+    // [減点方式] potential += 35;
     tags.push('🚀7枠:勝負の突き抜け(勝率1位)');
   } else if (frame === 4) {
     // 4枠：スコア3位(0.75) 複勝率58.3%のヒモ穴バイアス
-    potential += 10;
+    // [減点方式] potential += 10;
     distortionBoost += 0.6; // 2-3着への食い込みやすさを強化
     tags.push('💎4枠:激走の紐穴(複勝率1位)');
   } else if (frame === 8) {
     // 8枠：スコア4位(0.70) 標準以上の期待値
-    potential += 15;
+    // [減点方式] potential += 15;
     tags.push('🛡️8枠:外枠の安定感');
   } else if (frame === 2) {
     // 2枠：スコア最下位(0.25) 明確な死角
@@ -4683,17 +4652,17 @@ export function calculateTsuchiyaScore(
   // 2. 厩舎所属エリア（栗東/美浦）
   if (trackName !== '東京' && race.venue !== '東京') {
     if (horse.stableLocation === '栗東') {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push('🏰西高東低(栗東所属)');
     } else if (horse.stableLocation === '美浦') {
-      potential += 5;
+      // [減点方式] potential += 5;
     }
   }
 
   // 3. オッズ偏差値解析（歪みの標準化）
   if (horse.oddsStandardScore) {
     if (horse.oddsStandardScore >= 65) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('💎不当過小評価(歪み特大)');
     } else if (horse.oddsStandardScore <= 35) {
       potential -= 15;
@@ -4709,10 +4678,10 @@ export function calculateTsuchiyaScore(
   if (wave.level <= 2) {
     // 波乱度低（鉄板・堅実）フェーズ：上位人気が強力
     if (popularity === 1) {
-      potential += 45; 
+      // [減点方式] potential += 45;
       tags.push(`👑堅実フェーズ:1番人気信頼 (${wave.category})`);
     } else if (popularity >= 2 && popularity <= 3) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push(`🎯堅実フェーズ:上位人気順当 (${wave.category})`);
     } else {
       potential -= 20;
@@ -4723,7 +4692,7 @@ export function calculateTsuchiyaScore(
       potential -= 5;
       tags.push(`⚠️波乱フェーズ:1番人気過信禁物 (${wave.category})`);
     } else if (popularity >= 5 && popularity <= 8) {
-      potential += 25;
+      // [減点方式] potential += 25;
       distortionBoost += 1.2;
       tags.push(`💎波乱の使者:激走の伏兵 (${wave.category})`);
     }
@@ -4731,7 +4700,7 @@ export function calculateTsuchiyaScore(
     // 波乱期における「減量騎手」の一発評価
     const isWeightReduced = kinryo <= 53 || horse.prevJockey?.match(/[▲△☆]/);
     if (isWeightReduced) {
-      potential += 30;
+      // [減点方式] potential += 30;
       distortionBoost += 0.5;
       tags.push(`⚡波乱警戒:減量騎手の爆発力 (${wave.category})`);
     }
@@ -4745,25 +4714,25 @@ export function calculateTsuchiyaScore(
 
   // ① JRA所属馬の交流戦バイアス（中央未勝利交流戦など）
   if (isExchangeRace && isJRAHorse) {
-    potential += 60; // 圧倒的な実力差を考慮
+    /* [減点方式] potential += 60; */ // 圧倒的な実力差を考慮
     tags.push('🚀中央所属馬(交流戦バイアス)');
   }
 
   // ② 特定厩舎のクラス別優位性（加藤義厩舎のA級戦独占など）
   if (trainer === '加藤義' && (horse.raceClass?.match(/A[123]/) || race.raceNumber >= 11)) {
-    potential += 35;
+    // [減点方式] potential += 35;
     tags.push('🏰有力厩舎:加藤義(A級戦・メイン勝負)');
   }
 
   // ③ 特定の「馬主×厩舎」強力タッグ
   // ミルファーム × 金田一
   if (owner.match(/ミルファーム/) && trainer === '金田一') {
-    potential += 40;
+    // [減点方式] potential += 40;
     tags.push('🤝強力タッグ:ミルファーム×金田一');
   }
   // (株)ファーストビジネス × 加藤和
   if (owner.match(/(ファーストビジネス|First Business)/) && trainer === '加藤和') {
-    potential += 40;
+    // [減点方式] potential += 40;
     tags.push('🤝強力タッグ:ファーストビジネス×加藤和');
   }
 
@@ -4776,17 +4745,17 @@ export function calculateTsuchiyaScore(
     
     // ① アタマ(1着)候補の王道：前走僅差または上位着順
     if (tDiff < 0) {
-      potential += 35; // 前走圧勝
+      /* [減点方式] potential += 35; */ // 前走圧勝
       tags.push(`🔥前走圧勝実績(着差${tDiff}秒)`);
     } else if (tDiff <= 1.0 || lastRace.result <= 3) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🔥王道パターン(前走好走/僅差)');
     }
     
     // ② JRA転入馬の「格上」評価（大敗無視）
     const isJRATransfer = horse.pastRaces.some(pr => pr.venue.match(/(東京|中山|阪神|京都|新潟|中京|小倉|福島|函館|札幌)/));
     if (isJRATransfer && tDiff >= 2.0) {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push('🚀JRA転入馬(格上/前走大敗無視)');
     }
     
@@ -4826,12 +4795,12 @@ export function calculateTsuchiyaScore(
     if (currentLevel > 0 && prevLevel > 0) {
       if (prevLevel > currentLevel) {
         // 降級ローテ（前走よりクラスが下がった）
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push(`📉 降級ローテ: 前走格上クラス(${lastRace.raceClass})から今回(${horse.raceClass})で実力優位`);
         
         // 前走で僅差好走または上位着順であればさらに勝負ヤリ
         if (lastRace.result <= 5 || tDiff <= 1.0) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push('⚡ 降級メイチ: 前走格上で掲示板内・僅差の巻き返し期待');
         }
       } else if (prevLevel < currentLevel) {
@@ -4841,7 +4810,7 @@ export function calculateTsuchiyaScore(
         
         // 前走勝ち上がり（1着）または前走圧勝なら昇級の壁を突破する余地あり
         if (lastRace.result === 1 || tDiff < 0) {
-          potential += 20; // 差し引き +10
+          /* [減点方式] potential += 20; */ // 差し引き +10
           tags.push('⚡ 昇級即通用: 前走勝ち上がりの勢いあり');
         }
       }
@@ -4871,7 +4840,7 @@ export function calculateTsuchiyaScore(
         
         // 若駒の順調なビルドアップ（成長期トレンド）
         if (age <= 3 && prevDiff >= 2 && actualDiff >= 2 && actualDiff <= 12) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push('🚀 成長期トレンド: 若駒の順調なビルドアップ・好調キープ');
         }
       }
@@ -4886,7 +4855,7 @@ export function calculateTsuchiyaScore(
             potential -= 15; // 急激な戻しすぎは太目残り（リバウンド失敗）
             tags.push(`⚠️ 急激な馬体増: 短期間での過剰増(+${actualDiff}kg)による太目残り懸念`);
           } else {
-            potential += 20; // 適切な回復
+            /* [減点方式] potential += 20; */ // 適切な回復
             tags.push(`📈 馬体ふっくら: 大幅減からの回復・前走大敗からの復調気配`);
           }
         }
@@ -4901,7 +4870,7 @@ export function calculateTsuchiyaScore(
         
         // 今回の馬体重が、過去好走時の平均体重と±6kg以内である場合
         if (Math.abs(weight - avgBestWeight) <= 6) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push(`🏆 ベスト体重適合: 過去好走時の平均馬体重(${Math.round(avgBestWeight)}kg)に合致`);
         }
       }
@@ -4917,7 +4886,7 @@ export function calculateTsuchiyaScore(
       const isUnderValued = (popularity >= 5) || (odds >= 8.0);
 
       if (wasFavored && didUnderperform && isUnderValued) {
-        potential += 35;
+        // [減点方式] potential += 35;
         distortionBoost += 1.5; // 期待値バイアスを大幅に強化
         tags.push("💎 期待値の闇: 前走上位人気裏切りによる過小評価(妙味爆発)");
       }
@@ -4939,7 +4908,7 @@ export function calculateTsuchiyaScore(
       const isGeneralRace = !race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ|OP|オープン)/i);
       
       if (isGeneralRace && lastRace.result <= 8) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push(`👑 相手関係大幅緩和: 前走高賞金特別戦(${lastRace.prize}万)惜敗から今回平場一般戦で格上優位`);
       }
     }
@@ -4952,7 +4921,7 @@ export function calculateTsuchiyaScore(
     const last3fTimes = horse.pastRaces.map(pr => parseFloat(pr.last3fTime || '99.9'));
     const best3f = Math.min(...last3fTimes);
     if (isLowerClass && best3f <= 34.2) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🚀下位クラス末脚エッジ');
     }
     
@@ -4961,7 +4930,7 @@ export function calculateTsuchiyaScore(
       const sameDistRaces = horse.pastRaces.filter(pr => pr.distance === race.distance);
       const bestTime = sameDistRaces.length > 0 ? Math.min(...sameDistRaces.map(pr => parseFloat(pr.time || '999'))) : 999;
       if (bestTime < 999) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push('🛡️上位クラス持ち時計エッジ');
       }
     }
@@ -4969,7 +4938,7 @@ export function calculateTsuchiyaScore(
     // ⑤ 隠れた「タイム異常値」検知：着順は大敗でもタイム差が極少な馬
     const hiddenGem = horse.pastRaces.find(pr => pr.result >= 8 && pr.timeDiff !== undefined && pr.timeDiff <= 0.5);
     if (hiddenGem) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push('💎タイム異常値(着順不問・実力不一致)');
     }
     
@@ -4978,20 +4947,20 @@ export function calculateTsuchiyaScore(
     
     if (race.surface === '芝') {
       if (bestLast3f <= 33.3) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push(`🚀芝瞬発力エリート(上がり${bestLast3f.toFixed(1)}s)`);
         if (bestLast3f <= 32.8) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push('⚡芝異次元の末脚(32秒台)');
         }
       }
     } else if (race.surface === 'ダート') {
       // ダート：高速決着なら37-38秒台が必須。クラスが上がるほど要求値がシビアに。
       if (bestLast3f <= 38.2) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push(`💪ダート高速末脚(上がり${bestLast3f.toFixed(1)}s)`);
         if (isUpperClass && bestLast3f <= 37.8) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push('⚡上位ダート:必須スピード性能クリア');
         }
       }
@@ -5001,7 +4970,7 @@ export function calculateTsuchiyaScore(
       // ポジションを取って37-38秒台（短距離）で粘り込む馬を上位評価
       if (horse.style === '逃げ' || horse.style === '先行' || horse.style === '好位') {
         if (bestLast3f <= 38.5) {
-          potential += 30;
+          // [減点方式] potential += 30;
           tags.push('🛡️先行持続脚(前残りバイアス適合)');
         }
       } else if (horse.style === '差し' || horse.style === '追込') {
@@ -5014,10 +4983,10 @@ export function calculateTsuchiyaScore(
       
       // 【新設】後半レース(8R〜12R)における末脚持続力（39秒台〜40秒台前半）の正当な評価
       if (race.raceNumber >= 8 && bestLast3f <= 40.5) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push(`🌃後半戦:安定した末脚(上がり${bestLast3f.toFixed(1)}s)`);
         if (bestLast3f <= 39.9) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push('🔥後半戦:39秒台の決定力');
         }
       }
@@ -5050,7 +5019,7 @@ export function calculateTsuchiyaScore(
     });
 
     if (hasFastAndLate) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🏆総合スピード能力(タイム×上がり相関)');
     }
     
@@ -5063,16 +5032,16 @@ export function calculateTsuchiyaScore(
     }).length;
 
     if (frontPosCount >= 2) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🚀安定した先行力(1-3番手保持実績)');
     } else if (frontPosCount === 1 && (horse.style === '逃げ' || horse.style === '先行')) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push('🏹先行実績あり');
     }
 
     // ⑨ 超短距離（1100m以下）における「テンの速さ」特化評価
     if (dist <= 1100 && (horse.style === '逃げ' || horse.style === '先行')) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('⚡超短距離エッジ(テンの速さ重視)');
     }
 
@@ -5081,7 +5050,7 @@ export function calculateTsuchiyaScore(
       const pos = lastRace.passingPositions.split('-').map(Number);
       const isFront = pos[0] <= 3 || pos[1] <= 3;
       if (isFront && (trackName === '川崎' || trackName === '門別' || trackName === '笠松' || trackName === '園田')) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push('🏇小回り先行実績(展開利)');
       }
     }
@@ -5097,19 +5066,19 @@ export function calculateTsuchiyaScore(
   if (race.surface === 'ダート') {
     // ダート戦：先行・好位抜け出しが王道（4角5番手以内想定）
     if (hStyle === '逃げ' || hStyle === '先行' || hStyle === '好位') {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push('🔥ダート王道展開(先行・好位)');
       tags.push('💪ダート先行利:キックバック回避');
       
       // 下級クラスや後半の古馬戦ならさらに「前残り」を強く評価
       if (isLClass || race.raceNumber >= 8) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push('🛡️ダート物理的先行有利(1着候補)');
       }
     } else {
       // ダート差し・追込：通常は割引だが、前半の3歳戦(JRA移籍等)は例外
       if (age <= 3 || race.raceNumber <= 7) {
-        potential += 15; // 差し切りのポテンシャルを評価
+        /* [減点方式] potential += 15; */ // 差し切りのポテンシャルを評価
         tags.push('🚀若駒ダート:末脚一閃期待(差し切り)');
       } else {
         potential -= 15;
@@ -5126,16 +5095,16 @@ export function calculateTsuchiyaScore(
     if (isLClass || race.raceNumber <= 6) {
       // 芝前半レース（下位クラス）：先行・好位抜け出し有利
       if (hStyle === '逃げ' || hStyle === '先行' || hStyle === '好位') {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push('🏹芝前半:先行・好位展開利');
       }
     } else if (isUClass || race.raceNumber >= 7) {
       // 芝後半レース（上級条件）：差し・追込の爆発有利
       if (hStyle === '中団' || hStyle === '後方') {
-        potential += 40;
+        // [減点方式] potential += 40;
         tags.push('🚀芝後半:差し・追込展開利');
         if (isHighPaceSim) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push('🔥ハイペース激戦:末脚ブースト');
         }
       } else if (hStyle === '逃げ' || hStyle === '先行') {
@@ -5152,10 +5121,10 @@ export function calculateTsuchiyaScore(
   // 平均11〜12%。13%超は重く、11%未満はパワー優位。
   const jockWeightRatio = (kinryo / weight) * 100;
   if (jockWeightRatio < 11.0) {
-    potential += 35; // 500kg超大型馬の圧倒的パワー
+    /* [減点方式] potential += 35; */ // 500kg超大型馬の圧倒的パワー
     tags.push('💪斤量比率10%台(パワー無双)');
   } else if (jockWeightRatio <= 12.5) {
-    potential += 20; // 450-490kg前後の適正サイズ
+    /* [減点方式] potential += 20; */ // 450-490kg前後の適正サイズ
     tags.push('💪斤量比率適正(勝ちきり期待)');
   } else if (jockWeightRatio >= 14.0) {
     potential -= 20; // 小柄な馬の1着は厳しい
@@ -5167,14 +5136,14 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 55kgが最多勝利。54kg以下はヒモ、57kg以上は後半のみ信頼。
   if (kinryo === 55) {
-    potential += 25; 
+    // [減点方式] potential += 25;
     tags.push('🎯黄金斤量(55kg)');
   } else if (kinryo <= 54) {
     potential -= 15;
     tags.push('🎐軽量馬(2-3着ヒモ穴特化)');
   } else if (kinryo >= 57) {
     if (race.raceNumber >= 7) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('🏰重量実力馬(後半勝負)');
     } else {
       potential -= 15;
@@ -5184,7 +5153,7 @@ export function calculateTsuchiyaScore(
 
   // 馬格(500kg+) と 成長(+10kg+) のシナジー評価
   if (weight >= 500 && weightChange >= 10) {
-    potential += 25;
+    // [減点方式] potential += 25;
     tags.push('🚀大型馬×大幅増(成長パワーアップ)');
   }
 
@@ -5196,16 +5165,16 @@ export function calculateTsuchiyaScore(
     
     // 枠順バイアス（全時間帯共通の強力な傾向）
     if (frame >= 7) {
-      potential += 30; tags.push('盛岡:外枠絶対優位');
+      // [減点方式] potential += 30; tags.push('盛岡:外枠絶対優位');
     } else if (frame === 1) {
-      potential += 20; tags.push('盛岡:最内枠健闘');
+      // [減点方式] potential += 20; tags.push('盛岡:最内枠健闘');
     } else if (frame === 2 || frame === 4) {
       potential -= 25; tags.push('盛岡:死滅枠(2/4枠)懸念');
     }
 
     if (race.raceNumber >= 7) {
       if (popularity >= 6 && popularity <= 10) {
-        potential += 25; tags.push('盛岡後半:波乱警戒(大穴)');
+        // [減点方式] potential += 25; tags.push('盛岡後半:波乱警戒(大穴)');
       }
       
       // 1200m戦の上級クラス（後半戦）における上がりタイム要求
@@ -5213,7 +5182,7 @@ export function calculateTsuchiyaScore(
         // 近走1200mで好走（末脚上位相当）しているか
         const pastFast = horse.pastRaces.some(pr => pr.distance <= 1400 && pr.result <= 3);
         if (pastFast) {
-          potential += 20; tags.push('盛岡後半1200m:末脚要求適合');
+          // [減点方式] potential += 20; tags.push('盛岡後半1200m:末脚要求適合');
         }
       }
     }
@@ -5221,17 +5190,17 @@ export function calculateTsuchiyaScore(
     // 盛岡特有の馬特性ボーナス
     // 1. 前走1着馬の連勝（勢い）ボーナス
     if (horse.pastRaces && horse.pastRaces.length > 0 && horse.pastRaces[0].result === 1) {
-      potential += 25; tags.push('盛岡:前走1着(連勝期待)');
+      // [減点方式] potential += 25; tags.push('盛岡:前走1着(連勝期待)');
     }
     // 2. ベテラン高齢馬（9歳以上）の激走警戒
     if (horse.age >= 9) {
-      potential += 20; tags.push('盛岡:ベテラン激走警戒');
+      // [減点方式] potential += 20; tags.push('盛岡:ベテラン激走警戒');
     }
     // 3. 特効上位騎手とヒモ穴（若手・減量）の傾向
     if (jockey.includes('高松') || jockey.includes('高橋悠') || jockey.includes('山本聡')) {
-      potential += 25; tags.push('盛岡:特効上位騎手(頭候補)');
+      // [減点方式] potential += 25; tags.push('盛岡:特効上位騎手(頭候補)');
     } else if (jockey.includes('塚本涼') || jockey.includes('坂井瑛') || /[☆△▲◇]/.test(jockey)) {
-      potential += 15; tags.push('盛岡:ヒモ穴警戒(減量/若手)');
+      // [減点方式] potential += 15; tags.push('盛岡:ヒモ穴警戒(減量/若手)');
     }
   }
 
@@ -5239,8 +5208,8 @@ export function calculateTsuchiyaScore(
   // GIS幾何学適性 - 枠順バイアス (盛岡・東京以外)
   // ==========================================
   if (trackName !== '盛岡' && trackName !== '東京' && race.venue !== '盛岡' && race.venue !== '東京') {
-    if (frame <= 3) { potential += 15; tags.push('内枠最短経路'); }
-    else if (frame >= (headCount - 1)) { potential += 10; tags.push('外枠被せなし'); }
+    if (frame <= 3) { /* [減点方式] potential += 15; */ tags.push('内枠最短経路'); }
+    else if (frame >= (headCount - 1)) { /* [減点方式] potential += 10; */ tags.push('外枠被せなし'); }
   }
 
   // ==========================================
@@ -5250,9 +5219,9 @@ export function calculateTsuchiyaScore(
   const turfSires = ['ディープインパクト', 'ハーツクライ', 'キズナ', 'エピファネイア', 'モーリス', 'ロードカナロア', 'ドゥラメンテ'];
 
   if (race.surface === 'ダート') {
-    if (dirtSires.some(s => bloodline.includes(s))) { potential += 25; tags.push('ダートエリート血統'); }
+    if (dirtSires.some(s => bloodline.includes(s))) { /* [減点方式] potential += 25; */ tags.push('ダートエリート血統'); }
   } else {
-    if (turfSires.some(s => bloodline.includes(s))) { potential += 25; tags.push('芝エリート血統'); }
+    if (turfSires.some(s => bloodline.includes(s))) { /* [減点方式] potential += 25; */ tags.push('芝エリート血統'); }
   }
 
   // ==========================================
@@ -5260,27 +5229,27 @@ export function calculateTsuchiyaScore(
   // ==========================================
   if (trackName === '笠松') {
     if (horse.transferFrom === 'JRA' && (horse.jraEarnings || 0) === 0) { potential -= 25; tags.push('JRA未収得賞金の罠'); }
-    if (weight >= 510) { potential += 25; tags.push('絶対パワー'); }
+    if (weight >= 510) { /* [減点方式] potential += 25; */ tags.push('絶対パワー'); }
     else if (weight <= 430) { potential -= 35; tags.push('足切り'); }
     if (dist === 800 && (condition === '重' || condition === '不良')) {
-      if (frame >= 7) { potential += 30; tags.push('外枠絶対優位'); }
+      if (frame >= 7) { /* [減点方式] potential += 30; */ tags.push('外枠絶対優位'); }
       if (frame === 1) { potential -= 40; tags.push('1枠死滅'); }
     }
-    if (bloodline.includes('Roberto')) { potential += 15; tags.push('Roberto血統'); }
+    if (bloodline.includes('Roberto')) { /* [減点方式] potential += 15; */ tags.push('Roberto血統'); }
     if (jockey === '渡邊竜也') {
       if (popularity === 1 && headCount >= 10) { potential -= 30; }
-      else if (5 <= frame && frame <= 8) { potential += 25; tags.push('渡邊中外枠エッジ'); }
+      else if (5 <= frame && frame <= 8) { /* [減点方式] potential += 25; */ tags.push('渡邊中外枠エッジ'); }
     }
   } else if (trackName === '大井') {
-    if (bloodline.includes('キングマンボ')) { potential += 20; tags.push('ベアリング効果抗力'); }
+    if (bloodline.includes('キングマンボ')) { /* [減点方式] potential += 20; */ tags.push('ベアリング効果抗力'); }
     if (condition === '良' && (bloodline.includes('イスラボニータ') || bloodline.includes('スクリーンヒーロー'))) {
-      potential += 25; tags.push('良馬場芝適性');
+      // [減点方式] potential += 25; tags.push('良馬場芝適性');
     } else if ((condition === '重' || condition === '不良') && (bloodline.includes('ゴールドアリュール') || bloodline.includes('ドレフォン') || bloodline.includes('クロフネ'))) {
-      potential += 30; tags.push('重馬場パワー型');
+      // [減点方式] potential += 30; tags.push('重馬場パワー型');
     }
-    if (dist === 1600 && bloodline.includes('ヘニーヒューズ')) { potential += 45; tags.push('大井1600特注ヘニーヒューズ'); }
+    if (dist === 1600 && bloodline.includes('ヘニーヒューズ')) { /* [減点方式] potential += 45; */ tags.push('大井1600特注ヘニーヒューズ'); }
     const goldenCombos: Record<string, number> = { '佐々木洋一 × 矢野貴之': 40, '林正人 × 町田直希': 40, '荒山勝徳 × 笹川翼': 30 };
-    if (goldenCombos[`${horse.trainer} × ${jockey}`]) { potential += goldenCombos[`${horse.trainer} × ${jockey}`]; tags.push('黄金コンビ'); }
+    if (goldenCombos[`${horse.trainer} × ${jockey}`]) { /* [減点方式] potential += goldenCombos[...]; */ tags.push('黄金コンビ'); }
   }
 
   // ==========================================
@@ -5296,7 +5265,7 @@ export function calculateTsuchiyaScore(
       const isPrevElite = ELITE_JOCKEYS.some((ej: string) => prevJ.includes(ej));
       const isCurrElite = ELITE_JOCKEYS.some((ej: string) => currJ.includes(ej));
       if (!isPrevElite && isCurrElite) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push('🔥勝負気配:エリート騎手乗り替え強化');
       } else if (isPrevElite && !isCurrElite) {
         // 鞍上弱化
@@ -5307,7 +5276,7 @@ export function calculateTsuchiyaScore(
       // 減量騎手への乗り替えによる斤量恩恵
       const isApprentice = /[▲△☆★◇]/.test(horse.jockey) || horse.jockey.includes('減量') || horse.jockey.includes('▲') || horse.jockey.includes('△');
       if (isApprentice) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push('⚡鞍上交代:減量ジョッキー起用(斤量恩恵バフ)');
       }
     }
@@ -5321,10 +5290,10 @@ export function calculateTsuchiyaScore(
 
     if (isLeftTrack) {
       if (horse.leftTurnExperience && horse.leftTurnExperience >= 2) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push(`🔄サウスポー適性:左回り好走実績あり(実績:${horse.leftTurnExperience}回)`);
       } else if (leftTurnGood >= 2) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push(`🔄左回り好走実績馬(${leftTurnGood}回)`);
       } else if (rightTurnGood >= 3 && leftTurnGood === 0) {
         // 右回りは得意だが左回りは未知または凡走のみ
@@ -5333,7 +5302,7 @@ export function calculateTsuchiyaScore(
       }
     } else {
       if (rightTurnGood >= 2) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push(`🔄右回り適性確実(${rightTurnGood}回)`);
       }
     }
@@ -5343,7 +5312,7 @@ export function calculateTsuchiyaScore(
   if (race.surface === 'ダート' && frame >= 6) {
     const isInnerLoad = horse.prevInnerLoadExp || (horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].frameNumber !== undefined && horse.pastRaces[0].frameNumber <= 2);
     if (isInnerLoad && horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].result >= 6) {
-      potential += 30;
+      // [減点方式] potential += 30;
       distortionBoost += 0.5;
       tags.push('🔥砂被り解放:前走内負荷大敗→今回砂被り回避外枠');
     }
@@ -5353,10 +5322,10 @@ export function calculateTsuchiyaScore(
   if (horse.ownerType === 'club' || horse.ownerType === 'major') {
     const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
     if (isGradeOrSpecial) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🏰大物馬主/一口クラブ馬:上級勝負仕上げ');
     } else {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push('🏰有力クラブ所有馬(素質馬)');
     }
   }
@@ -5364,13 +5333,13 @@ export function calculateTsuchiyaScore(
   if (horse.jraEarnings && horse.jraEarnings > 0) {
     const isNarTrack = /(川崎|船橋|大井|浦和|門別|盛岡|水沢|金沢|笠松|名古屋|園田|姫路|高知|佐賀)/.test(trackName || race.venue);
     if (isNarTrack) {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push(`🚀JRA実績格付け:圧倒的クラス格差(賞金:${Math.round(horse.jraEarnings)}万)`);
     } else {
       // JRA下級条件での本賞金持ち実績
       const isLowerJRA = race.raceName?.match(/(未勝利|1勝クラス|新馬)/) || race.raceNumber <= 6;
       if (isLowerJRA && horse.jraEarnings >= 500) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push('🛡️JRAクラス内実績馬(賞金アドバンテージ)');
       }
     }
@@ -5394,7 +5363,7 @@ export function calculateTsuchiyaScore(
     }
 
     if (hasRestGoodRecord) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('🛡️鉄砲実績馬:休み明け初戦から走るタイプ');
     } else {
       potential -= 15;
@@ -5421,10 +5390,10 @@ export function calculateTsuchiyaScore(
     }).length;
 
     if (isSummerRace && summerWins >= 2) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('☀️夏馬エッジ:暑い時期にパフォーマンス向上');
     } else if (isWinterRace && winterWins >= 2) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('❄️冬馬エッジ:寒い時期にパフォーマンス向上');
     }
   }
@@ -5432,7 +5401,7 @@ export function calculateTsuchiyaScore(
   if ((race.weather?.includes('雨') || race.weather?.includes('雪') || race.condition === '重' || race.condition === '不良') && horse.pastRaces) {
     const heavyGood = horse.pastRaces.filter(pr => (pr.condition === '重' || pr.condition === '不良') && pr.result <= 3).length;
     if (heavyGood >= 2) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push(`☔道悪巧者:荒天・泥馬場実績(${heavyGood}回好走)`);
     }
   }
@@ -5440,7 +5409,7 @@ export function calculateTsuchiyaScore(
   // 7. コーナー通過順変動（まくり・押し上げ能力）補正
   if (horse.cornerPositionVariance && horse.cornerPositionVariance >= 3.0) {
     if (horse.style === '差し' || horse.style === '追込' || horse.style === '中団') {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push(`🌀動的まくり脚:道中位置押し上げ能力(分散:${horse.cornerPositionVariance.toFixed(1)})`);
     }
   }
@@ -5453,22 +5422,22 @@ export function calculateTsuchiyaScore(
   if (race.raceNumber <= 6) {
     // 前半：差し・追い込み展開利 ＆ 中穴（7-8人気）の台頭
     if (horse.style === '中団' || horse.style === '後方') {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('前半:差し・追い込み波乱警戒');
     }
     if (popularity >= 6 && popularity <= 8) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('前半:中穴激走ゾーン');
     }
     // 1番人気の取りこぼし注意
     // 1番人気の信頼度アップ
     if (popularity === 1) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('後半:1番人気(信頼度アップ)');
     }
     // 10番人気以下の超大穴の一発警戒
     if (popularity >= 10) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('後半:爆穴(ヒモ穴・高配当狙い)');
     }
   }
@@ -5479,10 +5448,10 @@ export function calculateTsuchiyaScore(
   // 24戦23勝が3番人気以内という極端な「堅実決着」パターンを学習
   if (trackName === '園田' || trackName === '西脇' || trackName === '姫路') {
     if (popularity === 1) {
-      potential += 60; // 1番人気の鉄板級信頼度(勝率60%超)
+      /* [減点方式] potential += 60; */ // 1番人気の鉄板級信頼度(勝率60%超)
       tags.push('👑園田:1番人気(鉄板級信頼度)');
     } else if (popularity <= 3) {
-      potential += 35; // 3番人気以内の圧倒的勝率(24戦23勝)を反映
+      /* [減点方式] potential += 35; */ // 3番人気以内の圧倒的勝率(24戦23勝)を反映
       tags.push('🛡️園田:上位人気(堅実決着ゾーン)');
     } else if (popularity >= 6) {
       // 穴馬の激走確率が極めて低い馬場・展開条件を反映して大幅割引
@@ -5497,7 +5466,7 @@ export function calculateTsuchiyaScore(
   // ① 前半フェーズ（1-6R / 下級条件）：先行力・ポジションが絶対正義
   if (race.raceNumber <= 6) {
     if (horse.style === '逃げ' || horse.style === '先行' || horse.style === '好位') {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🌅前半フェーズ:先行・ポジション優位');
     }
   } 
@@ -5509,13 +5478,13 @@ export function calculateTsuchiyaScore(
       return race.surface === '芝' ? l3f <= 33.8 : l3f <= 38.5;
     });
     if (hasSharpLast3f) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🌃後半フェーズ:鋭い末脚(上がり重視)');
     }
     
     // 重要な局面（特別・メイン）でのリーディング上位騎手への期待値
     if (isEliteJockey) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('🌃後半フェーズ:トップ騎手の勝負強さ');
     }
     
@@ -5523,7 +5492,7 @@ export function calculateTsuchiyaScore(
     if (isUClass) {
       const hasFastTime = horse.pastRaces.some(pr => pr.distance === race.distance && pr.result <= 3);
       if (hasFastTime) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push('🌃後半フェーズ:上位クラス時計実績');
       }
     }
@@ -5540,14 +5509,14 @@ export function calculateTsuchiyaScore(
     if (prevRaceData && prevRaceData.last3fTime) {
       const prevLast3f = parseFloat(prevRaceData.last3fTime);
       if ((horse.style === '差し' || horse.style === '追込') && prevRaceData.result >= 4 && !isNaN(prevLast3f) && prevLast3f <= 34.5) {
-        potential += 45;
+        // [減点方式] potential += 45;
         tags.push("🔥 期待値クロス: 前走展開泣きの上がり最速馬（ハイペース必至で台頭）");
       }
     }
   } else if (escapeHorsesCount === 1) {
     // 単騎逃げ確定
     if (horse.style === '逃げ') {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push("🔥 期待値クロス: 競り掛ける馬が不在の単騎逃げ確定（マイペース絶対有利）");
     }
   }
@@ -5555,7 +5524,7 @@ export function calculateTsuchiyaScore(
   // 2. 着順ではなく着差（タイム差）評価ロジック
   if (prevRaceData && prevRaceData.result >= 6 && prevRaceData.timeDiff !== undefined) {
     if (prevRaceData.timeDiff <= 0.5) {
-      potential += 35;
+      // [減点方式] potential += 35;
       tags.push("🔥 期待値クロス: 前走6着以下だが着差0.5秒以内の実力馬（オッズ盲点）");
     }
   }
@@ -5566,7 +5535,7 @@ export function calculateTsuchiyaScore(
     const prevWasTop = jraTopJockeys.some(j => prevRaceData.jockey.includes(j));
     const nowIsTop = jraTopJockeys.some(j => horse.jockey.includes(j));
     if (!prevWasTop && nowIsTop) {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push("🔥 期待値クロス: 前走非トップ騎手からのトップ騎手手配（陣営の超勝負気配）");
     }
   }
@@ -5577,10 +5546,10 @@ export function calculateTsuchiyaScore(
   
   // 1. 調教評価ロジック
   if (horse.trainingRating === 'S') {
-    potential += 35;
+    // [減点方式] potential += 35;
     tags.push('🚀 究極仕上げ: 調教評価Sランク（一変のサイン）');
   } else if (horse.trainingRating === 'A') {
-    potential += 15;
+    // [減点方式] potential += 15;
     tags.push('💨 メイチ仕上げ: 調教評価A');
   }
 
@@ -5599,7 +5568,7 @@ export function calculateTsuchiyaScore(
   if (horse.breeder && horse.breeder.includes('ノーザンファーム')) {
     const topEliteJockeys = ['ルメール', '川田', 'モレイラ'];
     if (topEliteJockeys.some(j => horse.jockey.includes(j))) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push('💎 エリート包囲網: ノーザンF × トップ騎手（勝負気配MAX）');
     }
   }
@@ -5607,14 +5576,14 @@ export function calculateTsuchiyaScore(
   // 4. 前走の明確な不利からの巻き返し
   if (prevRaceData && prevRaceData.incidents) {
     if (prevRaceData.incidents.includes('前が壁') || prevRaceData.incidents.includes('詰まる') || prevRaceData.incidents.includes('不利')) {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push('🚨 巻き返し必至: 前走「前が壁・不利」による不完全燃焼');
     }
   }
 
   // 5. 特殊馬具（ブリンカー着用）
   if (horse.useBlinkers) {
-    potential += 10;
+    // [減点方式] potential += 10;
     tags.push('🐴 ブリンカー着用（集中力UP）');
   }
 
@@ -5628,7 +5597,7 @@ export function calculateTsuchiyaScore(
       pr.result <= 3 && pr.cushionValue !== undefined && Math.abs(pr.cushionValue - race.cushionValue!) <= 0.3
     );
     if (hasPerfectMatch) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('🎯 馬場ピタリ: 好走時のクッション値と完全一致');
     }
   }
@@ -5639,7 +5608,7 @@ export function calculateTsuchiyaScore(
       potential -= 25;
       tags.push('⚠️ 危険信号: 強烈な向かい風による逃げ馬の失速懸念');
     } else if (horse.style === '差し' || horse.style === '追込') {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push('🌪️ 強風展開利: 向かい風で前が潰れる差し展開');
     }
   }
@@ -5649,14 +5618,14 @@ export function calculateTsuchiyaScore(
     // 例: "南W 67.5-51.2-37.1-11.4" から "-11.X" の部分を抽出
     const match = horse.trainingTime.match(/-11\.[0-6]$/);
     if (match) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push('⚡ 鬼脚仕上: 調教ラスト1F 11秒台の超加速ラップ');
     }
   }
 
   // 4. ローテーションの妙味（叩き2走目）と疲労検知（連闘減体重）
   if (horse.rotation === '休み明け2戦目' || horse.rotation === '叩き2走目') {
-    potential += 20;
+    // [減点方式] potential += 20;
     tags.push('🔥 状態ピーク: 叩き2走目の大幅な上積み');
   } else if ((horse.rotation === '連闘' || horse.rotation === '中1週') && horse.weightChange <= -4) {
     potential -= 15;
@@ -5666,7 +5635,7 @@ export function calculateTsuchiyaScore(
   // 5. 仮柵（A→B/Cコース）替わりのイン突きバイアス
   if (race.temporaryFencePosition === 'B' || race.temporaryFencePosition === 'C') {
     if (horse.frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push(`🛣️ トラックバイアス絶対神: ${race.temporaryFencePosition}コース替わりの内枠先行`);
     }
   }
@@ -5681,11 +5650,11 @@ export function calculateTsuchiyaScore(
       const hasBadLuck = historicalIncidents.some((inc: any) => inc.note === "レース中不利");
       
       if (hasHugeWin) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push('👑 怪物記憶: AIが記憶する過去の「大差圧勝」履歴（底なしポテンシャル）');
       }
       if (hasBadLuck) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push('🧠 不利記憶: AIが記憶する過去のレース不利履歴からの巻き返し');
       }
     }
@@ -5710,7 +5679,7 @@ export function calculateTsuchiyaScore(
         if (adj.operator === 'includes' && val.includes(adj.value)) applies = true;
         else if (adj.operator === '==' && val === adj.value) applies = true;
       }
-      if (applies) { potential += adj.scoreAdjust; tags.push(`学習パッチ(${patch.version})`); }
+      if (applies) { /* [減点方式] potential += adj.scoreAdjust; */ tags.push(`学習パッチ(${patch.version})`); }
     }
   }
 
@@ -5718,7 +5687,7 @@ export function calculateTsuchiyaScore(
   // 【新設】オッズ偏差値 (Odds Deviation) システム
   // ==========================================
   const impliedProb = 1.0 / (odds || 999.9);
-  // AI算出勝率（暫定評価値を0-1スケールに近似：500点を50%勝率と仮定）
+  // AI算出勝率（減点方式：初期値1000から減点、1000点=満点として比率計算）
   const aiWinProb = Math.min(potential / 1000.0, 1.0);
   const oddsDeviation = aiWinProb - impliedProb;
 
@@ -5731,7 +5700,7 @@ export function calculateTsuchiyaScore(
     // 強力なトリガー（ブリンカー・激絞り）とのシナジー
     const hasSynergyTrigger = tags.some(t => t.match(/(ブリンカー|極限の仕上げ|一変トリガー|激走フラグ)/));
     if (hasSynergyTrigger) {
-      potential += 45;
+      // [減点方式] potential += 45;
       tags.push('🚀期待値シナジー(歪み×一変トリガー)');
     }
   }
@@ -5760,7 +5729,7 @@ export function calculateTsuchiyaScore(
   // 平均1.75番人気で決着する「低偏差馬場」では、高SS（上位人気）ほど正解率が向上する
   if (trackName === '園田' || trackName === '西脇' || trackName === '姫路') {
     if (currentOddsSS >= 65 || popularity <= 2) {
-      potential += 30; // 圧倒的人気への実力集中を評価
+      /* [減点方式] potential += 30; */ // 圧倒的人気への実力集中を評価
       tags.push('🛡️市場収束:上位人気への能力集中');
     }
     // 穴馬の歪みブーストをこの馬場では抑制（紛れが少ないため）
@@ -5828,7 +5797,7 @@ export function calculateTsuchiyaScore(
 
     // 1. 急坂パワー物理（巨大なすり鉢とJRA最大の急坂）
     if (weight >= 500 && race.surface === 'ダート') {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("💪 中山急坂物理: 500kg超の絶対的パワー優位");
     } else if (weight > 0 && weight <= 430) {
       potential -= 15;
@@ -5837,7 +5806,7 @@ export function calculateTsuchiyaScore(
 
     // 2. コーナーリング力学と脚質バイアス
     if (horse.style === "先行") {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🏃 中山力学: 4角先行・持続力押し切りエッジ");
     } else if (horse.style === "追込") {
       potential -= 25;
@@ -5860,20 +5829,20 @@ export function calculateTsuchiyaScore(
 
     // 1. スパイラルカーブの遠心力回避（インベタ絶対優位）
     if (frame <= 3 && (horse.style === "逃げ" || horse.style === "先行")) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🎯 中京スパイラル力学: 内枠先行のロスなしインベタエッジ");
     }
 
     // 2. 芝1200mの道悪バイアス反転
     const isWetChukyo = race.condition === "重" || race.condition === "不良";
     if (race.surface === '芝' && dist === 1200 && isWetChukyo && frame >= 6) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("☔ 中京芝道悪: バイアス反転による外枠優位");
     }
 
     // 3. ダートの白い砂（珪砂）適性とマクリ
     if (race.surface === 'ダート' && horse.style === "マクリ") {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🚀 中京ダート: 珪砂適性とマクリ強襲エッジ");
     }
   }
@@ -5887,19 +5856,19 @@ export function calculateTsuchiyaScore(
 
     // 1. スピード絶対主義（下り坂の慣性利用）
     if (horse.style === "逃げ") {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🚀 小倉スピード主義: 下り坂慣性を活かす逃げ馬絶対優位");
     }
 
     // 2. 中距離マクリ物理
     if (dist >= 1700 && horse.style === "マクリ") {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🌪️ 小倉中距離: 丘からの下り坂を利用したマクリ物理エッジ");
     }
 
     // 3. 芝スプリントの大型馬パワー
     if (race.surface === '芝' && dist === 1200 && weight >= 500) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("💪 小倉スプリント: 激流を制する大型馬パワーエッジ");
     }
   }
@@ -5913,19 +5882,19 @@ export function calculateTsuchiyaScore(
 
     // 1. 大回りの幾何学（減速不要のコーナーリング）
     if (horse.style === "逃げ" || horse.style === "先行") {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🏃 札幌大回り幾何学: 緩いコーナーでの先行押し切りエッジ");
     }
 
     // 2. 減速不要のマクリ
     if (dist >= 1700 && horse.style === "マクリ") {
-      potential += 30;
+      // [減点方式] potential += 30;
       tags.push("🌪️ 札幌大回り幾何学: 減速不要の高速マクリエッジ(特注)");
     }
 
     // 3. ダート外枠の砂被り回避
     if (race.surface === 'ダート' && frame >= 6) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("🛡️ 札幌ダート: 砂被り回避の外枠スムーズエッジ");
     }
   }
@@ -5945,14 +5914,14 @@ export function calculateTsuchiyaScore(
 
     // 2. マクリ優勢の起伏
     if (race.surface === '芝' && horse.style === "マクリ") {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🌪️ 福島起伏力学: 早め仕掛けのマクリ絶対優位");
     }
 
     // 3. ダート1150mの異常バイアス（道悪の1枠）
     const isWetFuku = race.condition === "重" || race.condition === "不良";
     if (race.surface === 'ダート' && dist === 1150 && isWetFuku && frame === 1) {
-      potential += 40;
+      // [減点方式] potential += 40;
       tags.push("🎯 福島ダ1150特注: 道悪1枠の異常バイアス鉄板フラグ");
     }
   }
@@ -5971,7 +5940,7 @@ export function calculateTsuchiyaScore(
     // 季節適性バイオリズム判定
     if (race.season === 'summer') {
       if (gender === '牝') {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("☀️ 夏の牝馬バイアス適合(暑さ耐性)");
       }
       if (horse.coatColor && /(黒鹿毛|青鹿毛|青毛)/.test(horse.coatColor) && weight >= 500) {
@@ -5990,7 +5959,7 @@ export function calculateTsuchiyaScore(
       const softBlood = ['キズナ', 'エピファネイア', 'ルーラーシップ', 'ハービンジャー', 'ゴールドシップ'];
       const hasSoftBlood = softBlood.some(sb => bloodline.includes(sb) || (horse.sire && horse.sire.includes(sb)) || (horse.bms && horse.bms.includes(sb)));
       if (hasSoftBlood) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("☔ 天候急変（雨/雪）による道悪血統適性(馬場軟化適性)");
       }
     }
@@ -6013,7 +5982,7 @@ export function calculateTsuchiyaScore(
         const eliteLongSires = ['ディープインパクト', 'ハーツクライ', 'ドゥラメンテ', 'キタサンブラック'];
         const isEliteLong = eliteLongSires.some(es => horse.sire.includes(es));
         if (isEliteLong) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push(`🧬 芝中長距離エリートサイアー適性(${horse.sire.replace(/ファーム|牧場/g, '')})`);
         }
       }
@@ -6021,7 +5990,7 @@ export function calculateTsuchiyaScore(
         const speedSires = ['ロードカナロア', 'ヘニーヒューズ', 'シニスターミニスター', 'ドレフォン'];
         const isSpeedSire = speedSires.some(ss => horse.sire.includes(ss));
         if (isSpeedSire) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push(`🧬 スピード・砂サイアー適性(${horse.sire.replace(/ファーム|牧場/g, '')})`);
         }
       }
@@ -6031,7 +6000,7 @@ export function calculateTsuchiyaScore(
     if (horse.isAfterRest) {
       const rating = horse.trainingRating?.toUpperCase();
       if (rating === 'S' || rating === 'A') {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🔥 鉄砲抜群：休み明け初戦×好仕上がり(即戦力)");
       } else {
         potential -= 15;
@@ -6070,7 +6039,7 @@ export function calculateTsuchiyaScore(
 
       if (currScore > 0 && prevScore > 0) {
         if (currScore < prevScore) {
-          potential += 30;
+          // [減点方式] potential += 30;
           tags.push(`👑 クラス降級による圧倒的格上位アドバンテージ(${prevClass}→${currentClass})`);
         } else if (currScore > prevScore) {
           potential -= 10;
@@ -6082,14 +6051,14 @@ export function calculateTsuchiyaScore(
     // コーナー通過順位変動（まくり機動力）判定
     const isShortTrack = /(中山|福島|小倉|函館|札幌)/.test(race.venue || race.trackName || '');
     if (isShortTrack && horse.cornerPositionVariance && horse.cornerPositionVariance >= 2.0) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("📐 小回り勝負所機動力（まくり適性）適合");
     }
 
     // 左回りサウスポー判定
     const isLeftTrack = /(東京|中京|新潟)/.test(race.venue || race.trackName || '');
     if (isLeftTrack && horse.leftTurnExperience && horse.leftTurnExperience >= 2) {
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("📐 左回りサウスポー実績適合");
     }
 
@@ -6098,20 +6067,20 @@ export function calculateTsuchiyaScore(
       const wasInner = horse.prevInnerLoadExp || (horse.pastRaces[0].frameNumber !== undefined && horse.pastRaces[0].frameNumber <= 2);
       const didLose = horse.pastRaces[0].result >= 6;
       if (wasInner && didLose) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("📐 前走内荒れロスからの外枠替わり激変期待値");
       }
     }
 
     // 初ブリンカー変心判定
     if (horse.useBlinkers) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("🎯 初ブリンカー装着による集中力激変期待");
     }
 
     // オッズ偏差値信頼度判定
     if (horse.oddsStandardScore && horse.oddsStandardScore >= 65 && popularity === 1) {
-      potential += 15;
+      // [減点方式] potential += 15;
       tags.push("👑 断然人気・オッズ偏差値SSS of 絶対的信頼");
     }
 
@@ -6125,7 +6094,7 @@ export function calculateTsuchiyaScore(
         return pr.winnerName && eliteRivals.some(er => pr.winnerName?.includes(er)) && pr.timeDiff !== undefined && pr.timeDiff <= 0.4;
       });
       if (hasStrongRival) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("👑 過去走対戦馬レベル高（勝ち馬のその後の出世）");
       }
     }
@@ -6150,7 +6119,7 @@ export function calculateTsuchiyaScore(
       });
 
       if (hasExcellentTime) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("⏱️ クラス基準タイム超えの高速時計実績");
       }
     }
@@ -6163,7 +6132,7 @@ export function calculateTsuchiyaScore(
       });
       const isEasyVenue = /(京都|新潟|小倉)/.test(race.venue || race.trackName || '');
       if (hasToughGood && isEasyVenue) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⛰️ 急坂・タフ場での好走実績（底力の裏付け）");
       }
     }
@@ -6175,7 +6144,7 @@ export function calculateTsuchiyaScore(
       const isUnderValued = odds >= 8.0;
 
       if (avgPopularity <= 3.0 && lastFailed && isUnderValued) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("⚡ 過去走人気トレンドからの巻き返し急襲穴馬");
       }
     }
@@ -6197,7 +6166,7 @@ export function calculateTsuchiyaScore(
       const isUnderValuedNow = odds >= 10.0 || popularity >= 4;
       
       if ((wasOuterRun || didStumble) && isUnderValuedNow) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("🚀 展開バイアス不利からの巻き返し(期待値特大の穴馬)");
       }
     }
@@ -6220,7 +6189,7 @@ export function calculateTsuchiyaScore(
       });
 
       if (hasExcellentTime && (odds >= 10.0 || popularity >= 4)) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("💎 持ち時計優秀の過小評価馬(期待値特大の穴馬)");
       }
     }
@@ -6244,7 +6213,7 @@ export function calculateTsuchiyaScore(
         return false;
       });
       if (hasHillClimber) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⛰️ 勾配物理:急坂負荷クリアの坂適性裏付け");
       }
     }
@@ -6263,7 +6232,7 @@ export function calculateTsuchiyaScore(
                  pr.timeDiff <= 0.3;
         });
         if (hasFastCushion) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("⚡ 超高速物理:極限クッション値スピード適合");
         }
       } else if (race.cushionValue <= 7.5) {
@@ -6276,7 +6245,7 @@ export function calculateTsuchiyaScore(
                  pr.timeDiff <= 0.3;
         });
         if (hasSoftCushion) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("⛰️ 重厚物理:低クッション値クッションタフネス適合");
         }
       }
@@ -6291,7 +6260,7 @@ export function calculateTsuchiyaScore(
       if (prevRace.incidents && prevRace.result >= 5) {
         const hasPathBlock = /(直線進路なし|前が壁|追い出せず)/.test(prevRace.incidents);
         if (hasPathBlock) {
-          potential += 25;
+          // [減点方式] potential += 25;
           tags.push("⚠️ 不利度外視:前走直線進路カットによる不可抗力惨敗");
         }
       }
@@ -6305,7 +6274,7 @@ export function calculateTsuchiyaScore(
                pr.timeDiff <= 0.5;
       });
       if (hasOuterLoss) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📐 走行軌跡:過去走大外回し極大距離ロス補正");
       }
     }
@@ -6317,12 +6286,12 @@ export function calculateTsuchiyaScore(
       const fencePos = race.temporaryFencePosition.toUpperCase();
       if (/(B|C|D)/.test(fencePos)) {
         if (frame <= 3 && /(逃げ|先行|好位)/.test(hStyle || '')) {
-          potential += 20;
+          // [減点方式] potential += 20;
           tags.push("📐 仮柵幾何学:内移動グリーンベルト・イン突き適合");
         }
       } else if (fencePos === 'A') {
         if (frame >= 6 && /(差し|中団|後方|追込)/.test(hStyle || '')) {
-          potential += 15;
+          // [減点方式] potential += 15;
           tags.push("📐 仮柵幾何学:仮柵Aステージ荒れ内馬場回避エッジ");
         }
       }
@@ -6341,7 +6310,7 @@ export function calculateTsuchiyaScore(
             potential -= 25;
             tags.push("⚠️ 時計の罠:前走超高速馬場恩恵による過剰人気割引");
           } else if (odds >= 8.0) {
-            potential += 30;
+            // [減点方式] potential += 30;
             distortionBoost *= 1.3;
             tags.push("🌀 期待値の闇:高速時計実績に対する過小評価オッズ歪み適合");
           }
@@ -6391,7 +6360,7 @@ export function calculateTsuchiyaScore(
         potential -= 10;
         tags.push("⚠️ 夜間冷え込み砂緊縮：小柄馬スタミナ・パワー懸念");
       } else if (weight >= 500 && /(逃げ|先行|好位)/.test(horse.style || '')) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⚡ 夜間冷え込み砂緊縮：大型先行馬パワーアドバンテージ");
       }
     }
@@ -6402,7 +6371,7 @@ export function calculateTsuchiyaScore(
     // 南関ヒエラルキーと遠征アドバンテージ: 川崎・浦和開催において、大井・船橋所属の遠征馬は実力レベルの高さを評価
     if (/(川崎|浦和)/.test(raceVenue)) {
       if (/(大井|船橋)/.test(horseBelonging)) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("🌋 南関遠征所属ヒエラルキー適合");
       }
     }
@@ -6415,14 +6384,14 @@ export function calculateTsuchiyaScore(
     }
     // - 外枠大型馬の砂被り回避＋推進力エッジ: 馬体重500kg以上の大型馬で、外枠（6枠以上）かつ先行脚質
     if (weight >= 500 && frame >= 6 && /(逃げ|先行|好位)/.test(horse.style || '')) {
-      potential += 25;
+      // [減点方式] potential += 25;
       tags.push("⚡ 砂理学:外枠大型馬の砂被り回避黄金エッジ");
     }
 
     // 小回り超スプリント幾何学ボトルネック: 距離が1000m未満（900mや800mなど）の超短距離戦において、内枠（1〜3枠）かつ逃げ・先行脚質は大幅加点。外枠（7枠以上）は減点。
     if (dist > 0 && dist < 1000) {
       if (frame <= 3 && /(逃げ|先行)/.test(horse.style || '')) {
-        potential += 35;
+        // [減点方式] potential += 35;
         tags.push("📐 スプリント幾何学:極小回り内枠逃げ先行アドバンテージ");
       } else if (frame >= 7) {
         potential -= 25;
@@ -6435,7 +6404,7 @@ export function calculateTsuchiyaScore(
     if (isLeadingTrainer) {
       const rating = horse.trainingRating?.toUpperCase();
       if (rating === 'S' || rating === 'A') {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("🔥 地方リーディング厩舎×勝負仕上げ（メイチ回収）");
       }
     }
@@ -6455,7 +6424,7 @@ export function calculateTsuchiyaScore(
       const isSecondRaceAfterTransfer = !isJRATransferFirst && horse.pastRaces[0] && horse.pastRaces[0].result >= 6;
       const hasJRAHistory = horse.pastRaces.slice(1).some(pr => /(東京|中山|京都|阪神|中京|新潟|小倉|福島|函館|札幌)/.test(pr.venue || ''));
       if (isSecondRaceAfterTransfer && hasJRAHistory && odds >= 6.0) {
-        potential += 30;
+        // [減点方式] potential += 30;
         tags.push("🌀 移籍2戦目:オッズ急落による大化け激走期待値");
       }
     }
@@ -6464,7 +6433,7 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces && horse.pastRaces[0]) {
       const prevRace = horse.pastRaces[0];
       if (prevRace.incidents && /(前が壁|他馬の斜行|挟まれ|大きな不利|落鉄)/.test(prevRace.incidents) && prevRace.result >= 6) {
-        potential += 25;
+        // [減点方式] potential += 25;
         tags.push("⚠️ 不利度外視:前走致命的不利による不可抗力惨敗");
       }
     }
@@ -6489,11 +6458,11 @@ export function calculateTsuchiyaScore(
         }
       }
       if (hasRonsupamakuri) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("📐 位置取り遷移:ロンスパまくり加速エッジ");
       }
       if (hasPositionKeep) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("📐 位置取り遷移:終始好位キープ自在性");
       }
     }
@@ -6518,11 +6487,11 @@ export function calculateTsuchiyaScore(
         }
       }
       if (hasFastPaceTough) {
-        potential += 20;
+        // [減点方式] potential += 20;
         tags.push("⏱️ ラップ物理:前傾ハイペースダートタフネス適合");
       }
       if (hasSlowPaceSpeed) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⏱️ ラップ物理:後傾スロー瞬発スピード適合");
       }
     }
@@ -6540,7 +6509,7 @@ export function calculateTsuchiyaScore(
         if (winnerData && winnerData.results) {
           const hasWonLater = winnerData.results.some((r: any) => r.date > prevRaceDate && r.rank === 1);
           if (hasWonLater) {
-            potential += 25;
+            // [減点方式] potential += 25;
             tags.push("👑 動的対戦レベル高:前走勝ち馬の次走勝ち上がり裏付け");
           }
         }
@@ -6551,12 +6520,12 @@ export function calculateTsuchiyaScore(
     if (horse.pastRaces) {
       const hasGoodFirmCloseResult = horse.pastRaces.some(pr => pr.condition === '良' && pr.timeDiff !== undefined && pr.timeDiff <= 0.3 && pr.result <= 3);
       if (hasGoodFirmCloseResult) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⚖️ 砂理学:良馬場タフ戦僅差実績の真価");
       }
       const hasMuddyCloseResult = horse.pastRaces.some(pr => (pr.condition === '重' || pr.condition === '不良') && pr.timeDiff !== undefined && pr.timeDiff <= 0.6 && pr.result <= 3);
       if (hasMuddyCloseResult) {
-        potential += 15;
+        // [減点方式] potential += 15;
         tags.push("⚖️ 砂理学:道悪高速追走耐久実績");
       }
     }
@@ -6569,8 +6538,233 @@ export function calculateTsuchiyaScore(
 
     if ((isKochiFinal || isOoiSpecial || isKawasakiSprint || isKasamatsuC) && odds >= 8.0) {
       distortionBoost *= 1.25;
-      potential += 20;
+      // [減点方式] potential += 20;
       tags.push("🌀 期待値の闇:高波乱トリガーによるオッズ歪み適合");
+    }
+  }
+
+
+  // ==========================================
+  // ✅【完全減点方式】明示的ペナルティブロック（potential -= N;）
+  // 不利条件が揃った場合に積極的に減点を行う
+  // ==========================================
+
+  // ─────────────────────────────────────────
+  // 【A-1】全場共通：連続凡走ペナルティ
+  // ─────────────────────────────────────────
+  if (horse.pastRaces && horse.pastRaces.length >= 2) {
+    const recentTwoRaces = horse.pastRaces.slice(0, 2);
+    const bothBad = recentTwoRaces.every(pr => pr.result >= 8);
+    if (bothBad && popularity > 4) {
+      potential -= 25;
+      tags.push("❌ 連続凡走ペナルティ: 直近2走連続8着以下×上位人気外");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【A-2】全場共通：前走大敗×低人気 二重ペナルティ
+  // ─────────────────────────────────────────
+  if (prevRaceData && prevRaceData.result >= 10 && popularity >= 5) {
+    potential -= 15;
+    tags.push("❌ 前走10着以下×4番人気以下ペナルティ");
+  }
+
+  // ─────────────────────────────────────────
+  // 【A-3】全場共通：調教評価 C 以下ペナルティ
+  // ─────────────────────────────────────────
+  if (horse.trainingRating) {
+    const rating = horse.trainingRating.toUpperCase();
+    if (rating === "C" || rating === "D" || rating === "E") {
+      potential -= 20;
+      tags.push("❌ 調教評価C以下ペナルティ(明らかな仕上がり不足)");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【A-4】全場共通：逃げ・先行馬 × 多頭数（16頭以上）ペナルティ
+  // ─────────────────────────────────────────
+  if ((horse.style === '逃げ') && headCount >= 16) {
+    potential -= 20;
+    tags.push("❌ 逃げ馬×多頭数ペナルティ: 16頭以上では包まれるリスク大");
+  }
+
+  // ─────────────────────────────────────────
+  // 【A-5】全場共通：長距離 × 追込馬 × 距離延長ペナルティ
+  // ─────────────────────────────────────────
+  if (dist >= 2400 && horse.style === '追込' && prevRaceData && prevRaceData.distance < dist) {
+    potential -= 20;
+    tags.push("❌ 距離延長×追込馬×長距離ペナルティ(末脚届かないリスク)");
+  }
+
+  // ─────────────────────────────────────────
+  // 【A-6】全場共通：連闘（5日以内出走）×重斤量ペナルティ
+  // ─────────────────────────────────────────
+  if (horse.isAfterRest === false && prevRaceData && kinryo >= 58) {
+    // 前走日付が5日以内かを確認（prevRaceData.dateがある場合）
+    if (prevRaceData.date) {
+      const prevDate = new Date(prevRaceData.date);
+      const raceDate = new Date(race.date || Date.now());
+      const diffDays = (raceDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays <= 7) {
+        potential -= 25;
+        tags.push("❌ 連闘×重斤量ペナルティ(短期ローテ×58kg以上の過負荷)");
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【B-1】東京専用ペナルティ
+  // ─────────────────────────────────────────
+  if (trackName && trackName.includes('東京')) {
+    // 東京ダート1600m：差し・追込 × 内枠(1〜3枠) → 前の砂をかぶる
+    if (race.surface === 'ダート' && dist === 1600 && frame <= 3 &&
+        (horse.style === '差し' || horse.style === '追込')) {
+      potential -= 25;
+      tags.push("❌ 東京D1600ペナルティ: 内枠差し追込は砂かぶりで前半消耗大");
+    }
+
+    // 東京芝短距離：追込 × 外枠(7枠以上) → 捌けない
+    if (race.surface === '芝' && dist <= 1400 && frame >= 7 && horse.style === '追込') {
+      potential -= 20;
+      tags.push("❌ 東京芝短距離ペナルティ: 外枠追込は直線が詰まりやすい");
+    }
+
+    // 東京芝中長距離：逃げ馬 × 多頭数 × 外枠 → ハナを切れないリスク
+    if (race.surface === '芝' && dist >= 1800 && horse.style === '逃げ' && frame >= 7 && headCount >= 12) {
+      potential -= 20;
+      tags.push("❌ 東京芝ペナルティ: 多頭数外枠の逃げ馬(ハナ争い激化リスク)");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【B-2】中山専用ペナルティ
+  // ─────────────────────────────────────────
+  if (trackName && trackName.includes('中山')) {
+    // 外枠(7枠以上) × 芝短距離・マイル → コーナーロスが大きい
+    if (race.surface === '芝' && dist <= 1600 && frame >= 7) {
+      potential -= 25;
+      tags.push("❌ 中山芝ペナルティ: 外枠はスパイラルカーブで大きなロス");
+    }
+    // 差し・追込 × 芝2000m以下 → 直線310mでは届かない
+    if (race.surface === '芝' && dist <= 2000 &&
+        (horse.style === '差し' || horse.style === '追込') && frame >= 6) {
+      potential -= 20;
+      tags.push("❌ 中山芝外枠差しペナルティ: 短い直線×外枠差しは物理的に不利");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【B-3】函館・小倉・福島（小回りコース）専用ペナルティ
+  // ─────────────────────────────────────────
+  const isSmallCourse = trackName && ['函館', '小倉', '福島'].some(t => trackName.includes(t));
+  if (isSmallCourse) {
+    // 差し × 外枠(6枠以上) × 小回りコース → 直線で詰まりやすい
+    if (frame >= 6 && horse.style === '差し') {
+      potential -= 20;
+      tags.push("❌ 小回りコースペナルティ: 外枠差しは直線が短く届きにくい");
+    }
+    // 追込 × 脚質（函館・小倉・福島ではほぼ無効）→ さらに追加減点
+    if (horse.style === '追込') {
+      potential -= 25;
+      tags.push("❌ 小回りコース追込ペナルティ: 直線が短すぎて物理的に届かない");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【B-4】新潟千直（芝1000m）専用ペナルティ
+  // ─────────────────────────────────────────
+  if (trackName && trackName.includes('新潟') && race.surface === '芝' && dist === 1000) {
+    // 内枠(1〜2枠) → ラチ際が荒れやすく圧倒的不利
+    if (frame <= 2) {
+      potential -= 30;
+      tags.push("❌ 新潟千直ペナルティ: 内枠は内ラチ沿いが荒れており致命的不利");
+    }
+    // 差し・追込 × 内〜中枠 → 直線一本勝負で砂かぶりリスク
+    if ((horse.style === '差し' || horse.style === '追込') && frame <= 4) {
+      potential -= 20;
+      tags.push("❌ 新潟千直ペナルティ: 差し追込の内枠は前が壁になりやすい");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【B-5】阪神専用ペナルティ
+  // ─────────────────────────────────────────
+  if (trackName && trackName.includes('阪神')) {
+    // 阪神芝中長距離(1600m〜2200m) × 外枠(6枠以上) × 差し・追込
+    if (race.surface === '芝' && dist >= 1600 && dist <= 2200 &&
+        frame >= 6 && (horse.style === '差し' || horse.style === '追込')) {
+      potential -= 25;
+      tags.push("❌ 阪神芝ペナルティ: 内回り専門コースで外枠差しは展開に左右されすぎる");
+    }
+    // 阪神ダート短距離(1400m以下) × 外枠(8枠) → 砂かぶりロス大
+    if (race.surface === 'ダート' && dist <= 1400 && frame === 8) {
+      potential -= 20;
+      tags.push("❌ 阪神ダート短距離ペナルティ: 最外枠は序盤の砂かぶりが致命的");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【C-1】血統不適性ペナルティ
+  // ─────────────────────────────────────────
+  const sireName = horse.sire || '';
+
+  // 芝特化血統 × ダート重賞
+  const isTurfOnlySire = ['ディープインパクト', 'ハーツクライ', 'コントレイル', 'エフフォーリア'].some(s => sireName.includes(s));
+  const isDirtStakes = race.surface === 'ダート' && race.raceName && race.raceName.match(/G[1-3I-III]|重賞|特別ステークス/);
+  if (isTurfOnlySire && isDirtStakes) {
+    potential -= 20;
+    tags.push("❌ 血統不適性ペナルティ: 芝特化血統×ダート重賞(適性外の勝負)");
+  }
+
+  // ダート特化血統 × 芝重賞
+  const isDirtOnlySire = ['シニスターミニスター', 'ヘニーヒューズ', 'パイロ', 'ゴールドアリュール'].some(s => sireName.includes(s));
+  const isTurfStakes = race.surface === '芝' && race.raceName && race.raceName.match(/G[1-3I-III]|重賞|特別ステークス/);
+  if (isDirtOnlySire && isTurfStakes) {
+    potential -= 20;
+    tags.push("❌ 血統不適性ペナルティ: ダート特化血統×芝重賞(コース適性に疑問)");
+  }
+
+  // 洋芝不向き軽量スピード血統 × 函館・札幌の芝
+  const isSpeedOnlySire = ['ロードカナロア', 'ダイワメジャー', 'キンシャサノキセキ', 'ミッキーアイル'].some(s => sireName.includes(s));
+  const isYoshibaCourse = trackName && (trackName.includes('函館') || trackName.includes('札幌')) && race.surface === '芝';
+  if (isSpeedOnlySire && isYoshibaCourse) {
+    potential -= 20;
+    tags.push("❌ 洋芝血統不適ペナルティ: スピード系血統は重い洋芝で能力を発揮しにくい");
+  }
+
+  // ─────────────────────────────────────────
+  // 【D-1】ローテーション不利ペナルティ
+  // ─────────────────────────────────────────
+  // 長期休み明け × 非エリート騎手 × 重賞
+  if (horse.isAfterRest && race.raceName && race.raceName.match(/G[1-3I-III]|重賞/)) {
+    const isEliteJockeyRider = ELITE_JOCKEYS.some(ej => jockey.includes(ej));
+    if (!isEliteJockeyRider) {
+      potential -= 20;
+      tags.push("❌ 長期休み明け×非エリート騎手×重賞ペナルティ(仕上がり不安)");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【D-2】レース適性ミスマッチペナルティ
+  // ─────────────────────────────────────────
+  // 初ダート × ダート重賞（実績なし）
+  if (race.surface === 'ダート' && horse.pastRaces && horse.pastRaces.length > 0) {
+    const hasAllTurf = horse.pastRaces.every(pr => pr.surface === '芝');
+    if (hasAllTurf && race.raceName && race.raceName.match(/G[1-3I-III]|重賞/)) {
+      potential -= 25;
+      tags.push("❌ 初ダート×ダート重賞ペナルティ: 実績ゼロの未知数すぎる条件");
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【D-3】斤量急増ペナルティ（前走より3kg以上増）
+  // ─────────────────────────────────────────
+  if (prevRaceData && prevRaceData.jockeyWeight) {
+    const prevKinryo = prevRaceData.jockeyWeight;
+    const kinryoDiff = kinryo - prevKinryo;
+    if (kinryoDiff >= 3) {
+      potential -= 15;
+      tags.push(`❌ 斤量急増ペナルティ: 前走比+${kinryoDiff}kg(パフォーマンス低下リスク)`);
     }
   }
 
