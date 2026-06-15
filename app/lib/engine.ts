@@ -1551,7 +1551,7 @@ export function calculateTsuchiyaScore(
       breederName.includes("ケイアイファーム")
     ) {
       // [減点方式] potential += 8;
-      tags.push(`🐎 有名実力牧場生産(${breederName.replace(/牧場|ファーム/g, '')})`);
+      tags.push(`🐎 有名実力牧場生産(ブランド力)`);
     }
   }
 
@@ -4123,7 +4123,7 @@ export function calculateTsuchiyaScore(
       // ※ 今回の出走馬全体との相対比較はコンテキストがないため、絶対的なスピード加点として機能させる
       // クラス基準タイムや直近5走の最速タイムと比べても遜色ない場合は底力として評価
       // [減点方式] potential += 25;
-      tags.push(`⌚ 生涯ベスト時計保有(${bestTimeStr})`);
+      tags.push(`⌚ 生涯ベスト時計保有(スピード上位)`);
     }
   }
 
@@ -4234,7 +4234,7 @@ export function calculateTsuchiyaScore(
       const nationwideWinRate = jm.wins / jm.totalRaces;
       if (nationwideWinRate >= 0.15) {
         // [減点方式] potential += 15;
-        tags.push(`👑 全国トップジョッキー(勝率${(nationwideWinRate*100).toFixed(1)}%)`);
+        tags.push(`👑 全国トップジョッキー(高勝率)`);
       }
     }
   }
@@ -4398,13 +4398,13 @@ export function calculateTsuchiyaScore(
     const dirtEliteSires = /(ドレフォン|シニスターミニスタ|ヘニーヒューズ|マジェスティックウォリアー|パイロ|ミッキーアイル)/;
     if (sireName.match(dirtEliteSires)) {
       // [減点方式] potential += 25;
-      tags.push(`🧬ダート黄金血統(${sireName})`);
+      tags.push(`🧬ダート黄金血統(適性抜群)`);
     }
 
     const eliteDirtBreeders = /(カタオカフアーム|ノーザンファーム|社台|グランド牧場|ヤナガワ牧場)/;
     if (breederName.match(eliteDirtBreeders)) {
       // [減点方式] potential += 20;
-      tags.push(`🏡ダート優秀牧場(${breederName})`);
+      tags.push(`🏡ダート優秀牧場`);
     }
   } else if (race.surface === '芝') {
     const turfEliteSires = /(ディープインパクト|ロードカナロア|キタサンブラック|エピファネイア|モーリス|ハーツクライ)/;
@@ -4426,7 +4426,7 @@ export function calculateTsuchiyaScore(
       const dirtEliteBMS = /(クロフネ|フレンチデピュティ|ゴールドアリュール|ブライアンズタイム|シンボリクリスエス|ワイルドラッシュ|エンドスウィープ)/;
       if (bmsName.match(dirtEliteBMS)) {
         // [減点方式] potential += 20;
-        tags.push(`💪 砂のスタミナ(母父): ダート適性に優れたBMS血統エッジ(${bmsName})`);
+        tags.push(`💪 砂のスタミナ(母父): ダート適性に優れたBMS血統エッジ`);
       }
     }
 
@@ -4958,7 +4958,7 @@ export function calculateTsuchiyaScore(
       // ダート：高速決着なら37-38秒台が必須。クラスが上がるほど要求値がシビアに。
       if (bestLast3f <= 38.2) {
         // [減点方式] potential += 35;
-        tags.push(`💪ダート高速末脚(上がり${bestLast3f.toFixed(1)}s)`);
+        tags.push(`💪ダート高速末脚(上がり最速級)`);
         if (isUpperClass && bestLast3f <= 37.8) {
           // [減点方式] potential += 20;
           tags.push('⚡上位ダート:必須スピード性能クリア');
@@ -4984,7 +4984,7 @@ export function calculateTsuchiyaScore(
       // 【新設】後半レース(8R〜12R)における末脚持続力（39秒台〜40秒台前半）の正当な評価
       if (race.raceNumber >= 8 && bestLast3f <= 40.5) {
         // [減点方式] potential += 30;
-        tags.push(`🌃後半戦:安定した末脚(上がり${bestLast3f.toFixed(1)}s)`);
+        tags.push(`🌃後半戦:安定した末脚`);
         if (bestLast3f <= 39.9) {
           // [減点方式] potential += 15;
           tags.push('🔥後半戦:39秒台の決定力');
@@ -5695,7 +5695,7 @@ export function calculateTsuchiyaScore(
   if (oddsDeviation >= 0.05) { // 期待値が5%以上プラス乖離
     const deviationBonus = Math.floor(oddsDeviation * 250); // 乖離幅に応じた加点
     potential += deviationBonus;
-    tags.push(`💎期待値乖離(+${(oddsDeviation * 100).toFixed(1)}%)`);
+    tags.push(`💎期待値乖離(大化け期待)`);
     
     // 強力なトリガー（ブリンカー・激絞り）とのシナジー
     const hasSynergyTrigger = tags.some(t => t.match(/(ブリンカー|極限の仕上げ|一変トリガー|激走フラグ)/));
@@ -5991,7 +5991,7 @@ export function calculateTsuchiyaScore(
         const isSpeedSire = speedSires.some(ss => horse.sire.includes(ss));
         if (isSpeedSire) {
           // [減点方式] potential += 20;
-          tags.push(`🧬 スピード・砂サイアー適性(${horse.sire.replace(/ファーム|牧場/g, '')})`);
+          tags.push(`🧬 スピード・砂サイアー適性`);
         }
       }
     }
@@ -6764,7 +6764,7 @@ export function calculateTsuchiyaScore(
     const kinryoDiff = kinryo - prevKinryo;
     if (kinryoDiff >= 3) {
       potential -= 15;
-      tags.push(`❌ 斤量急増ペナルティ: 前走比+${kinryoDiff}kg(パフォーマンス低下リスク)`);
+      tags.push(`❌ 斤量急増ペナルティ(パフォーマンス低下リスク)`);
     }
   }
 
