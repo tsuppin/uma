@@ -6791,94 +6791,74 @@ export function generateFormation(predictions: Prediction[], raceType: Formation
 
   const axisNos = horses.slice(0, 3);
   const darkNos = horses.slice(3, 7);
+  const allNos = [...new Set([...axisNos, ...darkNos])].sort((a, b) => a - b);
 
   let col1 = axisNos;
   let col2 = axisNos;
-  let col3: number[] | undefined = [...new Set([...axisNos, ...darkNos])].sort((a, b) => a - b);
+  let col3: number[] | undefined = allNos;
 
   let tickets: number[][] = [];
+  
   if (raceType === 'trifecta_exact') {
-    const horses6 = horses.slice(0, 6);
-    
-    // 2-4-6 フォーメーション
-    // 1着: A, C (1位, 3位)
-    // 2着: A, B, C, D (上位4頭)
-    // 3着: A, B, C, D, E, F (上位6頭)
-    const t1 = [horses6[0], horses6[2]].filter(x => x !== undefined);
-    const t2 = horses6.slice(0, 4);
-    const t3 = horses6.slice(0, 6);
+    col1 = axisNos;
+    col2 = axisNos;
+    col3 = allNos;
 
-    col1 = t1;
-    col2 = t2;
-    col3 = t3;
-
-    for (const first of t1) {
-      for (const second of t2) {
+    for (const first of col1) {
+      for (const second of col2) {
         if (first === second) continue;
-        for (const third of t3) {
+        for (const third of col3) {
           if (first === third || second === third) continue;
           tickets.push([first, second, third]);
         }
       }
     }
   } else if (raceType === 'quinella') {
-    const horses5 = horses.slice(0, 5);
-    
-    // フォーメーション (2 x 3)
-    // 1列目: 1位, 4位
-    // 2列目: 2位, 3位, 5位
-    const t1 = [horses5[0], horses5[3]].filter(x => x !== undefined);
-    const t2 = [horses5[1], horses5[2], horses5[4]].filter(x => x !== undefined);
-
-    col1 = t1;
-    col2 = t2;
+    col1 = axisNos;
+    col2 = allNos;
     col3 = undefined;
 
     const ticketSet = new Set<string>();
-    t1.forEach(a => t2.forEach(b => {
+    col1.forEach(a => col2.forEach(b => {
       if (a !== b) {
         ticketSet.add([a, b].sort((x, y) => x - y).join('-'));
       }
     }));
     tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
   } else if (raceType === 'exacta') {
-    const horses5 = horses.slice(0, 5);
-    
-    // フォーメーション (2 x 3)
-    // 1列目: 1位, 4位
-    // 2列目: 2位, 3位, 5位
-    const t1 = [horses5[0], horses5[3]].filter(x => x !== undefined);
-    const t2 = [horses5[1], horses5[2], horses5[4]].filter(x => x !== undefined);
-
-    col1 = t1;
-    col2 = t2;
+    col1 = axisNos;
+    col2 = allNos;
     col3 = undefined;
 
-    for (const first of t1) {
-      for (const second of t2) {
+    for (const first of col1) {
+      for (const second of col2) {
         if (first === second) continue;
         tickets.push([first, second]);
       }
     }
   } else {
-
-    const customAxis = [horses[0], horses[2], horses[4]].filter(x => x !== undefined);
-    
-    col1 = customAxis;
-    col2 = customAxis;
-    col3 = [...new Set([...customAxis, ...darkNos])].sort((a, b) => a - b);
+    // trifecta
+    col1 = axisNos;
+    col2 = axisNos;
+    col3 = allNos;
 
     const ticketSet = new Set<string>();
-    combinations(customAxis, 3).forEach(c => ticketSet.add(c.sort((a,b)=>a-b).join('-')));
-    combinations(customAxis, 2).forEach(p => darkNos.forEach(d => {
-      if (!p.includes(d)) {
-        ticketSet.add([...p, d].sort((a,b)=>a-b).join('-'));
+    for (let i = 0; i < col1.length; i++) {
+      for (let j = 0; j < col2.length; j++) {
+        for (let k = 0; k < col3.length; k++) {
+          const a = col1[i];
+          const b = col2[j];
+          const c = col3[k];
+          if (a !== b && b !== c && a !== c) {
+            ticketSet.add([a, b, c].sort((x, y) => x - y).join('-'));
+          }
+        }
       }
-    }));
+    }
     tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
   }
 
-  return { type: raceType, col1, col2, col3: ['quinella', 'exacta'].includes(raceType) ? undefined : col3, tickets, totalPoints: tickets.length, axisHorses: axisNos, darkHorses: darkNos };
+  return { type: raceType, col1, col2, col3, tickets, totalPoints: tickets.length, axisHorses: axisNos, darkHorses: darkNos };
 }
 
 export function generateWin5Picks(races: Race[], allPredictions: Record<string, Prediction[]>): { raceId: string; picks: number[]; }[] {
