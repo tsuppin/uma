@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export default function BacktestPanel({ state }: { state: AppState }) {
   const tagStats: TagStats[] = state.tagStats || [];
-  const [sortBy, setSortBy] = useState<"fired" | "hitRate" | "winRate">("fired");
+  const [sortBy, setSortBy] = useState<"fired" | "hitRate" | "winRate" | "evaluation">("fired");
   const [minFired, setMinFired] = useState(3);
   const [selectedVenue, setSelectedVenue] = useState<string>("全競馬場");
 
@@ -33,6 +33,7 @@ export default function BacktestPanel({ state }: { state: AppState }) {
     .sort((a, b) => {
       if (sortBy === "fired") return b.fired - a.fired;
       if (sortBy === "hitRate") return b.hitRate - a.hitRate;
+      if (sortBy === "evaluation") return a.hitRate - b.hitRate; // 判定（要見直し等）の悪い順
       return b.winRate - a.winRate;
     });
 
@@ -219,7 +220,7 @@ export default function BacktestPanel({ state }: { state: AppState }) {
               並び替え
             </label>
             <div style={{ display: "flex", gap: "6px" }}>
-              {(["fired", "hitRate", "winRate"] as const).map(s => (
+              {(["fired", "hitRate", "winRate", "evaluation"] as const).map(s => (
                 <button
                   key={s}
                   onClick={() => setSortBy(s)}
@@ -233,7 +234,7 @@ export default function BacktestPanel({ state }: { state: AppState }) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  {s === "fired" ? "発動回数" : s === "hitRate" ? "複勝率" : "勝率"}
+                  {s === "fired" ? "発動回数" : s === "hitRate" ? "複勝率" : s === "winRate" ? "勝率" : "判定"}
                 </button>
               ))}
             </div>
