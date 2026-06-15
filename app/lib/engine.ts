@@ -4490,7 +4490,7 @@ export function calculateTsuchiyaScore(
   // PMR (Physical Mass Ratio) 解析
   // ==========================================
   if (dist <= 1400) {
-    if (460 <= weight && weight <= 490) { /* [減点方式] potential += 15; */ // [要見直し] tags.push('PMR最適（短距離）'); }
+    if (460 <= weight && weight <= 490) { /* [減点方式] potential += 15; */ /* [要見直し] tags.push('PMR最適（短距離）'); */ }
     else if (weight > 510) { potential -= 10; }
     else if (weight < 440) { potential -= 15; }
   } else if (dist <= 2000) {
