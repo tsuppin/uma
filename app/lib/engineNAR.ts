@@ -334,221 +334,171 @@ export function calculateNARScore(
   }
   else if (trackName.includes('園田') || trackName.includes('姫路')) {
     // ==========================================
-    // 【特化ロジック】園田競馬場・減点方式ハイブリッド（2026/06分析）
+    // 【特化ロジック】園田競馬場・完全減点方式（2026/06分析）
     // ==========================================
+    // 初期スコアを「100点」にリセット
+    potential = 100;
+    
     const popularity = horse.popularity || 99;
     const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
-    // ルール1：1着（アタマ）は「1〜3番人気」から手堅く選ぶ
-    if (popularity >= 1 && popularity <= 3) {
-      potential += 10;
-      tags.push("👑 園田特注: 1着候補の手堅い本命(1〜3番人気)");
-    } else if (popularity >= 4) {
-      potential -= 10; // 1着候補としては減点
-      tags.push("⚠️ 園田減点: アタマ(1着)としては信頼度減(4番人気以下)");
+    
+    // -----------------------------------------------------
+    // 【1. 基本能力・適性による減点】
+    // -----------------------------------------------------
+    // 人気減点【-10点】：当日「4番人気以下」
+    if (popularity >= 4) {
+      potential -= 10;
+      tags.push("⚠️ 園田減点: 1着候補としては信頼度減(4番人気以下)");
+    }
+    
+    // 馬体重減点【-20点】：前走比で±10kg以上
+    if (typeof horse.weightChange === 'number' && Math.abs(horse.weightChange) >= 10) {
+      potential -= 20;
+      tags.push("⚠️ 園田消去法: 極端な馬体重変動(±10kg以上)によるアタマ除外");
+    }
+    
+    // 距離ローテ減点【-10点】：前走の距離が異なる
+    if (prevRaceData && prevRaceData.distance !== undefined && prevRaceData.distance !== dist) {
+      potential -= 10;
+      tags.push("⚠️ 園田減点: ペースに戸惑う距離変更ローテーション");
     }
 
-    // ルール2：馬体重の変動が「±6kg以内」の馬を狙う（大幅な増減は減点）
-    if (typeof horse.weightChange === 'number') {
-      if (Math.abs(horse.weightChange) >= 10) {
-        potential -= 20; // 1着候補から外すための大幅減点
-        tags.push("⚠️ 園田消去法: 極端な馬体重変動(±10kg以上)によるアタマ除外");
-      }
-    }
-
-    // ルール3：前走で「3着以内」に好走している馬は高く評価する
-    if (prevRaceData && prevRaceData.result >= 1 && prevRaceData.result <= 3) {
-      potential += 10;
-      tags.push("🔥 園田特注: 前走3着以内の好調馬(今の馬場に直結)");
-    }
-
-    // ルール4：2・3着のヒモには「6〜8番人気」の穴馬を必ず入れる
-    if (popularity >= 6 && popularity <= 8) {
-      const hasCloseRace = horse.pastRaces && horse.pastRaces.some(pr => pr.timeMargin !== undefined && pr.timeMargin <= 0.5);
-      if (hasCloseRace) {
-        potential += 20; // ヒモとして拾いやすくするためスコア底上げ
-        tags.push("💥 園田特注: ヒモ荒れ必須！僅差健闘歴のある伏兵(6〜8番人気)");
-      }
-    }
-
-    // ==========================================
-    // 【特化ロジック】園田競馬場・騎手特化ルール（2026/06分析）
-    // ==========================================
-    const jName = horse.jockey;
-    if (jName) {
-      // 騎手ルール1：アタマ候補の強力加点（田野豊 / 小牧太 × 1〜3番人気）
-      if (['田野', '小牧太'].some(j => jName.includes(j)) && popularity >= 1 && popularity <= 3) {
-        potential += 20;
-        tags.push("👑 園田特注: アタマ最有力！絶好調ジョッキー(田野/小牧太)×上位人気");
-      }
-
-      // 騎手ルール2：ヒモ穴のピックアップ指示（☆小谷哲 × 5番人気以下）
-      if (jName.includes('小谷') && popularity >= 5) {
-        potential += 15; // 波乱を起こす可能性が高いためヒモとしてスコア底上げ
-        tags.push("💥 園田特注: 波乱メーカー襲来！ヒモ穴に必須の小谷騎手(5番人気以下)");
-      }
-
-      // 騎手ルール3：安定感の加点（山本咲 / 下原）
-      if (['山本咲', '下原'].some(j => jName.includes(j))) {
-        potential += 5;
-        tags.push("🎯 園田特注: 抜群の馬券内安定感(山本咲/下原理)");
-      }
-    }
-
-    // ==========================================
-    // 【特化ロジック】園田競馬場・枠順オカルト＆セオリー（2026/06分析）
-    // ==========================================
-
-    // 枠順ルール1：「枠番」と「馬番」が一致している馬（アタマ候補として強力加点）
-    if (frame === horse.horseNumber) {
-      potential += 15;
-      tags.push("👑 園田特注: アタマの強烈サイン！枠番と馬番が一致(勝率異常のオカルト)");
-    }
-
-    // 枠順ルール2：レース後半（5R以降）は外枠有利、前半は内枠有利
-    if (race.raceNumber) {
-      if (race.raceNumber >= 5 && frame >= 5) {
-        potential += 5;
-        tags.push("📈 園田特注: 後半レース(5R以降)の外枠有利バイアス");
-      } else if (race.raceNumber <= 4 && frame <= 4) {
-        potential += 5;
-        tags.push("📈 園田特注: 前半レース(1〜4R)の内枠有利バイアス");
-      }
-    }
-
-    // 枠順ルール3：本命馬(1番人気)と同枠・隣枠のヒモ穴推奨
-    const favHorse = race.horses.find(h => h.popularity === 1);
-    if (favHorse && favHorse.frame && popularity >= 4) {
-      if (Math.abs(frame - favHorse.frame) <= 1) {
-        potential += 10; // ヒモ穴としてスコア底上げ
-        tags.push("💥 園田特注: 本命と同枠・隣接枠のヒモ穴(ゾロ目・連番決着パターン)");
-      }
-    }
-
-    // ==========================================
-    // 【特化ロジック】園田競馬場・過去5走の隠れた実績評価（2026/06分析）
-    // ==========================================
+    // -----------------------------------------------------
+    // 【2. 過去実績・脚質による減点】
+    // -----------------------------------------------------
+    let top3Count = 0;
+    let allWorseThan6 = true;
+    let olderGoodRun = false;
+    let recentSlump = false;
+    
     if (horse.pastRaces && horse.pastRaces.length > 0) {
       const recentRaces = horse.pastRaces.slice(0, 5);
-      
-      let top3Count = 0;
-      let allWorseThan6 = true;
-      let recentSlump = true;
-      let olderGoodRun = false;
-
       recentRaces.forEach((pr, index) => {
         if (pr.result && pr.result <= 3) {
           top3Count++;
           allWorseThan6 = false;
-          if (index >= 2) { // 3走前〜5走前
-            olderGoodRun = true;
-          } else { // 前走・前々走 (index 0, 1)
-            recentSlump = false;
-          }
+          if (index >= 2) { olderGoodRun = true; } // 3走前〜5走前に好走
         } else if (pr.result && pr.result <= 5) {
-          allWorseThan6 = false; // 4,5着は完全なスランプ(6着以下)ではない
-          if (index < 2) {
-            recentSlump = false; // 直近凡走(6着以下)ではない
-          }
+          allWorseThan6 = false;
+        }
+        if (index < 2 && pr.result && pr.result >= 6) {
+          recentSlump = true; // 前走・前々走が6着以下
         }
       });
-
-      // 過去実績ルール1：鉄板アタマ（過去5走で3回以上馬券内）
-      if (top3Count >= 3) {
-        potential += 15;
-        tags.push("👑 園田特注: 過去5戦で3回以上好走の安定感(鉄板アタマ候補)");
-      }
-
-      // 過去実績ルール2：スランプ馬の大幅減点（過去5走すべて6着以下）
+      
+      // スランプ減点【-20点】：過去5走すべて6着以下
       if (allWorseThan6 && recentRaces.length >= 3) {
         potential -= 20;
-        tags.push("⚠️ 園田消去法: 過去すべて6着以下の完全スランプ(アタマ・対抗から除外)");
-      }
-
-      // 過去実績ルール3：爆裂ヒモ穴（直近凡走で人気落ち × 3〜5走前に好走歴あり）
-      if (recentSlump && olderGoodRun && popularity >= 6) {
-        potential += 20; // ヒモとして拾いやすくするためスコア底上げ
-        tags.push("💥 園田特注: 直近の大敗で人気急落の隠れた実力馬！絶好のヒモ穴推奨");
+        tags.push("⚠️ 園田消去法: 過去すべて6着以下の完全スランプ");
       }
     }
-
-    // ヒモ穴絞り込み条件2：前走が後方待機の追い込み馬（展開待ち）
-    if (popularity >= 6 && ['後方', '追込'].includes(horse.style)) {
-      potential += 15;
-      tags.push("💥 園田特注: 展開待ちから強襲！前がやり合う展開で浮上する追い込み穴馬");
+    
+    // 前走着順減点【-10点】：前走4着以下（ただし過去5走中3回以上1-3着の馬は免除）
+    if (prevRaceData && prevRaceData.result >= 4) {
+      if (top3Count < 3) {
+        potential -= 10;
+        tags.push("⚠️ 園田減点: 前走4着以下の凡走");
+      }
     }
 
-    // ヒモ穴絞り込み条件3：波乱メーカーの調教師（尾林二 / 碇清次）
-    if (horse.trainer && ['尾林二', '碇清次'].some(t => horse.trainer.includes(t))) {
-      potential += 15; // 波乱を起こす陣営としてスコア底上げ
-      tags.push("💥 園田特注: 波乱の使者！高配当を演出する穴メーカー陣営(尾林二/碇清次厩舎)");
+    // 脚質（通過順）減点【-10点】：前走4角9番手以下（※追い込み馬はヒモ穴フラグBで救済される場合あり）
+    if (horse.style === '追込' || horse.style === '後方') {
+      potential -= 10;
+      tags.push("⚠️ 園田減点: 前走後方待機(展開待ちリスク)");
+    }
+    
+    // -----------------------------------------------------
+    // 【3. 騎手・陣営による減点】
+    // -----------------------------------------------------
+    const jName = horse.jockey || '';
+    const tName = horse.trainer || '';
+    const isTopJockey = ['田野', '小牧太'].some(j => jName.includes(j));
+    
+    // 騎手力減点【-15点】：田野豊・小牧太以外
+    if (!isTopJockey) {
+      potential -= 15;
+      tags.push("⚠️ 園田減点: トップ騎手(田野/小牧太)以外の騎乗");
+    }
+    
+    // 継続騎乗不信減点【-10点】：上位人気かつ乗り替わり（トップ騎手へは免除）
+    const isJockeyChanged = prevRaceData && prevRaceData.jockey && jName !== prevRaceData.jockey;
+    if (popularity <= 3 && isJockeyChanged && !isTopJockey) {
+      potential -= 10;
+      tags.push("⚠️ 園田減点: 上位人気馬の不穏な乗り替わり");
+    }
+    
+    // 単騎出し減点【-5点】
+    if (tName) {
+      const sameTrainerCount = race.horses.filter(h => h.trainer && h.trainer.includes(tName)).length;
+      if (sameTrainerCount === 1) {
+        potential -= 5;
+        tags.push("⚠️ 園田減点: 同厩舎の多頭出しがない単騎参戦");
+      }
     }
 
-    // ==========================================
-    // 【特化ロジック】園田競馬場・乗り替わりの勝負気配（2026/06分析）
-    // ==========================================
-    if (prevRaceData && horse.jockey && prevRaceData.jockey) {
-      const isJockeyChanged = horse.jockey !== prevRaceData.jockey;
+    // -----------------------------------------------------
+    // 【4. 枠順による減点】
+    // -----------------------------------------------------
+    // 枠・馬番不一致減点【-15点】
+    if (frame !== horse.horseNumber) {
+      potential -= 15;
+      tags.push("⚠️ 園田減点: 枠番と馬番の不一致(マイナスバイアス)");
+    }
+    
+    // 馬場傾向減点（前半1〜4R）【-5点】：外枠（5〜8枠）
+    const raceNumMatch = race.raceName ? race.raceName.match(/(\d+)R/) : null;
+    const raceNum = raceNumMatch ? parseInt(raceNumMatch[1], 10) : (race.raceNumber || 0);
+    if (raceNum >= 1 && raceNum <= 4 && frame >= 5) {
+      potential -= 5;
+      tags.push("⚠️ 園田減点: 前半レースの外枠不利");
+    }
+    
+    // 馬場傾向減点（後半5〜12R）【-5点】：内枠（1〜4枠）
+    if (raceNum >= 5 && raceNum <= 12 && frame <= 4) {
+      potential -= 5;
+      tags.push("⚠️ 園田減点: 後半レースの内枠不利");
+    }
+
+    // -----------------------------------------------------
+    // 【ヒモ穴推奨フラグ（別枠加点）】
+    // -----------------------------------------------------
+    if (popularity >= 5) {
+      let isHimoHole = false;
+      let himoReason = "";
       
-      if (isJockeyChanged) {
-        // 乗り替わりルール1：勝負の乗り替わり（田野豊 / 小牧太へのスイッチ）
-        if (['田野', '小牧太'].some(j => horse.jockey.includes(j))) {
-          potential += 15;
-          tags.push("👑 園田特注: 陣営の勝負気配！トップ騎手への勝負の乗り替わり");
-        }
-
-        // 乗り替わりルール3：ヒモ穴の強力ピックアップ（乗り替わり＋負担重量1.0kg以上減）
-        // 型定義に依存せず安全に比較するため、パースして数値として比較
-        const prevWeight = parseFloat(prevRaceData.burdenWeight);
-        const currWeight = parseFloat(horse.burdenWeight);
-        if (!isNaN(prevWeight) && !isNaN(currWeight)) {
-          const weightDiff = prevWeight - currWeight;
-          if (weightDiff >= 1.0) {
-            potential += 15; // ヒモ穴としてスコア底上げ
-            tags.push("💥 園田特注: 激走のサイン！乗り替わりによる負担重量1.0kg以上の軽量化");
-          }
-        }
-      } else {
-        // 乗り替わりルール2：上位人気の継続騎乗の信頼
-        if (popularity >= 1 && popularity <= 3) {
-          potential += 10;
-          tags.push("🎯 園田特注: 陣営の信頼の証拠！上位人気馬の継続騎乗(手堅いアタマ候補)");
+      // フラグA：前走凡走 × 3〜5走前に好走
+      if (recentSlump && olderGoodRun) {
+        isHimoHole = true; himoReason = "隠れた実力(過去好走歴)";
+      }
+      // フラグB：前走後方待機、または距離短縮
+      if (horse.style === '追込' || horse.style === '後方') {
+        isHimoHole = true; himoReason = "追い込み一変";
+      }
+      if (prevRaceData && prevRaceData.distance !== undefined && prevRaceData.distance > dist) {
+        isHimoHole = true; himoReason = "大幅な距離短縮恩恵";
+      }
+      // フラグC：陣営の波乱使者（小谷哲 / 尾林二 / 碇清次）
+      if (jName.includes('小谷') || ['尾林二', '碇清次'].some(t => tName.includes(t))) {
+        isHimoHole = true; himoReason = "波乱メーカー陣営";
+      }
+      // フラグD：恩恵乗り替わり（斤量1.0kg以上減）
+      if (isJockeyChanged && prevRaceData && prevRaceData.burdenWeight && horse.burdenWeight) {
+        const prevW = parseFloat(prevRaceData.burdenWeight);
+        const currW = parseFloat(horse.burdenWeight);
+        if (!isNaN(prevW) && !isNaN(currW) && (prevW - currW) >= 1.0) {
+          isHimoHole = true; himoReason = "乗り替わり軽量化";
         }
       }
-    }
-
-    // マニアック1: 1400mの1コーナー争い（内枠絶対有利・イン突き）
-    if (dist === 1400 && frame <= 3) {
-      // [減点方式] potential += 45;
-      tags.push("🔥 園田マニアック: 最初のコーナー争いを制し、イン突きを狙える『内枠』の絶対的有利");
-    }
-    // マニアック2: 大外枠の絶望
-    if (frame >= 7 && dist === 1400) {
-      potential -= 30;
-      tags.push("⚠️ 園田危険: 1400mの1コーナーで外を回される致命的な距離ロス（外枠減点）");
-    }
-
-    // ==========================================
-    // 【特化ロジック】園田競馬場・距離変更とタイム差大敗のトラップ（2026/06分析）
-    // ==========================================
-    if (prevRaceData) {
-      // 距離ルール1：アタマの王道「同距離ローテ」
-      if (prevRaceData.distance === dist) {
-        potential += 10;
-        tags.push("👑 園田特注: アタマの王道！ペース慣れしている同距離ローテ");
+      // フラグE：本命馬と同枠・隣枠
+      const favHorse = race.horses.find(h => h.popularity === 1);
+      if (favHorse && favHorse.frame && Math.abs(frame - favHorse.frame) <= 1) {
+        isHimoHole = true; himoReason = "本命馬の同枠/隣枠";
       }
-
-      // 距離ルール2：ヒモ穴を呼ぶ「大幅な距離短縮組」
-      if (prevRaceData.distance !== undefined && prevRaceData.distance > dist && popularity >= 6) {
-        potential += 15; // 距離短縮による一変を期待してヒモ穴スコアを底上げ
-        tags.push("💥 園田特注: 一変の可能性大！距離短縮でペースが向くヒモ穴候補");
-      }
-
-      // 距離ルール3：最大のトラップ「前走タイム差大敗」は巻き返し候補
-      if (prevRaceData.timeMargin !== undefined && prevRaceData.timeMargin >= 1.0) {
-        // NAR汎用の大敗ペナルティ等を相殺し、穴馬としてフラット〜プラスに評価するための救済加点
-        const recoveryBonus = popularity >= 6 ? 15 : 5;
-        potential += recoveryBonus;
-        tags.push("💥 園田特注: 前走1.0秒以上の大差負けは罠！人気落ちなら美味しい巻き返し候補");
+      
+      if (isHimoHole) {
+        // ヒモ穴として拾いやすくするため救済加点
+        potential += 30;
+        tags.push(`💥 園田特注: 絶好のヒモ穴推奨フラグ成立！(${himoReason})`);
       }
     }
   }
