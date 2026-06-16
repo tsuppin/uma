@@ -333,6 +333,42 @@ export function calculateNARScore(
     potential -= Math.max(0, kasamatsuPenalty);
   }
   else if (trackName.includes('園田') || trackName.includes('姫路')) {
+    // ==========================================
+    // 【特化ロジック】園田競馬場・減点方式ハイブリッド（2026/06分析）
+    // ==========================================
+
+    // ルール1：1着（アタマ）は「1〜3番人気」から手堅く選ぶ
+    if (popularity >= 1 && popularity <= 3) {
+      potential += 10;
+      tags.push("👑 園田特注: 1着候補の手堅い本命(1〜3番人気)");
+    } else if (popularity >= 4) {
+      potential -= 10; // 1着候補としては減点
+      tags.push("⚠️ 園田減点: アタマ(1着)としては信頼度減(4番人気以下)");
+    }
+
+    // ルール2：馬体重の変動が「±6kg以内」の馬を狙う（大幅な増減は減点）
+    if (typeof horse.weightChange === 'number') {
+      if (Math.abs(horse.weightChange) >= 10) {
+        potential -= 20; // 1着候補から外すための大幅減点
+        tags.push("⚠️ 園田消去法: 極端な馬体重変動(±10kg以上)によるアタマ除外");
+      }
+    }
+
+    // ルール3：前走で「3着以内」に好走している馬は高く評価する
+    if (prevRaceData && prevRaceData.result >= 1 && prevRaceData.result <= 3) {
+      potential += 10;
+      tags.push("🔥 園田特注: 前走3着以内の好調馬(今の馬場に直結)");
+    }
+
+    // ルール4：2・3着のヒモには「6〜8番人気」の穴馬を必ず入れる
+    if (popularity >= 6 && popularity <= 8) {
+      const hasCloseRace = horse.pastRaces && horse.pastRaces.some(pr => pr.timeMargin !== undefined && pr.timeMargin <= 0.5);
+      if (hasCloseRace) {
+        potential += 20; // ヒモとして拾いやすくするためスコア底上げ
+        tags.push("💥 園田特注: ヒモ荒れ必須！僅差健闘歴のある伏兵(6〜8番人気)");
+      }
+    }
+
     // マニアック1: 1400mの1コーナー争い（内枠絶対有利・イン突き）
     if (dist === 1400 && frame <= 3) {
       // [減点方式] potential += 45;
