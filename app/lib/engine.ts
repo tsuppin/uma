@@ -4337,9 +4337,9 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【中京競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
-  const isChukyo = race.venue?.includes("中京") || race.trackName?.includes("中京") || race.raceName?.includes("中京");
+  const isChukyoSpecial = race.venue?.includes("中京") || race.trackName?.includes("中京") || race.raceName?.includes("中京");
 
-  if (isChukyo) {
+  if (isChukyoSpecial) {
     tags.push("🐎 中京特化OMEGAエンジン適用中");
     
     // ルール1: 枠順（立ち回りの重要性と内枠有利・外枠不利）
