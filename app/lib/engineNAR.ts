@@ -324,7 +324,7 @@ export function calculateNARScore(
     }
 
     // 牝馬の強さ
-    if (horse.sex === '牝') {
+    if (horse.gender === '牝') {
       potential += 15;
       tags.push("🔥 笠松特注: 牡馬相手でも勝ち切る勝負強い牝馬");
     }
