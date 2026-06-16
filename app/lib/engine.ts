@@ -4343,25 +4343,19 @@ export function calculateTsuchiyaScore(
     tags.push("🐎 水沢特化OMEGAエンジン適用中");
 
     // 1. 超小回り（右回り）の物理バイアス
-    // 水沢はコーナーがきつく直線も短いため、圧倒的な「前残り・逃げ先行絶対有利」馬場
     if (horse.style === "逃げ" || horse.style === "先行") {
-      // [減点方式] potential += 30;
+      potential += 20;
       tags.push("🏃 水沢超小回り物理: 逃げ・先行の絶対的優位");
     } else if (horse.style === "追込") {
       potential -= 25;
       tags.push("❌ 水沢追込困難: 直線が短く物理的に届かない");
     }
 
-    // 2. 枠順バイアス（先行馬の内枠エッジ）
-    // コーナーが狭いため、ロスなく回れる内枠（1〜3枠）の先行馬が圧倒的に有利
-    if (frame <= 3) {
-      if (horse.style === "逃げ" || horse.style === "先行") {
-        // [減点方式] potential += 20;
-        tags.push("🎯 水沢鉄板: 内枠×先行のロスなしエッジ");
-      }
-    } else if (frame >= 7) {
-      potential -= 10;
-      tags.push("⚠️ 水沢外枠割引: 狭い1コーナーでの外回されロス");
+    // 2. 枠順バイアス (最新データ反映)
+    // 従来は内枠有利と言われていたが、最新傾向では外枠(6〜8枠)が圧倒的有利
+    if (frame >= 6) {
+      potential += 25;
+      tags.push("👑 水沢特注: 半分以上のレースで勝利する圧倒的有利な外枠(6〜8枠)");
     }
 
     // 3. 冬期特注・馬場凍結バイアス
@@ -4369,27 +4363,44 @@ export function calculateTsuchiyaScore(
     const isWinterMizusawa = raceMonth === 12 || raceMonth <= 3;
     if (isWinterMizusawa) {
       if (weight >= 500) {
-        // [減点方式] potential += 15;
+        potential += 15;
         tags.push("⛄ 水沢冬期馬場: 凍結・重い砂をこなす大型パワー馬");
       }
       if (horse.style === "逃げ") {
-        // [減点方式] potential += 15;
+        potential += 15;
         tags.push("⛄ 水沢冬期馬場: 前が止まらない冬の逃げ馬ボーナス");
       }
     }
 
-    // 4. 岩手リーディングジョッキー・シナジー
-    const isIwateEliteJ = ["山本聡", "村上忍", "高松亮", "菅原辰", "山本政"].some(j => jockey.includes(j));
+    // 4. 新ルール1: 1番人気は「連軸（ヒモ）」としての信頼度は高いが、単勝の過信は禁物
+    if (popularity === 1) {
+      potential -= 10;
+      tags.push("⚠️ 水沢特注: 1番人気は複勝率75%も勝率33%。1着固定より連軸推奨");
+    }
+
+    // 5. 新ルール3: 前走「3着以内」の近走好調馬を狙う
+    if (prevRaceData && prevRaceData.result !== undefined && prevRaceData.result >= 1 && prevRaceData.result <= 3) {
+      potential += 20;
+      tags.push("👑 水沢特注: 前走3着以内の好調馬が順当に勝ち切る傾向");
+    }
+
+    // 6. 新ルール4: 騎手の特徴（本命党は「村上忍騎手」、穴党は「坂井瑛騎手」）
+    if (jockey.includes("村上忍") && popularity <= 2) {
+      potential += 25;
+      tags.push("🎯 水沢鉄板: 人気馬に乗った村上忍騎手の抜群の信頼度");
+    }
+    if (jockey.includes("坂井瑛") && popularity >= 4) {
+      potential += 30;
+      tags.push("💥 水沢大穴特注: 伏兵馬を次々と勝たせる穴メーカー坂井瑛騎手");
+    }
+    
+    // 岩手リーディング全般のフォロー
+    const isIwateEliteJ = ["山本聡", "高松亮", "菅原辰", "山本政"].some(j => jockey.includes(j));
     if (isIwateEliteJ) {
-      // [減点方式] potential += 25;
-      tags.push("👑 岩手トップジョッキー絶対信頼度");
-      if (popularity <= 2) {
-        // [減点方式] potential += 15;
-        tags.push("🎯 水沢鉄板: 岩手トップ騎手×上位人気");
-      }
+      potential += 10;
+      tags.push("🌟 岩手トップジョッキー絶対信頼度");
     }
   }
-
   // ==========================================
   // 【名古屋・弥富競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
