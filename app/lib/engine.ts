@@ -281,6 +281,21 @@ export function calculateTsuchiyaScore(
       tags.push("💥 東京特注: 超大穴の激走警戒！中堅騎手の爆穴枠(木幡/丸山)");
     }
 
+    // ルール8：1着は絶対に関東馬(美浦)！関西馬(栗東)のアタマ狙いは危険
+    if (horse.stableLocation && horse.stableLocation.includes('美浦')) {
+      potential += 15;
+      tags.push("👑 東京特注: 1着固定の絶対条件！地元・美浦(関東)所属馬");
+    } else if (horse.stableLocation && horse.stableLocation.includes('栗東')) {
+      potential -= 20; // アタマとしては大きく割引き、ヒモとしての評価に留める
+      tags.push("⚠️ 東京減点: アタマ(1着)は危険。2・3着の相手までの栗東(関西)所属馬");
+    }
+
+    // ルール9：集中力アップで激走を呼ぶ「ブリンカー着用馬」
+    if (horse.useBlinkers) {
+      potential += 20; // 勝ち切るケースや大穴を開けるケースが多発しているため高評価
+      tags.push("💥 東京特注: 集中力MAX！大穴激走も狙えるブリンカー着用馬");
+    }
+
     // 1. 芝マイル以下（1400m・1600m）：「先行〜中団差し」×「圧倒的な内枠（2〜3枠）」
     if (race.surface === '芝' && dist <= 1600) {
       if ((frame === 2 || frame === 3) && ['逃げ', '先行', '差し'].includes(horse.style)) {
