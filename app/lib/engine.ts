@@ -4384,29 +4384,85 @@ export function calculateTsuchiyaScore(
       tags.push("🎯 中京鉄板: 直線の急坂をこなすパワーの証明！同じ急坂コース(阪神・中山)での好走実績あり");
     }
 
-    // ルール3: 芝2000m vs 芝2200m の真逆の脚質適性
+
+    // ルール3: 芝コースの距離別特化ロジック
     if (race.surface === "芝") {
-      const distance = parseInt(dist || race.distance || "0", 10);
+      const distance = parseInt(race.distance || "0", 10);
       const style = horse.style || "";
 
-      if (distance === 2000) {
-        // 芝2000m: ペースが遅くなり逃げ・先行が圧倒的有利
+      if (distance === 1200) {
+        // 芝1200m: ペース落ち着くがタフ。内枠で1400m以上実績馬が有利
+        if (frame >= 1 && frame <= 4) {
+          let hasLongerDistanceSuccess = false;
+          if (horse.pastRaces && horse.pastRaces.length > 0) {
+            hasLongerDistanceSuccess = horse.pastRaces.some(pr => {
+              const prDist = parseInt(pr.distance || "0", 10);
+              return prDist >= 1400 && pr.result !== undefined && pr.result <= 3;
+            });
+          }
+          if (hasLongerDistanceSuccess) {
+            potential += 25;
+            tags.push("👑 中京芝1200m鉄板: スタミナが問われる急坂コース！ロスなく回れる内枠＋1400m以上での好走実績(スタミナ証明)を持つ最強の狙い目");
+          } else {
+            potential += 10;
+            tags.push("🌟 中京芝1200m特注: 緩やかな上り坂発走でペースが落ち着くため、タイトなコーナーをロスなく回れる内枠が有利");
+          }
+        }
+      } else if (distance === 1400) {
+        // 芝1400m: ペース激化で内枠の差し・追い込み有利
+        if (style === "差し" || style === "追込") {
+          if (frame >= 1 && frame <= 4) {
+            potential += 25;
+            tags.push("👑 中京芝1400m鉄板: 1200mよりもペースが上がる逆転現象！前が潰れる展開を内からロスなく強襲する内枠の差し・追い込み馬");
+          } else {
+            potential += 10;
+            tags.push("🌟 中京芝1400m特注: 激しいペースにより差し・追い込みが決まりやすい");
+          }
+        }
+      } else if (distance === 1600) {
+        // 芝1600m: 内枠の先行＋瞬発力勝負
+        if (frame >= 1 && frame <= 4) {
+          if (style === "逃げ" || style === "先行") {
+            let hasFastLatePace = false;
+            if (horse.pastRaces && horse.pastRaces.length > 0) {
+              hasFastLatePace = horse.pastRaces.some(pr => pr.last3F !== undefined && pr.last3F <= 33.9);
+            }
+            if (hasFastLatePace) {
+              potential += 25;
+              tags.push("👑 中京芝1600m鉄板: 特殊ポケット発走で圧倒的内枠有利！スローからの瞬発力勝負に対応できる「鋭い上がり(33秒台以下)実績を持つ内枠先行馬」");
+            } else {
+              potential += 15;
+              tags.push("🌟 中京芝1600m特注: 最初のコーナーまでの距離が短いため圧倒的内枠有利の先行馬");
+            }
+          }
+        }
+      } else if (distance === 2000) {
+        // 芝2000m: ペースが遅くなり逃げ・先行が圧倒的有利 + リピーター
         if (style === "逃げ" || style === "先行") {
           potential += 20;
           tags.push("👑 中京芝2000m特注: 上り坂スタートでペースが落ち着くため、ロスなく運べる逃げ・先行馬が圧倒的有利");
           
-          // 2200mで先行してバテた馬の巻き返し
+          let isRepeater = false;
           let failedAt2200 = false;
           if (horse.pastRaces && horse.pastRaces.length > 0) {
+            isRepeater = horse.pastRaces.some(pr => {
+              const venue = pr.venue || pr.trackName || pr.raceName || '';
+              return venue.includes("中京") && pr.result !== undefined && pr.result <= 3;
+            });
             failedAt2200 = horse.pastRaces.some(pr => {
               const venue = pr.venue || pr.trackName || pr.raceName || '';
               const prDist = parseInt(pr.distance || "0", 10);
               return venue.includes("中京") && prDist === 2200 && (pr.style === "逃げ" || pr.style === "先行") && pr.result !== undefined && pr.result >= 4;
             });
           }
+          
+          if (isRepeater) {
+            potential += 15;
+            tags.push("🎯 中京芝2000m鉄板: 中京好走実績あり！特殊コースを得意とするリピーターの逃げ・先行馬");
+          }
           if (failedAt2200) {
             potential += 25;
-            tags.push("🎯 中京芝2000m鉄板: タフな2200mで先行して粘れなかった馬の距離短縮！ペースが落ち着くここは絶好の狙い目");
+            tags.push("🎯 中京芝2000m超鉄板: タフな2200mで先行して粘れなかった馬の距離短縮！ペースが落ち着くここは絶好の狙い目");
           }
         } else if (style === "差し" || style === "追込") {
           potential -= 15;
@@ -4418,7 +4474,6 @@ export function calculateTsuchiyaScore(
           potential += 20;
           tags.push("👑 中京芝2200m特注: 序盤から激しいポジション争いが発生。急坂を2回登るタフな展開で脚を溜められる差し・追い込み馬が有利");
           
-          // 2000mで差し届かなかった馬の巻き返し
           let failedAt2000 = false;
           if (horse.pastRaces && horse.pastRaces.length > 0) {
             failedAt2000 = horse.pastRaces.some(pr => {
