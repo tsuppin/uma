@@ -594,9 +594,9 @@ export function calculateNARScore(
         isHimoHole = true; himoReason = "波乱メーカー陣営";
       }
       // フラグD：恩恵乗り替わり（斤量1.0kg以上減）
-      if (isJockeyChanged && prevRaceData && prevRaceData.burdenWeight && horse.burdenWeight) {
-        const prevW = parseFloat(prevRaceData.burdenWeight);
-        const currW = parseFloat(horse.burdenWeight);
+      if (isJockeyChanged && prevRaceData && prevRaceData.jockeyWeight !== undefined && horse.jockeyWeight !== undefined) {
+        const prevW = prevRaceData.jockeyWeight;
+        const currW = horse.jockeyWeight;
         if (!isNaN(prevW) && !isNaN(currW) && (prevW - currW) >= 1.0) {
           isHimoHole = true; himoReason = "乗り替わり軽量化";
         }
