@@ -337,7 +337,7 @@ export function calculateNARScore(
     // 【特化ロジック】園田競馬場・減点方式ハイブリッド（2026/06分析）
     // ==========================================
     const popularity = horse.popularity || 99;
-
+    const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
     // ルール1：1着（アタマ）は「1〜3番人気」から手堅く選ぶ
     if (popularity >= 1 && popularity <= 3) {
       potential += 10;
