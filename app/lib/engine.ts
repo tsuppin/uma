@@ -267,6 +267,20 @@ export function calculateTsuchiyaScore(
       tags.push("💥 東京特注: ヒモ荒れ誘発！丹内騎手の中位人気馬(高配当の使者)");
     }
 
+    // ルール6：「荻野極騎手・F.ゴンサルベス騎手」×「中位人気」の伏兵
+    const isOginoGoncalves = horse.jockey && ['荻野極', 'ゴンサルベス'].some(j => horse.jockey.includes(j));
+    if (isOginoGoncalves && popularity >= 2 && popularity <= 6) {
+      potential += 15;
+      tags.push("🔥 東京特注: 伏兵を上位に持ってくる名手(荻野極/ゴンサルベス)");
+    }
+
+    // ルール7：大穴狙いなら中堅・若手騎手(木幡巧/木幡初/丸山)の二桁人気馬
+    const isKowataMaruyama = horse.jockey && ['木幡巧', '木幡初', '丸山'].some(j => horse.jockey.includes(j));
+    if (isKowataMaruyama && popularity >= 10) {
+      potential += 15; // 大穴でもスコア底上げでヒモに残す
+      tags.push("💥 東京特注: 超大穴の激走警戒！中堅騎手の爆穴枠(木幡/丸山)");
+    }
+
     // 1. 芝マイル以下（1400m・1600m）：「先行〜中団差し」×「圧倒的な内枠（2〜3枠）」
     if (race.surface === '芝' && dist <= 1600) {
       if ((frame === 2 || frame === 3) && ['逃げ', '先行', '差し'].includes(horse.style)) {
