@@ -4448,35 +4448,6 @@ export function calculateTsuchiyaScore(
     }
   }
 
-  // 【中山競馬場 超特化型オメガ・プロトコル推論エンジン】
-  // ==========================================
-  const isNakayamaSpecial = race.venue?.includes("中山") || race.trackName?.includes("中山") || race.raceName?.includes("中山");
-
-  if (isNakayamaSpecial) {
-    tags.push("🐎 中山特化OMEGAエンジン適用中");
-    
-    // 中山の立ち回り（内枠有利）
-    if (frame >= 1 && frame <= 4) {
-      potential += 15;
-      tags.push("👑 中山特注: タイトなコーナーをロスなく回る機動力と立ち回りが活きる内枠");
-    }
-
-    // 中山実績と東京実績の相反チェック
-    let hasNakayamaSuccess = false;
-    let hasTokyoSuccess = false;
-    if (horse.pastRaces && horse.pastRaces.length > 0) {
-      hasNakayamaSuccess = horse.pastRaces.some(pr => pr.venue?.includes("中山") && pr.result !== undefined && pr.result <= 3);
-      hasTokyoSuccess = horse.pastRaces.some(pr => pr.venue?.includes("東京") && pr.result !== undefined && pr.result <= 3);
-    }
-
-    if (hasNakayamaSuccess) {
-      potential += 25;
-      tags.push("🎯 中山鉄板: 直線の急坂と小回りをこなす機動力・スタミナの証明！中山好走実績あり");
-    } else if (hasTokyoSuccess && !hasNakayamaSuccess) {
-      potential -= 20;
-      tags.push("🔻 中山危険: 東京での好走実績のみ。直線の長い瞬発力勝負に偏っており、中山特有の急坂・小回り(機動力)適性に欠ける危険な人気馬の可能性");
-    }
-  }
 
   // ==========================================
   // 【東京競馬場 超特化型オメガ・プロトコル推論エンジン】
