@@ -3054,6 +3054,23 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【福島競馬場 超特化型オメガ・プロトコル推論エンジン】
+  // ==========================================
+  const isFukushimaSpecial = race.venue?.includes("福島") || race.trackName?.includes("福島") || race.raceName?.includes("福島");
+
+  if (isFukushimaSpecial) {
+    tags.push("🐎 福島特化OMEGAエンジン適用中");
+    
+    // 福島芝2600m × ゴールドシップ産駒
+    if (race.surface === "芝" && parseInt(dist || race.distance || "0", 10) === 2600) {
+      if (horse.sire && horse.sire.includes("ゴールドシップ")) {
+        potential += 30;
+        tags.push("👑 福島芝2600m超鉄板: 3回走れば1回は馬券に絡む！タフな長丁場で無類のスタミナを誇るゴールドシップ産駒は無条件で買い");
+      }
+    }
+  }
+
+  // ==========================================
   // 【東京競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isTokyo = race.venue?.includes("東京") || race.trackName?.includes("東京") || race.raceName?.includes("東京");
@@ -4335,6 +4352,22 @@ export function calculateTsuchiyaScore(
   }
 
   // ==========================================
+  // 【ダート戦全般 血統特化ロジック (砂被り嫌悪)】
+  // ==========================================
+  if (race.surface === "ダート") {
+    if (horse.sire && horse.sire.includes("アメリカンファラオ")) {
+      // 砂被りを極端に嫌うため「逃げ」または「外枠(7〜8枠)」で大激走
+      if (horse.style === "逃げ" || frame >= 7) {
+        potential += 25;
+        tags.push("👑 ダート特注(アメリカンファラオ): 砂を被らない条件(逃げ or 外枠)が揃った時、極端にパフォーマンスを上げるピンパーの単勝狙い目！");
+      } else {
+        potential -= 10;
+        tags.push("🔻 ダート減点(アメリカンファラオ): 砂を被る内枠・中団からの競馬では脆い");
+      }
+    }
+  }
+
+  // ==========================================
   // 【中山競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
   const isNakayamaSpecial = race.venue?.includes("中山") || race.trackName?.includes("中山") || race.raceName?.includes("中山");
@@ -4402,6 +4435,17 @@ export function calculateTsuchiyaScore(
       tags.push("🔻 東京危険: 中山での好走実績のみ。小回りの立ち回りやスタミナに偏っており、東京で最も重要な「スピードと極限の瞬発力」に欠ける危険な馬");
     }
   }
+    // 東京ダート2100m × ホッコータルマエ産駒
+    if (race.surface === "ダート" && parseInt(dist || race.distance || "0", 10) === 2100) {
+      if (horse.sire && horse.sire.includes("ホッコータルマエ")) {
+        potential += 20;
+        tags.push("🌟 東京ダート2100m特注: キンカメ系スタミナの血統！勝率12%・単回値103%を誇るホッコータルマエ産駒");
+        if (horse.style === "逃げ" || horse.style === "先行") {
+          potential += 15; // 追加ボーナス
+          tags.push("🎯 東京ダート2100m鉄板: 前で競馬ができるホッコータルマエ産駒は絶好の狙い目！");
+        }
+      }
+    }
 
   // ==========================================
   // 【中京競馬場 超特化型オメガ・プロトコル推論エンジン】
