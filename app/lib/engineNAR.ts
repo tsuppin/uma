@@ -552,7 +552,7 @@ export function calculateNARScore(
     // 【4. 枠順による減点】
     // -----------------------------------------------------
     // 枠・馬番不一致減点【-15点】
-    if (frame !== horse.horseNumber) {
+    if (frame !== horse.number) {
       potential -= 15;
       tags.push("⚠️ 園田減点: 枠番と馬番の不一致(マイナスバイアス)");
     }
