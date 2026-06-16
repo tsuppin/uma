@@ -4337,9 +4337,9 @@ export function calculateTsuchiyaScore(
   // ==========================================
   // 【中山競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
-  const isNakayama = race.venue?.includes("中山") || race.trackName?.includes("中山") || race.raceName?.includes("中山");
+  const isNakayamaSpecial = race.venue?.includes("中山") || race.trackName?.includes("中山") || race.raceName?.includes("中山");
 
-  if (isNakayama) {
+  if (isNakayamaSpecial) {
     tags.push("🐎 中山特化OMEGAエンジン適用中");
     
     // 中山の立ち回り（内枠有利）
