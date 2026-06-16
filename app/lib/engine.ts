@@ -2823,16 +2823,28 @@ export function calculateTsuchiyaScore(
     if (surface === "芝") {
       if (distance === 1200) {
         if (frame >= 1 && frame <= 4) {
-          potential += 20;
-          tags.push("👑 中山芝1200m鉄板: 下り坂でハイペース。ロスなく回れる内枠が圧倒的有利！");
+          let hasHill1200Success = horse.pastRaces && horse.pastRaces.some(pr => (pr.venue?.includes("中山") || pr.venue?.includes("阪神") || pr.venue?.includes("中京")) && parseInt(pr.distance||"0",10) === 1200 && pr.result <= 3);
+          if (hasHill1200Success) {
+            potential += 25;
+            tags.push("🎯 中山芝1200m超鉄板: 急坂コースの1200m好走実績を持つ内枠！下り坂ハイペースでも止まらない最強の狙い目");
+          } else {
+            potential += 15;
+            tags.push("👑 中山芝1200m鉄板: 下り坂でハイペース。ロスなく回れる内枠が圧倒的有利！");
+          }
         } else if (frame >= 7 && frame <= 8) {
           potential -= 20;
           tags.push("🔻 中山芝1200m減点: 下り坂でスピードに乗る中、大外枠は大きな距離ロスとなり不利");
         }
       } else if (distance === 1600) {
         if (frame >= 1 && frame <= 4) {
-          potential += 20;
-          tags.push("👑 中山芝1600m鉄板: 特殊ポケット発走。最初のコーナーまで短く内枠が圧倒的有利！");
+          let hasNakayama1600Success = horse.pastRaces && horse.pastRaces.some(pr => pr.venue?.includes("中山") && parseInt(pr.distance||"0",10) === 1600 && pr.result <= 3);
+          if (hasNakayama1600Success) {
+            potential += 30;
+            tags.push("🎯 中山芝1600m超鉄板: 特殊条件の中山マイルで好走実績を持つ内枠馬！他場マイル実績馬を出し抜く絶好の狙い目");
+          } else {
+            potential += 20;
+            tags.push("👑 中山芝1600m鉄板: 特殊ポケット発走。最初のコーナーまで短く内枠が圧倒的有利！");
+          }
         }
       } else if (distance === 1800) {
         if ((style === "逃げ" || style === "先行") && frame >= 1 && frame <= 4) {
@@ -2841,15 +2853,35 @@ export function calculateTsuchiyaScore(
         }
       } else if (distance === 2000) {
         if (style === "差し" || style === "追込") {
-          potential += 20;
-          tags.push("🌟 中山芝2000m特注: 1角までが長くポジション争いが激化。前半で脚を使う前残りが厳しくなり、差し・追い込み馬が浮上！");
+          let failedAt1800 = horse.pastRaces && horse.pastRaces.some(pr => pr.venue?.includes("中山") && parseInt(pr.distance||"0",10) === 1800 && (pr.style==="差し"||pr.style==="追込") && pr.result >= 4);
+          if (failedAt1800) {
+              potential += 30;
+              tags.push("🎯 中山芝2000m超鉄板: 1800mで展開が向かず届かなかった差し・追い込み馬！ポジション争いが激化するここは絶好の『出し入れ』の舞台");
+          } else {
+              potential += 20;
+              tags.push("🌟 中山芝2000m特注: 1角までが長くポジション争いが激化。前半で脚を使う前残りが厳しくなり、差し・追い込み馬が浮上！");
+          }
         } else if (style === "逃げ" || style === "先行") {
           potential -= 15;
           tags.push("🔻 中山芝2000m減点: ペースが激しくなりやすく、逃げ・先行馬には厳しい展開");
         }
+      } else if (distance === 2200) {
+        if (style === "差し") {
+          let hasFastPace = horse.pastRaces && horse.pastRaces.some(pr => pr.last3F && pr.last3F <= 34.5);
+          if (hasFastPace) {
+              potential += 25;
+              tags.push("👑 中山芝2200m鉄板: なぜかスローペースになりやすい条件。中団から速い上がり3ハロンを繰り出せる馬が優秀な成績を残す特注舞台");
+          }
+        }
       } else if (distance === 2500) {
-        potential += 15;
-        tags.push("🌟 中山芝2500m特注: 有馬記念の舞台。アップダウンが多く非常にタフなコース。高い総合力とスタミナが問われる");
+        let firstTime2500 = !(horse.pastRaces && horse.pastRaces.some(pr => pr.venue?.includes("中山") && parseInt(pr.distance||"0",10) === 2500));
+        if (firstTime2500 && !(race.raceName && race.raceName.includes("有馬記念"))) { // 下級条件想定
+            potential += 20;
+            tags.push("🎯 中山芝2500m特注: 他距離で通用しなかった馬が集まる下級条件。未知の適性を秘めた「中山2500m初出走馬」が狙い目！");
+        } else {
+            potential += 15;
+            tags.push("🌟 中山芝2500m特注: 有馬記念の舞台。アップダウンが多く非常にタフなコース。高い総合力とスタミナが問われる");
+        }
       }
     } else if (surface === "ダート") {
       if (distance === 1200) {
@@ -2863,9 +2895,15 @@ export function calculateTsuchiyaScore(
           potential += 20;
           tags.push("🎯 中山ダート1800m特注: わざわざ輸送費をかけて関東のタフな舞台に挑んでくる「勝負気配の高い関西馬」！");
         }
+      } else if (distance === 2400) {
+        let prevMiddleDistance = horse.pastRaces && horse.pastRaces.length > 0 && parseInt(horse.pastRaces[0].distance||"0",10) >= 1800 && parseInt(horse.pastRaces[0].distance||"0",10) <= 2100;
+        let firstTime2400 = !(horse.pastRaces && horse.pastRaces.some(pr => pr.venue?.includes("中山") && parseInt(pr.distance||"0",10) === 2400));
+        if (prevMiddleDistance && firstTime2400) {
+            potential += 25;
+            tags.push("🎯 中山ダート2400m超鉄板: メンバーレベルが下がる長距離戦。中距離(1800〜2100m)で高いレベルの相手と戦ってきた馬の初出走は絶好の狙い目！");
+        }
       }
     }
-  }
   // ==========================================
   // 【阪神競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
