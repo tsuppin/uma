@@ -4345,10 +4345,29 @@ export function calculateTsuchiyaScore(
     // ルール1: 枠順（立ち回りの重要性と内枠有利・外枠不利）
     if (frame >= 1 && frame <= 4) {
       potential += 20;
-      tags.push("👑 中京特注: 遠心力を抑えてロスなく回れる内枠(1〜4枠)は絶対的有利");
+      if (race.surface === "ダート") {
+        tags.push("👑 中京ダート特注: 砂を被るデメリットより、遠心力を抑えて最短距離を回れる内枠(1〜4枠)のメリットが圧倒的に勝る");
+        
+        // 過去に内枠から好走した実績があるか(砂被り耐性の証明)
+        let hasInnerFrameSuccess = false;
+        if (horse.pastRaces && horse.pastRaces.length > 0) {
+          hasInnerFrameSuccess = horse.pastRaces.some(pr => pr.frame !== undefined && pr.frame <= 4 && pr.result !== undefined && pr.result <= 3);
+        }
+        if (hasInnerFrameSuccess) {
+          potential += 25; // 強烈な上乗せ加点
+          tags.push("🎯 中京ダート鉄板: 過去に内枠での好走実績あり！砂を被る展開でも怯まず内を突ける最強の狙い目");
+        }
+      } else {
+        tags.push("👑 中京特注: 遠心力を抑えてロスなく回れる内枠(1〜4枠)は絶対的有利");
+      }
     } else if (frame >= 7 && frame <= 8) {
-      potential -= 15;
-      tags.push("🔻 中京減点: 3・4角の下り坂＋タイトなコーナーで外を回される外枠(7〜8枠)は大幅なスタミナロス");
+      if (race.surface === "ダート") {
+        potential -= 25; // 砂を被らないメリットよりロスが大きいため大幅減点
+        tags.push("🔻 中京ダート減点: 砂回避のメリットより、3・4角の下り坂＋タイトなコーナーで外を回される遠心力スタミナロスが甚大");
+      } else {
+        potential -= 15;
+        tags.push("🔻 中京減点: 3・4角の下り坂＋タイトなコーナーで外を回される外枠(7〜8枠)はスタミナロス");
+      }
     }
 
     // ルール2: 急坂適性（阪神・中山での好走歴）
