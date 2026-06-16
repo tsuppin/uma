@@ -323,6 +323,139 @@ export function calculateNARScore(
       tags.push("💥 川崎特注: 牝馬特有のスピードや切れ味が活きる重馬場");
     }
 
+    // --- [前走以前の実績ルール (追加4箇条)] --------------------------
+    
+    // 実績ルール1: 「前走2着・3着」の惜敗馬を素直に「1着」で狙う
+    if (prevRaceData && (prevRaceData.result === 2 || prevRaceData.result === 3)) {
+      potential += 15;
+      tags.push("👑 川崎特注: 勝ち切るチャンス！好調を維持する前走惜敗馬");
+    }
+
+    // 実績ルール2: 前走大敗馬は「川崎での好走歴」または「前々走の勝利」を確認する
+    if (prevRaceData && prevRaceData.result >= 6 && horse.pastRaces && horse.pastRaces.length > 1) {
+      let hasGoodKawasaki = false;
+      let hasRecentWin = false;
+      for (let i = 1; i < horse.pastRaces.length; i++) {
+        const r = horse.pastRaces[i];
+        if (r.venue && r.venue.includes('川崎') && r.result <= 3) hasGoodKawasaki = true;
+        if (r.result === 1) hasRecentWin = true;
+      }
+      if (hasGoodKawasaki || hasRecentWin) {
+        potential += 20;
+        tags.push("💥 川崎特注: 前走大敗は罠！近5走に隠れた川崎適性・地力の高さに警戒");
+      }
+    }
+
+    // 実績ルール3: 「JRAからの転入馬」や「他地区の重賞実績馬」の底力を重視する
+    const isFromJRA = horse.transferFrom === 'JRA' || horse.belonging === 'JRA';
+    let hasGradedStakes = false;
+    if (horse.pastRaces) {
+      for (const r of horse.pastRaces) {
+        // 重賞や特別戦のざっくりとした判定
+        if (r.raceName && (r.raceName.includes('重賞') || r.raceName.includes('スプリント') || r.raceName.includes('G') || r.raceName.includes('Jpn'))) {
+          hasGradedStakes = true;
+        }
+      }
+    }
+    if (isFromJRA || hasGradedStakes) {
+      potential += 15;
+      tags.push("💥 川崎特注: 重馬場でモノを言うJRA転入馬・他地区重賞実績馬の「底力」");
+    }
+
+    // 実績ルール4: 「超短距離（900m〜1200m）」を使われてきたスピード馬を評価する
+    let usedInShortDist = false;
+    if (horse.pastRaces) {
+      for (let i = 0; i < Math.min(horse.pastRaces.length, 5); i++) {
+        if (horse.pastRaces[i].dist <= 1200) {
+          usedInShortDist = true;
+          break;
+        }
+      }
+    }
+    if (usedInShortDist) {
+      potential += 10;
+      tags.push("💥 川崎特注: 時計の速い馬場でスピード負けしない超短距離(900〜1200m)経験馬");
+    }
+
+    // --- [乗り替わりのルール (追加4箇条)] --------------------------
+    let isJockeyChangedK = false;
+    if (prevRaceData && prevRaceData.jockey) {
+      // 騎手名が部分一致しない場合を乗り替わりと判定
+      if (!jName.includes(prevRaceData.jockey) && !prevRaceData.jockey.includes(jName)) {
+        isJockeyChangedK = true;
+      }
+    }
+
+    // 乗り替わりルール1: 「前走好走（1着・2着）＋継続騎乗」のコンビは素直に信頼する
+    if (prevRaceData && prevRaceData.result <= 2 && !isJockeyChangedK) {
+      potential += 15;
+      tags.push("👑 川崎特注: 勝ち負け必至！前走連対＋継続騎乗の堅軸コンビ");
+    }
+
+    // 乗り替わりルール2: 「トップジョッキーへの乗り替わり」は勝負気配
+    if (isJockeyChangedK && ['矢野', '町田', '御神本', '森泰', '笹川'].some(j => jName.includes(j))) {
+      potential += 20;
+      tags.push("👑 川崎特注: 陣営の勝負気配！トップジョッキーへの鞍上強化");
+    }
+
+    // 乗り替わりルール3: 前走大敗馬の「乗り替わり」を一変（激走）のサインとして穴で狙う
+    if (prevRaceData && prevRaceData.result >= 6 && isJockeyChangedK) {
+      potential += 15;
+      tags.push("💥 川崎特注: 前走大敗からのカンフル剤！乗り替わりによる一変警戒");
+    }
+
+    // 乗り替わりルール4: 「他場を主戦とする騎手」への乗り替わりは特注
+    if (isJockeyChangedK && ['澤田', '西啓太', '笠野', '達城'].some(j => jName.includes(j))) {
+      potential += 15;
+      tags.push("💥 川崎特注: 勝算あり？他場主戦ジョッキーへの意欲的な乗り替わり");
+    }
+
+    // --- [6〜8番人気の穴馬（ヒモ穴）を狙う4つの条件] --------------------------
+    if (popularity >= 6 && popularity <= 8) {
+      let himoPoints = 0;
+      let reasons = [];
+
+      // 条件1: 「前走3着〜5着」の善戦馬
+      if (prevRaceData && prevRaceData.result >= 3 && prevRaceData.result <= 5) {
+        himoPoints += 10;
+        reasons.push("前走善戦");
+      }
+
+      // 条件2: 「1〜2枠（内枠）」または「7〜8枠（外枠）」
+      if (frame <= 2 || frame >= 7) {
+        himoPoints += 5;
+        reasons.push("極端枠");
+      }
+
+      // 条件3: 近走で「4番手以内」の先行策をとれた経験がある馬
+      let hasEarlySpeed = false;
+      if (horse.pastRaces) {
+        for (let i = 0; i < Math.min(horse.pastRaces.length, 3); i++) {
+          if (horse.pastRaces[i].corner4Position !== undefined && horse.pastRaces[i].corner4Position <= 4) {
+            hasEarlySpeed = true;
+            break;
+          }
+        }
+      }
+      if (hasEarlySpeed) {
+        himoPoints += 10;
+        reasons.push("先行力");
+      }
+
+      // 条件4: 「継続騎乗」または「好調騎手への乗り替わり」
+      const isGoodJockeyRide = isJockeyChangedK && ['町田', '新原', '矢野', '御神本', '森泰'].some(j => jName.includes(j));
+      if (!isJockeyChangedK || isGoodJockeyRide) {
+        himoPoints += 10;
+        reasons.push(!isJockeyChangedK ? "継続騎乗" : "勝負乗替");
+      }
+
+      // 複数条件クリアで強力なヒモ穴として評価
+      if (himoPoints >= 20) {
+        potential += 20;
+        tags.push(`💥 川崎特注: 高配当の使者！6〜8番人気の好走条件合致(${reasons.join(', ')})`);
+      }
+    }
+
     // --- [既存のマニアックルール] --------------------------
     if (dist === 1500 && frame <= 3 && horse.style === '逃げ') {
       potential += 20;
