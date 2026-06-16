@@ -2687,343 +2687,106 @@ export function calculateTsuchiyaScore(
   const isHakodate = race.venue?.includes("函館") || race.trackName?.includes("函館") || race.raceName?.includes("函館");
 
   if (isHakodate) {
-    // [要見直し2] tags.push("🦑 函館特化OMEGAエンジン適用中");
+    // 函館競馬場 完全減点方式（持ち点100点からのマイナス評価）
+    potential = 100;
+    tags.push("🦑 函館特化減点方式OMEGAエンジン適用中(100点スタート)");
 
     const isTurf = race.surface === "芝";
     const isDirt = race.surface === "ダート";
-
-    // 1. 直線JRA最短(262m)の絶対的脚質バイアス
-    if (horse.style === "逃げ" || horse.style === "先行") {
-      // [減点方式] potential += 25;
-      tags.push("🏃 函館最短直線の鉄則：前が絶対に止まらない逃げ・先行アドバンテージ");
-    } else if (horse.style === "追込") {
-      potential -= 30;
-      tags.push("⚠️ 函館危険：直線262mでは物理的に届かない追込（大幅割引）");
-    }
-
-    // 2. 芝1200m「距離短縮」のフレッシュ激走
-    if (isTurf && dist === 1200) {
-      const isDistanceShortened = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance >= 1400;
-      if (isDistanceShortened) {
-        // [減点方式] potential += 25;
-        tags.push("🚀 函館芝1200m黄金ローテ：距離短縮によるスタミナ優位の激走");
-      }
-      
-      // 武豊騎手の芝1200mイン突き職人技
-      if (jockey.includes("武豊") && frame <= 4) {
-        // [減点方式] potential += 30;
-        tags.push("👑 武豊×函館芝1200m内枠：遠心力に逆らう天才的なイン突き");
-      }
-    }
-
-    // 3. 芝2000m（コーナー6回）の「小型馬」機動力エッジ
-    if (isTurf && dist === 2000) {
-      if (weight > 0 && weight <= 450) {
-        // [減点方式] potential += 20;
-        tags.push("🏎️ 函館芝2000m：コーナー6回をロスなく回る小型馬の機動力エッジ");
-      }
-    }
-
-    // 4. ダート2400mの「大幅距離延長」または「大外枠」
-    if (isDirt && dist === 2400) {
-      const isDistanceExtended = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].distance <= 1800;
-      if (isDistanceExtended || frame >= 7) {
-        // [減点方式] potential += 25;
-        tags.push("📈 函館ダ2400m穴条件：大幅距離延長または砂を被らない外枠の激走");
-      }
-    }
-
-    // 5. 100%洋芝特注血統（野芝からのパフォーマンス急上昇）
-    if (isTurf) {
-      const sireUpper = horse.sire?.toUpperCase() || "";
-      if (sireUpper.includes("キズナ") || sireUpper.includes("モーリス") || sireUpper.includes("ミッキーアイル")) {
-        // [減点方式] potential += 25;
-        tags.push("🧬 函館洋芝特注血統：100%洋芝で覚醒するパワー・スタミナ血統");
-      }
-    }
-
-    // 6. 函館マイスタージョッキー
-    if (jockey.includes("横山武史") || jockey.includes("佐々木大輔") || jockey.includes("丹内祐次")) {
-      // [減点方式] potential += 15;
-      tags.push("🌟 函館マイスター騎手：コース熟知と積極策エッジ");
-    }
-
-    // 7. 新ルール1: 1番人気は1着固定を避け、連軸やヒモとして扱う
-    if (popularity === 1) {
-      potential -= 10; // アタマ（1着）の確率が低いため減点
-      tags.push("⚠️ 函館特注: 1番人気は1着固定のリスク大(勝率8.3%)。連軸や2〜3着候補へ");
-    }
-
-    // 8. 新ルール2: 勝馬の条件は「4コーナーで5番手以内」の逃げ・先行馬
-    if (prevRaceData && prevRaceData.corner4Position !== undefined && prevRaceData.corner4Position <= 5) {
-      potential += 15; // 強力な勝ち馬条件
-      tags.push("👑 函館特注: 圧倒的有利な「4角5番手以内」の先行力");
-    }
-
-    // 9. 新ルール3: 1着候補には「2〜5番人気」の中位人気馬を狙う
-    if (popularity >= 2 && popularity <= 5) {
-      potential += 15; // 1着候補としてスコアを底上げ
-      tags.push("👑 函館特注: 1番人気よりも1着になる確率が極めて高い2〜5番人気の中穴候補");
-    }
-
-    // 10. 新ルール4: 前走「大敗馬(二桁着順)」のコース替わり巻き返し
-    if (prevRaceData && prevRaceData.result >= 10) {
-      const isCourseChanged = prevRaceData.venue && !prevRaceData.venue.includes('函館');
-      if (isCourseChanged) {
-        potential += 25; // 大敗ペナルティを大きく相殺する加点
-        tags.push("💥 函館穴馬: 前走二桁着順からのコース替わり(小回り・洋芝)による一変警戒");
-      }
-    }
-
-    // 11. 函館・騎手ルール1: 無条件で「横山和生騎手」を軸にする（一強ルール）
-    if (jockey.includes("横山和生")) {
-      potential += 30; // 圧倒的な勝率のため最大級の加点
-      tags.push("👑 函館騎手特注: 圧倒的無双状態！絶対軸の横山和生騎手");
-    }
-
-    // 16. 函館・騎手ルール2: 大穴狙いは「小沢大仁騎手」に託す
-    if (jockey.includes("小沢大仁")) {
-      if (popularity >= 4) {
-        potential += 25; // 穴馬に乗ったときの激走を高く評価
-        tags.push("💥 函館騎手特注: 万馬券の使者！人気薄で激走する小沢大仁騎手");
-      } else {
-        potential += 10;
-      }
-    }
-
-    // 17. 函館・騎手ルール3: 斤量の軽い「減量騎手（若手）」が波乱を呼ぶ
-    if (jockey.match(/[☆▲△◇★]/)) {
-      potential += 15;
-      tags.push("💥 函館騎手特注: 斤量差を活かして波乱を演出する減量騎手(ヒモ穴必須)");
-    }
-
-    // 18. 函館・騎手ルール4: 迷ったら「横山ファミリー」で固める
-    if (jockey.includes("横山") && !jockey.includes("横山和生")) {
-      potential += 15;
-      tags.push("👑 函館騎手特注: 和生に続く横山ファミリー(武史・琉人・典弘)の好走");
-    }
-
-    // 12. 函館・馬ルール1: 夏の函館は「牝馬」を積極的に狙う
-    if (horse.gender === '牝') {
-      potential += 15;
-      tags.push("👑 函館馬特注: 夏は牝馬！函館で勝率の高い牝馬の激走");
-    }
-
-    // 13. 函館・馬ルール2: 馬体重は「維持」または「プラス体重」の馬を選ぶ
-    if (typeof horse.weightChange === 'number') {
-      if (horse.weightChange <= -10) {
-        potential -= 15;
-        tags.push("⚠️ 函館減点: 滞在競馬でコンディション崩れが疑われる大幅な馬体減(-10kg以上)");
-      } else if (horse.weightChange >= 0) {
-        potential += 10;
-        tags.push("👑 函館馬特注: 滞在競馬で好調を維持している馬体増・維持");
-      }
-    }
-
-    // 14. 函館・馬ルール3: 古馬混合戦でも「若い馬（3〜4歳）」を中心にする
-    if (horse.age === 3 || horse.age === 4) {
-      potential += 15;
-      tags.push("👑 函館馬特注: 高齢馬より圧倒的に成績が良いフレッシュな若馬(3〜4歳)");
-    } else if (horse.age >= 5) {
-      potential -= 10;
-      tags.push("⚠️ 函館減点: 函館コースでは勝率が極端に落ちる高齢馬(5歳以上)");
-    }
-
-    // 15. 函館・馬ルール4: 函館適性の高い「特定種牡馬の産駒」
-    const sireName = horse.sire || '';
-    if (isTurf && (sireName.includes('キズナ') || sireName.includes('エピファネイア'))) {
-      potential += 20;
-      tags.push("👑 函館馬特注: 洋芝適性抜群のキズナ/エピファネイア産駒");
-    } else if (isDirt && sireName.includes('サンダースノー')) {
-      potential += 20;
-      tags.push("👑 函館馬特注: 函館小回りダートで複数勝利を挙げるサンダースノー産駒");
-    }
-
-    // 19. 函館・枠順ルール1: アタマ（1着）で狙うなら「5枠」が最強
-    if (frame === 5) {
-      potential += 20;
-      tags.push("👑 函館枠順特注: 1着回数トップ(勝率25%)！アタマで狙える最強の5枠");
-    }
-
-    // 20. 函館・枠順ルール2: 連軸・ヒモには迷わず「7枠」を入れる
-    if (frame === 7) {
-      potential += 15;
-      tags.push("👑 函館枠順特注: 異常な連対率(約54%)を誇る7枠は軸・ヒモに必須");
-    }
-
-    // 21. 函館・枠順ルール3: 「7枠-8枠」の外枠ワンツー決着を狙う
-    if (frame === 8) {
-      potential += 10;
-      tags.push("🌟 函館枠順特注: 7枠との強力な外枠ワンツー決着が狙える8枠");
-    }
-
-    // 22. 函館・枠順ルール4: 最内「1枠」の1着固定は危険
-    if (frame === 1) {
-      potential -= 15; // アタマ候補から下げる
-      tags.push("⚠️ 函館枠順減点: 包まれるリスクが高く1着を取りこぼしやすい最内1枠");
-    }
-
-    // 23. 函館・脚質ルール1&3: 1着・2着の絶対条件は「4コーナー5番手以内」(前残り)
-    if (horse.style === '差し' || horse.style === '追込') {
-      potential -= 25; // 差し・追込は届かない
-      tags.push("⚠️ 函館脚質減点: 後方待機(差し・追込)は圧倒的不利。1着候補からは完全除外");
-    } else if (prevRaceData && prevRaceData.corner4Position !== undefined) {
-      if (prevRaceData.corner4Position > 5) {
-        potential -= 20;
-        tags.push("⚠️ 函館脚質減点: 4角6番手以降からの直線の短さによる物理的な届かなさ");
-      }
-    }
-
-    // 24. 函館・脚質ルール2: 迷ったら「逃げ馬（4角1番手）」の1着固定
-    if (horse.style === '逃げ' || (prevRaceData && prevRaceData.corner4Position === 1)) {
-      potential += 25;
-      tags.push("👑 函館脚質特注: 最強の脚質「逃げ(4角先頭)」。高確率で逃げ切りが発生するためアタマ固定推奨");
-    }
-
-    // 25. 函館・脚質ルール4: 「上がり3ハロン」より「テンの速さ（1〜2角の位置取り）」
-    if (prevRaceData && prevRaceData.corner1Position !== undefined && prevRaceData.corner2Position !== undefined) {
-      if (prevRaceData.corner1Position <= 3 && prevRaceData.corner2Position <= 3) {
-        potential += 15;
-        tags.push("👑 函館脚質特注: 上がり最速よりテンの速さ！1〜2角を前目で通過するダッシュ力を高く評価");
-      }
-    }
-
-    // 26. 函館・前走実績ルール1: 前走「掲示板（1〜5着）確保馬」の信頼度は高い
-    if (prevRaceData && prevRaceData.result !== undefined && prevRaceData.result >= 1 && prevRaceData.result <= 5) {
-      potential += 15;
-      tags.push("👑 函館実績特注: 前走掲示板(1〜5着)確保で好調を維持している堅実な軸候補");
-    }
-
-    // 27. 函館・前走実績ルール2: 前走「6着〜9着」の馬が美味しい配当を連れてくる
-    if (prevRaceData && prevRaceData.result !== undefined && prevRaceData.result >= 6 && prevRaceData.result <= 9) {
-      potential += 20; // 穴馬としての期待値
-      tags.push("💥 函館実績特注: 前走6〜9着の中途半端に負けた馬による適性変化の巻き返し(中穴)");
-    }
-
-    // 28. 函館・前走実績ルール3: 前走「二桁着順（大敗）」でも、先行力があれば切らない
-    if (prevRaceData && prevRaceData.result >= 10) {
-      if (prevRaceData.corner1Position !== undefined && prevRaceData.corner1Position <= 3) {
-        potential += 25; // 先行力があれば大穴
-        tags.push("💥 函館実績特注: 前走二桁着順の大敗でも、テンの速さ(前目通過)がある一発警戒の大穴");
-      }
-    }
-
-    // 29. 函館・前走実績ルール4: 前走が「他場（広いコース）」からのコース替わりを狙う
-    if (prevRaceData && prevRaceData.venue) {
-      if (prevRaceData.venue.includes('東京') || prevRaceData.venue.includes('新潟') || prevRaceData.venue.includes('京都') || prevRaceData.venue.includes('中京')) {
-        potential += 15;
-        tags.push("🌟 函館実績特注: 広いコース(東京・新潟・京都など)で差し届かなかった馬の小回り替わり一変");
-      }
-    }
-
-    // --- 乗り替わりロジック判定 ---
     const prevJockeyName = prevRaceData?.jockey || horse.prevJockey || '';
     const cleanPrevJockey = prevJockeyName.replace(/[☆▲△◇★]/g, '').trim();
     const cleanCurrentJockey = jockey.replace(/[☆▲△◇★]/g, '').trim();
     const isJockeyChanged = cleanPrevJockey && cleanPrevJockey !== cleanCurrentJockey;
-
-    // 30. 函館・乗り替わりルール1：「好調騎手（横山和生・小沢大仁）」への乗り替わりは黙って買い
-    if (isJockeyChanged && (jockey.includes("横山和生") || jockey.includes("小沢大仁"))) {
-      potential += 20;
-      tags.push("👑 函館乗替特注: 勝負気配MAX！絶好調騎手(横山和生・小沢大仁)への乗り替わり");
-    }
-
-    // 31. 函館・乗り替わりルール2: ベテラン・中堅から「減量騎手」へのスイッチによる一変
     const isApprentice = jockey.match(/[☆▲△◇★]/);
-    const wasApprentice = prevJockeyName.match(/[☆▲△◇★]/);
-    if (isJockeyChanged && isApprentice && !wasApprentice) {
-      potential += 15;
-      tags.push("💥 函館乗替特注: ベテランからの減量騎手スイッチ！斤量恩恵による粘り込み一変警戒");
+    const isSpecialJockey = isApprentice || jockey.includes("横山和生") || jockey.includes("小沢大仁");
+
+    // 【1. 脚質・位置取りに関する減点】
+    let isRule1Exempt = false;
+    if (prevRaceData && prevRaceData.result >= 10 && prevRaceData.corner4Position !== undefined && prevRaceData.corner4Position <= 3) {
+      isRule1Exempt = true; // 例外（救済）
     }
 
-    // 32. 函館・乗り替わりルール3: トップジョッキーからの「格下がり乗り替わり」でも切ってはいけない
-    const topJockeysForHakodate = ["川田将雅", "ルメール", "戸崎圭太", "武豊"];
-    const wasTopJockey = topJockeysForHakodate.some(tj => prevJockeyName.includes(tj));
-    if (isJockeyChanged && wasTopJockey) {
-      potential += 10;
-      tags.push("🌟 函館乗替特注: トップジョッキーからの乗り替わりによる人気落ち妙味(消し厳禁)");
+    if (!isRule1Exempt) {
+      if (prevRaceData && prevRaceData.corner4Position !== undefined && prevRaceData.corner4Position >= 6) {
+        potential -= 20;
+        tags.push("⚠️ 函館減点1-A: 直線の短い函館で致命的な前走4角6番手以降(差し・追込)");
+      } else if (prevRaceData && prevRaceData.corner1Position !== undefined && prevRaceData.corner2Position !== undefined) {
+        if (prevRaceData.corner1Position >= 4 && prevRaceData.corner2Position >= 4) {
+          potential -= 10;
+          tags.push("⚠️ 函館減点1-B: 前走1〜2コーナーが中団〜後方でテンのスピード不足");
+        }
+      }
+    } else {
+      tags.push("🌟 函館救済: 前走大敗でも4角3番手以内の先行力があるため脚質減点免除");
     }
 
-    // 33. 函館・乗り替わりルール4: 「継続騎乗」で狙えるのは、前走で好走（掲示板確保）している馬のみ
-    if (!isJockeyChanged && cleanCurrentJockey) {
-      if (prevRaceData && prevRaceData.result !== undefined && prevRaceData.result <= 5) {
-        potential += 15;
-        tags.push("👑 函館乗替特注: 前走掲示板確保からの「継続騎乗」は手堅い勝負気配");
-      } else if (prevRaceData && prevRaceData.result >= 6) {
-        potential -= 15;
-        tags.push("⚠️ 函館乗替減点: 前走大敗からの「継続騎乗」は巻き返しの可能性が低く割引");
+    // 【2. 馬体重・コンディションに関する減点】
+    if (typeof horse.weightChange === 'number') {
+      if (horse.weightChange <= -10) {
+        potential -= 20;
+        tags.push("⚠️ 函館減点2-A: 滞在競馬での大幅馬体減(-10kg以上)はコンディション不安");
+      } else if (horse.weightChange >= -8 && horse.weightChange <= -4) {
+        potential -= 5;
+        tags.push("⚠️ 函館減点2-B: 滞在競馬での小幅な馬体減(-4〜-8kg)による割引");
       }
     }
 
-    // 34. 函館・ブリンカー特注ルール1〜3: 7枠 × 距離短縮 × 前走4〜8着
+    // 【3. 性別・年齢に関する減点】
+    if (horse.gender === '牡' || horse.gender === 'セ') {
+      potential -= 10;
+      tags.push("⚠️ 函館減点3-A: 夏は牝馬！牝馬優勢データに基づく牡馬・セン馬割引");
+    }
+    if (horse.age >= 5) {
+      potential -= 10;
+      tags.push("⚠️ 函館減点3-B: 若馬優勢データに基づく高齢馬(5歳以上)割引");
+    }
+
+    // 【4. 枠順・人気に関する減点】
+    if (frame === 1) {
+      potential -= 10;
+      tags.push("⚠️ 函館減点4-A: 包まれるリスクが大きい最内1枠割引");
+    }
+    if (popularity === 1) {
+      potential -= 15;
+      tags.push("⚠️ 函館減点4-B: 勝率8.3%の1番人気アタマ評価割引(連軸候補推奨)");
+    }
+
+    // 【5. 前走実績・騎手（乗り替わり）の減点】
+    if (!isJockeyChanged && prevRaceData && prevRaceData.result !== undefined && prevRaceData.result >= 6) {
+      potential -= 15;
+      tags.push("⚠️ 函館減点5-A: 前走6着以下からの「継続騎乗」は巻き返し困難");
+    }
+    if (prevRaceData && prevRaceData.result !== undefined && (prevRaceData.result < 1 || prevRaceData.result > 5)) {
+      if (!isJockeyChanged || !isSpecialJockey) {
+        potential -= 10;
+        tags.push("⚠️ 函館減点5-B: 前走掲示板外で、有効な乗り替わり(減量・横山和・小沢)がないため割引");
+      }
+    }
+
+    // 【6. ブリンカー着用馬の特殊減点フィルター】
     if (horse.useBlinkers) {
-      // 条件1: 絶対条件は枠順が「7枠」であること
-      if (frame === 7) {
-        potential += 25;
-        tags.push("👑 函館ブリンカー特注: 異常な連対率を誇る「ブリンカー着用×7枠」の黄金条件");
+      let blinkerPenalty = false;
+      if (frame !== 7) {
+        potential -= 20;
+        tags.push("⚠️ 函館減点6-A: ブリンカー着用馬は7枠以外大幅割引");
+        blinkerPenalty = true;
       }
-
-      if (prevRaceData) {
-        // 条件2: 前走からの「距離短縮」であること
-        if (prevRaceData.distance !== undefined && prevRaceData.distance > dist) {
-          potential += 20;
-          tags.push("💥 函館ブリンカー特注: ペースアップにカチッとハマる「ブリンカー着用×距離短縮」の一変警戒");
-        }
-
-        // 条件3: 前走成績が「4着〜8着」の惜しい馬
-        if (prevRaceData.result !== undefined && prevRaceData.result >= 4 && prevRaceData.result <= 8) {
-          potential += 15;
-          tags.push("💥 函館ブリンカー特注: あと一歩足りなかった馬(前走4〜8着)へのカンフル剤！中穴の使者");
-        }
+      if (prevRaceData && prevRaceData.distance !== undefined && prevRaceData.distance <= dist) {
+        potential -= 10;
+        tags.push("⚠️ 函館減点6-B: ブリンカー着用馬の同距離・距離延長は割引(距離短縮のみ狙い)");
+        blinkerPenalty = true;
       }
-    }
-
-    // 35. 函館・穴馬(6〜8番人気)の特注条件
-    if (popularity >= 6 && popularity <= 8) {
-      // 条件1: 「減量騎手」または「小沢大仁騎手」が騎乗している
-      if (jockey.match(/[☆▲△◇★]/) || jockey.includes("小沢大仁")) {
-        potential += 20;
-        tags.push("💥 函館大穴特注: 穴メーカー(減量騎手・小沢大仁)による積極策がハマる期待値大");
+      if (prevRaceData && prevRaceData.result !== undefined && (prevRaceData.result <= 3 || prevRaceData.result >= 9)) {
+        potential -= 10;
+        tags.push("⚠️ 函館減点6-C: ブリンカー着用馬で前走4〜8着以外(中途半端な着順以外)は割引");
+        blinkerPenalty = true;
       }
       
-      // 条件2: 前走が「6着以下(二桁着順含む)」で人気を落としている
-      if (prevRaceData && prevRaceData.result !== undefined && prevRaceData.result >= 6) {
-        potential += 15;
-        tags.push("💥 函館大穴特注: 前走大敗で人気落ちした馬のコース替わり・斤量減による一変");
+      if (!blinkerPenalty && frame === 7 && prevRaceData && prevRaceData.distance > dist && prevRaceData.result >= 4 && prevRaceData.result <= 8) {
+        tags.push("👑 函館ブリンカー特注: 減点ゼロ！黄金条件クリアの超特注穴馬");
       }
-      
-      // 条件3: 「牝馬」であること
-      if (horse.gender === '牝') {
-        potential += 15;
-        tags.push("💥 函館大穴特注: 夏の牝馬法則！人気薄でも激走しやすい牝馬");
-      }
-      
-      // 条件4: 馬体重が「プラス体重」または「維持」であること
-      if (typeof horse.weightChange === 'number' && horse.weightChange >= 0) {
-        potential += 15;
-        tags.push("💥 函館大穴特注: 人気薄でもコンディションをしっかり維持(プラス体重)している勝負気配");
-      }
-    }
-
-    // 36. 函館・馬券戦略ルール1&4: 3連単は万馬券前提で広く買い、アタマ固定は避けてボックス・マルチ推奨
-    if (popularity <= 5) {
-      tags.push("🎫 函館馬券戦略: 荒れ模様で万馬券多発！ヒモには手広く穴馬(前走大敗馬など)を流すこと");
-      tags.push("🎫 函館馬券戦略: 1馬身以内の大接戦多発のため、1着固定よりマルチやボックス推奨");
-    }
-
-    // 37. 函館・調教師ルール: 仕上げに長けた「安田翔伍厩舎」と「鹿戸雄一厩舎」
-    if (horse.trainer && (horse.trainer.includes("安田翔伍") || horse.trainer.includes("鹿戸雄一"))) {
-      potential += 15;
-      tags.push("👑 函館調教師特注: 滞在競馬のコンディション調整が抜群に上手い安田翔伍・鹿戸雄一厩舎");
-    }
-
-    // 38. 函館・大穴一発ルール: 「前走ダート大敗」からの「今回芝」への条件替わり
-    if (isTurf && prevRaceData && prevRaceData.surface && prevRaceData.surface.includes('ダート') && prevRaceData.result !== undefined && prevRaceData.result >= 10) {
-      potential += 25;
-      tags.push("💥 函館大穴特注: 前走ダート大敗からの芝替わり！洋芝のパワー勝負で突如覚醒する超大穴パターン");
     }
   }
-
   // ==========================================
   // 【阪神競馬場 超特化型オメガ・プロトコル推論エンジン】
   // ==========================================
