@@ -2954,6 +2954,29 @@ export function calculateTsuchiyaScore(
         tags.push("⚠️ 函館乗替減点: 前走大敗からの「継続騎乗」は巻き返しの可能性が低く割引");
       }
     }
+
+    // 34. 函館・ブリンカー特注ルール1〜3: 7枠 × 距離短縮 × 前走4〜8着
+    if (horse.useBlinkers) {
+      // 条件1: 絶対条件は枠順が「7枠」であること
+      if (frame === 7) {
+        potential += 25;
+        tags.push("👑 函館ブリンカー特注: 異常な連対率を誇る「ブリンカー着用×7枠」の黄金条件");
+      }
+
+      if (prevRaceData) {
+        // 条件2: 前走からの「距離短縮」であること
+        if (prevRaceData.distance !== undefined && prevRaceData.distance > dist) {
+          potential += 20;
+          tags.push("💥 函館ブリンカー特注: ペースアップにカチッとハマる「ブリンカー着用×距離短縮」の一変警戒");
+        }
+
+        // 条件3: 前走成績が「4着〜8着」の惜しい馬
+        if (prevRaceData.result !== undefined && prevRaceData.result >= 4 && prevRaceData.result <= 8) {
+          potential += 15;
+          tags.push("💥 函館ブリンカー特注: あと一歩足りなかった馬(前走4〜8着)へのカンフル剤！中穴の使者");
+        }
+      }
+    }
   }
 
   // ==========================================
