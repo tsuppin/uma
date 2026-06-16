@@ -4341,261 +4341,162 @@ export function calculateTsuchiyaScore(
 
   if (isMizusawa) {
     tags.push("🐎 水沢特化OMEGAエンジン適用中");
-
-    // 1. 水沢・脚質ルール1&3: 前残りの「逃げ・先行馬」絶対優位 (テンの速さ重視)
-    const isFrontRunner = horse.style === "逃げ" || horse.style === "先行" || (prevRaceData && prevRaceData.corner1Position !== undefined && prevRaceData.corner1Position <= 3);
-    if (isFrontRunner) {
-      potential += 25;
-      tags.push("🏃 水沢脚質特注: 稍重馬場で前残りが顕著！アタマ(1着)候補の逃げ・先行馬");
-      tags.push("🏃 水沢脚質特注: 上がりタイムよりもテンの速さ(1角の位置取り)を絶対視すべし");
+    // --- 水沢特化 減点方式ロジックデータ (AIナレッジ完全準拠) ---
+    // 初期スコアはベース100点からスタート
+    
+    // ==========================================
+    // 免除・例外・無視ルールの事前判定
+    // ==========================================
+    
+    // 無視ルール: 以下のペナルティは水沢では発動させないよう相殺する
+    // 1. 馬体重の2桁増減 (±10kg以上)
+    if (typeof horse.weightChange === 'number' && Math.abs(horse.weightChange) >= 10) {
+      potential += 10; // 一般的な大幅増減ペナルティを相殺
+      tags.push("🌟 水沢救済: 馬体重の2桁増減(±10kg以上)でも好走多数。水沢では変動の大きさによるマイナス評価は不要");
     }
     
-    // 1b. 水沢・脚質ルール2: 「差し・追込馬」は2・3着の相手候補(ヒモ)
-    const isCloser = horse.style === "差し" || horse.style === "追込" || (!isFrontRunner && prevRaceData && prevRaceData.corner1Position !== undefined && prevRaceData.corner1Position >= 6);
-    if (isCloser) {
-      potential -= 10; // アタマの確率が低いためやや割引
-      tags.push("🎫 水沢馬券戦略: 差し・追込馬はアタマ(1着)では狙わず、2〜3着のヒモとして扱うべし");
-    }
-
-    // 2. 枠順バイアス (最新データ反映)
-    if (frame >= 6) {
-      potential += 20; // 外枠ベース加点
-      tags.push("👑 水沢特注: 全12レース中11レースで連対する圧倒的有利な外枠(6〜8枠)");
-      
-      // 8枠の大特注ルール
-      if (frame === 8) {
-        potential += 15; // 8枠はさらに強力な加点
-        tags.push("🎯 水沢鉄板: 迷ったら8枠！7レースで連対する大特注の連軸候補");
-      }
-    } else if (frame >= 1 && frame <= 5) {
-      // 1〜5枠のヒモ推奨ルール
-      tags.push("🎫 水沢馬券戦略: 内〜中枠(1〜5枠)はアタマより外枠(特に8枠)からのヒモ・相手候補として手広く流すべし");
-    }
-
-    // 3. 冬期特注・馬場凍結バイアス
-    const raceMonth = race.date ? parseInt(race.date.split("-")[1] || "0") : 0;
-    const isWinterMizusawa = raceMonth === 12 || raceMonth <= 3;
-    if (isWinterMizusawa) {
-      if (weight >= 500) {
-        potential += 15;
-        tags.push("⛄ 水沢冬期馬場: 凍結・重い砂をこなす大型パワー馬");
-      }
-      if (horse.style === "逃げ") {
-        potential += 15;
-        tags.push("⛄ 水沢冬期馬場: 前が止まらない冬の逃げ馬ボーナス");
-      }
-    }
-
-    // 4. 新ルール1: 1番人気は「連軸（ヒモ）」としての信頼度は高いが、単勝の過信は禁物
-    if (popularity === 1) {
-      potential -= 10;
-      tags.push("⚠️ 水沢特注: 1番人気は複勝率75%も勝率33%。1着固定より連軸推奨");
-    }
-
-    // 5. 新ルール3: 前走「3着以内」の近走好調馬を狙う
-    if (prevRaceData && prevRaceData.result !== undefined && prevRaceData.result >= 1 && prevRaceData.result <= 3) {
-      potential += 20;
-      tags.push("👑 水沢特注: 前走3着以内の好調馬が順当に勝ち切る傾向");
-    }
-
-    // 7. 新ルール5: ダート戦でも「牝馬」を軽視しない
-    if (horse.gender === '牝') {
-      potential += 15;
-      tags.push("🌟 水沢馬特注: ダート戦でも牡馬相手に勝ち切る牝馬の台頭");
-    }
-
-    // 8. 新ルール6: 7歳以上の「ベテラン馬（高齢馬）」の激走に注意
-    if (horse.age >= 7) {
-      potential += 15;
-      tags.push("👑 水沢馬特注: 馬場を知り尽くした7歳以上のベテラン馬による熟練の走り");
-    }
-
-    // 6. 水沢騎手ルール1: 坂井瑛騎手は「波乱を呼ぶ穴メーカー」
-    if (jockey.includes("坂井瑛") && popularity >= 4) {
-      potential += 30;
-      tags.push("💥 水沢大穴特注: 人気薄の馬を勝たせる波乱の穴メーカー・坂井瑛騎手(無条件で買い)");
-    }
-
-    // 7. 水沢騎手ルール2: 村上忍騎手は「人気馬騎乗時の軸」
-    if (jockey.includes("村上忍") && popularity <= 2) {
-      potential += 25;
-      tags.push("🎯 水沢鉄板: 上位人気馬に乗った際の安定感は随一。村上忍騎手の連軸推奨");
-    }
-
-    // 8. 水沢騎手ルール3: 山本政騎手は「3連系のヒモ（3着候補）」に最適
-    if (jockey.includes("山本政")) {
-      // 1着候補としての極端な加点は避け、ヒモとしてのタグ付け
-      potential += 10;
-      tags.push("🎫 水沢馬券戦略: 山本政騎手は1着(アタマ)より3連複・3連単のヒモ(3着候補)として最適");
-    }
-
-    // 9. 水沢騎手ルール4: 小林凌騎手は「人気薄の2・3着」で高配当を演出
-    if (jockey.includes("小林凌") && popularity >= 6) {
-      potential += 20;
-      tags.push("💥 水沢大穴特注: 人気薄の小林凌騎手はヒモ荒れ要員として高配当を演出する警戒対象");
-    }
-
-    // 10. 水沢騎手ルール5: 佐々志騎手は「上位人気馬で手堅く勝負」
-    if (jockey.includes("佐々志") && popularity <= 3) {
-      potential += 20;
-      tags.push("🎯 水沢鉄板: 上位人気馬の実力を引き出し手堅く結果を出す佐々志騎手");
-    }
-
-    // 11. 水沢過去実績ルール1〜3: 過去5走に基づくアタマ判定・隠れ好調馬・大敗無視
+    // 2. 近走の二桁着順 (10〜12着などの大敗歴があっても減点しない)
     if (horse.pastRaces && horse.pastRaces.length > 0) {
-      let hasTop3InPast5 = false;
-      let hasWinOrSecondIn3to5 = false;
-      let hasBigLossInPast5 = false;
-      let recent2RacesPoor = false;
+      const hasBigLossInPast5 = horse.pastRaces.slice(0, 5).some(pr => pr.result !== undefined && pr.result >= 10);
+      if (hasBigLossInPast5) {
+        potential += 10; // 他でかかっているかもしれないペナルティを相殺
+        tags.push("🌟 水沢救済: 近走に二桁大敗があっても巻き返し可能(大敗無視ルール)");
+      }
+    }
+    
+    // (性別・年齢の割引は元の共通ロジックに依存するため、ここでボーナスを与えて相殺)
+    if (horse.sex === "牝") {
+      potential += 5;
+      tags.push("🌟 水沢馬特注: ダート戦でも牡馬相手に勝ち切る牝馬の台頭(パワー不足判定無効化)");
+    }
+    if (age >= 7) {
+      potential += 5;
+      tags.push("🌟 水沢馬特注: 馬場を知り尽くした7歳以上のベテラン馬(衰え判定無効化)");
+    }
 
+    // 過去実績データ準備
+    let hasTop3InPast5 = false;
+    let recent2RacesPoor = false;
+    let hasWinOrSecondIn3to5 = false;
+    let corner1Max3 = false;
+    let isReturnAndGood = false;
+    
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
       const past5 = horse.pastRaces.slice(0, 5);
       past5.forEach((pr, index) => {
-        if (pr.result !== undefined) {
-          if (pr.result <= 3) hasTop3InPast5 = true;
-          if (pr.result >= 10) hasBigLossInPast5 = true;
-          if (index >= 2 && index <= 4 && pr.result <= 2) {
-            hasWinOrSecondIn3to5 = true;
-          }
+        if (pr.result !== undefined && pr.result <= 3) hasTop3InPast5 = true;
+        if (index >= 2 && index <= 4 && pr.result !== undefined && pr.result <= 2) {
+          hasWinOrSecondIn3to5 = true;
         }
       });
-
-      const recent2 = past5.slice(0, 2);
+      
       let poorCount = 0;
-      recent2.forEach(pr => {
-        if (pr.result !== undefined && pr.result >= 4) poorCount++;
-      });
-      if (poorCount === recent2.length && recent2.length > 0) recent2RacesPoor = true;
-
-      // ルール1: 過去5走で一度も3着以内がない馬はアタマ(1着)候補から切る
-      if (!hasTop3InPast5 && past5.length >= 3) {
-        potential -= 20;
-        tags.push("⚠️ 水沢減点: 過去5走で馬券内(3着以内)ゼロの馬はアタマ候補から消し");
+      for (let i = 0; i < 2 && i < horse.pastRaces.length; i++) {
+        if (horse.pastRaces[i].result !== undefined && horse.pastRaces[i].result >= 4) poorCount++;
       }
-
-      // ルール2: 前走・前々走が不振でも、3〜5走前に「連対(1〜2着)実績」があれば巻き返せる
-      if (recent2RacesPoor && hasWinOrSecondIn3to5) {
-        potential += 25;
-        tags.push("💥 水沢大穴特注: 近2走不振でも3〜5走前に連対実績あり！巻き返し必至の隠れ好調馬");
-      }
-
-      // ルール3: 近走に「二桁着順(大敗)」が混ざっていてもマイナス評価にしない
-      if (hasTop3InPast5 && hasBigLossInPast5) {
-        potential += 10; // 大敗による不当な人気の落ち込みを補正
-        tags.push("🌟 水沢救済: 近走に二桁大敗があっても好走歴があれば巻き返し可能(大敗無視ルール)");
+      if (poorCount === 2 || (horse.pastRaces.length === 1 && poorCount === 1)) recent2RacesPoor = true;
+      
+      corner1Max3 = past5.some(pr => pr.corner1Position !== undefined && pr.corner1Position <= 3);
+      
+      const cleanCurrentJockeyMiz = jockey.replace(/[☆▲△◇★]/g, '').trim();
+      for (let i = 1; i < horse.pastRaces.length && i < 5; i++) {
+        const pr = horse.pastRaces[i];
+        if (pr.jockey && pr.jockey.replace(/[☆▲△◇★]/g, '').trim() === cleanCurrentJockeyMiz && pr.result !== undefined && pr.result <= 3) {
+          isReturnAndGood = true;
+          break;
+        }
       }
     }
-
-    // 12. 水沢乗り替わりルール1〜3: 継続騎乗の圧倒的有利と「手戻り」の特注
+    
     const prevJockeyNameMiz = prevRaceData?.jockey || horse.prevJockey || '';
     const cleanPrevJockeyMiz = prevJockeyNameMiz.replace(/[☆▲△◇★]/g, '').trim();
     const cleanCurrentJockeyMiz = jockey.replace(/[☆▲△◇★]/g, '').trim();
+    const isJockeyChangedMiz = cleanPrevJockeyMiz ? cleanPrevJockeyMiz !== cleanCurrentJockeyMiz : false;
+
+    // 穴馬特例免除 (6〜8番人気)
+    const isDarkHorse = popularity >= 6 && popularity <= 8;
+    const isSakaiOrKobayashi = jockey.includes("坂井瑛") || jockey.includes("小林凌");
+    const isDarkHorseExempt = isDarkHorse && isSakaiOrKobayashi && cleanPrevJockeyMiz === cleanCurrentJockeyMiz;
     
-    if (cleanPrevJockeyMiz) {
-      const isJockeyChangedMiz = cleanPrevJockeyMiz !== cleanCurrentJockeyMiz;
-      
-      if (!isJockeyChangedMiz) {
-        // ルール1: 継続騎乗は無条件で高評価(連対馬の約79%)
-        potential += 20;
-        tags.push("👑 水沢特注: コンビ確立済みの「継続騎乗」は連対率激高の鉄板条件");
-        
-        // ルール3: 「当日好調な騎手」×「継続騎乗」は鉄板の軸馬
-        if (jockey.includes("坂井瑛") || jockey.includes("村上忍") || jockey.includes("佐々志")) {
-          potential += 25; // さらに上乗せ
-          tags.push("🎯 水沢大鉄板: 好調騎手(坂井瑛・村上忍・佐々志)×継続騎乗の最強コンボ！迷わず軸へ");
-        }
+    if (isDarkHorseExempt) {
+      tags.push("💥 水沢超大穴免除: 穴メーカー(坂井瑛・小林凌)の継続騎乗により、乗り替わり・内枠のペナルティを無効化");
+    }
+
+    // ==========================================
+    // 減点ルールの適用 (Deduction Rules)
+    // ==========================================
+
+    // ルール1: 過去5走好走実績なし
+    if (!hasTop3InPast5 && horse.pastRaces && horse.pastRaces.length >= 3) {
+      potential -= 50;
+      tags.push("🔻 水沢大幅減点: 過去5走好走実績なし(-50点)");
+    }
+    
+    // ルール2: 近走不振かつ巻き返し要素なし
+    if (recent2RacesPoor && !hasWinOrSecondIn3to5) {
+      potential -= 30;
+      tags.push("🔻 水沢減点: 近走不振かつ巻き返し要素なし(-30点)");
+    }
+    
+    // ルール3: 非継続騎乗（乗り替わり）
+    if (isJockeyChangedMiz) {
+      if (isReturnAndGood) {
+        tags.push("🌟 水沢特例: 手戻りのため非継続騎乗の減点を免除(0点)");
+      } else if (isDarkHorseExempt) {
+        // 免除
       } else {
-        // 乗り替わり発生時
-        let isReturnAndGood = false;
-        
-        // 過去2〜5走前に現在の騎手で連対(1〜2着)実績があるかチェック(手戻り)
-        if (horse.pastRaces && horse.pastRaces.length >= 2) {
-          for (let i = 1; i < horse.pastRaces.length && i < 5; i++) {
-            const pr = horse.pastRaces[i];
-            if (pr.jockey) {
-              const cleanPrJockey = pr.jockey.replace(/[☆▲△◇★]/g, '').trim();
-              if (cleanPrJockey === cleanCurrentJockeyMiz && pr.result !== undefined && pr.result <= 2) {
-                isReturnAndGood = true;
-                break;
-              }
-            }
-          }
-        }
-        
-        // ルール2: 乗り替わりは基本割引だが、「手戻り」はプラス評価
-        if (isReturnAndGood) {
-          potential += 20;
-          tags.push("💥 水沢大穴特注: 過去の好走コンビ復活！主戦騎手への「手戻り」は大幅プラスの狙い目");
-        } else {
-          potential -= 15;
-          tags.push("⚠️ 水沢減点: 継続騎乗が圧倒的有利なため、新規の乗り替わりは割引");
-        }
+        potential -= 30;
+        tags.push("🔻 水沢減点: 非継続騎乗(乗り替わり)(-30点)");
+      }
+    } else if (cleanPrevJockeyMiz && cleanPrevJockeyMiz === cleanCurrentJockeyMiz) {
+      potential += 10; // 連対率79%のバフとして多少は残す
+      tags.push("👑 水沢特注: コンビ確立済みの「継続騎乗」は連対率激高の鉄板条件");
+    }
+    
+    // ルール4: 内〜中枠の割引
+    if (frame >= 1 && frame <= 5) {
+      if (isDarkHorseExempt) {
+        tags.push("🌟 水沢特例: 穴メーカー継続騎乗のため内〜中枠の減点を免除");
+      } else {
+        potential -= 20;
+        tags.push("🔻 水沢減点: 内〜中枠の割引(-20点)");
+      }
+    } else {
+      potential += 10;
+      tags.push("👑 水沢特注: 圧倒的有利な外枠(6〜8枠)");
+      if (frame === 8) {
+        potential += 10;
+        tags.push("🎯 水沢鉄板: 迷ったら8枠！大特注の連軸候補");
       }
     }
-
-    // 13. 水沢・穴馬(6〜8番人気)の激走条件
-    if (popularity >= 6 && popularity <= 8) {
-      // 穴条件1: 坂井瑛・小林凌の継続騎乗
-      const isSakaiOrKobayashi = jockey.includes("坂井瑛") || jockey.includes("小林凌");
-      if (isSakaiOrKobayashi && cleanPrevJockeyMiz && cleanPrevJockeyMiz === cleanCurrentJockeyMiz) {
-        potential += 25;
-        tags.push("💥 水沢超大穴特注: 穴メーカー(坂井瑛・小林凌)の継続騎乗は激走のサイン！絶対買い");
+    
+    // ルール5: 後方脚質（差し・追込）
+    if (horse.style === "差し" || horse.style === "追込" || (!corner1Max3 && horse.style !== "逃げ" && horse.style !== "先行")) {
+      potential -= 20;
+      tags.push("🔻 水沢減点: 後方脚質(差し・追込)のアタマ候補割引(-20点)");
+    }
+    
+    // ルール6: 上がり最速の過信
+    if (prevRaceData?.last3F) {
+      if (popularity <= 3) {
+        potential -= 10;
+        tags.push("🔻 水沢減点: 稍重馬場での上がり最速馬は過信禁物(-10点)");
       }
-      
-      // 穴条件2: 近2走大敗でも3〜5走前に好走歴(1着など)あり
-      let recent2Poor = false;
-      let winIn3to5 = false;
-      if (horse.pastRaces && horse.pastRaces.length >= 3) {
-        let poorCount = 0;
-        for (let i = 0; i < 2 && i < horse.pastRaces.length; i++) {
-          if (horse.pastRaces[i].result !== undefined && horse.pastRaces[i].result >= 4) poorCount++;
-        }
-        if (poorCount === 2 || (horse.pastRaces.length === 1 && poorCount === 1)) recent2Poor = true;
-        
-        for (let i = 2; i < 5 && i < horse.pastRaces.length; i++) {
-          if (horse.pastRaces[i].result !== undefined && horse.pastRaces[i].result <= 3) winIn3to5 = true;
-        }
-      }
-      if (recent2Poor && winIn3to5) {
-        potential += 20;
-        tags.push("💥 水沢超大穴特注: 人気ガタ落ちの今が狙い目！3〜5走前に上位好走歴がある隠れ実力馬");
-      }
-      
-      // 穴条件3: 過去に好走した騎手への手戻り
-      let isReturnToGoodJockey = false;
-      if (cleanPrevJockeyMiz && cleanPrevJockeyMiz !== cleanCurrentJockeyMiz && horse.pastRaces && horse.pastRaces.length >= 2) {
-        for (let i = 1; i < horse.pastRaces.length && i < 5; i++) {
-          const pr = horse.pastRaces[i];
-          if (pr.jockey && pr.jockey.replace(/[☆▲△◇★]/g, '').trim() === cleanCurrentJockeyMiz && pr.result !== undefined && pr.result <= 3) {
-            isReturnToGoodJockey = true;
-            break;
-          }
-        }
-      }
-      if (isReturnToGoodJockey) {
-        potential += 20;
-        tags.push("💥 水沢超大穴特注: 過去の好走コンビ復活！主戦騎手への「手戻り」は激走のサイン");
-      }
-
-      // 穴条件4: ヒモ(2・3着候補)として狙うなら「内枠・中枠(1〜5枠)」
-      if (frame >= 1 && frame <= 5) {
-        potential += 15;
-        tags.push("🎫 水沢馬券戦略: 外枠有利で人気が落ちる1〜5枠の中穴馬こそ、ヒモ荒れ(2・3着)の絶好のターゲット");
-      }
+    } else if (popularity <= 3 && horse.style === "追込") {
+      potential -= 10;
+      tags.push("🔻 水沢減点: 上位人気でも差し遅れリスク高(-10点)");
+    }
+    
+    // ルール7: 1番人気の単勝リスク
+    if (popularity === 1) {
+      potential -= 15;
+      tags.push("🔻 水沢減点: 1番人気の単勝リスク(-15点)");
     }
 
-    // 14. 水沢・その他特注ルール1〜3: 上がり最速過信禁物・ヒモ荒れ必至・馬体重変動無視
-    // ルール1 & 2: 上がり最速の過信禁物とガチガチ決着の否定
-    if (popularity <= 3) {
-      tags.push("⚠️ 水沢馬券戦略: 稍重では「上がり最速馬」の1着取りこぼしが多発。テンの速さを重視せよ");
-      tags.push("🎫 水沢馬券戦略: 上位人気(1〜3番人気)のみの決着はほぼ皆無。ヒモには必ず4番人気以下の中穴〜大穴を混ぜるべし");
+    // 岩手特有のトップ騎手補正
+    if (jockey.includes("村上忍") || jockey.includes("坂井瑛") || jockey.includes("佐々志") || jockey.includes("山本政") || jockey.includes("小林凌")) {
+      tags.push("🎯 水沢特注: 当日好調騎手");
     }
-
-    // ルール3: 馬体重の2桁増減はマイナス評価にしない
-    if (typeof horse.weightChange === 'number' && Math.abs(horse.weightChange) >= 10) {
-      potential += 10; // 他の共通ロジックによる大幅増減ペナルティを相殺
-      tags.push("🌟 水沢救済: 馬体重の2桁増減(±10kg以上)でも好走多数。水沢では変動の大きさによるマイナス評価は不要");
-    }
-
     // 岩手リーディング全般のフォロー(残りのトップ騎手)
     const isIwateEliteJ = ["山本聡", "高松亮", "菅原辰"].some(j => jockey.includes(j));
     if (isIwateEliteJ) {
