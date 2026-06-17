@@ -474,6 +474,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       const r3 = calculated[2]?.horseNumber || 0;
 
       const predictions = race.predictions;
+      const formWin = generateFormation(predictions, 'win');
+      const formWide = generateFormation(predictions, 'wide');
       const formTrio = generateFormation(predictions, 'trifecta');
       const formTrifecta = generateFormation(predictions, 'trifecta_exact');
       const formQuinella = generateFormation(predictions, 'quinella');
@@ -539,6 +541,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
   // 各券種の的中判定
   const predictions = race.predictions || [];
+  const formWin = predictions.length > 0 ? generateFormation(predictions, 'win') : null;
+  const formWide = predictions.length > 0 ? generateFormation(predictions, 'wide') : null;
   const formTrio = predictions.length > 0 ? generateFormation(predictions, 'trifecta') : null;
   const formTrifecta = predictions.length > 0 ? generateFormation(predictions, 'trifecta_exact') : null;
   const formQuinella = predictions.length > 0 ? generateFormation(predictions, 'quinella') : null;
@@ -547,6 +551,19 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   const r1 = results[0]?.horseNumber || 0;
   const r2 = results[1]?.horseNumber || 0;
   const r3 = results[2]?.horseNumber || 0;
+
+  const resWin = [r1].filter(Boolean);
+  const hitWin = formWin && r1 ? formWin.tickets.filter(t => t[0] === r1) : [];
+
+  const resWideMatches: number[][] = [];
+  if (r1 && r2) resWideMatches.push([r1, r2].sort((a,b)=>a-b));
+  if (r1 && r3) resWideMatches.push([r1, r3].sort((a,b)=>a-b));
+  if (r2 && r3) resWideMatches.push([r2, r3].sort((a,b)=>a-b));
+  
+  const hitWide = formWide ? formWide.tickets.filter(t => {
+    const sortedT = [...t].sort((a,b)=>a-b);
+    return resWideMatches.some(match => match[0] === sortedT[0] && match[1] === sortedT[1]);
+  }) : [];
 
   const resTrio = [r1, r2, r3].filter(Boolean).sort((a,b)=>a-b);
   const hitTrio = formTrio && resTrio.length === 3 ? formTrio.tickets.filter(t => [...t].sort((a,b)=>a-b).every((n,i)=>n===resTrio[i])) : [];
@@ -561,6 +578,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   const hitExacta = formExacta && resExacta.length === 2 ? formExacta.tickets.filter(t => t.every((n,i)=>n===resExacta[i])) : [];
 
   const hits = {
+    win: hitWin.length > 0,
+    wide: hitWide.length > 0,
     trio: hitTrio.length > 0,
     trifecta: hitTrifecta.length > 0,
     quinella: hitQuinella.length > 0,
@@ -568,6 +587,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   };
 
   const hitTicketsMap = {
+    win: hitWin,
+    wide: hitWide,
     trio: hitTrio,
     trifecta: hitTrifecta,
     quinella: hitQuinella,
@@ -827,11 +848,11 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         <div className="card mt-16">
           <div className="card-header">
             <div className="card-title">🎯 券種別的中判定 & 払戻金自動計算</div>
-          </div>
-
           <div className="p-16 flex flex-col gap-12">
             <div className="grid-2 gap-12" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
               {[
+                { label: "単勝", isHit: hits.win, comb: resWin.join("-"), tickets: hitWin },
+                { label: "ワイド", isHit: hits.wide, comb: resWideMatches.map(m => m.join("-")).join(" / "), tickets: hitWide },
                 { label: "三連複", isHit: hits.trio, comb: resTrio.join("-"), tickets: hitTrio },
                 { label: "三連単", isHit: hits.trifecta, comb: resTrifecta.join("→"), tickets: hitTrifecta },
                 { label: "馬連", isHit: hits.quinella, comb: resQuinella.join("-"), tickets: hitQuinella },

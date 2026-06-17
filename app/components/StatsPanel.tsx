@@ -11,6 +11,8 @@ export default function StatsPanel({ state }: { state: AppState }) {
         total: 0, 
         hit: 0, 
         profit: 0,
+        win: 0,
+        wide: 0,
         trio: 0,
         trifecta: 0,
         quinella: 0,
@@ -23,11 +25,15 @@ export default function StatsPanel({ state }: { state: AppState }) {
 
     if (race.result) {
       const r = race.result;
+      const isWinHit = r.hits?.win;
+      const isWideHit = r.hits?.wide;
       const isTrioHit = r.hits?.trio || (r.hitTickets && r.hitTickets.length > 0);
       const isTrifectaHit = r.hits?.trifecta;
       const isQuinellaHit = r.hits?.quinella;
       const isExactaHit = r.hits?.exacta;
 
+      if (isWinHit) acc[race.venue].win++;
+      if (isWideHit) acc[race.venue].wide++;
       if (isTrioHit) acc[race.venue].trio++;
       if (isTrifectaHit) acc[race.venue].trifecta++;
       if (isQuinellaHit) acc[race.venue].quinella++;
@@ -39,6 +45,8 @@ export default function StatsPanel({ state }: { state: AppState }) {
     total: number; 
     hit: number; 
     profit: number;
+    win: number;
+    wide: number;
     trio: number;
     trifecta: number;
     quinella: number;
@@ -71,6 +79,8 @@ export default function StatsPanel({ state }: { state: AppState }) {
           <div className="p-16 flex flex-col gap-12">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               {[
+                { label: "単勝", hits: completed.filter(r => r.result?.hits?.win).length, rate: (completed.filter(r => r.result?.hits?.win).length / completed.length) * 100, color: "var(--color-red)" },
+                { label: "ワイド", hits: completed.filter(r => r.result?.hits?.wide).length, rate: (completed.filter(r => r.result?.hits?.wide).length / completed.length) * 100, color: "var(--color-blue)" },
                 { label: "三連複", hits: completed.filter(r => r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)).length, rate: (completed.filter(r => r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)).length / completed.length) * 100, color: "var(--accent-gold)" },
                 { label: "三連単", hits: completed.filter(r => r.result?.hits?.trifecta).length, rate: (completed.filter(r => r.result?.hits?.trifecta).length / completed.length) * 100, color: "var(--accent-purple)" },
                 { label: "馬連", hits: completed.filter(r => r.result?.hits?.quinella).length, rate: (completed.filter(r => r.result?.hits?.quinella).length / completed.length) * 100, color: "var(--accent-green)" },
@@ -104,6 +114,8 @@ export default function StatsPanel({ state }: { state: AppState }) {
               <tr>
                 <th>競馬場</th>
                 <th style={{ width: '36px', minWidth: '36px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px', fontSize: '10px' }}>ﾚｰｽ</th>
+                <th>単勝</th>
+                <th>ワイド</th>
                 <th>馬単</th>
                 <th>馬連</th>
                 <th>三連単</th>
@@ -112,6 +124,8 @@ export default function StatsPanel({ state }: { state: AppState }) {
             </thead>
             <tbody>
               {Object.entries(venueStats).map(([venue, s]) => {
+                const winRate = s.total > 0 ? s.win / s.total : 0;
+                const wideRate = s.total > 0 ? s.wide / s.total : 0;
                 const trioRate = s.total > 0 ? s.trio / s.total : 0;
                 const trifectaRate = s.total > 0 ? s.trifecta / s.total : 0;
                 const quinellaRate = s.total > 0 ? s.quinella / s.total : 0;
@@ -120,6 +134,8 @@ export default function StatsPanel({ state }: { state: AppState }) {
                   <tr key={venue}>
                     <td className="fw-600">{venue}</td>
                     <td style={{ width: '36px', minWidth: '36px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px', fontSize: '11px' }}>{s.total}</td>
+                    <td style={{ color: winRate > 0.4 ? '#ff4d4f' : undefined }}>{(winRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.win})</span></td>
+                    <td style={{ color: wideRate > 0.4 ? '#ff4d4f' : undefined }}>{(wideRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.wide})</span></td>
                     <td style={{ color: exactaRate > 0.4 ? '#ff4d4f' : undefined }}>{(exactaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.exacta})</span></td>
                     <td style={{ color: quinellaRate > 0.4 ? '#ff4d4f' : undefined }}>{(quinellaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.quinella})</span></td>
                     <td style={{ color: trifectaRate > 0.4 ? '#ff4d4f' : undefined }}>{(trifectaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trifecta})</span></td>

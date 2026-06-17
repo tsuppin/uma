@@ -199,12 +199,16 @@ export interface RaceResult {
   learningApplied?: boolean;
   learningNotes?: string;
   hits?: {
+    win?: boolean;
+    wide?: boolean;
     trio: boolean;
     trifecta: boolean;
     quinella: boolean;
     exacta: boolean;
   };
   hitTicketsMap?: {
+    win?: number[][];
+    wide?: number[][];
     trio?: number[][];
     trifecta?: number[][];
     quinella?: number[][];
