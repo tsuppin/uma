@@ -7923,8 +7923,9 @@ export function calculateTsuchiyaScore(
     }
 
     // ③「得意コース」に戻ってきた馬
+    const horseMaster = masterData?.horses?.[horse.name];
     if (horseMaster && prevRaceData) {
-      const hasSuccessHere = horseMaster.results.some(r => r.venue === race.venue && r.rank <= 3);
+      const hasSuccessHere = horseMaster.results?.some((r: any) => r.venue === race.venue && r.rank <= 3);
       if (hasSuccessHere && prevRaceData.venue !== race.venue && prevRaceData.result >= 6) {
         holeBonus += 40;
         holeReasons.push('得意コース戻り');
