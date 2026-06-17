@@ -7829,6 +7829,31 @@ export function calculateTsuchiyaScore(
     }
 
     // 【-1点】わずかな不安要素
+    const leftTurnTracks = ['東京', '中京', '新潟', '川崎', '船橋', '浦和', '盛岡'];
+    const rightTurnTracks = ['中山', '京都', '阪神', '小倉', '福島', '函館', '札幌', '大井', '門別', '水沢', '金沢', '笠松', '名古屋', '園田', '姫路', '高知', '佐賀'];
+    const isCurrentLeft = trackName && leftTurnTracks.some(t => trackName.includes(t));
+    const isCurrentRight = trackName && rightTurnTracks.some(t => trackName.includes(t));
+    if ((isCurrentLeft || isCurrentRight) && horse.pastRaces && horse.pastRaces.length > 0) {
+      const pastTurns = horse.pastRaces.map(pr => {
+        if (!pr.trackName) return 'unknown';
+        if (leftTurnTracks.some(t => pr.trackName.includes(t))) return 'left';
+        if (rightTurnTracks.some(t => pr.trackName.includes(t))) return 'right';
+        return 'unknown';
+      }).filter(t => t !== 'unknown');
+
+      if (pastTurns.length > 0) {
+        const leftCount = pastTurns.filter(t => t === 'left').length;
+        const rightCount = pastTurns.filter(t => t === 'right').length;
+        if (isCurrentLeft && leftCount === 0 && rightCount >= 2) {
+          dangerScore -= 1;
+          dangerReasons.push('左回り実績なし(初左回り・右回り特化)');
+        } else if (isCurrentRight && rightCount === 0 && leftCount >= 2) {
+          dangerScore -= 1;
+          dangerReasons.push('右回り実績なし(初右回り・左回り特化)');
+        }
+      }
+    }
+
     if (race.season === 'summer' && weight >= 500) {
       dangerScore -= 1;
       dangerReasons.push('夏場の大型馬');
