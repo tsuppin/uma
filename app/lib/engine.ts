@@ -7984,6 +7984,23 @@ export function calculateTsuchiyaScore(
       hanshinReasons.push('馬体重安定(±4kg内)');
     }
 
+    // ⑥ 馬格のある馬（460kg以上の中〜大型馬）
+    if (weight && weight >= 460) {
+      hanshinBonus += 15;
+      hanshinReasons.push('馬格あり(460kg+)');
+    }
+
+    // ⑦ ブリンカー着用馬（阪神での激走特効）
+    if (horse.useBlinkers) {
+      hanshinBonus += 20;
+      hanshinReasons.push('ブリンカー着用(阪神特効)');
+      // 穴馬のブリンカーは強烈なフラグ
+      if (popularity >= 4 || odds >= 10.0) {
+        distortionBoost += 0.5; // Darknessを跳ね上げる
+        isTargetYatomi = true;
+      }
+    }
+
     // ③ 外枠（6〜8枠）に入った馬（スムーズな競馬）
     if (frame >= 6) {
       hanshinBonus += 15;
