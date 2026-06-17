@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Race, Formation } from "../types";
 import { generateFormation } from "../lib/engine";
 
@@ -57,6 +57,20 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
   const [formationType, setFormationType] = useState<Formation["type"]>("quinella");
   const predictions = race.predictions || [];
   const hasPrediction = predictions.length > 0;
+
+  useEffect(() => {
+    if (hasPrediction && race.waveLevel) {
+      const lvl = race.waveLevel.level;
+      if (lvl <= 2) {
+        setFormationType("quinella"); // 鉄板・堅実なレースは馬連
+      } else if (lvl === 3) {
+        setFormationType("wide"); // 中波乱はワイド
+      } else {
+        setFormationType("trifecta"); // 波乱・大波乱は3連複
+      }
+    }
+  }, [hasPrediction, race.waveLevel]);
+
   const maxPotential = Math.max(...predictions.map(p => p.potential), 1);
   const formation: Formation | null = hasPrediction
     ? generateFormation(predictions, formationType, race)
