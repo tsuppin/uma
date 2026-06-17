@@ -390,7 +390,9 @@ BASE_FEATURES = [
     'cushion_value', 'moisture',
     'is_roberto_line', 'is_heavy_track_sire',
     'weight_chg_plus', 'weight_chg_zero', 'weight_chg_minus', 'weight_chg_severe_minus',
-    'has_blinker', 'is_apprentice_jockey'
+    'has_blinker', 'is_apprentice_jockey',
+    'frame_5_win_boost', 'outer_frame_advantage', 'frame_1_trap_penalty',
+    'is_yokoyama_kazuo', 'is_ozawa_daijin', 'apprentice_light_female'
 ]
 
 # 追加された前走・展開特徴量
@@ -428,6 +430,7 @@ PREV_RACE_FEATURES = [
     'prev2_corner1_pos',
     'prev2_corner2_pos',
     'is_distance_reduction',
+    'jockey_change_to_special',
 ]
 
 # Target Encoding特徴量
@@ -627,7 +630,7 @@ def train_and_save_model(
     if model_params:
         default_params.update(model_params)
 
-    train_data = lgb.Dataset(X, label=y, categorical_feature=['性別'])
+    train_data = lgb.Dataset(X, label=y, categorical_feature=['性別', '枠番'])
 
     print(f"\n[START] [{venue_name}] total={len(df)} rows / features={len(available_features)} ...")
     model = lgb.train(
@@ -710,7 +713,10 @@ def preprocess_from_text_df(df: pd.DataFrame) -> pd.DataFrame:
         'is_jockey_changed', 'weight_chg_plus', 'weight_chg_zero', 'weight_chg_minus',
         'weight_chg_severe_minus', 'has_blinker', 'is_apprentice_jockey',
         'prev_corner1_pos', 'prev_corner2_pos', 'prev_corner4_pos', 'prev_corner4_within_5',
-        'prev2_corner1_pos', 'prev2_corner2_pos', 'is_distance_reduction'
+        'prev2_corner1_pos', 'prev2_corner2_pos', 'is_distance_reduction',
+        'frame_5_win_boost', 'outer_frame_advantage', 'frame_1_trap_penalty',
+        'is_yokoyama_kazuo', 'is_ozawa_daijin', 'apprentice_light_female',
+        'jockey_change_to_special'
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -740,7 +746,10 @@ def preprocess_from_text_df(df: pd.DataFrame) -> pd.DataFrame:
         'weight_chg_plus', 'weight_chg_zero', 'weight_chg_minus', 'weight_chg_severe_minus',
         'has_blinker', 'is_apprentice_jockey',
         'prev_corner1_pos', 'prev_corner2_pos', 'prev_corner4_pos', 'prev_corner4_within_5',
-        'prev2_corner1_pos', 'prev2_corner2_pos', 'is_distance_reduction'
+        'prev2_corner1_pos', 'prev2_corner2_pos', 'is_distance_reduction',
+        'frame_5_win_boost', 'outer_frame_advantage', 'frame_1_trap_penalty',
+        'is_yokoyama_kazuo', 'is_ozawa_daijin', 'apprentice_light_female',
+        'jockey_change_to_special'
     ]
     for feat in new_features:
         if feat not in df.columns:

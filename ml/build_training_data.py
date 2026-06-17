@@ -206,6 +206,20 @@ def _build_base_row(
         'has_blinker':   1.0 if horse.get('has_blinker') else 0.0,
         'is_apprentice_jockey': 1.0 if horse.get('is_apprentice') else 0.0,
         'kinryo_weight_ratio': float(horse.get('kinryo', 55.0) or 55.0) / float(horse.get('weight', 480) or 480) if float(horse.get('weight', 480) or 480) > 0 else 0.11,
+        
+        # 枠順バイアスフラグ
+        'frame_5_win_boost': 1.0 if float(horse.get('frame', 0) or 0) == 5 else 0.0,
+        'outer_frame_advantage': 1.0 if float(horse.get('frame', 0) or 0) in (7, 8) else 0.0,
+        'frame_1_trap_penalty': 1.0 if float(horse.get('frame', 0) or 0) == 1 else 0.0,
+        
+        # 騎手バイアスフラグ
+        'is_yokoyama_kazuo': 1.0 if '横山和生' in horse.get('jockey', '') else 0.0,
+        'is_ozawa_daijin': 1.0 if '小沢大仁' in horse.get('jockey', '') else 0.0,
+        'apprentice_light_female': 1.0 if (
+            horse.get('is_apprentice') 
+            and horse.get('gender') == '牝' 
+            and 50.0 <= float(horse.get('kinryo', 55.0) or 55.0) <= 53.0
+        ) else 0.0,
 
         # レース条件
         '距離':          float(race_info.get('distance', 0) or 0),
@@ -337,6 +351,10 @@ def _build_base_row(
             'prev_top3_flag':  1.0 if prev.get('result', 0) and prev['result'] <= 3 else 0.0,
             'prev_jockey':     prev.get('jockey', ''),
             'is_jockey_changed': 1.0 if prev.get('jockey') and horse.get('jockey') and prev.get('jockey') != horse.get('jockey') else 0.0,
+            'jockey_change_to_special': 1.0 if (
+                (prev.get('jockey') and horse.get('jockey') and prev.get('jockey') != horse.get('jockey')) 
+                and ('横山和生' in horse.get('jockey', '') or '小沢大仁' in horse.get('jockey', '') or horse.get('is_apprentice'))
+            ) else 0.0,
             'is_transfer':     is_transfer,
             'class_drop_flag': class_drop_flag,
             'class_up_flag':   class_up_flag,

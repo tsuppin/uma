@@ -47,9 +47,15 @@ else:
 
     monotone_constraints = []
     for feat in available_features:
-        if feat in ('prev_corner1_pos', 'prev_corner2_pos', 'prev_corner4_pos'):
+        if feat in ('prev_corner1_pos', 'prev_corner2_pos', 'prev_corner4_pos', 'frame_1_trap_penalty'):
             monotone_constraints.append(-1)
-        elif feat == 'prev_corner4_within_5':
+        elif feat in (
+            'prev_corner4_within_5', 
+            'frame_5_win_boost', 'outer_frame_advantage',
+            'is_yokoyama_kazuo', 'is_ozawa_daijin', 
+            'is_apprentice_jockey', 'apprentice_light_female', 
+            'jockey_change_to_special'
+        ):
             monotone_constraints.append(1)
         else:
             monotone_constraints.append(0)
