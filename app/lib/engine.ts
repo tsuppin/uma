@@ -7965,6 +7965,54 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ==========================================
+  // 【新設】プロ馬券師理論：阪神特化予想ロジック（堅実な本命選び）
+  // ==========================================
+  if (race.venue === '阪神') {
+    let hanshinBonus = 0;
+    const hanshinReasons: string[] = [];
+
+    // ① 1〜3番人気の上位人気馬ボーナス（堅実さ評価）
+    if (popularity >= 1 && popularity <= 3) {
+      hanshinBonus += 15;
+      hanshinReasons.push('上位人気堅実');
+    }
+
+    // ② 馬体重の変動が少ない馬（コンディション安定）
+    if (horse.weightChange !== undefined && Math.abs(horse.weightChange) <= 4) {
+      hanshinBonus += 10;
+      hanshinReasons.push('馬体重安定(±4kg内)');
+    }
+
+    // ③ 外枠（6〜8枠）に入った馬（スムーズな競馬）
+    if (frame >= 6) {
+      hanshinBonus += 15;
+      hanshinReasons.push('外枠有利(6〜8枠)');
+    }
+
+    // ④ トップジョッキーボーナス
+    const topHanshinJockeys = ['川田将雅', '武豊', '西村淳也', '松山弘平'];
+    if (horse.jockey && topHanshinJockeys.some(j => horse.jockey!.includes(j))) {
+      hanshinBonus += 20;
+      hanshinReasons.push(`特注騎手(${horse.jockey})`);
+    }
+
+    // ⑤ 前走で好走している馬（5着以内）
+    if (prevRaceData && prevRaceData.result <= 5) {
+      hanshinBonus += 10;
+      hanshinReasons.push('前走好走(掲示板)');
+    }
+
+    if (hanshinBonus > 0) {
+      potential += hanshinBonus;
+      tags.push(`🐅 阪神特効: ${hanshinReasons.join(', ')}`);
+      // 阪神でこのボーナスが多く入った人気馬は信頼度MAXとして扱う
+      if (popularity <= 3 && hanshinBonus >= 35) {
+        isTargetYatomi = true; 
+      }
+    }
+  }
+
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
 
   return {
