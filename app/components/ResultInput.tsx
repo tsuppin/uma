@@ -848,6 +848,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         <div className="card mt-16">
           <div className="card-header">
             <div className="card-title">🎯 券種別的中判定 & 払戻金自動計算</div>
+          </div>
           <div className="p-16 flex flex-col gap-12">
             <div className="grid-2 gap-12" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
               {[
