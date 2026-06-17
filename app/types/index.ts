@@ -135,7 +135,7 @@ export interface Prediction {
 }
 
 export interface Formation {
-  type: 'trifecta' | 'trifecta_exact' | 'exacta' | 'win' | 'place' | 'quinella' | 'win5';
+  type: 'win' | 'wide' | 'quinella' | 'trifecta' | 'trifecta_exact' | 'exacta' | 'place' | 'win5';
   col1: number[];  // 1列目
   col2?: number[]; // 2列目
   col3?: number[]; // 3列目
@@ -143,6 +143,13 @@ export interface Formation {
   totalPoints: number; // 点数
   axisHorses: number[];  // 軸馬
   darkHorses: number[];  // 闇のヒモ穴
+  // プロ馬券師理論拡張フィールド
+  syntheticOdds: number;          // 合成オッズ（点数加重平均の逆数ベース）
+  strategy: string;               // 戦略説明文
+  riskLevel: 'safe' | 'normal' | 'risk';  // リスクレベル
+  stakeGuide: string;             // 資金配分ガイド
+  warningMessage?: string;        // NGパターン警告メッセージ
+  limitPoints: number;            // 推奨最大点数
 }
 
 export interface RaceResult {
