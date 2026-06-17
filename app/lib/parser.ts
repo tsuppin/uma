@@ -6,6 +6,9 @@ import { generateId } from "./storage";
 // ==========================================
 export function detectFormat(text: string): "jra" | "nar" {
   if (/枠\d[白黒赤青黄緑橙桃]/.test(text)) return "jra";
+  const venue = extractVenue(text);
+  const jraTracks = ["東京", "中山", "京都", "阪神", "中京", "新潟", "福島", "小倉", "函館", "札幌"];
+  if (venue && jraTracks.includes(venue)) return "jra";
   return "nar";
 }
 
@@ -512,9 +515,16 @@ export function parseJRAText(rawText: string): {
 
   const blockStarts: number[] = [];
   for (let i = 0; i < lines.length; i++) {
+    const l = lines[i].trim();
     // 枠番の検出を大幅に強化 (行頭のスペース、枠と数値の間のスペース/タブ/全角スペースの揺れに完全対応)
     if (/^[\s\t　]*枠[\s\t　]*\d/.test(lines[i])) {
       blockStarts.push(i);
+    } 
+    // 最新フォーマット: 1 1 スナッピードレッサ などの 枠番 馬番 馬名 のパターン
+    else if (/^\d+[\t\s]+\d+[\t\s]+[^\t\s]+/.test(l)) {
+      if (!l.includes("頭") && !l.includes("番") && !l.includes("人") && !l.includes("kg") && !l.includes("m") && !l.includes(":") && !l.match(/\d{2}\/\d{2}\/\d{2}/)) {
+        blockStarts.push(i);
+      }
     }
   }
 
@@ -557,35 +567,56 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     }
   }
 
-  const frameMatch = lines[0].match(/枠[\s\t　]*(\d)/);
-  const frame = frameMatch ? parseInt(frameMatch[1]) : 1;
-  const tabParts = lines[0].split(/\t/);
-  let number = tabParts[1] ? parseInt(tabParts[1].trim()) : 0;
+  let frame = 1;
+  let number = 0;
+  let name = "";
   let idx = 1;
+  let hasBlinker = false;
 
-  // 馬番のパースを極限まで頑健化 (前後のスペース・タブのトリム、ブリンカーや空行の自動スキップに対応)
-  if (!number) {
-    while (idx < lines.length) {
-      const cleanLine = (lines[idx] || "").trim();
-      if (/^\d+$/.test(cleanLine)) {
-        number = parseInt(cleanLine);
-        idx++;
-        break;
-      }
-      if (cleanLine === "" || cleanLine === "ブリンカー" || cleanLine === "勝負服の画像") {
-        idx++;
-      } else {
-        break;
-      }
+  const frameMatch = lines[0].match(/枠[\s\t　]*(\d)/);
+  if (frameMatch) {
+    frame = parseInt(frameMatch[1]);
+  }
+
+  // 1 1 スナッピードレッサ のようなパターンを抽出
+  const multiMatch = lines[0].match(/^(\d+)[\s\t　]+(\d+)[\s\t　]+([^\s\t　]+)/);
+  if (multiMatch) {
+    frame = parseInt(multiMatch[1]);
+    number = parseInt(multiMatch[2]);
+    name = multiMatch[3];
+  } else {
+    const tabParts = lines[0].split(/\t/);
+    if (tabParts.length > 1 && /^\d+$/.test(tabParts[1].trim())) {
+      number = parseInt(tabParts[1].trim());
     }
   }
 
-  let hasBlinker = false;
-  if ((lines[idx] || "").includes("ブリンカー")) { hasBlinker = true; idx++; }
+  if (!name) {
+    // 馬番のパースを極限まで頑健化 (前後のスペース・タブのトリム、ブリンカーや空行の自動スキップに対応)
+    if (!number) {
+      while (idx < lines.length) {
+        const cleanLine = (lines[idx] || "").trim();
+        if (/^\d+$/.test(cleanLine)) {
+          number = parseInt(cleanLine);
+          idx++;
+          break;
+        }
+        if (cleanLine === "" || cleanLine === "ブリンカー" || cleanLine === "勝負服の画像") {
+          idx++;
+        } else {
+          break;
+        }
+      }
+    }
 
-  // カタカナの「マルガイ」「マルチ」の誤削除を廃止し、正式な馬名そのまま登録する
-  const name = (lines[idx] || "").trim(); idx++;
-  while (idx < lines.length && (lines[idx] === "" || /^\d+$/.test(lines[idx].trim()))) idx++;
+    if ((lines[idx] || "").includes("ブリンカー")) { hasBlinker = true; idx++; }
+
+    // カタカナの「マルガイ」「マルチ」の誤削除を廃止し、正式な馬名そのまま登録する
+    name = (lines[idx] || "").trim(); idx++;
+    while (idx < lines.length && (lines[idx] === "" || /^\d+$/.test(lines[idx].trim()))) idx++;
+  } else {
+    if ((lines[idx] || "").includes("ブリンカー")) { hasBlinker = true; idx++; }
+  }
 
   const owner = lines[idx] || ""; idx++;
   while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
