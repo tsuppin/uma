@@ -8007,11 +8007,31 @@ export function calculateTsuchiyaScore(
       hanshinReasons.push('外枠有利(6〜8枠)');
     }
 
-    // ④ トップジョッキーボーナス
-    const topHanshinJockeys = ['川田将雅', '武豊', '西村淳也', '松山弘平'];
-    if (horse.jockey && topHanshinJockeys.some(j => horse.jockey!.includes(j))) {
-      hanshinBonus += 20;
-      hanshinReasons.push(`特注騎手(${horse.jockey})`);
+    // ④ 阪神特化：騎手ルール
+    if (horse.jockey) {
+      // ルール1: 軸最適（川田将雅、岩田望来）
+      if (['川田将雅', '岩田望来'].some(j => horse.jockey!.includes(j))) {
+        hanshinBonus += 20;
+        reliability += 15;
+        hanshinReasons.push(`軸最適(${horse.jockey})`);
+      }
+      // ルール2: 単勝特注（武豊、西村淳也）
+      else if (['武豊', '西村淳也'].some(j => horse.jockey!.includes(j))) {
+        hanshinBonus += 25;
+        hanshinReasons.push(`単勝期待(${horse.jockey})`);
+      }
+      // ルール3: 若手期待（高杉吏麒、田口貫太）
+      else if (['高杉吏麒', '田口貫太'].some(j => horse.jockey!.includes(j))) {
+        hanshinBonus += 15;
+        distortionBoost += 0.3; // 穴やヒモとして高配当をもたらす
+        hanshinReasons.push(`若手特注(${horse.jockey})`);
+      }
+      // ルール4: 堅実評価（松山弘平、C.ルメール）
+      else if (['松山弘平', 'ルメール'].some(j => horse.jockey!.includes(j))) {
+        hanshinBonus += 15;
+        reliability += 10;
+        hanshinReasons.push(`堅実評価(${horse.jockey})`);
+      }
     }
 
     // ⑤ 前走で好走している馬（5着以内）
