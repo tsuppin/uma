@@ -7871,6 +7871,48 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ==========================================
+  // 【新設】プロ馬券師理論：美味しい穴馬（危険条件の逆転パターン）
+  // ==========================================
+  // 適用対象：4番人気以降、またはオッズ10.0以上の穴馬（前走6着以下の大敗馬）
+  if ((popularity >= 4 || odds >= 10.0) && prevRaceData && prevRaceData.result >= 6) {
+    let holeBonus = 0;
+    const holeReasons: string[] = [];
+    const prevFrameEquivalent = prevRaceData.frame || (prevRaceData.horseNumber ? Math.ceil(prevRaceData.horseNumber / 2) : 4);
+
+    // 【逆転パターン①】ダートの砂被りストレス解放（前走内枠大敗 → 今回外枠）
+    if (race.surface === 'ダート' && frame >= 6 && prevFrameEquivalent <= 3) {
+      holeBonus += 40;
+      holeReasons.push('ダート外枠替わり(砂被り解放)');
+    }
+
+    // 【逆転パターン②】牡馬混合戦からの解放（前走牡馬混合大敗 → 今回牝馬限定）
+    if (gender === '牝' && race.raceName?.includes('牝') && prevRaceData.raceName && !prevRaceData.raceName.includes('牝')) {
+      holeBonus += 40;
+      holeReasons.push('牝馬限定戦戻り(フィジカル差解放)');
+    }
+
+    // 【逆転パターン③】芝のコースロス解放（前走外枠大敗 → 今回内枠）
+    if (race.surface === '芝' && frame <= 3 && prevFrameEquivalent >= 7) {
+      holeBonus += 40;
+      holeReasons.push('芝内枠替わり(コースロス解放)');
+    }
+
+    // 【逆転パターン④】馬場状態の好転（前走特殊馬場大敗 → 今回良馬場）
+    if (condition === '良' && (prevRaceData.condition === '重' || prevRaceData.condition === '不良')) {
+      holeBonus += 30;
+      holeReasons.push('良馬場戻り(特殊馬場からの解放)');
+    }
+
+    // ボーナス反映
+    if (holeBonus > 0) {
+      potential += holeBonus;
+      distortionBoost += (holeBonus / 50); // Darknessスコアも押し上げる (1.0 -> 1.8等)
+      tags.push(`💎 激走フラグ: ${holeReasons.join(', ')}`);
+      isTargetYatomi = true; // 強力な狙い目としてフラグを立てる
+    }
+  }
+
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
 
   return {
