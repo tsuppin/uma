@@ -7736,6 +7736,116 @@ export function calculateTsuchiyaScore(
     }
   }
 
+  // ==========================================
+  // 【新設】プロ馬券師理論：危険な人気馬（減点方式チェックリスト）
+  // ==========================================
+  // 適用対象：1〜3番人気、またはオッズ10.0未満の上位人気馬
+  if (popularity <= 3 || odds < 10.0) {
+    let dangerScore = 0;
+    const dangerReasons: string[] = [];
+
+    // 【-5点】致命的な不安要素
+    if (prevRaceData && prevRaceData.passingPositions && prevRaceData.passingPositions.startsWith('1-1') && prevRaceData.result <= 3) {
+      dangerScore -= 5;
+      dangerReasons.push('前走逃げ好走');
+    }
+    if (prevRaceData && horse.pastRaces) {
+      const allPastTurf = horse.pastRaces.every(pr => pr.surface === '芝');
+      const allPastDirt = horse.pastRaces.every(pr => pr.surface === 'ダート');
+      if (race.surface === 'ダート' && allPastTurf && horse.pastRaces.length > 0) {
+        dangerScore -= 5;
+        dangerReasons.push('初ダート');
+      }
+      if (race.surface === '芝' && allPastDirt && horse.pastRaces.length > 0) {
+        dangerScore -= 5;
+        dangerReasons.push('初芝');
+      }
+    }
+    if (prevRaceData && prevRaceData.distance && prevRaceData.distance < dist) {
+      dangerScore -= 5;
+      dangerReasons.push('距離延長');
+    }
+    if (race.surface === 'ダート' && prevRaceData && prevRaceData.raceName?.includes('牝') && gender === '牝' && !(race.raceName?.includes('牝'))) {
+      dangerScore -= 5;
+      dangerReasons.push('牝馬限定ダート→牡馬混合');
+    }
+
+    // 【-4点】能力や再現性に疑いがある要素
+    if (prevRaceData && prevRaceData.result === 1) {
+      if (race.raceName && prevRaceData.raceName && !race.raceName.includes(prevRaceData.raceName.substring(0, 2))) {
+         dangerScore -= 4;
+         dangerReasons.push('昇級初戦の疑い');
+      }
+    }
+    if (prevRaceData && (prevRaceData.condition === '重' || prevRaceData.condition === '不良') && prevRaceData.result <= 3 && condition === '良') {
+      dangerScore -= 4;
+      dangerReasons.push('前走道悪好走→今回良');
+    }
+    const majorTracks = ['東京', '中山', '京都', '阪神'];
+    const isCurrentMajor = trackName && majorTracks.some(t => trackName.includes(t));
+    const isPrevLocal = prevRaceData && prevRaceData.trackName && !majorTracks.some(t => prevRaceData.trackName.includes(t));
+    if (isCurrentMajor && isPrevLocal) {
+      dangerScore -= 4;
+      dangerReasons.push('ローカル実績→中央主要場');
+    }
+
+    // 【-3点】明確な割り引き要素
+    if (horse.isAfterRest) {
+      dangerScore -= 3;
+      dangerReasons.push('長期休養明け');
+    } else if (prevRaceData && race.date && prevRaceData.date) {
+      const pDate = new Date(prevRaceData.date);
+      const rDate = new Date(race.date);
+      if ((rDate.getTime() - pDate.getTime()) / (1000 * 3600 * 24) >= 180) {
+        dangerScore -= 3;
+        dangerReasons.push('半年以上休み明け');
+      }
+    }
+    const prevFrameEquivalent = prevRaceData ? (prevRaceData.frame || (prevRaceData.horseNumber ? Math.ceil(prevRaceData.horseNumber / 2) : 4)) : 4;
+    if (race.surface === '芝' && headCount >= 16 && frame >= 7 && prevRaceData && prevFrameEquivalent <= 3 && prevRaceData.result <= 3) {
+      dangerScore -= 3;
+      dangerReasons.push('芝の外枠替わり');
+    }
+    if (race.surface === 'ダート' && frame <= 3 && prevRaceData && prevFrameEquivalent >= 7 && prevRaceData.result <= 3) {
+      dangerScore -= 3;
+      dangerReasons.push('ダートの内枠替わり');
+    }
+    if (race.raceName?.includes('ハンデ') && kinryo >= 57) {
+      dangerScore -= 3;
+      dangerReasons.push('ハンデ重斤量');
+    }
+
+    // 【-2点】適性や状態の不安要素
+    const steepTracks = ['中山', '阪神', '中京'];
+    const isCurrentSteep = trackName && steepTracks.some(t => trackName.includes(t));
+    const isPrevSteep = prevRaceData && prevRaceData.trackName && steepTracks.some(t => prevRaceData.trackName.includes(t));
+    if (isCurrentSteep && !isPrevSteep && prevRaceData && prevRaceData.result <= 3) {
+      dangerScore -= 2;
+      dangerReasons.push('急坂実績不安');
+    }
+    if (weightChange >= 15 || weightChange <= -15) {
+      dangerScore -= 2;
+      dangerReasons.push(`馬体重変調(${weightChange > 0 ? '+' : ''}${weightChange}kg)`);
+    }
+
+    // 【-1点】わずかな不安要素
+    if (race.season === 'summer' && weight >= 500) {
+      dangerScore -= 1;
+      dangerReasons.push('夏場の大型馬');
+    }
+    if (race.season === 'winter' && gender === '牝' && weight <= 450 && weight > 0) {
+      dangerScore -= 1;
+      dangerReasons.push('冬場の小型牝馬');
+    }
+
+    // スコア反映（1点 = 30 Potential）
+    if (dangerScore < 0) {
+      const penalty = dangerScore * 30;
+      potential += penalty;
+      tags.push(`🚨 危険な人気馬: ${dangerScore}点 (${dangerReasons.join(', ')})`);
+    }
+  }
+
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
 
   return {
@@ -8080,26 +8190,46 @@ export function generateFormation(
     }
 
   } else if (raceType === 'trifecta_exact') {
-    const allNos = [...new Set([...axisNos, ...darkNos])];
-    col1 = [...axisNos];
-    col2 = [...axisNos];
-    col3 = allNos;
+    const popularHorsesExact = horsesByOdds.slice(0, 4).map(h => {
+      const p = predictions.find(pr => pr.horseNumber === h.num);
+      return { num: h.num, pot: p ? p.potential : 0 };
+    });
+    const sortedPopsExact = [...popularHorsesExact].sort((a, b) => b.pot - a.pot);
+    
+    const darkHorsesListExact = horsesByOdds.slice(4).map(h => {
+      const p = predictions.find(pr => pr.horseNumber === h.num);
+      return { num: h.num, dark: p ? p.darkness : 0 };
+    }).sort((a, b) => b.dark - a.dark);
+
+    const horseA = sortedPopsExact[0];
+    const horseB = sortedPopsExact[1];
+    const horseC = darkHorsesListExact[0];
+    const horseD = darkHorsesListExact[1];
+
     limitPoints = 4;
 
-    for (const first of col1) {
-      for (const second of col2) {
-        if (first === second) continue;
-        for (const third of col3) {
-          if (first === third || second === third) continue;
-          tickets.push([first, second, third]);
-        }
-      }
+    if (horseA && horseB && horseC && horseD) {
+      col1 = [horseA.num];
+      col2 = [horseB.num, horseC.num, horseD.num];
+      col3 = [horseB.num, horseC.num, horseD.num];
+      
+      tickets.push([horseA.num, horseB.num, horseC.num]);
+      tickets.push([horseA.num, horseC.num, horseB.num]);
+      tickets.push([horseA.num, horseB.num, horseD.num]);
+      tickets.push([horseA.num, horseD.num, horseB.num]);
+    } else {
+      // Fallback
+      col1 = []; col2 = []; col3 = [];
     }
-    tickets = tickets.slice(0, limitPoints);
-    riskLevel = 'risk';
-    strategy = '三連単は「自分の予想を整理するための設計図」として使う。着順イメージが明確で4点以内に絞れる時のみ購入。一攫千金目当ての多点買いは絶対禁止。';
-    stakeGuide = '推奨購入額: 500〜1,000円/点（点数が少ない分、1点の単価を上げる）\n4点を超えるなら三連複への切り替えを強く推奨。';
-    warningMessage = '三連単は4点以内が鉄則。着順のイメージが明確な時のみ購入してください。';
+
+    riskLevel = 'normal';
+    strategy = '【3連単】予想を整理するための設計図（4点）\n着順イメージが明確に固まった時のみ買うボーナス馬券。1着は確実なA(1番手)固定、2/3着に手堅いB(2番手)を固定し、残り1枠に荒れるC/D(穴馬)の突っ込みを狙う。';
+    stakeGuide = '推奨購入額: 100〜500円/点\n資金効率が悪いため、メインの勝負はワイドや馬連で行い、3連単はボーナス感覚で差し込むのが鉄則。';
+    
+    if (!horseA || horseA.pot < 900) {
+      warningMessage = '【警告】絶対的な1着候補（Aの馬）が不在のため、着順イメージが固まりません。3連単の多点買いは避け、「見（ケン）」または馬連・ワイドでの勝負を強く推奨します。';
+      riskLevel = 'risk';
+    }
   }
 
   const syntheticOdds = calcSyntheticOdds(tickets);
