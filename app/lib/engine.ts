@@ -8440,10 +8440,6 @@ export function generateFormation(
   }
 
   const syntheticOdds = calcSyntheticOdds(tickets);
-  if (syntheticOdds > 0 && syntheticOdds < 13.0 && !warningMessage) {
-    warningMessage = `合成オッズ${syntheticOdds}倍は推奨基準（13.0倍）を下回っています。「見（ケン）」を推奨します。`;
-    if (riskLevel !== 'risk') riskLevel = 'risk';
-  }
 
   return {
     type: raceType,
