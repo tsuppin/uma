@@ -7904,6 +7904,58 @@ export function calculateTsuchiyaScore(
       holeReasons.push('良馬場戻り(特殊馬場からの解放)');
     }
 
+      // ==========================================
+    // 【新設】プロ馬券師理論：5つの激走パターン（期待値の高い穴馬）
+    // ==========================================
+    
+    // ①「初ブリンカー」着用の馬（データ上着用フラグがある場合を一変の可能性として評価）
+    if (horse.useBlinkers) {
+      holeBonus += 30;
+      holeReasons.push('ブリンカー着用一変');
+    }
+
+    // ②「大幅な距離短縮」ローテの馬
+    if (prevRaceData && prevRaceData.distance >= 1600 && race.distance <= 1400) {
+      holeBonus += 50;
+      holeReasons.push('大幅距離短縮ローテ');
+    }
+
+    // ③「得意コース」に戻ってきた馬
+    if (horseMaster && prevRaceData) {
+      const hasSuccessHere = horseMaster.results.some(r => r.venue === race.venue && r.rank <= 3);
+      if (hasSuccessHere && prevRaceData.venue !== race.venue && prevRaceData.result >= 6) {
+        holeBonus += 40;
+        holeReasons.push('得意コース戻り');
+      }
+    }
+
+    // ④「季節適性」が合致する馬
+    if (race.season === 'summer' && gender === '牝') {
+      holeBonus += (weight && weight <= 450) ? 40 : 20;
+      holeReasons.push(weight && weight <= 450 ? '夏特効:小型牝馬' : '夏特効:牝馬');
+    } else if (race.season === 'winter' && gender === '牡') {
+      holeBonus += 20;
+      holeReasons.push('冬特効:牡馬');
+    }
+
+    // ⑤「初ダート」の条件クリア馬
+    if (race.surface === 'ダート' && prevRaceData && prevRaceData.surface === '芝') {
+      let dirtConditionsMet = 0;
+      if (frame >= 6) dirtConditionsMet++; // 外枠
+      if (weight && weight >= 460) dirtConditionsMet++; // 馬体重460kg以上
+      if (race.raceName?.includes('牝')) dirtConditionsMet++; // 牝馬限定戦
+      
+      const dirtSires = ['シニスターミニスター', 'ヘニーヒューズ', 'ドレフォン', 'マインドユアビスケッツ', 'パイロ', 'キズナ', 'マクフィ', 'サウスヴィグラス', 'クロフネ', 'ゴールドアリュール', 'ホッコータルマエ'];
+      if (horseMaster?.sire && dirtSires.some(s => horseMaster.sire!.includes(s))) {
+        dirtConditionsMet++; // ダート適性種牡馬
+      }
+
+      if (dirtConditionsMet >= 3) {
+        holeBonus += 50;
+        holeReasons.push(`初ダート激走条件クリア(${dirtConditionsMet}/4)`);
+      }
+    }
+
     // ボーナス反映
     if (holeBonus > 0) {
       potential += holeBonus;
