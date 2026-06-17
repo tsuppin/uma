@@ -2700,17 +2700,15 @@ export function calculateTsuchiyaScore(
     const isApprentice = jockey.match(/[☆▲△◇★]/);
     const isSpecialJockey = isApprentice || jockey.includes("横山和生") || jockey.includes("小沢大仁");
 
-    // 【1. 脚質・位置取りに関する減点】
+    // 【1. 脚質・位置取りに関する例外（救済）】
     let isRule1Exempt = false;
     if (prevRaceData && prevRaceData.result >= 10 && prevRaceData.corner4Position !== undefined && prevRaceData.corner4Position <= 3) {
       isRule1Exempt = true; // 例外（救済）
     }
 
     if (!isRule1Exempt) {
-      if (prevRaceData && prevRaceData.corner4Position !== undefined && prevRaceData.corner4Position >= 6) {
-        potential -= 20;
-        tags.push("⚠️ 函館減点1-A: 直線の短い函館で致命的な前走4角6番手以降(差し・追込)");
-      } else if (prevRaceData && prevRaceData.corner1Position !== undefined && prevRaceData.corner2Position !== undefined) {
+      // 1-A (6番手以降)の減点はJSONルールエンジンで処理
+      if (prevRaceData && prevRaceData.corner1Position !== undefined && prevRaceData.corner2Position !== undefined) {
         if (prevRaceData.corner1Position >= 4 && prevRaceData.corner2Position >= 4) {
           potential -= 10;
           tags.push("⚠️ 函館減点1-B: 前走1〜2コーナーが中団〜後方でテンのスピード不足");
@@ -2720,36 +2718,16 @@ export function calculateTsuchiyaScore(
       tags.push("🌟 函館救済: 前走大敗でも4角3番手以内の先行力があるため脚質減点免除");
     }
 
-    // 【2. 馬体重・コンディションに関する減点】
+    // 【2. 馬体重・コンディションに関する減点】(-10kg以上の大幅減はJSONで処理)
     if (typeof horse.weightChange === 'number') {
-      if (horse.weightChange <= -10) {
-        potential -= 20;
-        tags.push("⚠️ 函館減点2-A: 滞在競馬での大幅馬体減(-10kg以上)はコンディション不安");
-      } else if (horse.weightChange >= -8 && horse.weightChange <= -4) {
+      if (horse.weightChange >= -8 && horse.weightChange <= -4) {
         potential -= 5;
         tags.push("⚠️ 函館減点2-B: 滞在競馬での小幅な馬体減(-4〜-8kg)による割引");
       }
     }
 
-    // 【3. 性別・年齢に関する減点】
-    if (horse.gender === '牡' || horse.gender === 'セ') {
-      potential -= 10;
-      tags.push("⚠️ 函館減点3-A: 夏は牝馬！牝馬優勢データに基づく牡馬・セン馬割引");
-    }
-    if (horse.age >= 5) {
-      potential -= 10;
-      tags.push("⚠️ 函館減点3-B: 若馬優勢データに基づく高齢馬(5歳以上)割引");
-    }
-
-    // 【4. 枠順・人気に関する減点】
-    if (frame === 1) {
-      potential -= 10;
-      tags.push("⚠️ 函館減点4-A: 包まれるリスクが大きい最内1枠割引");
-    }
-    if (popularity === 1) {
-      potential -= 15;
-      tags.push("⚠️ 函館減点4-B: 勝率8.3%の1番人気アタマ評価割引(連軸候補推奨)");
-    }
+    // 【3. 性別・年齢に関する減点】 -> JSONルールエンジンで処理
+    // 【4. 枠順・人気に関する減点】 -> JSONルールエンジンで処理
 
     // 【5. 前走実績・騎手（乗り替わり）の減点】
     if (!isJockeyChanged && prevRaceData && prevRaceData.result !== undefined && prevRaceData.result >= 6) {
@@ -2766,9 +2744,8 @@ export function calculateTsuchiyaScore(
     // 【6. ブリンカー着用馬の特殊減点フィルター】
     if (horse.useBlinkers) {
       let blinkerPenalty = false;
+      // 6-A (7枠以外大幅割引)はJSONルールエンジンで処理
       if (frame !== 7) {
-        potential -= 20;
-        tags.push("⚠️ 函館減点6-A: ブリンカー着用馬は7枠以外大幅割引");
         blinkerPenalty = true;
       }
       if (prevRaceData && prevRaceData.distance !== undefined && prevRaceData.distance <= dist) {
@@ -2786,6 +2763,31 @@ export function calculateTsuchiyaScore(
         tags.push("👑 函館ブリンカー特注: 減点ゼロ！黄金条件クリアの超特注穴馬");
       }
     }
+
+    // ==========================================
+    // JSONルールエンジン（完全減点方式）の適用
+    // ==========================================
+    const evalContext = {
+      prev_4corner_pos: prevRaceData?.corner4Position,
+      jockey: jockey,
+      jockey_mark: jockey.match(/[☆▲△◇★]/) ? jockey.match(/[☆▲△◇★]/)![0] : '',
+      frame: frame,
+      weight_change: horse.weightChange,
+      sex: horse.gender,
+      age: horse.age,
+      blinker: horse.useBlinkers,
+      popularity: popularity
+    };
+    
+    // JSON側の前走4角6番手以降減点について、救済対象の場合はコンテキストを上書きして減点回避
+    if (isRule1Exempt) {
+      evalContext.prev_4corner_pos = 1; // 救済措置としてダミーの良位置をセット
+    }
+
+    const evaluation = evaluateKnowledgeBase(evalContext, hakodatePenaltyModel as any);
+    potential += evaluation.scoreModifier;
+    tags.push(...evaluation.tags);
+
 
     // 季節ごとの馬場傾向
     let month = 0;

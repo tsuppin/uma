@@ -95,8 +95,9 @@ def build_row_from_result(
     """
     past_races = horse.get('past_races', [])
     prev = past_races[0] if len(past_races) >= 1 else None
+    prev2 = past_races[1] if len(past_races) >= 2 else None
 
-    row = _build_base_row(race_info, horse, actual_result, prev, race_date_obj)
+    row = _build_base_row(race_info, horse, actual_result, prev, prev2, race_date_obj)
     return row
 
 
@@ -148,6 +149,7 @@ def build_row_from_past(
     synthetic_horse['frame']      = target_race.get('frame', horse.get('frame', 0))
 
     prev = past_races[1] if len(past_races) >= 2 else None
+    prev2 = past_races[2] if len(past_races) >= 3 else None
     actual_result = target_race.get('result', 0)
 
     return _build_base_row(
@@ -155,6 +157,7 @@ def build_row_from_past(
         synthetic_horse,
         actual_result,
         prev,
+        prev2,
         target_race_date
     )
 
@@ -164,6 +167,7 @@ def _build_base_row(
     horse:          Dict[str, Any],
     actual_result:  int,
     prev:           Optional[Dict[str, Any]],
+    prev2:          Optional[Dict[str, Any]],
     race_date_obj:  Optional[date],
 ) -> Dict[str, Any]:
     """特徴量辞書を組み立てる内部関数"""
@@ -195,6 +199,12 @@ def _build_base_row(
         '性別':          float(GENDER_VALUES.get(horse.get('gender', '牡'), 0)),
         '馬体重_base':   float(horse.get('weight', 480) or 480),
         '馬体重_増減':   float(horse.get('weight_chg', 0) or 0),
+        'weight_chg_plus': 1.0 if float(horse.get('weight_chg', 0) or 0) > 0 else 0.0,
+        'weight_chg_zero': 1.0 if float(horse.get('weight_chg', 0) or 0) == 0 else 0.0,
+        'weight_chg_minus': 1.0 if float(horse.get('weight_chg', 0) or 0) < 0 else 0.0,
+        'weight_chg_severe_minus': 1.0 if float(horse.get('weight_chg', 0) or 0) <= -10 else 0.0,
+        'has_blinker':   1.0 if horse.get('has_blinker') else 0.0,
+        'is_apprentice_jockey': 1.0 if horse.get('is_apprentice') else 0.0,
         'kinryo_weight_ratio': float(horse.get('kinryo', 55.0) or 55.0) / float(horse.get('weight', 480) or 480) if float(horse.get('weight', 480) or 480) > 0 else 0.11,
 
         # レース条件
@@ -256,22 +266,50 @@ def _build_base_row(
         heavy_track_aptitude = float(heavy_top3 / heavy_runs) if heavy_runs > 0 else 0.0
         left_handed_aptitude = float(left_top3 / left_runs) if left_runs > 0 else 0.0
         
-        # 初角位置・マクリ判定・ごぼう抜き指数
+        # 初角位置・マクリ判定・ごぼう抜き指数・各コーナー通過順位
         prev_passing = prev.get('passing', '')
         first_corner_pos = 0.0
         makuri_flag = 0.0
         prev_corner34_overtake = 0.0
+        prev_corner1_pos = 0.0
+        prev_corner2_pos = 0.0
+        prev_corner4_pos = 0.0
+        prev_corner4_within_5 = 0.0
+
         if prev_passing and '-' in prev_passing:
             parts = prev_passing.split('-')
             if parts[0].isdigit():
                 first_corner_pos = float(parts[0])
+                prev_corner1_pos = float(parts[0])
+            if len(parts) >= 2 and parts[1].isdigit():
+                prev_corner2_pos = float(parts[1])
             if len(parts) >= 2 and parts[0].isdigit() and parts[-1].isdigit():
                 if int(parts[0]) - int(parts[-1]) >= 3:
                     makuri_flag = 1.0
             if len(parts) >= 2 and parts[-2].isdigit() and parts[-1].isdigit():
                 prev_corner34_overtake = float(int(parts[-2]) - int(parts[-1]))
+            if parts[-1].isdigit():
+                prev_corner4_pos = float(parts[-1])
+                prev_corner4_within_5 = 1.0 if int(parts[-1]) <= 5 else 0.0
         elif prev_passing and prev_passing.isdigit():
             first_corner_pos = float(prev_passing)
+            prev_corner1_pos = float(prev_passing)
+            prev_corner4_pos = float(prev_passing)
+            prev_corner4_within_5 = 1.0 if int(prev_passing) <= 5 else 0.0
+
+        # 前々走コーナー通過順位
+        prev2_corner1_pos = 0.0
+        prev2_corner2_pos = 0.0
+        if prev2:
+            prev2_passing = prev2.get('passing', '')
+            if prev2_passing and '-' in prev2_passing:
+                p2_parts = prev2_passing.split('-')
+                if p2_parts[0].isdigit():
+                    prev2_corner1_pos = float(p2_parts[0])
+                if len(p2_parts) >= 2 and p2_parts[1].isdigit():
+                    prev2_corner2_pos = float(p2_parts[1])
+            elif prev2_passing and prev2_passing.isdigit():
+                prev2_corner1_pos = float(prev2_passing)
 
         # 馬場替わり判定
         prev_surface = prev.get('surface', '')
@@ -294,6 +332,7 @@ def _build_base_row(
             'prev_head_count': float(prev.get('head_count', 0) or 0),
             'weight_trend':    float(weight_trend),
             'distance_change': float((race_info.get('distance', 0) or 0) - (prev.get('distance', 0) or 0)),
+            'is_distance_reduction': 1.0 if ((race_info.get('distance', 0) or 0) - (prev.get('distance', 0) or 0)) < 0 else 0.0,
             'interval_weeks':  float(_weeks_between(race_date_obj, prev_date_obj)),
             'prev_top3_flag':  1.0 if prev.get('result', 0) and prev['result'] <= 3 else 0.0,
             'prev_jockey':     prev.get('jockey', ''),
@@ -303,6 +342,12 @@ def _build_base_row(
             'class_up_flag':   class_up_flag,
             'surface_change':  surface_change,
             'first_corner_pos': first_corner_pos,
+            'prev_corner1_pos': prev_corner1_pos,
+            'prev_corner2_pos': prev_corner2_pos,
+            'prev_corner4_pos': prev_corner4_pos,
+            'prev_corner4_within_5': prev_corner4_within_5,
+            'prev2_corner1_pos': prev2_corner1_pos,
+            'prev2_corner2_pos': prev2_corner2_pos,
             'makuri_flag':     makuri_flag,
             'prev_corner34_overtake': prev_corner34_overtake,
             'heavy_track_aptitude': heavy_track_aptitude,
@@ -321,6 +366,13 @@ def _build_base_row(
             'class_up_flag': 0.0,
             'surface_change': 0.0,
             'first_corner_pos': 0.0,
+            'prev_corner1_pos': 0.0,
+            'prev_corner2_pos': 0.0,
+            'prev_corner4_pos': 0.0,
+            'prev_corner4_within_5': 0.0,
+            'prev2_corner1_pos': 0.0,
+            'prev2_corner2_pos': 0.0,
+            'is_distance_reduction': 0.0,
             'makuri_flag': 0.0,
             'prev_corner34_overtake': 0.0,
             'heavy_track_aptitude': 0.0,

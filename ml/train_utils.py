@@ -388,7 +388,9 @@ BASE_FEATURES = [
     '年齢', '性別', '馬体重_base', '馬体重_増減',
     'kinryo_weight_ratio', 'race_month',
     'cushion_value', 'moisture',
-    'is_roberto_line', 'is_heavy_track_sire'
+    'is_roberto_line', 'is_heavy_track_sire',
+    'weight_chg_plus', 'weight_chg_zero', 'weight_chg_minus', 'weight_chg_severe_minus',
+    'has_blinker', 'is_apprentice_jockey'
 ]
 
 # 追加された前走・展開特徴量
@@ -419,6 +421,13 @@ PREV_RACE_FEATURES = [
     'left_handed_aptitude', # 左回り適性
     'prev_pop_result_gap',  # 前走人気着順乖離
     'is_left_handed',       # 左回りフラグ
+    'prev_corner1_pos',
+    'prev_corner2_pos',
+    'prev_corner4_pos',
+    'prev_corner4_within_5',
+    'prev2_corner1_pos',
+    'prev2_corner2_pos',
+    'is_distance_reduction',
 ]
 
 # Target Encoding特徴量
@@ -543,6 +552,17 @@ def preprocess_common(df: pd.DataFrame) -> pd.DataFrame:
         df['weight_trend'] = 0.0
     if 'prev_last3f_rank' not in df.columns:
         df['prev_last3f_rank'] = 0.0
+
+    # 函館特化等で追加された特徴量のフォールバック
+    new_features = [
+        'weight_chg_plus', 'weight_chg_zero', 'weight_chg_minus', 'weight_chg_severe_minus',
+        'has_blinker', 'is_apprentice_jockey',
+        'prev_corner1_pos', 'prev_corner2_pos', 'prev_corner4_pos', 'prev_corner4_within_5',
+        'prev2_corner1_pos', 'prev2_corner2_pos', 'is_distance_reduction'
+    ]
+    for feat in new_features:
+        if feat not in df.columns:
+            df[feat] = 0.0
 
     return df
 
@@ -687,7 +707,10 @@ def preprocess_from_text_df(df: pd.DataFrame) -> pd.DataFrame:
         '馬体重_base', '馬体重_増減', 'cushion_value', 'moisture',
         'prev_result', 'prev_last3f', 'prev_time_diff', 'prev_popularity',
         'prev_distance', 'distance_change', 'interval_weeks', 'prev_top3_flag',
-        'is_jockey_changed'
+        'is_jockey_changed', 'weight_chg_plus', 'weight_chg_zero', 'weight_chg_minus',
+        'weight_chg_severe_minus', 'has_blinker', 'is_apprentice_jockey',
+        'prev_corner1_pos', 'prev_corner2_pos', 'prev_corner4_pos', 'prev_corner4_within_5',
+        'prev2_corner1_pos', 'prev2_corner2_pos', 'is_distance_reduction'
     ]
     for col in numeric_cols:
         if col in df.columns:
@@ -711,6 +734,17 @@ def preprocess_from_text_df(df: pd.DataFrame) -> pd.DataFrame:
         df['weight_trend'] = 0.0
     if 'prev_last3f_rank' not in df.columns:
         df['prev_last3f_rank'] = 0.0
+
+    # 函館特化等で追加された特徴量のフォールバック
+    new_features = [
+        'weight_chg_plus', 'weight_chg_zero', 'weight_chg_minus', 'weight_chg_severe_minus',
+        'has_blinker', 'is_apprentice_jockey',
+        'prev_corner1_pos', 'prev_corner2_pos', 'prev_corner4_pos', 'prev_corner4_within_5',
+        'prev2_corner1_pos', 'prev2_corner2_pos', 'is_distance_reduction'
+    ]
+    for feat in new_features:
+        if feat not in df.columns:
+            df[feat] = 0.0
 
     return df
 

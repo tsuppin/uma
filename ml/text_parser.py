@@ -347,6 +347,7 @@ def _parse_nar_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
     weight_chg = 0
     kinryo     = 55.0
     jockey     = ""
+    is_apprentice = False
     trainer    = ""
     owner      = ""
     sire       = ""
@@ -384,7 +385,9 @@ def _parse_nar_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
         if m:
             kinryo = float(m.group(1))
             if i > 1:
-                jockey = lines[i - 1].strip()
+                raw_jockey = lines[i - 1].strip()
+                is_apprentice = bool(re.match(r'^[▲△☆◇★]', raw_jockey))
+                jockey = re.sub(r'^[▲△☆◇★]', '', raw_jockey).strip()
             if i + 1 < profile_end:
                 raw_trainer = lines[i + 1].strip()
                 tm2 = re.match(r'^(.+?)\((.+?)\)$', raw_trainer)
@@ -408,7 +411,9 @@ def _parse_nar_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
         'weight_chg':  weight_chg,
         'kinryo':      kinryo,
         'jockey':      jockey,
+        'is_apprentice': is_apprentice,
         'trainer':     trainer,
+        'has_blinker': False,
         'owner':       owner,
         'sire':        sire,
         'dam':         dam,
@@ -759,6 +764,7 @@ def _parse_jra_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
     coat_color = ""
     kinryo = 55.0
     jockey = ""
+    is_apprentice = False
 
     while idx < len(lines):
         l = lines[idx].strip()
@@ -802,7 +808,9 @@ def _parse_jra_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
         idx += 1
 
     # 騎手
-    jockey = lines[idx].strip() if idx < len(lines) else ""
+    raw_jockey = lines[idx].strip() if idx < len(lines) else ""
+    is_apprentice = bool(re.match(r'^[▲△☆◇★]', raw_jockey))
+    jockey = re.sub(r'^[▲△☆◇★]', '', raw_jockey).strip()
     idx += 1
 
     while idx < len(lines) and not lines[idx].strip():
@@ -828,6 +836,7 @@ def _parse_jra_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
         'weight_chg':  horse_weight_chg,
         'kinryo':      kinryo,
         'jockey':      jockey,
+        'is_apprentice': is_apprentice,
         'trainer':     trainer,
         'owner':       owner,
         'sire':        sire,
