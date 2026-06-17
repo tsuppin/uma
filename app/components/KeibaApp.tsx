@@ -99,15 +99,21 @@ export default function KeibaApp() {
   const handleRunPrediction = (race: Race) => {
     setIsProcessing(true);
     setTimeout(() => {
-      const predictions = race.horses.map(h =>
-        calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
-      );
-      const sorted = sortPredictions(predictions);
-      const formation = generateFormation(sorted);
-      const updated = { ...race, predictions: sorted, formation } as Race & { formation: unknown };
-      const newState = updateRace(state, updated);
-      setState(newState);
-      setIsProcessing(false);
+      try {
+        const predictions = race.horses.map(h =>
+          calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
+        );
+        const sorted = sortPredictions(predictions);
+        const formation = generateFormation(sorted);
+        const updated = { ...race, predictions: sorted, formation } as Race & { formation: unknown };
+        const newState = updateRace(state, updated);
+        setState(newState);
+      } catch (error: any) {
+        console.error("Prediction error:", error);
+        alert("予想処理中にエラーが発生しました: " + (error.message || error));
+      } finally {
+        setIsProcessing(false);
+      }
     }, 100);
   };
 
