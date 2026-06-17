@@ -108,7 +108,7 @@ export function calculateTsuchiyaScore(
     }
   }
 
-  const trackName = race.trackName;
+  const trackName = race.trackName || race.venue || '';
   const dist = race.distance;
   const condition = race.condition;
   const weight = horse.weight;
