@@ -33,10 +33,39 @@ if not df_list:
 else:
     df = pd.concat(df_list, ignore_index=True)
     df = preprocess_common(df)
+
+    # 函館特化：上がり3ハロン関連の特徴量を学習から完全に除外する
+    hakodate_features = [
+        f for f in ALL_FEATURES 
+        if f not in ('prev_last3f', 'prev_last3f_rank')
+    ]
+
+    # 函館特化：コーナー通過順位に対する単調性制約（小さい＝前方にいるほど高評価）
+    # prev_corner4_within_5 は大きい（True=1.0）ほど高評価
+    from train_utils import get_available_features
+    available_features = get_available_features(df, hakodate_features)
+
+    monotone_constraints = []
+    for feat in available_features:
+        if feat in ('prev_corner1_pos', 'prev_corner2_pos', 'prev_corner4_pos'):
+            monotone_constraints.append(-1)
+        elif feat == 'prev_corner4_within_5':
+            monotone_constraints.append(1)
+        else:
+            monotone_constraints.append(0)
+
+    mc_str = "(" + ",".join(map(str, monotone_constraints)) + ")"
+
+    model_params = {
+        "num_leaves": 31, 
+        "learning_rate": 0.05,
+        "monotone_constraints": mc_str
+    }
+
     train_and_save_model(
         df=df,
-        features=ALL_FEATURES,
+        features=available_features,
         venue_name=VENUE_NAME,
-        model_params={"num_leaves": 31, "learning_rate": 0.05},
+        model_params=model_params,
         num_boost_round=300
     )
