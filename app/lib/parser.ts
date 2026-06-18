@@ -8,8 +8,11 @@ export function detectFormat(text: string): "jra" | "nar" {
   if (/枠\d[白黒赤青黄緑橙桃]/.test(text)) return "jra";
   const venue = extractVenue(text);
   const jraTracks = ["東京", "中山", "京都", "阪神", "中京", "新潟", "福島", "小倉", "函館", "札幌"];
-  if (venue && jraTracks.includes(venue)) return "jra";
-  return "nar";
+  
+  if (venue && !jraTracks.includes(venue)) return "nar";
+  if (text.includes("本賞金") || text.includes("ダ短") || text.includes("ダマ")) return "nar"; // 楽天競馬等の特有フォーマット
+  
+  return "jra";
 }
 
 function estimateStyle(pastRaces: PastRace[]): Horse["style"] {
@@ -126,8 +129,8 @@ export function parseNARText(rawText: string): {
   const blockStarts: number[] = [];
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i].trim();
-    if (/^\d+[\t\s]+\d+[\t\s]+[^\t\s]+/.test(l)) {
-      if (!l.includes("頭") && !l.includes("番") && !l.includes("人") && !l.includes("kg") && !l.includes("m") && !l.includes(":") && !l.match(/\d{2}\/\d{2}\/\d{2}/)) {
+    if (/^[1-8][\t\s]+(?:[1-9]|1[0-8])[\t\s]+[^\t\s]+/.test(l)) {
+      if (!l.includes("頭") && !l.includes("番") && !l.includes("人") && !l.includes("kg") && !l.includes("m") && !l.includes(":") && !l.includes("3F") && !l.includes("着") && !l.match(/\d{2}\/\d{2}\/\d{2}/)) {
         blockStarts.push(i);
       }
     }
