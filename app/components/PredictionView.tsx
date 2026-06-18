@@ -361,6 +361,9 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                     const resQ = [r1, r2].filter(Boolean).sort((a, b) => a - b);
                     const sortedT = [...ticket].sort((a, b) => a - b);
                     isHit = sortedT.length === 2 && sortedT.every((n, j) => n === resQ[j]);
+                  } else if (formationType === "exacta") {
+                    const resE = [r1, r2].filter(Boolean);
+                    isHit = ticket.length === 2 && ticket.every((n, j) => n === resE[j]);
                   } else if (formationType === "win") {
                     isHit = ticket.length === 1 && ticket[0] === r1;
                   }
@@ -378,7 +381,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                           >
                             {n}
                           </span>
-                          {j < ticket.length - 1 && <span className="text-muted ml-4 mr-4">{formationType === "trifecta_exact" ? "→" : "-"}</span>}
+                          {j < ticket.length - 1 && <span className="text-muted ml-4 mr-4">{formationType === "trifecta_exact" || formationType === "exacta" ? "→" : "-"}</span>}
                         </span>
                       );
                     })}
