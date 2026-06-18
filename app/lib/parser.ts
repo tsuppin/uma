@@ -129,7 +129,7 @@ export function parseNARText(rawText: string): {
   const blockStarts: number[] = [];
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i].trim();
-    if (/^[1-8][\t\s]+(?:[1-9]|1[0-8])[\t\s]+[^\t\s]+/.test(l)) {
+    if (/^[1-8][\t\s]+(?:[1-9]|1[0-8])[\t\s]+[^\t\s]+/.test(l) && /[ァ-ヶー]/.test(l)) {
       if (!l.includes("頭") && !l.includes("番") && !l.includes("人") && !l.includes("kg") && !l.includes("m") && !l.includes(":") && !l.includes("3F") && !l.includes("着") && !l.match(/\d{2}\/\d{2}\/\d{2}/)) {
         blockStarts.push(i);
       }
@@ -524,7 +524,7 @@ export function parseJRAText(rawText: string): {
       blockStarts.push(i);
     } 
     // 最新フォーマット: 1 1 スナッピードレッサ などの 枠番 馬番 馬名 のパターン
-    else if (/^[1-8][\t\s]+(?:[1-9]|1[0-8])[\t\s]+[^\t\s]+/.test(l)) {
+    else if (/^[1-8][\t\s]+(?:[1-9]|1[0-8])[\t\s]+[^\t\s]+/.test(l) && /[ァ-ヶー]/.test(l)) {
       if (!l.includes("頭") && !l.includes("番") && !l.includes("人") && !l.includes("kg") && !l.includes("m") && !l.includes(":") && !l.includes("3F") && !l.includes("着") && !l.match(/\d{2}\/\d{2}\/\d{2}/)) {
         blockStarts.push(i);
       }
