@@ -296,19 +296,28 @@ export function calculateTsuchiyaScore(
       tags.push("💥 東京新特注(13/14日分析): 大荒れ警戒・二桁人気のヒモ穴候補");
     }
 
-    // 新ルール3: 開催日に「乗れている（好調な）騎手」を重視する
-    // 津村明秀、荻野極、D.レーン騎手を高く評価
+    // 新ルール7: 開催日に「乗れている（好調な）騎手」を重視する
+    // 津村明秀、荻野極、D.レーン騎手など固め打ち傾向のある騎手
     const isHotJockey = horse.jockey && ['津村', '荻野極', 'レーン'].some(j => horse.jockey.includes(j));
     if (isHotJockey) {
       potential += 20;
       tags.push("👑 東京新特注(13/14日分析): 開催大暴れ中の絶好調騎手(津村/荻野極/レーン)");
     }
 
-    // ルール1：「C.ルメール騎手・D.レーン騎手」×「上位人気」
+    // 新ルール8: C.ルメール騎手とD.レーン騎手は素直に信頼する
+    // 1〜4番人気の上位人気なら素直に軸信頼
     const isLemaireLaneStrict = horse.jockey && ['ルメール', 'レーン'].some(j => horse.jockey.includes(j));
-    if (isLemaireLaneStrict && popularity >= 1 && popularity <= 3) {
+    if (isLemaireLaneStrict && popularity >= 1 && popularity <= 4) {
       potential += 25;
-      tags.push("👑 東京特注: ルメール/レーン×上位人気の圧倒的信頼度(確勝級)");
+      tags.push("👑 東京新特注(13/14日分析): ルメール/レーン×上位人気(1〜4番)は確勝級の信頼度");
+    }
+
+    // 新ルール9: 二桁人気の「大穴」を連れてくる中堅・ベテラン騎手を狙う
+    // 10番人気以下 × 中堅ベテラン(三浦、木幡、柴田大知など)
+    const isVeteranJockey = horse.jockey && ['三浦', '木幡', '柴田大知', '柴田善', '江田照', '勝浦', '内田'].some(j => horse.jockey.includes(j));
+    if (isVeteranJockey && popularity >= 10) {
+      potential += 25;
+      tags.push("💥 東京新特注(13/14日分析): ベテラン・中堅騎手×二桁人気(超高配当の使者)");
     }
 
     // ルール2：「2枠・5枠」×「先行脚質」の優位性
