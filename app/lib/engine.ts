@@ -478,13 +478,39 @@ export function calculateTsuchiyaScore(
       tags.push("💥 東京特注: 超大穴の激走警戒！中堅騎手の爆穴枠(木幡/丸山)");
     }
 
-    // ルール8：1着は絶対に関東馬(美浦)！関西馬(栗東)のアタマ狙いは危険
+    // ルール8 & 新ルール22：所属厩舎（美浦・栗東）の取捨選択
+    const isMainOrSpecial = race.raceNumber >= 9 || (race.raceName && (race.raceName.match(/G[1-3I-III]/i) || race.raceName.includes('OP') || race.raceName.includes('オープン') || race.raceName.includes('ステークス') || race.raceName.includes('特別')));
     if (horse.stableLocation && horse.stableLocation.includes('美浦')) {
-      potential += 15;
-      tags.push("👑 東京特注: 1着固定の絶対条件！地元・美浦(関東)所属馬");
+      if (!isMainOrSpecial) {
+        potential += 15;
+        tags.push("👑 東京特注: 平場戦は地元・美浦(関東)所属馬が中心");
+      }
     } else if (horse.stableLocation && horse.stableLocation.includes('栗東')) {
-      potential -= 20; // アタマとしては大きく割引き、ヒモとしての評価に留める
-      tags.push("⚠️ 東京減点: アタマ(1着)は危険。2・3着の相手までの栗東(関西)所属馬");
+      if (isMainOrSpecial) {
+        // 新ルール22: メイン特別戦の栗東遠征馬無双
+        potential += 25;
+        tags.push("🔥 東京新特注(13/14日分析): メイン・特別戦の栗東(関西)遠征馬は勝負気配MAX(無双状態)");
+      } else {
+        // ルール8: 平場での栗東馬は割引き
+        potential -= 20; 
+        tags.push("⚠️ 東京減点: 平場での栗東(関西)所属馬はアタマ(1着)としては危険");
+      }
+    }
+
+    // 新ルール23: 3歳以上の混合戦（平地）では、若い「3歳馬・4歳馬」の勢いを重視する
+    if (age <= 4) {
+      potential += 15;
+      tags.push("🔥 東京新特注(13/14日分析): 成長著しい若駒(3〜4歳)の勢い重視(アタマ候補)");
+    } else if (age >= 6) {
+      potential -= 20;
+      tags.push("⚠️ 東京新特注(13/14日分析): 6歳以上の高齢馬はアタマ(1着)・連軸としては危険");
+    }
+
+    // 新ルール24: 「▲」などの記号がつく減量騎手（若手騎手）は連軸・1着候補としては危険
+    const isApprentice = horse.jockey && /[▲★△☆◇]/.test(horse.jockey);
+    if (isApprentice) {
+      potential -= 25;
+      tags.push("⚠️ 東京新特注(13/14日分析): 減量騎手(▲★等)はアタマ・軸としての信頼度低(消し推奨)");
     }
 
     // ルール9：集中力アップで激走を呼ぶ「ブリンカー着用馬」
