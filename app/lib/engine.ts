@@ -344,6 +344,32 @@ export function calculateTsuchiyaScore(
       tags.push("🎯 東京新特注(13/14日分析): 馬券に絡みやすい外枠優勢傾向(6〜7枠)");
     }
 
+    // 新ルール30 & 31: 4コーナー通過順位に基づく「展開・脚質」の絶対評価
+    if (prevRaceData && prevRaceData.cornerOuterCount > 0) { // cornerOuterCount を4角通過順位と見立てるか、既存の脚質で判定
+      // 実際にはAPIからの正確な4角通過順位がベストですが、前走データか脚質を活用
+      const isFront = horse.style === '逃げ' || horse.style === '先行';
+      const isRear = horse.style === '追込' || horse.style === '後方';
+      
+      if (isFront) {
+        potential += 20;
+        tags.push("🔥 東京新特注(13/14日分析): 前残り多発の東京で絶対有利な「逃げ・先行」馬");
+      }
+      if (isRear) {
+        // 追込・後方待機はアタマ(1着)固定のリスクが高いため減点
+        potential -= 15;
+        tags.push("⚠️ 東京新特注(13/14日分析): 届かないリスク大の「後方待機」馬(1着固定は危険)");
+      }
+    } else {
+      // 過去データがない場合でも脚質で判定
+      if (horse.style === '逃げ' || horse.style === '先行') {
+        potential += 15;
+        tags.push("🔥 東京新特注: 展開有利な前目(逃げ・先行)のポジション");
+      } else if (horse.style === '追込') {
+        potential -= 10;
+        tags.push("⚠️ 東京新特注: アタマ取りこぼし注意の追込馬");
+      }
+    }
+
     // 新ルール13: 「前走1着馬（昇級戦）」の勢いはクラスの壁を突破する
     // 前走1着の馬は無条件で高く評価
     if (prevRaceData && prevRaceData.result === 1) {
