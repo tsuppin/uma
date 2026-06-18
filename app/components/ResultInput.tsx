@@ -303,10 +303,11 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         let linesConsumed = 1;
 
         // 1. 完全行のキャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" や "1着 2枠 3番 馬名")
-        // (\d+)[^\d\s\t]* は "1" や "1着" や "2(同着)" をキャプチャ
         const fullMatch = line.match(/^(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(.+)/);
         // 2. 改行分割行のキャプチャ (例: "1\t8\t16")
         const splitMatch = line.match(/^(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*$/);
+        // 3. 縦並びのキャプチャ (例: "1\n8\n16\n馬名")
+        const multilineMatch = i < lines.length - 3 && /^\d+[^\d\s\t]*$/.test(line) && /^\d+[^\d\s\t]*$/.test(lines[i+1].trim()) && /^\d+[^\d\s\t]*$/.test(lines[i+2].trim());
 
         if (fullMatch) {
           rank = parseInt(fullMatch[1]);
@@ -320,14 +321,12 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           rank = parseInt(splitMatch[1]);
           num = parseInt(splitMatch[3]);
 
-          // 次の行にブリンカー等の符号や馬名がある
           let nextIdx = i + 1;
           while (nextIdx < lines.length && !lines[nextIdx]?.trim()) {
             nextIdx++;
           }
           const nextLine = lines[nextIdx]?.trim() || "";
           
-          // "ブリンカー\tシュラフ6番人気" のような符号を消去し、馬名と人気を取り出す
           const cleanNext = nextLine.replace(/^(ブリンカー)[\t\s]*/, "").trim();
           const popM = cleanNext.match(/(.+?)(\d+)番人気/);
           name = popM ? popM[1].trim() : cleanNext;
@@ -335,6 +334,23 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
           isMatch = true;
           linesConsumed = (nextIdx - i) + 1; // 馬名行まで消費
+        } else if (multilineMatch) {
+          rank = parseInt(line.match(/^(\d+)/)?.[1] || "0");
+          num = parseInt(lines[i+2].match(/^(\d+)/)?.[1] || "0");
+
+          let nextIdx = i + 3;
+          while (nextIdx < lines.length && !lines[nextIdx]?.trim()) {
+            nextIdx++;
+          }
+          const nextLine = lines[nextIdx]?.trim() || "";
+          
+          const cleanNext = nextLine.replace(/^(ブリンカー)[\t\s]*/, "").trim();
+          const popM = cleanNext.match(/(.+?)(\d+)番人気/);
+          name = popM ? popM[1].trim() : cleanNext;
+          pop = popM ? parseInt(popM[2]) : 0;
+
+          isMatch = true;
+          linesConsumed = (nextIdx - i) + 1;
         }
 
         if (isMatch && rank >= 1 && rank <= 20) {
@@ -504,6 +520,23 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       let totalProfit = 0;
       const betMultiplier = betAmount / 100;
 
+      if (hitWin.length > 0) {
+        const payout = parsedRefunds.win?.[0]?.payout || 0;
+        totalProfit += hitWin.length * payout * betMultiplier;
+      }
+      if (hitWide.length > 0) {
+        // ワイドは複数の的中の可能性があるため、すべての的中チケットに対して払い戻しを加算
+        hitWide.forEach(t => {
+          // 実際の払戻データから、このチケット(2頭の組み合わせ)に一致する払戻を探す
+          const sortedT = [...t].sort((a,b)=>a-b);
+          const refund = parsedRefunds.wide?.find(rw => {
+            const matchNums = rw.horseNumbers?.sort((a,b)=>a-b) || [];
+            return matchNums[0] === sortedT[0] && matchNums[1] === sortedT[1];
+          });
+          const payout = refund?.payout || (parsedRefunds.wide?.[0]?.payout || 0); // マッチしない場合は1つ目の払戻を使用
+          totalProfit += payout * betMultiplier;
+        });
+      }
       if (hitTrio.length > 0) {
         const payout = parsedRefunds.trio?.[0]?.payout || 0;
         totalProfit += hitTrio.length * payout * betMultiplier;

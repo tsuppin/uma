@@ -531,7 +531,10 @@ export function parseJRAText(rawText: string): {
     }
     // テーブル形式でのコピペ: 行1=枠, 行2=馬番
     else if (i < lines.length - 2 && /^[1-8]$/.test(l) && /^[1-9]$|^1[0-8]$/.test(lines[i+1].trim())) {
-      // make sure it's not a date like "1\n2\n..." which shouldn't happen, but just to be safe
+      blockStarts.push(i);
+    }
+    // テーブル形式でのコピペ2: 行1=枠と馬番 (スペース区切り), 行2=馬名
+    else if (i < lines.length - 1 && /^[1-8][\s\t　]+(?:[1-9]|1[0-8])$/.test(l)) {
       blockStarts.push(i);
     }
   }
@@ -593,9 +596,17 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     number = parseInt(multiMatch[2]);
     name = multiMatch[3];
   } else {
-    const tabParts = lines[0].split(/\t/);
-    if (tabParts.length > 1 && /^\d+$/.test(tabParts[1].trim())) {
-      number = parseInt(tabParts[1].trim());
+    // 枠と馬番だけが同じ行にあるパターン (例: "1 1" や "1\t1")
+    const twoNumMatch = lines[0].match(/^(\d+)[\s\t　]+(\d+)$/);
+    if (twoNumMatch) {
+      frame = parseInt(twoNumMatch[1]);
+      number = parseInt(twoNumMatch[2]);
+    } else {
+      const tabParts = lines[0].split(/\t/);
+      if (tabParts.length > 1 && /^\d+$/.test(tabParts[1].trim())) {
+        frame = parseInt(tabParts[0].trim()) || frame;
+        number = parseInt(tabParts[1].trim());
+      }
     }
   }
 
