@@ -447,6 +447,26 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // 新ルール33: 若い「3歳馬・4歳馬」を無条件で加点する
+    const isMixedRace = race.raceName && (race.raceName.includes('以上') || race.raceName.includes('勝クラス') || race.raceName.includes('オープン'));
+    if (isMixedRace || race.raceNumber >= 6) { // 混合戦や後半のレースを想定
+      if (age === 3 || age === 4) {
+        potential += 15;
+        tags.push("🔥 東京新特注(13/14日分析): 充実期・成長期の若い馬(3歳/4歳)");
+      }
+    } else {
+      if (age === 3 || age === 4) {
+        potential += 10;
+        tags.push("🎯 東京新特注: 基本属性として優秀な年齢(3歳/4歳)");
+      }
+    }
+
+    // 新ルール34: 「6歳以上の高齢馬」を1着候補から外す（減点）
+    if (age >= 6) {
+      potential -= 15;
+      tags.push("⚠️ 東京新特注(13/14日分析): 成長力に乏しい高齢馬(6歳以上・1着固定は危険)");
+    }
+
     // 新ルール27: 馬体重の精緻な条件分岐（休養明け例外）
     if (typeof horse.weightChange === 'number') {
       const isLongRest = horse.isAfterRest || (prevRaceData && (new Date(race.date).getTime() - new Date(prevRaceData.date).getTime()) > 150 * 24 * 60 * 60 * 1000);
