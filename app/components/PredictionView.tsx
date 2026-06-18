@@ -343,10 +343,17 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                   const r1 = race.result.result[0]?.horseNumber || 0;
                   const r2 = race.result.result[1]?.horseNumber || 0;
                   const r3 = race.result.result[2]?.horseNumber || 0;
-                  if (formationType === "trifecta" || formationType === "wide") {
+                  if (formationType === "trifecta") {
                     const resTrio = [r1, r2, r3].filter(Boolean).sort((a, b) => a - b);
                     const sortedT = [...ticket].sort((a, b) => a - b);
                     isHit = sortedT.length === 3 && sortedT.every((n, j) => n === resTrio[j]);
+                  } else if (formationType === "wide") {
+                    const resWideMatches: number[][] = [];
+                    if (r1 && r2) resWideMatches.push([r1, r2].sort((a,b)=>a-b));
+                    if (r1 && r3) resWideMatches.push([r1, r3].sort((a,b)=>a-b));
+                    if (r2 && r3) resWideMatches.push([r2, r3].sort((a,b)=>a-b));
+                    const sortedT = [...ticket].sort((a, b) => a - b);
+                    isHit = sortedT.length === 2 && resWideMatches.some(match => match[0] === sortedT[0] && match[1] === sortedT[1]);
                   } else if (formationType === "trifecta_exact") {
                     isHit = ticket.length === 3 && ticket.every((n, j) => n === [r1, r2, r3].filter(Boolean)[j]);
                   } else if (formationType === "quinella") {
