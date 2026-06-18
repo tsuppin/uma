@@ -753,30 +753,28 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
            jockey = nextLine;
            idx = tempIdx + 1;
         }
-      } else {
-         // if not found, don't advance idx
       }
-           // Usually Trainer comes after Jockey
-           if (idx < lines.length && !lines[idx].match(/\d/) && !trainer) {
-             const tmLine = lines[idx].trim();
-             const tmMatch = tmLine.match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]/);
-             if (tmMatch) {
-               trainer = tmMatch[1].trim();
-               stableLocation = tmMatch[2];
-             } else {
-               // Netkeiba sometimes has "栗東" then "木村" on next line
-               if (tmLine.match(/^[栗美][東浦]$/)) {
-                 stableLocation = tmLine;
-                 idx++;
-                 if (idx < lines.length) trainer = lines[idx].trim();
-               } else {
-                 trainer = tmLine;
-               }
-             }
-             idx++;
-           }
+
+      // Usually Trainer comes after Jockey
+      if (idx < lines.length && !lines[idx].match(/\d/) && !trainer) {
+        const tmLine = lines[idx].trim();
+        const tmMatch = tmLine.match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]/);
+        if (tmMatch) {
+          trainer = tmMatch[1].trim();
+          stableLocation = tmMatch[2];
+        } else {
+          // Netkeiba sometimes has "栗東" then "木村" on next line
+          if (tmLine.match(/^[栗美][東浦]$/)) {
+            stableLocation = tmLine;
+            idx++;
+            if (idx < lines.length) trainer = lines[idx].trim();
+          } else {
+            trainer = tmLine;
+          }
         }
+        idx++;
       }
+      
       continue;
     }
 
