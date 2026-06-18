@@ -8598,6 +8598,50 @@ export function generateFormation(
       tickets = tickets.slice(0, 5);
     }
 
+  } else if (raceType === 'exacta') {
+    const ax1 = horseNums[0];
+    const darkByDark = [...sorted].sort((a, b) => b.darkness - a.darkness).slice(0, 3).map(p => p.horseNumber);
+    const partners = [...new Set([horseNums[1], horseNums[2], horseNums[3], ...darkByDark])]
+      .filter(n => n !== undefined && n !== ax1)
+      .slice(0, 5);
+    col1 = [ax1];
+    col2 = partners;
+    col3 = undefined;
+    limitPoints = 5;
+
+    for (const p of partners) {
+      if (ax1 !== p) tickets.push([ax1, p]);
+    }
+    const ax2 = horseNums[1];
+    if (ax2 && sorted[1] && sorted[0] && sorted[1].potential >= sorted[0].potential * 0.8) {
+      for (const p of partners) {
+        if (ax2 !== p) tickets.push([ax2, p]);
+      }
+    }
+    
+    const uniqueTickets = [];
+    const seen = new Set();
+    for (const t of tickets) {
+      const key = t.join('-');
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueTickets.push(t);
+      }
+    }
+    tickets = uniqueTickets.slice(0, limitPoints);
+    riskLevel = 'normal';
+    strategy = '馬単は1着固定から相手へ流す馬券。裏目（1着2着の逆転）に注意し、オッズの旨味がある場合のみ購入。';
+    stakeGuide = '推奨購入額: 自信度高=200円/点、普通=100円/点';
+    const top1Odds = oddsMap[ax1] || 10;
+    if (top1Odds < 2.0) {
+      warningMessage = '軸馬のオッズが低すぎます。見(ケン)を検討してください。';
+      riskLevel = 'risk';
+    } else if (tickets.length > 5) {
+      warningMessage = '馬単は5点以内が鉄則です。点数を絞ってください。';
+      riskLevel = 'risk';
+      tickets = tickets.slice(0, 5);
+    }
+
   } else if (raceType === 'trifecta') {
     const popularHorses = horsesByOdds.slice(0, 4).map(h => {
       const p = predictions.find(pr => pr.horseNumber === h.num);

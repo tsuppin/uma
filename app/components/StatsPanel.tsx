@@ -80,11 +80,11 @@ export default function StatsPanel({ state }: { state: AppState }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               {[
                 { label: "単勝", hits: completed.filter(r => r.result?.hits?.win).length, rate: (completed.filter(r => r.result?.hits?.win).length / completed.length) * 100, color: "var(--color-red)" },
-                { label: "ワイド", hits: completed.filter(r => r.result?.hits?.wide).length, rate: (completed.filter(r => r.result?.hits?.wide).length / completed.length) * 100, color: "var(--color-blue)" },
-                { label: "三連複", hits: completed.filter(r => r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)).length, rate: (completed.filter(r => r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)).length / completed.length) * 100, color: "var(--accent-gold)" },
-                { label: "三連単", hits: completed.filter(r => r.result?.hits?.trifecta).length, rate: (completed.filter(r => r.result?.hits?.trifecta).length / completed.length) * 100, color: "var(--accent-purple)" },
-                { label: "馬連", hits: completed.filter(r => r.result?.hits?.quinella).length, rate: (completed.filter(r => r.result?.hits?.quinella).length / completed.length) * 100, color: "var(--accent-green)" },
                 { label: "馬単", hits: completed.filter(r => r.result?.hits?.exacta).length, rate: (completed.filter(r => r.result?.hits?.exacta).length / completed.length) * 100, color: "var(--accent-blue)" },
+                { label: "ワイド", hits: completed.filter(r => r.result?.hits?.wide).length, rate: (completed.filter(r => r.result?.hits?.wide).length / completed.length) * 100, color: "var(--color-blue)" },
+                { label: "馬連", hits: completed.filter(r => r.result?.hits?.quinella).length, rate: (completed.filter(r => r.result?.hits?.quinella).length / completed.length) * 100, color: "var(--accent-green)" },
+                { label: "三連単", hits: completed.filter(r => r.result?.hits?.trifecta).length, rate: (completed.filter(r => r.result?.hits?.trifecta).length / completed.length) * 100, color: "var(--accent-purple)" },
+                { label: "三連複", hits: completed.filter(r => r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)).length, rate: (completed.filter(r => r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)).length / completed.length) * 100, color: "var(--accent-gold)" },
               ].map(item => (
                 <div key={item.label} className="bg-elevated p-12 rounded-8 border">
                   <div className="flex justify-between items-center mb-6">
@@ -115,15 +115,26 @@ export default function StatsPanel({ state }: { state: AppState }) {
                 <th>競馬場</th>
                 <th style={{ width: '36px', minWidth: '36px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px', fontSize: '10px' }}>ﾚｰｽ</th>
                 <th>単勝</th>
-                <th>ワイド</th>
                 <th>馬単</th>
+                <th>ワイド</th>
                 <th>馬連</th>
                 <th>三連単</th>
                 <th>三連複</th>
               </tr>
             </thead>
             <tbody>
-              {Object.entries(venueStats).map(([venue, s]) => {
+              {Object.entries(venueStats).sort(([v1], [v2]) => {
+                const VENUE_ORDER = [
+                  "札幌", "函館", "福島", "新潟", "中山", "東京", "中京", "京都", "阪神", "小倉",
+                  "帯広", "帯広ば", "帯広ばんえい", "門別", "盛岡", "水沢", "浦和", "船橋", "大井", "川崎", "金沢", "笠松", "名古屋", "園田", "姫路", "高知", "佐賀"
+                ];
+                const i1 = VENUE_ORDER.indexOf(v1);
+                const i2 = VENUE_ORDER.indexOf(v2);
+                if (i1 !== -1 && i2 !== -1) return i1 - i2;
+                if (i1 !== -1) return -1;
+                if (i2 !== -1) return 1;
+                return v1.localeCompare(v2);
+              }).map(([venue, s]) => {
                 const winRate = s.total > 0 ? s.win / s.total : 0;
                 const wideRate = s.total > 0 ? s.wide / s.total : 0;
                 const trioRate = s.total > 0 ? s.trio / s.total : 0;
@@ -135,8 +146,8 @@ export default function StatsPanel({ state }: { state: AppState }) {
                     <td className="fw-600">{venue}</td>
                     <td style={{ width: '36px', minWidth: '36px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px', fontSize: '11px' }}>{s.total}</td>
                     <td style={{ color: winRate > 0.4 ? '#ff4d4f' : undefined }}>{(winRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.win})</span></td>
-                    <td style={{ color: wideRate > 0.4 ? '#ff4d4f' : undefined }}>{(wideRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.wide})</span></td>
                     <td style={{ color: exactaRate > 0.4 ? '#ff4d4f' : undefined }}>{(exactaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.exacta})</span></td>
+                    <td style={{ color: wideRate > 0.4 ? '#ff4d4f' : undefined }}>{(wideRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.wide})</span></td>
                     <td style={{ color: quinellaRate > 0.4 ? '#ff4d4f' : undefined }}>{(quinellaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.quinella})</span></td>
                     <td style={{ color: trifectaRate > 0.4 ? '#ff4d4f' : undefined }}>{(trifectaRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trifecta})</span></td>
                     <td style={{ color: trioRate > 0.4 ? '#ff4d4f' : undefined }}>{(trioRate * 100).toFixed(1)}% <span className="fs-xs text-muted">({s.trio})</span></td>

@@ -41,10 +41,11 @@ function RiskBadge({ level }: { level: "safe" | "normal" | "risk" }) {
 
 const TICKET_TYPES: { value: Formation["type"]; label: string; icon: string; desc: string }[] = [
   { value: "win",             label: "単勝",   icon: "🥇", desc: "1点集中・最高回収率" },
+  { value: "exacta",          label: "馬単",   icon: "🎯", desc: "裏表注意" },
   { value: "wide",           label: "ワイド", icon: "🌊", desc: "プロ推奨・最強馬券" },
   { value: "quinella",       label: "馬連",   icon: "🔗", desc: "最大5点以内" },
-  { value: "trifecta",       label: "三連複", icon: "🎰", desc: "荒れた時に回収" },
   { value: "trifecta_exact", label: "三連単", icon: "⚡", desc: "4点以内・着順確定時のみ" },
+  { value: "trifecta",       label: "三連複", icon: "🎰", desc: "荒れた時に回収" },
 ];
 
 export default function PredictionView({ race, onRunPrediction, onEnterResult, onBack }: {
@@ -371,7 +372,12 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                       const isAxisHorse = formation.axisHorses.includes(n);
                       return (
                         <span key={j}>
-                          <span className={`ticket-num ${isAxisHorse ? "bg-gold-muted text-gold" : "bg-elevated text-primary"}`}>{n}</span>
+                          <span 
+                            className={`ticket-num ${formationType === 'win' ? "bg-elevated" : (isAxisHorse ? "bg-gold-muted text-gold" : "bg-elevated text-primary")}`}
+                            style={formationType === 'win' ? { color: '#ffffff' } : undefined}
+                          >
+                            {n}
+                          </span>
                           {j < ticket.length - 1 && <span className="text-muted ml-4 mr-4">{formationType === "trifecta_exact" ? "→" : "-"}</span>}
                         </span>
                       );

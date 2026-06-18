@@ -1,0 +1,61 @@
+{
+  "knowledge_base": "hakodate_summer_penalty_model",
+  "evaluation_method": "subtraction",
+  "base_score": 100,
+  "features": [
+    {
+      "name": "late_charge_penalty",
+      "condition": "prev_4corner_pos >= 6",
+      "penalty_score": -20,
+      "description": "前走4コーナー通過順位が6番手以降の差し・追い込み馬は、直線の短い函館では圧倒的不利なため大幅減点"
+    },
+    {
+      "name": "non_target_jockey_penalty",
+      "condition": "jockey NOT IN ('横山和生', '小沢大仁') AND jockey_mark NOT IN ('△', '▲', '☆')",
+      "penalty_score": -10,
+      "description": "特注騎手（横山和、小沢）または斤量恩恵のある減量騎手以外が騎乗する場合は減点"
+    },
+    {
+      "name": "frame_1_penalty",
+      "condition": "frame == 1",
+      "penalty_score": -15,
+      "description": "1枠に入った馬は馬群に包まれて力を出し切れないリスクが高いため大幅減点"
+    },
+    {
+      "name": "non_frame_7_penalty",
+      "condition": "frame != 7",
+      "penalty_score": -5,
+      "description": "最も連対率が高い『7枠』に入っていない馬から小減点"
+    },
+    {
+      "name": "weight_loss_penalty",
+      "condition": "weight_change <= -10",
+      "penalty_score": -15,
+      "description": "滞在競馬において、前走から-10kg以上の馬体減はコンディション不良とみなし大幅減点"
+    },
+    {
+      "name": "male_horse_penalty",
+      "condition": "sex IN ('牡', 'せん')",
+      "penalty_score": -5,
+      "description": "夏競馬で優勢な牝馬から外れる牡馬・セン馬を減点"
+    },
+    {
+      "name": "elder_horse_penalty",
+      "condition": "age >= 5",
+      "penalty_score": -5,
+      "description": "勢いのある3〜4歳馬に対し、5歳以上の高齢馬は減点"
+    },
+    {
+      "name": "blinker_trap_penalty",
+      "condition": "blinker == true AND frame != 7",
+      "penalty_score": -20,
+      "description": "ブリンカー着用馬が『7枠以外』に入った場合は激走条件を満たさないため大幅減点"
+    },
+    {
+      "name": "favorite_1st_penalty",
+      "condition": "popularity == 1",
+      "penalty_score": -10,
+      "description": "勝率の低い1番人気馬は、アタマ（1着）評価において減点"
+    }
+  ]
+}
