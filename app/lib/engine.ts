@@ -530,6 +530,43 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
+    // 【特化ロジック】東京競馬場・上がり3ハロンと位置取りのクロス分析（2026/06分析）
+    // ==========================================
+    
+    // 過去の左回り直線長コース（東京・新潟・中京）での上がり上位実績を評価
+    const hasFast3FLeftLong = horse.pastRaces && horse.pastRaces.some(pr => {
+      const isLeftLong = ['東京', '新潟', '中京'].some(v => pr.venue.includes(v));
+      return isLeftLong && pr.last3fTime && pr.last3fTime <= 34.2;
+    });
+
+    if (hasFast3FLeftLong) {
+      // 新ルール25: 左回り/直線長での上がり実績は無条件で大評価
+      potential += 20;
+      tags.push("🚀 東京新特注(13/14日分析): 左回り長直線コースでの極限の末脚実績(爆発確定)");
+    }
+
+    // 新ルール26: 上がり最速馬の「トラップ（位置取りの罠）」のクロス分析
+    if (prevRaceData && prevRaceData.last3fTime && prevRaceData.last3fTime <= 34.5) {
+      const isFrontPosition = horse.style === '先行' || horse.style === '好位' || horse.style === '逃げ' || (prevRaceData.corner4Position && prevRaceData.corner4Position <= 5);
+      const isRearPosition = horse.style === '追込' || horse.style === '後方' || (prevRaceData.corner4Position && prevRaceData.corner4Position >= 10);
+
+      if (isFrontPosition) {
+        // 最高評価（◎・1着固定）：先行力があり、かつ上がり最速が狙える馬
+        potential += 35;
+        tags.push("👑 東京新特注(13/14日分析): 先行力×上がり最速の最強コンボ(アタマ確勝級)");
+      } else if (isRearPosition) {
+        // 相手候補（〇〜△）：上がり最速は確実だが、脚質が追込の場合はアタマ候補から減点
+        potential += 5; // ヒモとしては拾う
+        potential -= 15; // アタマとしては危険なので減点
+        tags.push("⚠️ 東京新特注(13/14日分析): 上がり最速でも位置取りが後ろすぎる罠(2・3着ヒモまで)");
+      } else {
+        // 中団からの差し
+        potential += 15;
+        tags.push("💥 東京新特注(13/14日分析): 東京で信頼度抜群の上がり上位差し馬");
+      }
+    }
+
+    // ==========================================
     // 【特化ロジック】東京競馬場・近走実績4パターン（2026/06分析）
     // ==========================================
 
