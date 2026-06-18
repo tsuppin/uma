@@ -401,8 +401,8 @@ export function calculateTsuchiyaScore(
     }
 
     // 新ルール19〜21: 「乗り替わり」による一変と好走フラグ
-    const isJockeyChanged = prevRaceData && prevRaceData.jockey && horse.jockey && prevRaceData.jockey !== horse.jockey;
-    if (isJockeyChanged) {
+    const isJockeyChangedNew = prevRaceData && prevRaceData.jockey && horse.jockey && prevRaceData.jockey !== horse.jockey;
+    if (isJockeyChangedNew) {
       // 基本乗り替わり加点
       potential += 15;
       tags.push("🔄 東京新特注(13/14日分析): 陣営の勝負気配漂う「乗り替わり」馬");
