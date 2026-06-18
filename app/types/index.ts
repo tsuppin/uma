@@ -73,6 +73,7 @@ export interface PastRace {
   winnerName?: string;     // 勝ち馬名（1着とのタイム差時の馬名）
   passingPositions?: string; // 通過順位（例：「1-1-2-2」）
   last3fTime?: string;     // 上がり3ハロン
+  last3fTimeRank?: number; // 上がり3ハロン順位
   isStumbled?: boolean;    // 出遅れフラグ
   halonPace?: string;      // ペース（例: "34.5-35.2"）
   incidents?: string;      // 競走中の不利・アクシデント詳細（例: "前が壁", "他馬の斜行でブレーキ"）
