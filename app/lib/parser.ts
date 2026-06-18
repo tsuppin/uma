@@ -584,6 +584,18 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   let idx = 1;
   let hasBlinker = false;
 
+  let trainer = "";
+  let stableLocation = "";
+  let sire = "", dam = "", bms = "";
+  let odds = 0, popularity = 0;
+  let horseWeight = 480, horseWeightChange = 0;
+  let gender: Horse["gender"] = "牡"; let age = 4;
+  let coatColor = "";
+  let kinryo = 55;
+  let jockey = "";
+  let owner = "";
+  let breeder = "";
+
   const frameMatch = lines[0].match(/枠[\s\t　]*(\d)/);
   if (frameMatch) {
     frame = parseInt(frameMatch[1]);
@@ -641,7 +653,34 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
 
     // カタカナの「マルガイ」「マルチ」の誤削除を廃止し、正式な馬名そのまま登録する
     name = (lines[idx] || "").trim(); idx++;
-    while (idx < lines.length && (lines[idx] === "" || /^\d+$/.test(lines[idx].trim()) || lines[idx].includes("勝負服"))) idx++;
+
+    // 直後の数行を先読みして、馬主・生産牧場・調教師を順に取得するパターン (Netkeiba JRA出馬表縦並び)
+    const tempLines: {text: string, idx: number}[] = [];
+    let tempIdx = idx;
+    while(tempIdx < lines.length && tempLines.length < 4) {
+       const cl = lines[tempIdx].trim();
+       if(cl !== "" && !/^\d+$/.test(cl) && !cl.includes("勝負服")) {
+          tempLines.push({text: cl, idx: tempIdx});
+       }
+       tempIdx++;
+    }
+    if (tempLines.length >= 4 && (tempLines[3].text.startsWith("父：") || tempLines[3].text.startsWith("父:"))) {
+       owner = tempLines[0].text;
+       breeder = tempLines[1].text;
+       const tmMatch = tempLines[2].text.match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]/);
+       if (tmMatch) {
+         trainer = tmMatch[1].trim();
+         stableLocation = tmMatch[2];
+       } else {
+         trainer = tempLines[2].text;
+       }
+       idx = tempLines[3].idx; // Advance idx to the '父：' line so the main loop can parse pedigree
+    }
+
+    while (idx < lines.length && (lines[idx] === "" || /^\d+$/.test(lines[idx].trim()) || lines[idx].includes("勝負服"))) {
+      if (idx >= tempLines[3]?.idx) break; // If we advanced, don't skip over Sire
+      idx++;
+    }
   } else {
     while (idx < lines.length) {
       const cleanLine = (lines[idx] || "").trim();
@@ -653,18 +692,6 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
       }
     }
   }
-
-  let trainer = "";
-  let stableLocation = "";
-  let sire = "", dam = "", bms = "";
-  let odds = 0, popularity = 0;
-  let horseWeight = 480, horseWeightChange = 0;
-  let gender: Horse["gender"] = "牡"; let age = 4;
-  let coatColor = "";
-  let kinryo = 55;
-  let jockey = "";
-  let owner = "";
-  let breeder = "";
 
   // Extract remaining fields using heuristics to handle different copy-paste layouts (table vs list)
   while (idx < lines.length) {
@@ -702,22 +729,22 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     // Kinryo (55.0) or Kinryo + Jockey (e.g. "55.0 ルメール", "55.0☆ルメール", "55.0(ルメール)")
     const kinryoJockeyMatch = l.match(/^(\d{2}(?:\.\d)?)(?:kg)?\s*[☆△▲◇☆★]?\s*([^\d\.\s\(（]+)/);
     
-    if (kinryoJockeyMatch && !jockey && parseFloat(kinryoJockeyMatch[1]) >= 48 && parseFloat(kinryoJockeyMatch[1]) <= 65) {
+    if (kinryoJockeyMatch && parseFloat(kinryoJockeyMatch[1]) >= 48 && parseFloat(kinryoJockeyMatch[1]) <= 65) {
       kinryo = parseFloat(kinryoJockeyMatch[1]);
       jockey = kinryoJockeyMatch[2].trim();
       idx++;
       continue;
-    } else if (l.match(/^\d{2}\.\dkg$/) || (l.match(/^\d{2}\.\d$/) && parseFloat(l) >= 48 && parseFloat(l) <= 65 && !jockey)) {
+    } else if (l.match(/^\d{2}\.\dkg$/) || (l.match(/^\d{2}\.\d$/) && parseFloat(l) >= 48 && parseFloat(l) <= 65)) {
       kinryo = parseFloat(l.replace("kg", "")); 
       idx++; 
       
       // Usually Jockey comes right after Kinryo in table format
-      if (idx < lines.length && !lines[idx].match(/\d/) && !jockey) {
+      if (idx < lines.length && !lines[idx].match(/\d/)) {
         const nextLine = lines[idx].trim();
         const isOwner = nextLine.includes("(有)") || nextLine.includes("(株)") || nextLine.includes("レーシング") || nextLine.includes("ファーム") || nextLine.includes("ホールディングス") || nextLine.includes("牧場") || nextLine.includes("クラブ") || nextLine.includes("組合");
         
         if (isOwner) {
-           owner = nextLine;
+           if (!owner) owner = nextLine;
            idx++;
         } else {
            jockey = nextLine;
