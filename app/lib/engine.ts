@@ -461,9 +461,9 @@ export function calculateTsuchiyaScore(
       }
     }
 
-    // 新ルール34: 「6歳以上の高齢馬」を1着候補から外す（減点）
-    if (age >= 6) {
-      potential -= 15;
+    // 新ルール34 & 減点5: 「6歳以上の高齢馬」を1着候補から外す（減点）
+    if (age >= 6 && isMixedRace) {
+      potential -= 10; // 減点方式仕様に準拠(-10点)
       tags.push("⚠️ 東京新特注(13/14日分析): 成長力に乏しい高齢馬(6歳以上・1着固定は危険)");
     }
 
@@ -483,46 +483,53 @@ export function calculateTsuchiyaScore(
         tags.push("👑 東京特注: 古馬の馬体重維持(±4kg以内)による安定感");
       }
       
+      // 新ルール5 & 減点1: 馬体重の「大幅なマイナス（二桁減）」は危険信号
       // 当日-10kg以上の大幅馬体重減は調子落ちとして大きく減点する
       if (horse.weightChange <= -10) {
-        potential -= 35;
+        potential -= 30; // 減点方式仕様に準拠(-30点)
         tags.push("⚠️ 東京新特注(13/14日分析): 大幅な馬体減(-10kg以上)は致命的(消し推奨)");
       }
     }
 
-    // 新ルール28: 「ブリンカー着用」の複合条件（クロス分析）による特注穴馬の抽出
+    // 新ルール28 & 減点6: 「ブリンカー着用」の複合条件（クロス分析）および「不発」判定
     if (horse.useBlinkers) {
-      potential += 20;
-      tags.push("💥 東京新特注(13/14日分析): 魔法の馬具ブリンカー着用(一変・大駆け警戒)");
-      
-      let isBlinkerCrossHit = false;
-      
-      // クロス条件1: 乗り替わり
-      if (isJockeyChangedNew) {
-        potential += 25;
-        tags.push("🚨 東京特注穴馬: 【ブリンカー×乗り替わり】陣営の強烈な勝負気配！");
-        isBlinkerCrossHit = true;
-      }
-      
-      // クロス条件2: 馬体重±4kg以内
-      if (typeof horse.weightChange === 'number' && horse.weightChange >= -4 && horse.weightChange <= 4) {
-        potential += 15;
-        tags.push("🚨 東京特注穴馬: 【ブリンカー×馬体維持】仕上がり万全・あとは集中力のみ！");
-        isBlinkerCrossHit = true;
-      }
-      
-      // クロス条件3: 近走惜敗(4・5着) または 先行力
-      const isPrevCloseMiss = prevRaceData && (prevRaceData.result === 4 || prevRaceData.result === 5);
-      const hasLeadingPower = horse.style === '逃げ' || horse.style === '先行';
-      if (isPrevCloseMiss || hasLeadingPower) {
+      const isWeightHugeChange = typeof horse.weightChange === 'number' && Math.abs(horse.weightChange) >= 10;
+      if (!isJockeyChangedNew || isWeightHugeChange) {
+        potential -= 10; // 加点ゼロ ＆ さらに減点(-10点)
+        tags.push("⚠️ 東京減点ロジック: 激走条件を満たさないブリンカー不発(陣営の空回り危険)");
+      } else {
         potential += 20;
-        tags.push("🚨 東京特注穴馬: 【ブリンカー×(近走惜敗or先行力)】集中力UPで押し切り濃厚！");
-        isBlinkerCrossHit = true;
-      }
-      
-      if (isBlinkerCrossHit && popularity >= 6) {
-        potential += 20; // 穴馬でクロス条件に引っかかればさらにボーナス
-        tags.push("🎰🎰 東京特注穴馬: ブリンカー複合条件を満たす大穴馬(激走フラグ点灯！)");
+        tags.push("💥 東京新特注(13/14日分析): 魔法の馬具ブリンカー着用(一変・大駆け警戒)");
+        
+        let isBlinkerCrossHit = false;
+        
+        // クロス条件1: 乗り替わり
+        if (isJockeyChangedNew) {
+          potential += 25;
+          tags.push("🚨 東京特注穴馬: 【ブリンカー×乗り替わり】陣営の強烈な勝負気配！");
+          isBlinkerCrossHit = true;
+        }
+        
+        // クロス条件2: 馬体重±4kg以内
+        if (typeof horse.weightChange === 'number' && horse.weightChange >= -4 && horse.weightChange <= 4) {
+          potential += 15;
+          tags.push("🚨 東京特注穴馬: 【ブリンカー×馬体維持】仕上がり万全・あとは集中力のみ！");
+          isBlinkerCrossHit = true;
+        }
+        
+        // クロス条件3: 近走惜敗(4・5着) または 先行力
+        const isPrevCloseMiss = prevRaceData && (prevRaceData.result === 4 || prevRaceData.result === 5);
+        const hasLeadingPower = horse.style === '逃げ' || horse.style === '先行';
+        if (isPrevCloseMiss || hasLeadingPower) {
+          potential += 20;
+          tags.push("🚨 東京特注穴馬: 【ブリンカー×(近走惜敗or先行力)】集中力UPで押し切り濃厚！");
+          isBlinkerCrossHit = true;
+        }
+        
+        if (isBlinkerCrossHit && popularity >= 6) {
+          potential += 20; // 穴馬でクロス条件に引っかかればさらにボーナス
+          tags.push("🎰🎰 東京特注穴馬: ブリンカー複合条件を満たす大穴馬(激走フラグ点灯！)");
+        }
       }
     }
 
