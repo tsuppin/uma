@@ -76,6 +76,91 @@
       "context": "local_horses_only",
       "bonus": 15,
       "reason": "レース結果を見ると、上位に入線する馬は推定上がり3ハロンのタイムが総じて速い傾向にある。"
+    },
+    {
+      "rule_id": "nagoya_add_006",
+      "name": "1着軸トップジョッキー固定",
+      "feature": "jockey",
+      "condition": "in ['大畑雅', '塚本征', '渡邊竜', '加藤聡', '今井貴']",
+      "condition_description": "大畑雅騎手など上位騎手が騎乗",
+      "bonus": 20,
+      "reason": "大畑雅騎手は非常に多くのレースで1着を獲得し圧倒的な信頼度。塚本征、渡邊竜、加藤聡、今井貴騎手も勝率が抜群。",
+      "notes": [
+        "1着（アタマ）候補として優先的に選ぶ"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_010",
+      "name": "減量騎手（◇・▲）のヒモ必須",
+      "feature": "jockey_mark",
+      "condition": "in ['◇', '▲']",
+      "condition_description": "名前の前に「◇」や「▲」がついている減量騎手が騎乗",
+      "bonus": 15,
+      "reason": "若手や女性の減量騎手（◇木之葵、▲近藤颯、▲小笠羚など）は負担重量の軽さを活かして2・3着に食い込む確率が非常に高い。",
+      "notes": [
+        "ヒモ（2着・3着候補）として必ず買い目に含める"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_011",
+      "name": "中穴・波乱狙いの中堅・若手騎手",
+      "feature": "jockey",
+      "condition": "in ['望月洵', '東川慎', '友森翔']",
+      "condition_description": "望月洵、東川慎、友森翔騎手が騎乗",
+      "bonus": 10,
+      "reason": "上位騎手以外で好成績を収め、配当妙味をもたらす。高い頻度で馬券に絡む波乱の使者。",
+      "notes": [
+        "オッズ的な旨味を求める場合の相手候補としてピックアップする"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_012",
+      "name": "JRA交流戦におけるJRA減量騎手",
+      "feature": "jockey_type",
+      "condition": "is_jra_exchange == true AND is_jra_jockey == true AND jockey_mark in ['◇', '▲', '☆', '★']",
+      "condition_description": "JRA交流戦でJRA所属の減量騎手が騎乗",
+      "bonus": 25,
+      "reason": "地方馬とJRA所属馬が激突する交流戦において、能力差と斤量差の二重の恩恵を受ける。",
+      "evidence": [
+        "ブルームザスマイル（◇今村聖）"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_007",
+      "name": "連勝中・圧勝劇を見せた昇級馬",
+      "feature": "promoted_with_momentum",
+      "condition": "is_promoted == true AND (current_streak >= 2 OR previous_margin == '圧勝')",
+      "condition_description": "昇級戦だが、連勝中または前走着差をつけて勝っている",
+      "bonus": 20,
+      "reason": "クラスが上がっても、前走で着差をつけて勝っている馬や連勝中の馬は、勢いそのままに通用する傾向がある。",
+      "evidence": [
+        "パーフェクト",
+        "アールオブケント"
+      ],
+      "notes": [
+        "クラスの壁を過度に恐れず軸候補として扱う。"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_008",
+      "name": "JRA関連馬のダート適性血統",
+      "feature": "sire_dirt_aptitude",
+      "condition": "is_jra_related == true AND sire in ['ヘニーヒューズ', 'マインドユアビスケッツ']",
+      "condition_description": "JRA関連馬で、父馬がダート適性の高い血統",
+      "bonus": 25,
+      "reason": "ダート適性の高い血統は、地方の砂に即座に適合するため、転入初戦から高いパフォーマンスを発揮する。"
+    },
+    {
+      "rule_id": "nagoya_add_009",
+      "name": "JRA関連馬の芝からの条件替わり（ダート初挑戦）",
+      "feature": "turf_to_dirt_jra",
+      "condition": "is_jra_related == true AND previous_surface == '芝' AND current_surface == 'ダート'",
+      "condition_description": "JRA時代に芝を使われていた馬のダート初挑戦",
+      "bonus": 25,
+      "reason": "芝で大敗していた馬が、地方ダートに舞台を移した途端に一変するケースが非常に多い。",
+      "evidence": [
+        "ブルームザスマイル"
+      ]
     }
   ],
   "operation_flow": {
