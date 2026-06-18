@@ -729,7 +729,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     // Kinryo (55.0) or Kinryo + Jockey (e.g. "55.0 ルメール", "55.0☆ルメール", "55.0(ルメール)")
     const kinryoJockeyMatch = l.match(/^(\d{2}(?:\.\d)?)(?:kg)?\s*[☆△▲◇☆★]?\s*([^\d\.\s\(（]+)/);
     
-    if (kinryoJockeyMatch && parseFloat(kinryoJockeyMatch[1]) >= 48 && parseFloat(kinryoJockeyMatch[1]) <= 65) {
+    if (kinryoJockeyMatch && kinryoJockeyMatch[2].trim() !== "kg" && parseFloat(kinryoJockeyMatch[1]) >= 48 && parseFloat(kinryoJockeyMatch[1]) <= 65) {
       kinryo = parseFloat(kinryoJockeyMatch[1]);
       jockey = kinryoJockeyMatch[2].trim();
       idx++;
@@ -739,16 +739,23 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
       idx++; 
       
       // Usually Jockey comes right after Kinryo in table format
-      if (idx < lines.length && !lines[idx].match(/\d/)) {
-        const nextLine = lines[idx].trim();
+      let tempIdx = idx;
+      while(tempIdx < lines.length && lines[tempIdx].trim() === "") tempIdx++;
+
+      if (tempIdx < lines.length && !lines[tempIdx].match(/\d/)) {
+        const nextLine = lines[tempIdx].trim();
         const isOwner = nextLine.includes("(有)") || nextLine.includes("(株)") || nextLine.includes("レーシング") || nextLine.includes("ファーム") || nextLine.includes("ホールディングス") || nextLine.includes("牧場") || nextLine.includes("クラブ") || nextLine.includes("組合");
         
         if (isOwner) {
            if (!owner) owner = nextLine;
-           idx++;
+           idx = tempIdx + 1;
         } else {
            jockey = nextLine;
-           idx++;
+           idx = tempIdx + 1;
+        }
+      } else {
+         // if not found, don't advance idx
+      }
            // Usually Trainer comes after Jockey
            if (idx < lines.length && !lines[idx].match(/\d/) && !trainer) {
              const tmLine = lines[idx].trim();
