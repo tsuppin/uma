@@ -526,6 +526,11 @@ export function parseJRAText(rawText: string): {
         blockStarts.push(i);
       }
     }
+    // テーブル形式でのコピペ: 行1=枠, 行2=馬番
+    else if (i < lines.length - 2 && /^[1-8]$/.test(l) && /^[1-9]$|^1[0-8]$/.test(lines[i+1].trim())) {
+      // make sure it's not a date like "1\n2\n..." which shouldn't happen, but just to be safe
+      blockStarts.push(i);
+    }
   }
 
   const horses: Horse[] = [];
@@ -601,7 +606,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
           idx++;
           break;
         }
-        if (cleanLine === "" || cleanLine === "ブリンカー" || cleanLine === "勝負服の画像") {
+        if (cleanLine === "" || cleanLine.includes("勝負服") || cleanLine === "ブリンカー" || /^\[[外地抽]\]$/.test(cleanLine)) {
           idx++;
         } else {
           break;
@@ -609,97 +614,146 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
       }
     }
 
-    if ((lines[idx] || "").includes("ブリンカー")) { hasBlinker = true; idx++; }
+    // Skip any pre-name elements like "勝負服", "ブリンカー", or icons
+    while (idx < lines.length) {
+      const cleanLine = (lines[idx] || "").trim();
+      if (cleanLine === "" || cleanLine.includes("勝負服") || cleanLine.includes("ブリンカー") || /^\[[外地抽]\]$/.test(cleanLine)) {
+        if (cleanLine.includes("ブリンカー")) hasBlinker = true;
+        idx++;
+      } else {
+        break;
+      }
+    }
 
     // カタカナの「マルガイ」「マルチ」の誤削除を廃止し、正式な馬名そのまま登録する
     name = (lines[idx] || "").trim(); idx++;
-    while (idx < lines.length && (lines[idx] === "" || /^\d+$/.test(lines[idx].trim()))) idx++;
+    while (idx < lines.length && (lines[idx] === "" || /^\d+$/.test(lines[idx].trim()) || lines[idx].includes("勝負服"))) idx++;
   } else {
-    if ((lines[idx] || "").includes("ブリンカー")) { hasBlinker = true; idx++; }
-  }
-
-  const owner = lines[idx] || ""; idx++;
-  while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
-
-  const breeder = lines[idx] || ""; idx++;
-  while (idx < lines.length && lines[idx] === "") idx++;
-
-  let trainer = "";
-  let stableLocation = "";
-  const tm = (lines[idx] || "").match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]/);
-  if (tm) { trainer = tm[1].trim(); stableLocation = tm[2]; idx++; }
-  else if (lines[idx]) { trainer = lines[idx]; idx++; }
-
-  let sire = "", dam = "", bms = "";
-  while (idx < lines.length) {
-    const l = (lines[idx] || "").trim();
-    if (l.startsWith("父：") || l.startsWith("父:")) {
-      sire = l.replace(/^父[：:]/, "").trim();
-      if (!sire && idx + 1 < lines.length) {
-        sire = lines[idx + 1].trim();
+    while (idx < lines.length) {
+      const cleanLine = (lines[idx] || "").trim();
+      if (cleanLine === "" || cleanLine.includes("勝負服") || cleanLine.includes("ブリンカー") || /^\[[外地抽]\]$/.test(cleanLine)) {
+        if (cleanLine.includes("ブリンカー")) hasBlinker = true;
         idx++;
+      } else {
+        break;
       }
-      idx++;
-    } else if (l.startsWith("母：") || l.startsWith("母:")) {
-      dam = l.replace(/^母[：:]/, "").trim();
-      if (!dam && idx + 1 < lines.length) {
-        dam = lines[idx + 1].trim();
-        idx++;
-      }
-      idx++;
-    } else if (l.includes("母の父")) {
-      bms = l.replace(/^.*?母の父[：:]?/, "").replace(/[\(\)（）]/g, "").trim();
-      idx++;
-    } else if (l === "" || l.includes("：") || l.includes(":")) {
-      idx++;
-    } else {
-      break;
     }
   }
 
+  let trainer = "";
+  let stableLocation = "";
+  let sire = "", dam = "", bms = "";
   let odds = 0, popularity = 0;
-  while (idx < lines.length) {
-    const l = lines[idx];
-    if (/^\d+\.?\d+$/.test(l) && !l.includes(":")) { odds = parseFloat(l); idx++; break; }
-    idx++;
-  }
-  const pm = (lines[idx] || "").match(/(\d+)番人気/);
-  if (pm) { popularity = parseInt(pm[1]); idx++; }
-
   let horseWeight = 480, horseWeightChange = 0;
   let gender: Horse["gender"] = "牡"; let age = 4;
   let coatColor = "";
   let kinryo = 55;
   let jockey = "";
+  let owner = "";
+  let breeder = "";
 
+  // Extract remaining fields using heuristics to handle different copy-paste layouts (table vs list)
   while (idx < lines.length) {
-    const l = lines[idx] || "";
-    const wm = l.match(/^(\d+)kg/);
-    if (wm) {
-      horseWeight = parseInt(wm[1]); idx++;
-      const wcm = (lines[idx] || "").match(/\(([+-]?\d+|初出走)\)/);
-      if (wcm) { horseWeightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]) || 0; idx++; }
+    const l = (lines[idx] || "").trim();
+    
+    if (l === "" || l.includes("勝負服") || l === "B" || l === "☆" || l === "勝負服の画像" || l === "ブリンカー") {
+      idx++; continue;
+    }
+
+    // Past races start
+    if (l.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/)) {
       break;
     }
-    idx++;
+
+    // Gender and Age
+    const gm = l.match(/^([牡牝セ]|せん)(\d+)(?:\/(.*))?$/);
+    if (gm) {
+      gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝";
+      age = parseInt(gm[2]);
+      if (gm[3]) coatColor = gm[3].trim();
+      idx++; continue;
+    }
+
+    // Horse Weight
+    const wm = l.match(/^(\d+)kg$/) || l.match(/^(\d{3})$/);
+    if (wm) {
+      horseWeight = parseInt(wm[1]);
+      idx++;
+      const nextLine = (lines[idx] || "").trim();
+      const wcm = nextLine.match(/^\(([+-]?\d+|初出走)\)$/);
+      if (wcm) { horseWeightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]) || 0; idx++; }
+      continue;
+    }
+
+    // Kinryo (55.0)
+    if (l.match(/^\d+\.\dkg$/) || l.match(/^\d+\.\d$/)) {
+      kinryo = parseFloat(l.replace("kg", "")); 
+      idx++; 
+      
+      // Usually Jockey comes right after Kinryo in table format
+      if (idx < lines.length && !lines[idx].match(/\d/) && !jockey) {
+        jockey = lines[idx].trim();
+        idx++;
+        // Usually Trainer comes after Jockey
+        if (idx < lines.length && !lines[idx].match(/\d/) && !trainer) {
+          const tmLine = lines[idx].trim();
+          const tmMatch = tmLine.match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]/);
+          if (tmMatch) {
+            trainer = tmMatch[1].trim();
+            stableLocation = tmMatch[2];
+          } else {
+            // Netkeiba sometimes has "栗東" then "木村" on next line
+            if (tmLine.match(/^[栗美][東浦]$/)) {
+              stableLocation = tmLine;
+              idx++;
+              if (idx < lines.length) trainer = lines[idx].trim();
+            } else {
+              trainer = tmLine;
+            }
+          }
+          idx++;
+        }
+      }
+      continue;
+    }
+
+    // Odds
+    if (l.match(/^[\d\.]+$/) && !l.match(/^\d+\.\d$/)) {
+      odds = parseFloat(l); idx++; continue;
+    }
+
+    // Popularity
+    const pm = l.match(/^(\d+)番人気$/);
+    if (pm) { popularity = parseInt(pm[1]); idx++; continue; }
+
+    // Trainer with stable
+    const tm = l.match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]$/);
+    if (tm && !trainer) { trainer = tm[1].trim(); stableLocation = tm[2]; idx++; continue; }
+
+    // Pedigree
+    if (l.startsWith("父：") || l.startsWith("父:")) {
+      sire = l.replace(/^父[：:]/, "").trim();
+      if (!sire && idx + 1 < lines.length) { sire = lines[idx + 1].trim(); idx++; }
+      idx++; continue;
+    }
+    if (l.startsWith("母：") || l.startsWith("母:")) {
+      dam = l.replace(/^母[：:]/, "").trim();
+      if (!dam && idx + 1 < lines.length) { dam = lines[idx + 1].trim(); idx++; }
+      idx++; continue;
+    }
+    if (l.includes("母の父")) {
+      bms = l.replace(/^.*?母の父[：:]?/, "").replace(/[\(\)（）]/g, "").trim();
+      idx++; continue;
+    }
+
+    // Unknown string without numbers is probably jockey if we haven't found it yet
+    if (!l.match(/\d/)) {
+      if (!jockey) { jockey = l; idx++; continue; }
+      if (!trainer && !l.match(/^[栗美][東浦]$/)) { trainer = l; idx++; continue; }
+    }
+
+    idx++; // Skip unrecognized lines
   }
-  while (idx < lines.length && (lines[idx] === "" || lines[idx] === "勝負服の画像")) idx++;
-
-  const gm = (lines[idx] || "").match(/([牡牝セ]|せん)(\d+)\/(.+)/);
-  if (gm) {
-    gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as "牡"|"牝";
-    age = parseInt(gm[2]);
-    coatColor = gm[3].trim();
-    idx++;
-  }
-  while (idx < lines.length && lines[idx] === "") idx++;
-
-  const kMatch = (lines[idx] || "").match(/(\d+\.?\d*)kg/);
-  if (kMatch) { kinryo = parseFloat(kMatch[1]); idx++; }
-  while (idx < lines.length && lines[idx] === "") idx++;
-
-  jockey = (lines[idx] || "").trim(); idx++;
-  while (idx < lines.length && lines[idx] === "") idx++;
 
   const pastRaces: PastRace[] = [];
   while (idx < lines.length && pastRaces.length < 5) {
