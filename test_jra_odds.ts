@@ -1,10 +1,10 @@
 import * as fs from 'fs';
 
 const rawText = `
-1	1	1	スナッピードレッサ
-牡3	55.0	ルメール	木村(美浦)	480(+2)	2.5	1
+1	1	1	スナッピ�EドレチE��
+牡3	55.0	ルメール	木杁E美浦)	480(+2)	2.5	1
 2	2	2	アサカ
-牝4	54.0	武豊	友道(栗東)	450(+2)	12.5	4
+牁E	54.0	武豁E友道(栗東)	450(+2)	12.5	4
 `;
 
 const lines = rawText.split("\n").map(l => l.trim()).filter(l => l !== "");
@@ -53,7 +53,7 @@ function parseJRAHorse(lines) {
     }
 
     // Popularity
-    const pm = l.match(/^(\d+)番人気$/) || l.match(/^(\d+)$/);
+    const pm = l.match(/^(\d+)番人氁E/) || l.match(/^(\d+)$/);
     if (pm && odds > 0) { popularity = parseInt(pm[1]); idx++; continue; }
 
     idx++;

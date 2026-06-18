@@ -1,18 +1,15 @@
 import * as fs from 'fs';
 
 const pasteText = `
-1	2	4	テスティモーネ 4番人気
-牡4 / 454kg(+6)
+1	2	4	チE��チE��モーチE4番人氁E牡4 / 454kg(+6)
 松山弘平(58.0)  杉山晴紀(栗東)
 2:01.3 / 36.1
-2	3	5	ラケマーダ 2番人気
-牡4 / 522kg(+6)
-川田将雅(58.0)  大久保龍(栗東)
-2:01.4 (クビ) / 36.1
-3	5	10	ルクスビッグスター 1番人気
-牡4 / 510kg(+4)
-武豊(58.0)  清水久詞(栗東)
-2:01.5 (クビ) / 35.8
+2	3	5	ラケマ�Eダ 2番人氁E牡4 / 522kg(+6)
+川田封E��(58.0)  大乁E��龁E栗東)
+2:01.4 (クチE / 36.1
+3	5	10	ルクスビッグスター 1番人氁E牡4 / 510kg(+4)
+武豁E58.0)  渁E��乁E��E栗東)
+2:01.5 (クチE / 35.8
 `;
 
 const lines = pasteText.split("\n").map(l => l.trim());
@@ -30,16 +27,16 @@ while (i < lines.length) {
   let rank = 0, num = 0, name = "", pop = 0;
   let linesConsumed = 1;
 
-  // 1. 完全行のキャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" またはスペース混在)
+  // 1. 完�E行�Eキャプチャ (侁E "1\t3\t5\tコンジェスタス6番人氁E また�Eスペ�Eス混在)
   const fullMatch = line.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)[\t\s]+(.+)/);
-  // 2. 改行分割行のキャプチャ (例: "1\t8\t16")
+  // 2. 改行�E割行�Eキャプチャ (侁E "1\t8\t16")
   const splitMatch = line.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)$/);
 
   if (fullMatch) {
     rank = parseInt(fullMatch[1]);
     num = parseInt(fullMatch[3]);
     const namePart = fullMatch[4].trim();
-    const popM = namePart.match(/(.+?)(\d+)番人気/);
+    const popM = namePart.match(/(.+?)(\d+)番人氁E);
     name = popM ? popM[1].trim() : namePart;
     pop = popM ? parseInt(popM[2]) : 0;
     isMatch = true;
@@ -51,7 +48,7 @@ while (i < lines.length) {
     const nextLine = lines[nextIdx]?.trim() || "";
     
     const cleanNext = nextLine.replace(/^(ブリンカー)[\t\s]*/, "").trim();
-    const popM = cleanNext.match(/(.+?)(\d+)番人気/);
+    const popM = cleanNext.match(/(.+?)(\d+)番人氁E);
     name = popM ? popM[1].trim() : cleanNext;
     pop = popM ? parseInt(popM[2]) : 0;
 
@@ -69,9 +66,9 @@ while (i < lines.length) {
       const wPart = lp[1]?.trim() || "";
       const wm = wPart.match(/(\d+)kg/);
       if (wm) weight = parseInt(wm[1]);
-      const wcm = wPart.match(/\(([+-]?\d+)\)/) || wPart.match(/\((初出走)\)/) || wPart.match(/\(±?(\d+)\)/);
+      const wcm = wPart.match(/\(([+-]?\d+)\)/) || wPart.match(/\((初�E走)\)/) || wPart.match(/\(±?(\d+)\)/);
       if (wcm) {
-        weightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]) || 0;
+        weightChange = wcm[1] === "初�E走" ? 0 : parseInt(wcm[1]) || 0;
       }
       baseIdx++;
     }
@@ -81,10 +78,10 @@ while (i < lines.length) {
     if (line3.includes("(")) {
       const jm = line3.match(/^([^\(]+?)\((\d+\.?\d*)\)/);
       if (jm) {
-        jockey = jm[1].trim().replace(/^[▲△☆◇]/, "");
+        jockey = jm[1].trim().replace(/^[▲△☁E��]/, "");
         jockeyWeight = parseFloat(jm[2]);
       }
-      const trM = line3.match(/\)\s+([^\s\(]+?[\(（][栗美][東浦][\)）])/);
+      const trM = line3.match(/\)\s+([^\s\(]+?[\(�E�E[栗美][東浦][\)�E�])/);
       if (trM) trainer = trM[1].trim();
       else {
         const parts = line3.split(/\s+/);

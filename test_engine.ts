@@ -1,10 +1,10 @@
-import { calculateTsuchiyaScore } from './app/lib/engine.ts';
-import { Race, Horse, MasterData } from './app/types/index.ts';
+import { calculateTsuchiyaScore } from './app/lib/engine';
+import { Race, Horse, MasterData } from './app/types/index';
 
 const horse: Horse = {
   number: 1,
   frame: 1,
-  name: 'スナッピードレッサ',
+  name: 'スナッピ�EドレチE��',
   gender: '牡',
   age: 3,
   weight: 500,
@@ -14,7 +14,7 @@ const horse: Horse = {
   odds: 5.5,
   popularity: 2,
   trainer: 'Test',
-  style: '先行',
+  style: '先衁E,
   pastRaces: []
 };
 
@@ -26,7 +26,7 @@ const race: Race = {
   raceNumber: 1,
   raceName: '1R',
   distance: 1600,
-  surface: '芝',
+  surface: '芁E,
   condition: '良',
   headCount: 18,
   horses: [horse]
