@@ -371,6 +371,35 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // 新ルール16〜18: 6〜8番人気の中穴激走条件（上がり最速・馬体微増・外枠）
+    if (popularity >= 6 && popularity <= 8) {
+      // 1. 上がり3ハロン上位候補 (過去の3Fタイムが良いか、脚質が差・追)
+      const hasFast3f = (prevRaceData && prevRaceData.last3fTime && prevRaceData.last3fTime <= 34.5) || horse.style === '差' || horse.style === '追';
+      // 2. 馬体重 +2kg 〜 +6kg
+      const isWeightSlightIncrease = typeof horse.weightChange === 'number' && horse.weightChange >= 2 && horse.weightChange <= 6;
+      // 3. 6〜8枠
+      const isOuterFrame = frame >= 6 && frame <= 8;
+
+      if (hasFast3f) {
+        potential += 15;
+        tags.push("💥 東京新特注(13/14日分析): 6〜8番人気×末脚鋭利(激走穴馬候補)");
+      }
+      if (isWeightSlightIncrease) {
+        potential += 15;
+        tags.push("👑 東京新特注(13/14日分析): 6〜8番人気×馬体重微増(+2〜+6kg)の好調サイン");
+      }
+      if (isOuterFrame) {
+        potential += 10;
+        tags.push("🎯 東京新特注(13/14日分析): 6〜8番人気×外枠(6〜8枠)の好走パターン");
+      }
+
+      // 3条件パーフェクトなら特大ボーナス
+      if (hasFast3f && isWeightSlightIncrease && isOuterFrame) {
+        potential += 40;
+        tags.push("🎰🎰🎰 東京新特注(13/14日分析): 中穴激走3条件パーフェクト達成！(超絶狙い目)");
+      }
+    }
+
     // 新ルール4: 馬体重の大幅増は「成長分」として肯定的に捉えるケースもある
     // 3歳(または4歳前半)などの成長期の大幅馬体重増(+10kg以上)はパフォーマンス向上と判断
     if (typeof horse.weightChange === 'number') {
