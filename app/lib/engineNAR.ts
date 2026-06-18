@@ -278,9 +278,95 @@ export function calculateNARScore(
     }
   }
   else if (trackName.includes('名古屋') || trackName.includes('弥富')) {
-    // マニアック: 圧倒的な先行有利（移転後の新名古屋）
+    // ==========================================
+    // 【特化ロジック】名古屋競馬場・完全分析ルール（2026/06抽出）
+    // ==========================================
+    const popularity = horse.popularity || 99;
+    const prevRace = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : null;
+
+    // 基本ルール1: 上位人気（1〜3番人気）を軸に据える
+    if (popularity <= 3) {
+      potential += 20;
+      tags.push("👑 名古屋特注: 信頼度の高い上位人気(1〜3番人気軸指定)");
+    }
+
+    // 基本ルール2: 外枠（5〜8枠）の馬を高く評価する
+    if (frame >= 5) {
+      potential += 15;
+      tags.push("🔥 名古屋特注: 馬群に揉まれにくい有利な外枠(5〜8枠)");
+    }
+
+    // 基本ルール3: JRA（中央競馬）転入馬の無条件警戒
+    const isFromJRA = horse.transferFrom === 'JRA' || horse.belonging === 'JRA';
+    const wasJRA = prevRace && prevRace.venue && prevRace.venue.match(/(東京|中山|京都|阪神|新潟|福島|中京|小倉|札幌|函館)/);
+    if (isFromJRA || wasJRA) {
+      potential += 30;
+      tags.push("🚀 名古屋特注: JRA転入馬の地力の違い(大敗歴不問で無条件警戒)");
+    }
+
+    // 基本ルール4: 地方生え抜き馬の近走好成績
+    const isLocalHorse = !isFromJRA && !wasJRA;
+    if (isLocalHorse && prevRace && prevRace.result <= 3) {
+      potential += 15;
+      tags.push("🔥 名古屋特注: 地方生え抜き馬の順当な好走傾向(近走3着以内)");
+    }
+
+    // 基本ルール4-2: 上がり最速クラスの末脚
+    if (isLocalHorse && prevRace && prevRace.last3fTimeRank && prevRace.last3fTimeRank <= 3) {
+      potential += 15;
+      tags.push("🔥 名古屋特注: 上位入線のカギを握る上がり最速クラスの末脚");
+    }
+
+    // 詳細ルール1-A: トップジョッキー（1着軸候補）
+    const isTopJockey = horse.jockey && ['大畑雅', '塚本征', '渡邊竜', '加藤聡', '今井貴'].some(j => horse.jockey.includes(j));
+    if (isTopJockey) {
+      potential += 20;
+      tags.push("👑 名古屋特注: 圧倒的信頼度を誇るトップジョッキー(1着軸推奨)");
+    }
+
+    // 詳細ルール1-B: 減量騎手（ヒモ穴必須）
+    const isApprentice = horse.jockey && horse.jockey.match(/[◇▲]/);
+    if (isApprentice) {
+      potential += 15;
+      tags.push("🌟 名古屋特注: 軽斤量を活かして食い込む減量騎手(ヒモ必須)");
+    }
+
+    // 詳細ルール1-C: 中穴・波乱狙いの中堅ジョッキー
+    const isLongshotJockey = horse.jockey && ['望月洵', '東川慎', '友森翔'].some(j => horse.jockey.includes(j));
+    if (isLongshotJockey) {
+      potential += 10;
+      tags.push("💥 名古屋特注: 波乱をもたらす中堅・若手騎手(オッズ妙味)");
+    }
+
+    // 詳細ルール1-D: JRA交流戦におけるJRA減量騎手
+    const isJraExchange = race.raceName && race.raceName.includes('交流');
+    // JRA所属騎手であることを簡易的に名前等で判定できなければisFromJRAと併用するなどで代替
+    if (isJraExchange && isApprentice) {
+      potential += 25;
+      tags.push("🚀 名古屋特注: JRA交流戦における減量騎手の斤量＆能力恩恵警戒");
+    }
+
+    // 詳細ルール3: 連勝中・圧勝劇を見せた「昇級馬」
+    if (prevRace && prevRace.result === 1) {
+      potential += 20;
+      tags.push("🔥 名古屋特注: クラスの壁を突破する前走1着の勢い(昇級馬)");
+    }
+
+    // 詳細ルール4: JRA関連馬のダート適性血統と条件替わり
+    if (isFromJRA || wasJRA) {
+      if (horse.sire && ['ヘニーヒューズ', 'マインドユアビスケッツ'].some(s => horse.sire.includes(s))) {
+        potential += 25;
+        tags.push("🚀 名古屋特注: JRA関連馬×圧倒的ダート適性血統(即通用)");
+      }
+      if (prevRace && prevRace.surface === '芝' && race.surface === 'ダート') {
+        potential += 25;
+        tags.push("🚀 名古屋特注: JRA時代芝からのダート替わり(一変警戒)");
+      }
+    }
+
+    // 既存マニアック: 圧倒的な先行有利
     if (horse.style === '逃げ' || horse.style === '先行') {
-      // [減点方式] potential += 35;
+      potential += 15;
       tags.push("🔥 名古屋マニアック: 移転後の新競馬場特有の止まらない圧倒的先行力");
     }
   }

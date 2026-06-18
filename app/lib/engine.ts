@@ -175,6 +175,183 @@ export function calculateTsuchiyaScore(
   const isTightCourse = ['浦和', '函館', '福島', '小倉', '高知'].some(t => trackName.includes(t));
   if (isTightCourse && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
     // [減点方式] potential += 45;
+// @ts-nocheck
+import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
+import { calculateNARScore } from './engineNAR';
+import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
+
+// モジュール共通のエリート騎手リスト
+const ELITE_JOCKEYS = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ", "松山弘平", "川田", "坂井", "戸崎", "笹川翼", "御神本訓", "吉村智洋", "渡邊竜也", "岡部誠"];
+
+// ==========================================
+// タイム文字列（コロン・ドット形式 "1:28.4" 等）を秒数（88.4）に安全変換するヘルパー
+// ==========================================
+function parseTimeToSeconds(timeStr: string | undefined): number {
+  if (!timeStr) return 0;
+  const str = timeStr.toString().trim();
+  const parts = str.split(':');
+  if (parts.length === 2) {
+    const mins = parseFloat(parts[0]) || 0;
+    const secs = parseFloat(parts[1]) || 0;
+    return mins * 60 + secs;
+  }
+  return parseFloat(str) || 0;
+}
+
+// ==========================================
+// Yatomi Physics Logic (弥富・名古屋競馬)
+// ==========================================
+export function calculateYatomiPhysics(
+  horse: Horse,
+  pastRace: Horse['pastRaces'][0] | undefined,
+  windSpeed: number,
+  isHeadwind: boolean,
+  trackCondition: string,
+  isInBiasActive: boolean
+): number {
+  if (!pastRace) return 0;
+  
+  // 文字列置換によるスケール誤差を解消し、物理計算を秒数ベースで正しく行う
+  let adjTime = parseTimeToSeconds(pastRace.time);
+  if (adjTime === 0) return 0;
+
+  // 1. WIND_VECTOR 補正（秒数ベースで0.3秒、0.2秒の風速補正が本来のスケールで機能）
+  if (isHeadwind && windSpeed >= 4.0) {
+    if (pastRace.corner4Position <= 4) {
+      adjTime += 0.3; // 先行馬：空気抵抗増大（0.3秒遅延）
+    } else {
+      adjTime -= 0.2; // スリップストリーム効果（0.2秒短縮）
+    }
+  }
+
+  // 2. TRACK_WIDTH_LOSS 補正
+  const nPosition = pastRace.cornerOuterCount || 1;
+  if (nPosition > 1) {
+    adjTime -= (nPosition - 1) * 0.15; // 外を回った頭数に応じた距離ロス補正
+  }
+
+  // 3. POWER_STRIDE_DYNAMICS 補正
+  const weight = horse.weight;
+  if (trackCondition === '良') {
+    if (weight < 480) {
+      adjTime += 0.2; // パワー負け
+    } else if (weight >= 500 && pastRace.otherVenueExp) {
+      adjTime -= 0.3; // 大型馬パワーアドバンテージ
+    }
+  }
+
+  // 4. DYNAMIC_BIAS_DETECTOR
+  if (isInBiasActive) {
+    if (horse.frame <= 3 && pastRace.cornerOuterCount === 1) {
+      adjTime -= 0.4; // イン伸びバイアス
+    }
+  }
+
+  // 基準タイムも秒数にパースして比較
+  const baseTimeStr = pastRace.classBaseTime?.toString() || '';
+  const classBaseTime = baseTimeStr ? parseTimeToSeconds(baseTimeStr) : adjTime + 0.5;
+
+  return adjTime <= classBaseTime ? 1 : 0; // 物理的狙い馬タグ
+}
+
+// ==========================================
+// Tsuchiya Protocol - スコア計算
+// ==========================================
+export function calculateTsuchiyaScore(
+  horse: Horse, 
+  race: Race, 
+  learningPatches: LearningPatch[],
+  masterData: MasterData
+): Prediction {
+  // 地方競馬（NAR）の判定（変数名の衝突を避けるため直接判定）
+  if (race.trackName && ['大井', '川崎', '船橋', '浦和', '盛岡', '水沢', '門別', '名古屋', '弥富', '笠松', '園田', '姫路', '高知', '佐賀', '金沢'].some(t => race.trackName!.includes(t))) {
+    return calculateNARScore(horse, race, learningPatches, masterData);
+  }
+
+  const hm = masterData.horses?.[horse.name];
+  const jm = masterData.jockeys?.[horse.jockey];
+
+  // ==========================================
+  // 【新設】④ プロフィール（血統・生産者）の自動補完ロジック
+  // ==========================================
+  let bloodline = horse.bloodline || '';
+  let horseBreeder = horse.breeder || '';
+  if (hm) {
+    if (!bloodline && hm.sire) {
+      bloodline = `${hm.sire} / ${hm.dam || 'Unknown'}`;
+    }
+    if (!horseBreeder && hm.breeder) {
+      horseBreeder = hm.breeder;
+    }
+  }
+
+  const trackName = race.trackName || race.venue || '';
+  const dist = race.distance;
+  const condition = race.condition;
+  const weight = horse.weight;
+  const weightChange = horse.weightChange;
+  const frame = horse.frame;
+  const gender = horse.gender;
+  const age = horse.age;
+  const odds = horse.odds || 10;
+  const kinryo = horse.jockeyWeight || 55;
+  const popularity = horse.popularity || 99;
+  const jockey = horse.jockey || '';
+  const headCount = race.headCount || 10;
+  
+  let potential = 1000;  // [減点方式] 初期値を1000に変更
+  let distortionBoost = 1.0;
+  let isTargetYatomi = false;
+  const tags: string[] = [];
+
+  // ==========================================
+  // 【新設】◎ データ・ドリブン・コア（最適化ロジック）
+  // 機械学習の結果から導き出された最も重要な「物理・人間」要素を最優先評価
+  // ==========================================
+  
+  // 【追加】オッズの歪み（期待値）ロジック＆PCI（ペースチェンジインデックス）分析
+  const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
+  
+  if (odds >= 15.0) {
+    if (prevRaceData) {
+      if (prevRaceData.isStumbled || prevRaceData.cornerOuterCount >= 4) {
+        // [減点方式] potential += 35;
+        tags.push("💰 期待値爆発: 前走物理的不利(度外視) × 大穴オッズ");
+      }
+      if (prevRaceData.halonPace) {
+        const paceParts = prevRaceData.halonPace.split('-');
+        if (paceParts.length === 2) {
+          const front3f = parseFloat(paceParts[0]);
+          const back3f = parseFloat(paceParts[1]);
+          if (front3f < back3f - 1.5 && (horse.style === '差し' || horse.style === '追込')) {
+            // [減点方式] potential += 30;
+            tags.push("💰 期待値爆発: 前走ハイペース被害の差し馬 × 大穴");
+          }
+        }
+      }
+    }
+  } else if (odds <= 2.5 && popularity === 1) {
+    if (weight > 0) {
+      const kinryoWeightRatio = (kinryo / weight) * 100;
+      if (kinryoWeightRatio >= 12.0) {
+        potential -= 40;
+        tags.push("⚠️ 過剰人気トラップ: 1番人気 × 物理的過負荷(斤量比12%超)");
+      }
+    }
+    if (race.surface === 'ダート' && prevRaceData?.surface === '芝') {
+      potential -= 30;
+      tags.push("⚠️ 過剰人気トラップ: 1番人気 × 初ダートの不確実性");
+    }
+  }
+
+  // ==========================================
+  // 【追加】最強の複合ファクター（黄金コンボ）判定
+  // ==========================================
+  
+  // コンボ1: 物理的絶対優位（小回り × 内枠 × 先行）
+  const isTightCourse = ['浦和', '函館', '福島', '小倉', '高知'].some(t => trackName.includes(t));
+  if (isTightCourse && frame <= 3 && (horse.style === '逃げ' || horse.style === '先行')) {
+    // [減点方式] potential += 45;
     tags.push("🔥 黄金コンボ: 小回り × 内枠 × 逃げ先行 (絶対物理優位)");
   }
 
@@ -184,52 +361,44 @@ export function calculateTsuchiyaScore(
     tags.push("🔥 黄金コンボ: 前走大外ロス度外視 × 今回好枠替わり");
   }
 
-  // コンボ3: 危険なトラップ（物理的過負荷 × タフな馬場）
-  if (weight > 0 && ['重', '不良'].includes(condition)) {
-    const kinryoWeightRatio = (kinryo / weight) * 100;
-    if (kinryoWeightRatio >= 12.0) {
-      potential -= 50;
-      tags.push("❄️ 危険コンボ: 物理的過負荷(斤量比12%超) × タフな重馬場");
-    }
-  }
-
-  // コンボ4: 陣営の勝負気配（エリート騎手への乗り替わり）
-  const eliteJockeys = ['ルメール', '川田', '武豊', 'モレイラ', 'レーン', '御神本', '吉村', '赤岡'];
-  if (prevRaceData && prevRaceData.jockey !== jockey && eliteJockeys.some(j => jockey.includes(j))) {
-    // [減点方式] potential += 35;
-    tags.push("🔥 黄金コンボ: エリート騎手への勝負の乗り替わり");
-  }
-
-  // ==========================================
-  // 【新設】堅いレース向け的中率アップ・プロトコル
-  // ==========================================
-  // 鉄板条件: トップ騎手 × 先行脚質
-  const topJockeys = ['ルメール', 'レーン', 'ゴンサルベス', 'ディー', '川田', '武豊', 'モレイラ'];
-  if (topJockeys.some(j => jockey.includes(j)) && (horse.style === '先行' || horse.style === '逃げ')) {
-    // [減点方式] potential += 40;
-    tags.push("🎯 鉄板軸: トップ騎手 × 前残り有利脚質 (的中率重視)");
-  }
-
-  // 危険な人気馬排除
-  if (popularity <= 3) {
-    if (weightChange <= -10) {
-      potential -= 50;
-      tags.push("⚠️ 危険な人気馬: 当日の大幅マイナス体重(-10kg以下)");
-    }
-    if (race.surface === '芝' && dist === 2000 && frame >= 7) {
-      potential -= 40;
-      tags.push("⚠️ 危険な人気馬: 芝2000mの不利な大外枠");
-    }
-  }
-
   // ==========================================
   // 【新設】東京最新トレンドプロトコル (2026/06抽出データ)
   // ==========================================
   if (trackName.includes('東京')) {
     // ==========================================
-    // 【減点方式】東京競馬場・消去法評価ロジック（2026/06分析）
+    // 【減点方式】東京競馬場・消去法評価ロジック（最新版）
     // ==========================================
     
+    // 【新規】減点ルール1: 馬体重変動ペナルティ (-30点)
+    if (typeof horse.weightChange === 'number' && horse.weightChange <= -10) {
+      potential -= 30;
+      tags.push("⚠️ 東京減点方式: 調子落ち確定の馬体重大幅減(-10kg以上)");
+    }
+
+    // 【新規】減点ルール2: 起爆剤のない前走大敗馬 (-30点)
+    if (prevRaceData && prevRaceData.result >= 10 && popularity >= 5) {
+      potential -= 30;
+      tags.push("⚠️ 東京減点方式: 一変の要素なし。前走大敗かつ今回人気薄(5番人気以下)");
+    }
+
+    // 【新規】減点ルール3: 過酷なローテーションと重斤量 (-40点)
+    if (kinryo >= 58 && (horse.rotation === '連闘' || horse.rotation === '中1週' || horse.rotation === '中2週')) {
+      potential -= 40;
+      tags.push("⚠️ 東京減点方式: 疲労蓄積が懸念される過酷ローテ(中2週以内)×重斤量(58kg以上)");
+    }
+
+    // 【新規】減点ルール4: ダート1600mの最悪条件 (-50点)
+    if (race.surface === 'ダート' && dist === 1600 && frame <= 2 && (horse.style === '差し' || horse.style === '追込')) {
+      potential -= 50;
+      tags.push("⚠️ 東京減点方式: D1600mの致命的条件「内枠(1・2枠)×差し・追込」(砂被り×前残り)");
+    }
+
+    // 【新規】減点ルール5: 減量騎手（若手騎手）への過大評価排除 (-20点)
+    if (horse.jockey && horse.jockey.match(/[☆▲△◇★]/)) {
+      potential -= 20;
+      tags.push("⚠️ 東京減点方式: コース形態と直線の長さで腕の差が出やすい東京での減量騎手");
+    }
+
     // 1. 【所属による減点】「栗東（関西）」所属馬の1着固定
     if (horse.stableLocation && horse.stableLocation.includes('栗東')) {
       potential -= 30; // 1着候補から完全除外するため大幅減点
