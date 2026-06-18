@@ -278,9 +278,32 @@ export function calculateTsuchiyaScore(
     }
 
     // ==========================================
-    // 【特化ロジック】東京競馬場・絶対的5ルール（2026/06分析）
+    // 【新設】東京最新トレンドプロトコル (2026/06抽出データ & 13/14日実データ)
     // ==========================================
     
+    // 新ルール1: 上がり3ハロン（末脚）の速い馬を軸にする
+    // 過去走で上がり34.5秒以下の鋭い脚を使っている馬を「上がり最速候補」として大加点
+    const hasFast3F = horse.pastRaces && horse.pastRaces.some(pr => pr.last3fTime && parseFloat(pr.last3fTime) <= 34.5);
+    if (hasFast3F) {
+      potential += 25;
+      tags.push("🔥 東京新特注(13/14日分析): 究極の末脚・上がり最速候補(軸推奨)");
+    }
+
+    // 新ルール2: 1番人気を過信せず、ヒモ（2着・3着）には二桁人気も含める
+    // 二桁人気(10番人気以下)のスコアを底上げし、フォーメーションのヒモに入りやすくする
+    if (popularity >= 10) {
+      potential += 15;
+      tags.push("💥 東京新特注(13/14日分析): 大荒れ警戒・二桁人気のヒモ穴候補");
+    }
+
+    // 新ルール3: 開催日に「乗れている（好調な）騎手」を重視する
+    // 津村明秀、荻野極、D.レーン騎手を高く評価
+    const isHotJockey = horse.jockey && ['津村', '荻野極', 'レーン'].some(j => horse.jockey.includes(j));
+    if (isHotJockey) {
+      potential += 20;
+      tags.push("👑 東京新特注(13/14日分析): 開催大暴れ中の絶好調騎手(津村/荻野極/レーン)");
+    }
+
     // ルール1：「C.ルメール騎手・D.レーン騎手」×「上位人気」
     const isLemaireLaneStrict = horse.jockey && ['ルメール', 'レーン'].some(j => horse.jockey.includes(j));
     if (isLemaireLaneStrict && popularity >= 1 && popularity <= 3) {
@@ -294,12 +317,13 @@ export function calculateTsuchiyaScore(
       tags.push("🔥 東京特注: 絶好枠(2・5枠)からの先行抜け出し(展開超有利)");
     }
 
-    // ルール3：3歳馬の大幅プラス、古馬の馬体維持
+    // 新ルール4: 馬体重の大幅増は「成長分」として肯定的に捉えるケースもある
+    // 3歳(または4歳前半)などの成長期の大幅馬体重増(+10kg以上)はパフォーマンス向上と判断
     if (typeof horse.weightChange === 'number') {
-      if (age === 3 && horse.weightChange >= 10) {
-        potential += 15;
-        tags.push("🔥 東京特注: 3歳馬の大幅馬体重プラス(成長分でパフォーマンス向上)");
-      } else if (age >= 4 && horse.weightChange >= -4 && horse.weightChange <= 4) {
+      if (age <= 4 && horse.weightChange >= 10) {
+        potential += 18;
+        tags.push("🔥 東京新特注(13/14日分析): 若駒の大幅馬体重増は成長分(パワーアップ確定)");
+      } else if (age >= 5 && horse.weightChange >= -4 && horse.weightChange <= 4) {
         potential += 10;
         tags.push("👑 東京特注: 古馬の馬体重維持(±4kg以内)による安定感");
       }
