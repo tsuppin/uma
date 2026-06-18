@@ -530,7 +530,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           // 実際の払戻データから、このチケット(2頭の組み合わせ)に一致する払戻を探す
           const sortedT = [...t].sort((a,b)=>a-b);
           const refund = parsedRefunds.wide?.find(rw => {
-            const matchNums = rw.horseNumbers?.sort((a,b)=>a-b) || [];
+            const matchNums = rw.combination?.split(/[\-\s]+/).map(n => parseInt(n)).sort((a,b)=>a-b) || [];
             return matchNums[0] === sortedT[0] && matchNums[1] === sortedT[1];
           });
           const payout = refund?.payout || (parsedRefunds.wide?.[0]?.payout || 0); // マッチしない場合は1つ目の払戻を使用
