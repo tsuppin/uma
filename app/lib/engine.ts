@@ -507,6 +507,15 @@ export function calculateTsuchiyaScore(
       tags.push("💥 東京特注: 超大穴の激走警戒！中堅騎手の爆穴枠(木幡/丸山)");
     }
 
+    // 新ルール29: 「当日の複数回好走」をリアルタイムで加点（ホットハンド評価）
+    if (jm && (jm.todayWins || 0) >= 1) {
+      potential += 15 + (jm.todayWins! * 5); // 勝利数に応じてボーナス増幅
+      tags.push(`🔥 東京新特注(13/14日分析): 当日すでに勝利している絶好調騎手(ホットハンド・固め打ち警戒)`);
+    } else if (jm && (jm.todayTop3 || 0) >= 2) {
+      potential += 10;
+      tags.push(`🔥 東京新特注(13/14日分析): 当日複数回馬券内の好調騎手(バイアス有利)`);
+    }
+
     // ルール8 & 新ルール22：所属厩舎（美浦・栗東）の取捨選択
     const isMainOrSpecial = race.raceNumber >= 9 || (race.raceName && (race.raceName.match(/G[1-3I-III]/i) || race.raceName.includes('OP') || race.raceName.includes('オープン') || race.raceName.includes('ステークス') || race.raceName.includes('特別')));
     if (horse.stableLocation && horse.stableLocation.includes('美浦')) {
