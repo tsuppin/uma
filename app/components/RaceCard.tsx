@@ -36,12 +36,14 @@ export default function RaceCard({ race, onClick, onDelete }: { race: Race; onCl
         if (hasHit) {
           const hitTypes: string[] = [];
           if (r.hits) {
-            if (r.hits.trio) hitTypes.push("三複");
-            if (r.hits.trifecta) hitTypes.push("三単");
+            if (r.hits.win) hitTypes.push("単勝");
+            if (r.hits.wide) hitTypes.push("ワイド");
             if (r.hits.quinella) hitTypes.push("馬連");
             if (r.hits.exacta) hitTypes.push("馬単");
+            if (r.hits.trio) hitTypes.push("三複");
+            if (r.hits.trifecta) hitTypes.push("三単");
           } else {
-            hitTypes.push("三複");
+            hitTypes.push("的中");
           }
           return (
             <span className="tag tag-green" title={hitTypes.join(", ")}>

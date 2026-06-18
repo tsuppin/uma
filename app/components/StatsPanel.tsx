@@ -173,10 +173,12 @@ export default function StatsPanel({ state }: { state: AppState }) {
                         
                         const hitTypes: string[] = [];
                         if (r.hits) {
-                          if (r.hits.trio) hitTypes.push("三複");
-                          if (r.hits.trifecta) hitTypes.push("三単");
+                          if (r.hits.win) hitTypes.push("単勝");
+                          if (r.hits.wide) hitTypes.push("ワイド");
                           if (r.hits.quinella) hitTypes.push("馬連");
                           if (r.hits.exacta) hitTypes.push("馬単");
+                          if (r.hits.trio) hitTypes.push("三複");
+                          if (r.hits.trifecta) hitTypes.push("三単");
                         } else if (r.hitTickets && r.hitTickets.length > 0) {
                           hitTypes.push("三複");
                         }
@@ -185,7 +187,14 @@ export default function StatsPanel({ state }: { state: AppState }) {
                           return (
                             <div className="flex gap-4 flex-wrap" style={{ gap: '4px' }}>
                               {hitTypes.map(type => {
-                                const bg = type === "三複" ? "tag-gold" : type === "三単" ? "tag-purple" : type === "馬連" ? "tag-green" : "tag-blue";
+                                let bg = "tag-blue";
+                                if (type === "三複") bg = "tag-gold";
+                                else if (type === "三単") bg = "tag-purple";
+                                else if (type === "馬連") bg = "tag-green";
+                                else if (type === "馬単") bg = "tag-blue";
+                                else if (type === "ワイド") bg = "tag-secondary";
+                                else if (type === "単勝") bg = "tag-red";
+                                
                                 return (
                                   <span key={type} className={`tag ${bg} fs-xs`} style={{ padding: '2px 4px', minWidth: 'unset', fontSize: '10px', lineHeight: 1 }}>
                                     {type}
