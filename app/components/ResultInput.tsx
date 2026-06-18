@@ -304,8 +304,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
         // 1. 完全行のキャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" や "1着 2枠 3番 馬名")
         const fullMatch = line.match(/^(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(.+)/);
-        // 2. 改行分割行のキャプチャ (例: "1\t8\t16")
-        const splitMatch = line.match(/^(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*$/);
+        // 2. 改行分割行のキャプチャ (例: "1\t8\t16") - trailing space/tab is allowed
+        const splitMatch = line.match(/^(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]*$/);
         // 3. 縦並びのキャプチャ (例: "1\n8\n16\n馬名")
         const multilineMatch = i < lines.length - 3 && /^\d+[^\d\s\t]*$/.test(line) && /^\d+[^\d\s\t]*$/.test(lines[i+1].trim()) && /^\d+[^\d\s\t]*$/.test(lines[i+2].trim());
 
