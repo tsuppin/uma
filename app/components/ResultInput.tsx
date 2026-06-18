@@ -302,10 +302,11 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         let rank = 0, num = 0, name = "", pop = 0;
         let linesConsumed = 1;
 
-        // 1. 完全行のキャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" またはスペース混在)
-        const fullMatch = line.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)[\t\s]+(.+)/);
+        // 1. 完全行のキャプチャ (例: "1\t3\t5\tコンジェスタス6番人気" や "1着 2枠 3番 馬名")
+        // (\d+)[^\d\s\t]* は "1" や "1着" や "2(同着)" をキャプチャ
+        const fullMatch = line.match(/^(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(.+)/);
         // 2. 改行分割行のキャプチャ (例: "1\t8\t16")
-        const splitMatch = line.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)$/);
+        const splitMatch = line.match(/^(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*[\t\s]+(\d+)[^\d\s\t]*$/);
 
         if (fullMatch) {
           rank = parseInt(fullMatch[1]);
@@ -320,7 +321,10 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           num = parseInt(splitMatch[3]);
 
           // 次の行にブリンカー等の符号や馬名がある
-          const nextIdx = i + 1;
+          let nextIdx = i + 1;
+          while (nextIdx < lines.length && !lines[nextIdx]?.trim()) {
+            nextIdx++;
+          }
           const nextLine = lines[nextIdx]?.trim() || "";
           
           // "ブリンカー\tシュラフ6番人気" のような符号を消去し、馬名と人気を取り出す
@@ -330,12 +334,13 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           pop = popM ? parseInt(popM[2]) : 0;
 
           isMatch = true;
-          linesConsumed = 2; // 馬名行まで消費
+          linesConsumed = (nextIdx - i) + 1; // 馬名行まで消費
         }
 
         if (isMatch && rank >= 1 && rank <= 20) {
           let baseIdx = i + linesConsumed;
 
+          while (baseIdx < lines.length && !lines[baseIdx]?.trim()) baseIdx++;
           // line2: 性齢 / 馬体重 (例: "牝4 / 444kg(+2)")
           const line2 = lines[baseIdx]?.trim() || "";
           let weight = 480, weightChange = 0;
@@ -349,6 +354,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               weightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]) || 0;
             }
             baseIdx++;
+            while (baseIdx < lines.length && !lines[baseIdx]?.trim()) baseIdx++;
           }
 
           // line3: 騎手(負担重量)  調教師 (例: "嶋田純次(56.0)  佐藤吉勝(美浦)")
@@ -367,6 +373,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               trainer = parts[parts.length - 1] || "";
             }
             baseIdx++;
+            while (baseIdx < lines.length && !lines[baseIdx]?.trim()) baseIdx++;
           }
 
           // line4: タイム(着差) / 推定上り (例: "0:56.7 / 33.3" または "0:56.7 (クビ) / 33.8")
@@ -385,6 +392,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             const lm = lastPart.match(/(\d{2}\.\d)/);
             if (lm) last3f = lm[1];
             baseIdx++;
+            while (baseIdx < lines.length && !lines[baseIdx]?.trim()) baseIdx++;
           }
 
           const cleanName = name.replace(/^ブリンカー\s*/, "").trim();
