@@ -686,7 +686,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     }
 
     // Kinryo (55.0)
-    if (l.match(/^\d+\.\dkg$/) || l.match(/^\d+\.\d$/)) {
+    if (l.match(/^\d+\.\dkg$/) || (l.match(/^\d+\.\d$/) && parseFloat(l) >= 48 && parseFloat(l) <= 65 && !jockey)) {
       kinryo = parseFloat(l.replace("kg", "")); 
       idx++; 
       
@@ -718,8 +718,13 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     }
 
     // Odds
-    if (l.match(/^[\d\.]+$/) && !l.match(/^\d+\.\d$/)) {
-      odds = parseFloat(l); idx++; continue;
+    if (l.match(/^[\d\.]+$/)) {
+      const val = parseFloat(l);
+      if (!isNaN(val) && val > 0) {
+        odds = val;
+        idx++;
+        continue;
+      }
     }
 
     // Popularity
