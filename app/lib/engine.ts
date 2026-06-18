@@ -344,6 +344,33 @@ export function calculateTsuchiyaScore(
       tags.push("🎯 東京新特注(13/14日分析): 馬券に絡みやすい外枠優勢傾向(6〜7枠)");
     }
 
+    // 新ルール13: 「前走1着馬（昇級戦）」の勢いはクラスの壁を突破する
+    // 前走1着の馬は無条件で高く評価
+    if (prevRaceData && prevRaceData.result === 1) {
+      potential += 20;
+      tags.push("🔥 東京新特注(13/14日分析): 勢い止まらぬ前走1着馬(昇級の壁なし・軸推奨)");
+    }
+
+    // 新ルール14: 前走「格上レース（重賞・リステッド）」での大敗はノーカウント
+    // 前走G1〜G3・OP等で大敗(10着以下)でも、今回自己条件なら大幅な巻き返し警戒
+    if (prevRaceData && prevRaceData.result >= 10 && prevRaceData.raceClass) {
+      const isGradedOrOp = prevRaceData.raceClass.includes('G') || prevRaceData.raceClass.includes('OP') || prevRaceData.raceClass.includes('オープン') || prevRaceData.raceClass.includes('リスト');
+      const isCurrentRaceLower = race.raceClass && !(race.raceClass.includes('G') || race.raceClass.includes('OP') || race.raceClass.includes('オープン'));
+      
+      if (isGradedOrOp && isCurrentRaceLower) {
+        potential += 25; // 減点を相殺して大きくプラス評価にする
+        tags.push("💥 東京新特注(13/14日分析): 前走重賞・OP大敗からの自己条件戻り(巻き返し必至)");
+      }
+    }
+
+    // 新ルール15: 前走「同クラスで2着・3着」の馬は素直に信頼する
+    if (prevRaceData && (prevRaceData.result === 2 || prevRaceData.result === 3)) {
+      if (prevRaceData.raceClass === race.raceClass) {
+        potential += 20;
+        tags.push("👑 東京新特注(13/14日分析): 前走同クラス好走馬(能力証明済み・堅実軸)");
+      }
+    }
+
     // 新ルール4: 馬体重の大幅増は「成長分」として肯定的に捉えるケースもある
     // 3歳(または4歳前半)などの成長期の大幅馬体重増(+10kg以上)はパフォーマンス向上と判断
     if (typeof horse.weightChange === 'number') {
