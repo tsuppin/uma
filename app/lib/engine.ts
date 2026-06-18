@@ -8129,22 +8129,18 @@ export function generateFormation(
   let limitPoints = 20;
 
   if (raceType === 'win') {
-    const preferred = sorted.find(p => {
-      const o = oddsMap[p.horseNumber] || 0;
-      return o >= 4.0 && o <= 9.9;
-    });
-    const pick = preferred ?? sorted[0];
+    const pick = sorted[0];
     col1 = [pick.horseNumber];
     col2 = undefined;
     col3 = undefined;
     tickets = [[pick.horseNumber]];
     limitPoints = 1;
     riskLevel = 'safe';
-    strategy = '単勝は払い戻し率80%で最も資金効率が高い券種。1点集中で資金を最大化。単勝4〜9.9倍のゾーンが長期回収率の最良帯。過剰人気しにくい「前走4〜6着馬」が狙い目。';
+    strategy = 'AIの総合スコア（◎本命）1位の馬を単勝で狙います。1点集中で資金を最大化します。';
     stakeGuide = '推奨購入額: 総資金の1〜3%\n（例: 資金10万円 → 1,000〜3,000円）';
     const winOdds = oddsMap[pick.horseNumber] || 0;
     if (winOdds > 0 && winOdds < 2.0) {
-      warningMessage = '推奨馬のオッズが低すぎます。単勝4〜9.9倍の馬を狙ってください。';
+      warningMessage = '本命馬のオッズが低すぎます（2.0倍未満）。長期的には回収率が下がるリスクがあるため、資金配分にご注意ください。';
       riskLevel = 'risk';
     } else if (winOdds > 15) {
       warningMessage = '高配当は魅力ですが的中率が低下します。慎重に検討してください。';
