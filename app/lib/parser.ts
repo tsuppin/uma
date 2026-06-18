@@ -521,8 +521,8 @@ export function parseJRAText(rawText: string): {
       blockStarts.push(i);
     } 
     // 最新フォーマット: 1 1 スナッピードレッサ などの 枠番 馬番 馬名 のパターン
-    else if (/^\d+[\t\s]+\d+[\t\s]+[^\t\s]+/.test(l)) {
-      if (!l.includes("頭") && !l.includes("番") && !l.includes("人") && !l.includes("kg") && !l.includes("m") && !l.includes(":") && !l.match(/\d{2}\/\d{2}\/\d{2}/)) {
+    else if (/^[1-8][\t\s]+(?:[1-9]|1[0-8])[\t\s]+[^\t\s]+/.test(l)) {
+      if (!l.includes("頭") && !l.includes("番") && !l.includes("人") && !l.includes("kg") && !l.includes("m") && !l.includes(":") && !l.includes("3F") && !l.includes("着") && !l.match(/\d{2}\/\d{2}\/\d{2}/)) {
         blockStarts.push(i);
       }
     }
@@ -685,33 +685,48 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
       continue;
     }
 
-    // Kinryo (55.0)
-    if (l.match(/^\d+\.\dkg$/) || (l.match(/^\d+\.\d$/) && parseFloat(l) >= 48 && parseFloat(l) <= 65 && !jockey)) {
+    // Kinryo (55.0) or Kinryo + Jockey (e.g. "55.0 ルメール", "55.0☆ルメール", "55.0(ルメール)")
+    const kinryoJockeyMatch = l.match(/^(\d{2}(?:\.\d)?)(?:kg)?\s*[☆△▲◇☆★]?\s*([^\d\.\s\(（]+)/);
+    
+    if (kinryoJockeyMatch && !jockey && parseFloat(kinryoJockeyMatch[1]) >= 48 && parseFloat(kinryoJockeyMatch[1]) <= 65) {
+      kinryo = parseFloat(kinryoJockeyMatch[1]);
+      jockey = kinryoJockeyMatch[2].trim();
+      idx++;
+      continue;
+    } else if (l.match(/^\d{2}\.\dkg$/) || (l.match(/^\d{2}\.\d$/) && parseFloat(l) >= 48 && parseFloat(l) <= 65 && !jockey)) {
       kinryo = parseFloat(l.replace("kg", "")); 
       idx++; 
       
       // Usually Jockey comes right after Kinryo in table format
       if (idx < lines.length && !lines[idx].match(/\d/) && !jockey) {
-        jockey = lines[idx].trim();
-        idx++;
-        // Usually Trainer comes after Jockey
-        if (idx < lines.length && !lines[idx].match(/\d/) && !trainer) {
-          const tmLine = lines[idx].trim();
-          const tmMatch = tmLine.match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]/);
-          if (tmMatch) {
-            trainer = tmMatch[1].trim();
-            stableLocation = tmMatch[2];
-          } else {
-            // Netkeiba sometimes has "栗東" then "木村" on next line
-            if (tmLine.match(/^[栗美][東浦]$/)) {
-              stableLocation = tmLine;
-              idx++;
-              if (idx < lines.length) trainer = lines[idx].trim();
-            } else {
-              trainer = tmLine;
-            }
-          }
-          idx++;
+        const nextLine = lines[idx].trim();
+        const isOwner = nextLine.includes("(有)") || nextLine.includes("(株)") || nextLine.includes("レーシング") || nextLine.includes("ファーム") || nextLine.includes("ホールディングス") || nextLine.includes("牧場") || nextLine.includes("クラブ") || nextLine.includes("組合");
+        
+        if (isOwner) {
+           owner = nextLine;
+           idx++;
+        } else {
+           jockey = nextLine;
+           idx++;
+           // Usually Trainer comes after Jockey
+           if (idx < lines.length && !lines[idx].match(/\d/) && !trainer) {
+             const tmLine = lines[idx].trim();
+             const tmMatch = tmLine.match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]/);
+             if (tmMatch) {
+               trainer = tmMatch[1].trim();
+               stableLocation = tmMatch[2];
+             } else {
+               // Netkeiba sometimes has "栗東" then "木村" on next line
+               if (tmLine.match(/^[栗美][東浦]$/)) {
+                 stableLocation = tmLine;
+                 idx++;
+                 if (idx < lines.length) trainer = lines[idx].trim();
+               } else {
+                 trainer = tmLine;
+               }
+             }
+             idx++;
+           }
         }
       }
       continue;
@@ -753,8 +768,10 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
 
     // Unknown string without numbers is probably jockey if we haven't found it yet
     if (!l.match(/\d/)) {
-      if (!jockey) { jockey = l; idx++; continue; }
-      if (!trainer && !l.match(/^[栗美][東浦]$/)) { trainer = l; idx++; continue; }
+      const isOwner = l.includes("(有)") || l.includes("(株)") || l.includes("レーシング") || l.includes("ファーム") || l.includes("ホールディングス") || l.includes("牧場") || l.includes("クラブ") || l.includes("組合");
+      if (isOwner) { owner = l; idx++; continue; }
+      if (!jockey && !isOwner) { jockey = l; idx++; continue; }
+      if (!trainer && !l.match(/^[栗美][東浦]$/) && !isOwner) { trainer = l; idx++; continue; }
     }
 
     idx++; // Skip unrecognized lines
