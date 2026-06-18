@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "venue": "nagoya",
+    "venue_name": "名古屋競馬場",
+    "version": "1.0.0",
+    "evaluation_mode": "addition",
+    "status": "active",
+    "description": "名古屋競馬場特化の買い目構築・加点スコアリングルール。4つの必勝傾向に基づく。",
+    "related_files": [
+      "NAGOYA_BETTING_LOGIC.md"
+    ]
+  },
+  "rules": [
+    {
+      "rule_id": "nagoya_add_001",
+      "name": "上位人気馬（1～3番人気）軸指定",
+      "feature": "popularity",
+      "condition": "<= 3",
+      "condition_description": "人気順が3番人気以内",
+      "bonus": 20,
+      "reason": "大半のレースにおいて1番人気から3番人気の馬が勝利しており、特に1番人気の信頼度が高い。",
+      "notes": [
+        "馬券の軸（本命）は奇をてらわず上位人気から選定する。"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_002",
+      "name": "外枠（5～8枠）有利",
+      "feature": "frame_number",
+      "condition": ">= 5",
+      "condition_description": "枠番が5枠〜8枠",
+      "bonus": 15,
+      "reason": "馬群に揉まれにくい外枠がレース展開において有利に働く傾向が顕著である。",
+      "notes": [
+        "軸選びや相手選びで迷った際は、内枠より外枠を優先的に評価する。"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_003",
+      "name": "JRA（中央競馬）転入馬の無条件警戒",
+      "feature": "previous_race_venue",
+      "condition": "in ['東京', '中山', '京都', '阪神', '新潟', '福島', '中京', '小倉', '札幌', '函館']",
+      "condition_description": "前走または前々走の競馬場がJRA（中央競馬）",
+      "bonus": 30,
+      "reason": "JRAで二桁着順で大敗している馬でも、名古屋に転入した途端に基礎能力の違いで圧勝するケースが頻発する。",
+      "evidence": [
+        "エバーウインド",
+        "ブルームザスマイル",
+        "サラサラヘアー",
+        "キーサーバー"
+      ],
+      "notes": [
+        "JRAからの転入馬は、前走の着順が悪くても無条件で本命や対抗の候補に引き上げる。"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_004",
+      "name": "地方生え抜き馬の近走好成績",
+      "feature": "recent_performance",
+      "condition": "(previous_rank <= 3 OR previous_rank_2 <= 3)",
+      "condition_description": "近2走以内に3着以内に入っている（地方所属馬限定）",
+      "context": "local_horses_only",
+      "bonus": 15,
+      "reason": "JRAからの転入馬がいないレースや地方馬同士の争いの場合、好調馬が順当に勝ち切る傾向にある。",
+      "evidence": [
+        "パーフェクト",
+        "ダイタエリュシオン"
+      ]
+    },
+    {
+      "rule_id": "nagoya_add_005",
+      "name": "上がり最速クラスの末脚",
+      "feature": "last_3f_time_rank",
+      "condition": "<= 3",
+      "condition_description": "推定上がり3ハロンタイムがメンバー中で上位（1〜3位相当）",
+      "context": "local_horses_only",
+      "bonus": 15,
+      "reason": "レース結果を見ると、上位に入線する馬は推定上がり3ハロンのタイムが総じて速い傾向にある。"
+    }
+  ],
+  "operation_flow": {
+    "description": "推奨運用フロー（ルールの適用手順）",
+    "steps": [
+      { "step": 1, "action": "JRA転入馬チェック: 前走JRAの馬がいれば無条件で本命・対抗候補へ（大敗歴不問）" },
+      { "step": 2, "action": "軸馬の決定: 上位人気（1〜3番人気）の中から本命を選定" },
+      { "step": 3, "action": "地方馬の絞り込み: JRA転入馬以外は、近2走3着以内、または上がり最速クラスの馬を抽出" },
+      { "step": 4, "action": "枠順による補正: 候補馬の中で迷った場合は、外枠（5〜8枠）をプラス評価して最終結論を出す" }
+    ]
+  }
+}
