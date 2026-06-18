@@ -1,0 +1,218 @@
+{
+  "meta": {
+    "venue": "tokyo",
+    "venue_name": "東京競馬場",
+    "version": "1.0.0",
+    "evaluation_mode": "deduction",
+    "base_score": 100,
+    "learning_data_date": "2026-06-13_14",
+    "status": "active",
+    "description": "東京競馬場特化の減点方式スコアリングルール。ベース100点から危険条件に応じて減点し、低スコアの馬を買い目から除外するフィルタとして機能する。",
+    "related_files": [
+      "TOKYO_DEDUCTION_SCORING.md",
+      "TOKYO_BETTING_LOGIC.md",
+      "TOKYO_WAVE_LEVEL.md",
+      "knowledge_tokyo_trends.md",
+      "TOKYO_RACECOURSE_ANALYSIS.md"
+    ]
+  },
+  "thresholds": {
+    "safe_zone": {
+      "min": 85,
+      "max": 100,
+      "label": "安全圏",
+      "action": "通常通り評価対象として残す"
+    },
+    "caution_zone": {
+      "min": 71,
+      "max": 84,
+      "label": "要注意",
+      "action": "軸・本命としての評価は下げる。ヒモ候補止まり"
+    },
+    "danger_zone": {
+      "min": 51,
+      "max": 70,
+      "label": "危険",
+      "action": "軸候補から除外。大穴要員としても積極的には購入しない"
+    },
+    "exclusion_zone": {
+      "min": 0,
+      "max": 50,
+      "label": "強制除外",
+      "action": "買い目から完全に除外する"
+    }
+  },
+  "rules": [
+    {
+      "rule_id": "tokyo_deduct_001",
+      "name": "馬体重大幅減（調子落ち判定）",
+      "feature": "weight_change",
+      "condition": "<= -10",
+      "condition_description": "前走からの馬体重増減が -10kg以上のマイナス",
+      "penalty": -30,
+      "danger_level": "high",
+      "danger_stars": 3,
+      "context": null,
+      "reason": "大幅な体重減による調子落ち・調整失敗。パフォーマンスを大きく落とす可能性が極めて高い。",
+      "evidence": [
+        { "date": "2026-06-13", "race": "10R", "horse": "メイショウフウドウ", "weight_change": -22, "result": "16着" },
+        { "date": "2026-06-13", "race": "8R",  "horse": "アルスマグナ",       "weight_change": -14, "result": "18着（最下位）" },
+        { "date": "2026-06-14", "race": "8R",  "horse": "レッドロスタム",     "weight_change": -12, "result": "4着" },
+        { "date": "2026-06-14", "race": "8R",  "horse": "マルチフクノスナノバラ", "weight_change": -20, "result": "13着" }
+      ],
+      "notes": [
+        "成長期3歳馬の +10kg以上体重増は好走トリガーとなる別ロジックのため混同禁止",
+        "本ルールはマイナス体重のみに適用する"
+      ]
+    },
+    {
+      "rule_id": "tokyo_deduct_002",
+      "name": "減量騎手（技術差・コース適性リスク）",
+      "feature": "jockey_mark",
+      "condition": "in ['▲', '★', '☆', '△']",
+      "condition_description": "騎手名の前に減量記号（▲ ★ ☆ △）が付いている",
+      "penalty": -20,
+      "danger_level": "medium_high",
+      "danger_stars": 2,
+      "context": null,
+      "reason": "直線が長く技術が問われる東京コースで、若手（減量）騎手の連軸・1着固定としての信頼度は低い。",
+      "evidence": [
+        { "date": "2026-06-13", "race": "3R", "jockeys": ["▲石神深道", "▲石田拓郎"], "result": "軒並み馬券圏外" }
+      ],
+      "notes": [
+        "2着・3着のヒモ候補として使う場合は減点を適用しない（1着評価に対してのみ有効）",
+        "本減点は軸・1着固定候補の信頼度を下げるためのもの"
+      ]
+    },
+    {
+      "rule_id": "tokyo_deduct_003",
+      "name": "1枠（コースバイアス・包まれリスク）",
+      "feature": "frame_number",
+      "condition": "== 1",
+      "condition_description": "枠番が1枠",
+      "penalty": -15,
+      "danger_level": "medium",
+      "danger_stars": 2,
+      "context": null,
+      "reason": "東京多頭数レースで馬群に包まれて脚力を発揮できないケースが多い。全体的に外枠（6〜8枠）優勢。",
+      "evidence": [
+        { "note": "全データを通して6枠・7枠・8枠の勝率が1枠を上回る" }
+      ],
+      "notes": [
+        "2枠は1着勝率が高い特例枠（knowledge_tokyo_trends.md ルール10参照）のため減点対象外",
+        "同じく8枠は買い目に無条件で組み込む推奨枠（knowledge_tokyo_trends.md ルール11参照）"
+      ]
+    },
+    {
+      "rule_id": "tokyo_deduct_004",
+      "name": "後方待機脚質（差し遅れ・1着取りこぼし）",
+      "feature": "corner_4_position",
+      "condition": ">= 10",
+      "condition_description": "近走の4コーナー通過順位が10番手以降（後方待機）",
+      "penalty": -15,
+      "penalty_note": "「1着予測スコア」から大幅減点。ヒモ候補スコアには軽減適用可",
+      "danger_level": "medium",
+      "danger_stars": 2,
+      "context": null,
+      "reason": "上がり最速の脚でも位置取りが後ろすぎると前の馬に届かず2〜3着止まりになるケースが散見される。",
+      "evidence": [
+        { "date": "2026-06-14", "race": "11R", "horse": "アクートゥス", "corner4": 13, "result": "3着" },
+        { "date": "2026-06-14", "race": "12R", "horse": "ミダース",     "corner4": 10, "result": "3着" }
+      ],
+      "notes": [
+        "3連複・3連単の3列目（ヒモ候補）としては引き続き有効",
+        "本減点は「1着固定・単軸」としての評価を下げるためのもの"
+      ]
+    },
+    {
+      "rule_id": "tokyo_deduct_005",
+      "name": "高齢馬（混合戦・成長力の頭打ち）",
+      "feature": "age",
+      "condition": ">= 6",
+      "condition_description": "馬の年齢が6歳以上",
+      "penalty": -10,
+      "danger_level": "low_medium",
+      "danger_stars": 1,
+      "context": "mixed_race_only",
+      "context_description": "3歳以上混合戦の場合のみ適用。同世代限定戦・高齢馬限定戦には適用しない",
+      "reason": "混合戦では身体の充実期にある3〜4歳馬が上位を独占しやすい。6歳以上は成長力に乏しい。",
+      "evidence": [
+        {
+          "date": "2026-06-13",
+          "race": "12R（1勝クラス混合戦）",
+          "result": "1着ラインジーク（3歳）・2着スタームーンナイト（3歳）・3着ジェイエルキャリア（3歳）と3歳馬が上位独占"
+        }
+      ],
+      "notes": [
+        "同世代戦（3歳限定戦など）には適用しない",
+        "高齢馬限定戦（例: 古馬オープンの特定条件）にも適用しない"
+      ]
+    },
+    {
+      "rule_id": "tokyo_deduct_006",
+      "name": "ブリンカー不発（激走条件を満たさないブリンカー着用馬）",
+      "feature": "blinker_fake_alert",
+      "condition": "(blinker == true) AND (jockey_change == false OR abs(weight_change) >= 10)",
+      "condition_description": "ブリンカー着用 かつ （継続騎乗 または 馬体重変動が±10kg以上）",
+      "penalty": -10,
+      "penalty_note": "ブリンカー加点ロジックを無効化（加点ゼロ）した上でさらに-10点を減算",
+      "danger_level": "medium",
+      "danger_stars": 2,
+      "context": null,
+      "reason": "ブリンカーが激走するには「騎手の乗り替わり」と「馬体重±4kg以内の安定」が必須。条件不成立は空回り（フェイクアラート）。",
+      "evidence": [
+        {
+          "date": "2026-06-14",
+          "race": "2R",
+          "horse": "ラブトゥエニイワン",
+          "blinker": true,
+          "jockey_change": false,
+          "weight_change": -10,
+          "result": "6着"
+        }
+      ],
+      "activation_conditions": {
+        "description": "以下の条件を両方満たす場合のみブリンカー加点ロジックを有効化する",
+        "required_all": [
+          {
+            "feature": "jockey_change",
+            "condition": "== true",
+            "description": "前走と異なる騎手に乗り替わっている"
+          },
+          {
+            "feature": "abs(weight_change)",
+            "condition": "<= 4",
+            "description": "前走からの体重増減が ±4kg以内"
+          }
+        ]
+      },
+      "notes": [
+        "激走条件を満たすブリンカー馬は knowledge_tokyo_trends.md ルール6 の「波乱の使者」として高く評価する",
+        "本ルールは「条件を満たさないブリンカー馬」のみに適用する"
+      ]
+    }
+  ],
+  "compound_penalty_example": {
+    "description": "複数ルールが重複する場合は加算的に減点（ペナルティの累積）",
+    "example": {
+      "horse_profile": "ブリンカー着用・1枠・減量騎手▲・前走比-12kg",
+      "calculation": [
+        { "rule_id": "tokyo_deduct_001", "penalty": -30, "running_score": 70 },
+        { "rule_id": "tokyo_deduct_002", "penalty": -20, "running_score": 50 },
+        { "rule_id": "tokyo_deduct_003", "penalty": -15, "running_score": 35 },
+        { "rule_id": "tokyo_deduct_006", "penalty": -10, "running_score": 25 }
+      ],
+      "final_score": 25,
+      "judgment": "強制除外"
+    }
+  },
+  "operation_flow": {
+    "description": "推奨運用フロー（他ファイルとの連携順序）",
+    "steps": [
+      { "step": 1, "file": "TOKYO_WAVE_LEVEL.md",       "action": "波乱度（Level 1〜3）を判定する" },
+      { "step": 2, "file": "TOKYO_DEDUCTION_SCORING.md", "action": "減点スコアリングを実施し、危険馬（70点以下）に除外フラグを設定する" },
+      { "step": 3, "file": "knowledge_tokyo_trends.md",  "action": "加点ルールで「期待馬」を選定する" },
+      { "step": 4, "file": "TOKYO_BETTING_LOGIC.md",     "action": "残った馬で買い目フォーメーションを構築する" }
+    ]
+  }
+}
