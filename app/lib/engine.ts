@@ -400,6 +400,27 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    // 新ルール19〜21: 「乗り替わり」による一変と好走フラグ
+    const isJockeyChanged = prevRaceData && prevRaceData.jockey && horse.jockey && prevRaceData.jockey !== horse.jockey;
+    if (isJockeyChanged) {
+      // 基本乗り替わり加点
+      potential += 15;
+      tags.push("🔄 東京新特注(13/14日分析): 陣営の勝負気配漂う「乗り替わり」馬");
+
+      // 新ルール20: トップジョッキー・好調騎手への「乗り替わり」は1着（アタマ）で狙う
+      const isEliteJockeyChange = ['ルメール', 'レーン', '津村', '荻野極'].some(j => horse.jockey.includes(j));
+      if (isEliteJockeyChange) {
+        potential += 30; // アタマ候補として特大加点
+        tags.push("👑 東京新特注(13/14日分析): トップ/絶好調騎手への乗り替わり(アタマ固定推奨)");
+      }
+
+      // 新ルール21: 波乱を演出する二桁人気の「大穴馬」も乗り替わりから生まれる
+      if (popularity >= 10) {
+        potential += 25;
+        tags.push("💥 東京新特注(13/14日分析): 乗り替わり×二桁人気(一変・超大穴狙い)");
+      }
+    }
+
     // 新ルール4: 馬体重の大幅増は「成長分」として肯定的に捉えるケースもある
     // 3歳(または4歳前半)などの成長期の大幅馬体重増(+10kg以上)はパフォーマンス向上と判断
     if (typeof horse.weightChange === 'number') {
