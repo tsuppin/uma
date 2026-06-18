@@ -744,6 +744,9 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                       {race.horses.map(h => (
                         <option key={h.id} value={h.number}>{h.number}番</option>
                       ))}
+                      {r.horseNumber > 0 && !race.horses.some(h => h.number === r.horseNumber) && (
+                        <option value={r.horseNumber}>{r.horseNumber}番 (未登録)</option>
+                      )}
                     </select>
                   </td>
                   <td className={r.horseName ? "fw-600" : ""}>
