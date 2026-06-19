@@ -327,7 +327,11 @@ export default function KeibaApp() {
           <Win5Panel state={state} />
         )}
         {view === "stats" && (
-          <StatsPanel state={state} />
+          <StatsPanel state={state} onReset={() => {
+            if (confirm("すべての成績データをリセットしますか？この操作は取り消せません。")) {
+              setState({ ...state, races: [] });
+            }
+          }} />
         )}
         {view === "backtest" && (
           <BacktestPanel state={state} onResetStats={() => setState({ ...state, tagStats: [] })} />

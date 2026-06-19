@@ -1,7 +1,7 @@
 "use client";
 import { AppState } from "../types";
 
-export default function StatsPanel({ state }: { state: AppState }) {
+export default function StatsPanel({ state, onReset }: { state: AppState; onReset?: () => void }) {
   const { stats } = state;
   const completed = state.races.filter(r => r.result);
 
@@ -55,8 +55,17 @@ export default function StatsPanel({ state }: { state: AppState }) {
 
   return (
     <div className="fade-in">
-      <div className="section-header">
-        <h2 className="section-title">📈 成績・統計</h2>
+      <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 className="section-title m-0">📈 成績・統計</h2>
+        {onReset && (
+          <button 
+            onClick={onReset}
+            className="btn btn-secondary fs-sm"
+            style={{ padding: '6px 12px' }}
+          >
+            🗑️ データをリセット
+          </button>
+        )}
       </div>
 
       <div className="stats-grid">
