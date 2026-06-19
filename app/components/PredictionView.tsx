@@ -310,7 +310,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                 const h = race.horses.find(h => h.number === n);
                 return (
                   <div key={n} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px", background: "var(--bg-gold-muted)", borderRadius: "12px", border: "2px solid var(--color-gold)" }}>
-                    <span style={{ width: "56px", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "var(--color-gold)", color: "#000", fontWeight: 900, fontSize: "1.4rem" }}>{n}</span>
+                    <span style={{ width: "56px", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "var(--color-gold)", color: "#fff", fontWeight: 900, fontSize: "1.4rem" }}>{n}</span>
                     <div>
                       <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--color-gold)" }}>{h?.name || `${n}番`}</div>
                       <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>{h?.jockey} / {h?.odds ? `${h.odds}倍` : "オッズ不明"}</div>
