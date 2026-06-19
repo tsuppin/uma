@@ -1,0 +1,61 @@
+{
+  "evaluation_model": "Deduction_Method",
+  "base_score": 100,
+  "rules": [
+    {
+      "category": "枠順",
+      "rule_id": "F01",
+      "description": "極端な内枠（1枠・2枠）は砂を被るリスクが高いため減点",
+      "condition": "枠番 <= 2",
+      "exception": "JRA転入初戦フラグ == True",
+      "deduction_points": 10
+    },
+    {
+      "category": "枠順",
+      "rule_id": "F02",
+      "description": "短距離戦（920m, 1400m）における内〜中枠（1枠〜4枠）は圧倒的不利なため大幅減点",
+      "condition": "距離 <= 1400 AND 枠番 <= 4",
+      "exception": "なし",
+      "deduction_points": 15
+    },
+    {
+      "category": "脚質",
+      "rule_id": "R01",
+      "description": "通過順位が終始後方（半分より後ろ）で、道中押し上げる「まくり」の動きがない馬は展開待ちになるため減点",
+      "condition": "全コーナー通過順位 >= (出走頭数 / 2) AND 通過順位に上昇傾向なし",
+      "exception": "JRA所属時のレースデータである場合（地方で一変するため免除）",
+      "deduction_points": 15
+    },
+    {
+      "category": "脚質",
+      "rule_id": "R02",
+      "description": "短距離戦（920m, 1400m）において、近走の最初のコーナー通過順位が3番手以下の馬はテンのスピード不足で減点",
+      "condition": "距離 <= 1400 AND 第一コーナー通過順位 >= 3",
+      "exception": "JRA所属時のレースデータである場合",
+      "deduction_points": 15
+    },
+    {
+      "category": "実績",
+      "rule_id": "P01",
+      "description": "地方所属馬で、過去5走以内に「3着以内」の実績が一度もない馬は能力・調子不足として減点",
+      "condition": "地方馬フラグ == True AND 過去5走の最高着順 >= 4",
+      "exception": "前走が昇級戦であった場合",
+      "deduction_points": 15
+    },
+    {
+      "category": "騎手",
+      "rule_id": "J01",
+      "description": "推奨騎手（トップ・穴メーカー・減量）以外の一般騎手が騎乗する場合は勝負気配と腕の差で減点",
+      "condition": "騎手名 NOT IN [大畑雅, 塚本征, 渡邊竜, 加藤聡, 今井貴, 東川慎, 友森翔, 望月洵] AND 減量マーク(◇,▲) == False",
+      "exception": "なし",
+      "deduction_points": 10
+    },
+    {
+      "category": "例外(非減点対象)",
+      "rule_id": "E01",
+      "description": "馬体重の大幅プラスは「成長・回復」と捉えるため、太め残りとしての減点は行わない",
+      "condition": "馬体重増減 >= +10",
+      "action": "Ignore Deduction"
+    }
+  ]
+}

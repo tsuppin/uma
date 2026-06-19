@@ -3749,6 +3749,250 @@ export function calculateTsuchiyaScore(
       }
     }
 
+    if (physicsResult === 1) {
+      /* [減点方式] potential += 45; */ // 物理的アドバンテージを持つ狙い馬として加点
+      isTargetYatomi = true;
+      tags.push("⚡ 弥富物理エッジ適合馬(風速・外回し・馬格パワー・インバイアス総合判定)");
+    }
+
+    // ==========================================
+    // 名古屋特化: 距離別 枠順（枠番）有利不利ルール
+    // ==========================================
+    const frameNumber = horse.frame || 0;
+    const isJraTransfer = horse.pastRaces && horse.pastRaces.some(pr => pr.venue && pr.venue.match(/(東京|中山|京都|阪神|新潟|福島|中京|小倉|札幌|函館)/));
+    const dist = race.distance;
+
+    // 共通: 「外枠（5〜8枠）」×「速い上がりタイム」の組み合わせを最強パターンとする
+    if (frameNumber >= 5 && frameNumber <= 8) {
+      const bestLast3f = horse.pastRaces && horse.pastRaces.length > 0 
+        ? Math.min(...horse.pastRaces.map(pr => parseFloat(pr.last3fTime || '99.9'))) 
+        : 99.9;
+      if (bestLast3f <= 39.5) {
+        potential += 40;
+        tags.push(`👑 名古屋必勝パターン: 外枠(${frameNumber}枠) × 速い上がり(${bestLast3f}秒) 鉄板の軸候補`);
+      }
+    }
+
+    if (dist === 920 || dist === 1400) {
+      // 1. 短距離戦（920m・1400m）：外枠（特に7・8枠）の「絶対的有利」
+      if (frameNumber === 7 || frameNumber === 8) {
+        potential += 35;
+        tags.push(`🔥 名古屋短距離特注: ${frameNumber}枠(7・8枠絶対有利のセオリー)`);
+      } else if (frameNumber <= 4) {
+        potential -= 30;
+        tags.push(`🔻 名古屋短距離危険: ${frameNumber}枠(短距離の内枠は実力馬でも疑うべき)`);
+      } else {
+        potential += 10; // 5,6枠
+        tags.push(`🌟 名古屋短距離: 外枠(${frameNumber}枠)優位`);
+      }
+    } else if (dist === 1500) {
+      // 2. 1500m戦：「外枠有利」が基本だが、能力があれば「内枠（1・3枠）」も届く
+      if (frameNumber >= 5 && frameNumber <= 8) {
+        potential += 20;
+        tags.push(`🌟 名古屋1500m: 基本の外枠(${frameNumber}枠)有利`);
+      } else if (frameNumber === 1 || frameNumber === 3) {
+        if (isJraTransfer || (horse.popularity && horse.popularity <= 3) || (horse.odds && horse.odds <= 5.0)) {
+          potential += 25;
+          tags.push(`🎯 名古屋1500m特注: 能力馬の内枠(${frameNumber}枠)はスムーズに立ち回れ好走率高し`);
+        } else {
+          potential -= 15;
+          tags.push(`⚠️ 名古屋1500m危険: 能力不足の内枠(${frameNumber}枠)は砂被りリスク大`);
+        }
+      } else {
+        // 2枠, 4枠
+        potential -= 20;
+        tags.push(`⚠️ 名古屋1500m危険: 揉まれやすい内枠(${frameNumber}枠)`);
+      }
+    } else if (dist >= 1700) {
+      // 3. 長距離戦（1700m・2000m）：「外枠」と「3枠」の好走が目立つ
+      if (frameNumber >= 5 && frameNumber <= 8) {
+        potential += 20;
+        tags.push(`🌟 名古屋長距離: 揉まれにくい外枠(${frameNumber}枠)有利`);
+      } else if (frameNumber === 3) {
+        potential += 25;
+        tags.push(`🎯 名古屋長距離特注: 距離延長でもなぜか好走が目立つ3枠`);
+      } else {
+        potential -= 10;
+        tags.push(`⚠️ 名古屋長距離: 基本的に割引の内枠(${frameNumber}枠)`);
+      }
+    }
+
+    // ==========================================
+    // 名古屋特化: 過去実績（前走〜5走前）の詳細ルール
+    // ==========================================
+    if (horse.pastRaces && horse.pastRaces.length > 0) {
+      const past5 = horse.pastRaces.slice(0, 5);
+      
+      // 1. JRAでの「二桁着順（大敗）」は地方では「好走のサイン」として扱う
+      const jraTracks = /(東京|中山|京都|阪神|新潟|福島|中京|小倉|札幌|函館)/;
+      const hasJraBigLoss = past5.some(pr => pr.venue && pr.venue.match(jraTracks) && (pr.result || 0) >= 10);
+      if (hasJraBigLoss) {
+        potential += 35;
+        tags.push("🌟 名古屋特注: JRA大敗組(地方馬との圧倒的な能力差で一変のサイン)");
+      }
+
+      // 2. 過去5走に「2着・3着（惜敗）」が並ぶ馬は軸として最適
+      const secondOrThirdCount = past5.filter(pr => pr.result === 2 || pr.result === 3).length;
+      if (secondOrThirdCount >= 2) {
+        potential += 25;
+        tags.push(`🎯 名古屋軸候補: 惜敗続き(${secondOrThirdCount}回)の安定馬(相手関係次第で勝ち負け必至)`);
+      }
+
+      // 3. 「前走の大敗」は、過去5走以内の「1着実績」があれば度外視する
+      const prevResult = past5[0].result || 0;
+      const hasWinInPast5 = past5.some(pr => pr.result === 1);
+      if (prevResult >= 10 && hasWinInPast5) {
+        potential += 30;
+        tags.push("🔥 名古屋巻き返し: 前走大敗も近走1着実績あり(実力上位で一変警戒)");
+      }
+
+      // 4. 直近で「1着」や上位好走を続けている馬の勢いを信じる
+      const outOfBoardCount = past5.filter(pr => (pr.result || 0) >= 6).length;
+      if (hasWinInPast5 && outOfBoardCount <= 1 && past5.length >= 3) {
+        potential += 30;
+        tags.push("👑 名古屋鉄板: 近走1着あり＆大崩れなし(昇級の不安要素度外視・勢い重視)");
+      }
+
+      // ==========================================
+      // 名古屋特化: 脚質・通過順位の詳細ルール
+      // ==========================================
+      const pr = past5[0];
+      const passingArr = (pr.passingOrder || '').split('-').map(Number).filter(n => !isNaN(n) && n > 0);
+      
+      // 1. 王道は逃げ馬の直後につける「好位先行（2〜4番手）」
+      if (passingArr.length >= 2 && passingArr.every(n => n >= 2 && n <= 4)) {
+        potential += 35;
+        tags.push("👑 名古屋王道: 常に2〜4番手につける好位先行馬(最も信頼できる軸候補)");
+      }
+      
+      // 2. 差し馬の「まくり」機動力判定
+      if (horse.style === '差し' || horse.style === '追込' || (passingArr.length > 0 && passingArr[0] >= 7)) {
+        if (passingArr.length >= 3) {
+          const isMakuri = passingArr[0] > passingArr[passingArr.length - 1] && passingArr[1] >= passingArr[passingArr.length - 1];
+          if (isMakuri) {
+            potential += 25;
+            tags.push("🌟 名古屋機動力: 道中でポジションを上げる「まくり」実績あり(差し馬の特注)");
+          } else if (passingArr.every(n => n >= 8)) {
+            potential -= 20;
+            tags.push("⚠️ 名古屋差し馬リスク: 道中動けない最後方待機(ヒモ評価まで)");
+          }
+        }
+      }
+
+      // 3. 短距離戦(920m・1400m)はテンのスピード(最初のコーナー1,2番手)が絶対条件
+      if (race.distance === 920 || race.distance === 1400) {
+        if (passingArr.length > 0) {
+          if (passingArr[0] === 1 || passingArr[0] === 2) {
+            potential += 30;
+            tags.push("🚀 名古屋短距離特注: 最初のコーナー1〜2番手のテンのスピード(絶対条件クリア)");
+          } else if (passingArr[0] >= 5) {
+            potential -= 30;
+            tags.push("🔻 名古屋短距離危険: テンのスピード不足(後方からの競馬は絶望的)");
+          }
+        }
+      }
+
+      // 4. JRA転入馬の「後方待機」は「先行・まくり」に豹変するとみなす
+      const isJraTransferRecent = pr.venue && pr.venue.match(jraTracks);
+      if (isJraTransferRecent && passingArr.length > 0 && passingArr[0] >= 7) {
+        potential += 35; // 差し馬リスク等の減点を相殺して大幅プラス
+        tags.push("🔥 名古屋豹変警戒: JRAでの後方待機は地方の先行・まくりに豹変(展開不問で高く評価)");
+      }
+
+      // ==========================================
+      // 名古屋特化: 乗り替わり（騎手変更）に関する詳細ルール
+      // ==========================================
+      const currentJockey = horse.jockey || '';
+      const prevJockey = pr.jockey || '';
+      const nagoyaTopJockeys = /(大畑雅|塚本征|渡邊竜|阪野学|今井貴|加藤聡|岡部誠|宮下瞳)/; 
+      const isCurrentTop = currentJockey.match(nagoyaTopJockeys);
+      const isPrevTop = prevJockey.match(nagoyaTopJockeys);
+      
+      const cleanCurrent = currentJockey.replace(/[▲△☆◇]/g, '');
+      const cleanPrev = prevJockey.replace(/[▲△☆◇]/g, '');
+      const isJockeyChanged = cleanCurrent !== cleanPrev && cleanPrev !== '';
+
+      if (isJockeyChanged) {
+        // 1. 中堅・若手から「トップジョッキー」への乗り替わりは強烈な勝負気配
+        if (!isPrevTop && isCurrentTop) {
+          potential += 40;
+          tags.push(`🌟 名古屋勝負気配: 弱化→トップ騎手(${currentJockey})への乗り替わり(激ヤリ・1着候補)`);
+        }
+        
+        // 2. 一般騎手から「減量騎手（▲・◇等）」への乗り替わりは斤量減の恩恵
+        const isCurrentClaiming = currentJockey.match(/[▲△☆◇]/);
+        const isPrevClaiming = prevJockey.match(/[▲△☆◇]/);
+        if (!isPrevClaiming && isCurrentClaiming) {
+          potential += 25;
+          tags.push(`🎯 名古屋減量恩恵: 一般騎手から減量騎手(${currentJockey})への乗り替わり(斤量減でヒモ・穴候補)`);
+        }
+
+        // 3. JRA転入初戦×「トップ騎手」への乗り替わりは鉄板のサイン
+        if (isJraTransferRecent && isCurrentTop) {
+          potential += 45;
+          tags.push(`🔥 名古屋鉄板転入: JRA転入初戦×トップ騎手(${currentJockey})配備(実力上位＆勝負気配・頭確定)`);
+        }
+
+        // 4. トップ騎手同士の乗り替わりは「素質の証」として評価を下げない
+        if (isPrevTop && isCurrentTop) {
+          potential += 30;
+          tags.push(`👑 名古屋素質馬: トップ騎手同士の乗り替わり(${prevJockey}→${currentJockey})(馬の能力が高い証拠・絶好の狙い目)`);
+        }
+      }
+      // ==========================================
+      // 名古屋特化: 体重・3歳戦・牝馬・長距離スピード
+      // ==========================================
+      // 1. 大幅なプラス体重は馬体の成長・回復
+      if (weightChange >= 9) {
+        potential += 25;
+        tags.push(`💪 名古屋馬体回復: 大幅プラス体重(+${weightChange}kg)は成長・環境慣れの好サイン`);
+      }
+
+      // 2. 3歳戦は「JRA未勝利転入初戦」か「地方好調馬」の2択
+      const is3yoRace = race.raceName?.match(/3歳/) || horse.age === 3;
+      if (is3yoRace) {
+        const isJraFirst = horse.pastRaces && horse.pastRaces[0] && horse.pastRaces[0].venue?.match(jraTracks);
+        const hasLocalWins = horse.pastRaces && horse.pastRaces.filter(pr => !pr.venue?.match(jraTracks) && pr.result === 1).length > 0;
+        if (isJraFirst) {
+          potential += 40;
+          tags.push("🔥 名古屋3歳鉄板: JRAからの転入初戦(地方勢との能力差で一変確実)");
+        } else if (hasLocalWins) {
+          potential += 25;
+          tags.push("📈 名古屋3歳無双: 地方転入後に既に勝利実績あり(底見せぬ好調馬)");
+        } else {
+          potential -= 30;
+          tags.push("🔻 名古屋3歳危険: 勝ち切れない地方既存勢力(疑ってかかるべき)");
+        }
+      }
+
+      // 3. 牝馬の斤量恩恵（特に減量騎手）
+      if (horse.gender === '牝') {
+        potential += 15;
+        tags.push("🎀 名古屋牝馬恩恵: 小回りコースでの斤量差アドバンテージ");
+        const currentJockey = horse.jockey || '';
+        const isCurrentClaiming = currentJockey.match(/[▲△☆◇]/);
+        if (isCurrentClaiming) {
+          potential += 25;
+          tags.push(`🚀 名古屋最軽量兵器: 牝馬×減量騎手(${currentJockey})の最大5kg減(一発警戒・ヒモ必須)`);
+        }
+      }
+
+      // 4. 長距離戦（1700m・2000m）は1500m戦でのスピード絶対値を重視
+      if (race.distance >= 1700 && horse.pastRaces) {
+        const past1500 = horse.pastRaces.filter(pr => pr.distance === 1500);
+        if (past1500.length > 0) {
+          const hasSpeed = past1500.some(pr => parseFloat(pr.last3fTime || '99.9') <= 40.0 || pr.result <= 3);
+          if (hasSpeed) {
+            potential += 30;
+            tags.push("⚡ 名古屋長距離適性: 1500m戦で通用するスピード・末脚の絶対値を証明済み");
+          } else {
+            potential -= 25;
+            tags.push("⚠️ 名古屋長距離危険: 1500m戦でのスピード不足(スタミナだけでは勝てない)");
+          }
+        }
+      }
+    }
+
     // 4. 馬体重変動の「トレンド」読み取り（勝ち切り安定と紐穴の分離）
     const absWeightChange = Math.abs(weightChange);
     if (weightChange >= 0 && weightChange <= 6) {
