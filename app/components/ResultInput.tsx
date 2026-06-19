@@ -726,38 +726,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           </button>
         </div>
 
-        {/* クイック入力ガイド */}
-        <hr className="divider" />
-        <div className="fs-sm text-muted">
-          <div className="fw-600 mb-8">🏇 クイック馬番入力</div>
-          <div className="flex gap-8 mt-4 flex-wrap">
-            {[1, 2, 3].map((rank, ri) => (
-              <div key={rank} className="flex items-center gap-4">
-                <span className={`rank-badge rank-${rank}`}>{rank}着</span>
-                <select
-                  className="form-select w-80"
-                  value={results[ri]?.horseNumber || 0}
-                  aria-label={`${rank}着 クイック馬番選択`}
-                  onChange={e => {
-                    const num = +e.target.value;
-                    const h = race.horses.find(h => h.number === num);
-                    setResults(prev => {
-                      const next = [...prev];
-                      while (next.length <= ri) next.push({ rank: next.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 });
-                      next[ri] = { ...next[ri], horseNumber: num, horseName: h?.name || "" };
-                      return next;
-                    });
-                  }}
-                >
-                  <option value={0}>—</option>
-                  {race.horses.map(h => (
-                    <option key={h.id} value={h.number}>{h.number}番 {h.name}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* ✏️ 手動入力・詳細エリア */}
