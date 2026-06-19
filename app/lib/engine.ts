@@ -3760,7 +3760,6 @@ export function calculateTsuchiyaScore(
     // ==========================================
     const frameNumber = horse.frame || 0;
     const isJraTransfer = horse.pastRaces && horse.pastRaces.some(pr => pr.venue && pr.venue.match(/(東京|中山|京都|阪神|新潟|福島|中京|小倉|札幌|函館)/));
-    const dist = race.distance;
 
     // 共通: 「外枠（5〜8枠）」×「速い上がりタイム」の組み合わせを最強パターンとする
     if (frameNumber >= 5 && frameNumber <= 8) {
