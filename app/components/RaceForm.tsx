@@ -194,20 +194,8 @@ export default function RaceForm({ onSubmit, onCancel }: {
                   </select>
                 </div>
               </div>
-              <div className="form-group flex flex-col justify-center">
-                <span className="form-label mb-6">名古屋・弥富物理オプション</span>
-                <div className="flex gap-12 mt-4">
-                  <label className="flex items-center gap-4 fs-xs text-muted cursor-pointer">
-                    <input type="checkbox" checked={isHeadwind} onChange={e => setIsHeadwind(e.target.checked)} />
-                    向かい風 (風速4m以上で有効)
-                  </label>
-                  <label className="flex items-center gap-4 fs-xs text-muted cursor-pointer">
-                    <input type="checkbox" checked={isInBiasActive} onChange={e => setIsInBiasActive(e.target.checked)} />
-                    イン伸びバイアス
-                  </label>
-                </div>
-              </div>
             </div>
+
           </div>
 
           {/* 出走馬一覧 */}
