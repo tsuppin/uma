@@ -104,7 +104,7 @@ export default function KeibaApp() {
           calculateTsuchiyaScore(h, race, state.learningPatches, state.masterData)
         );
         const sorted = sortPredictions(predictions);
-        const formation = generateFormation(sorted);
+        const formation = generateFormation(sorted, 'trifecta', race);
         const updated = { ...race, predictions: sorted, formation } as Race & { formation: unknown };
         const newState = updateRace(state, updated);
         setState(newState);

@@ -498,12 +498,24 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       const r3 = calculated[2]?.horseNumber || 0;
 
       const predictions = race.predictions;
-      const formWin = generateFormation(predictions, 'win');
-      const formWide = generateFormation(predictions, 'wide');
-      const formTrio = generateFormation(predictions, 'trifecta');
-      const formTrifecta = generateFormation(predictions, 'trifecta_exact');
-      const formQuinella = generateFormation(predictions, 'quinella');
-      const formExacta = generateFormation(predictions, 'exacta');
+      const formWin = generateFormation(predictions, 'win', race);
+      const formWide = generateFormation(predictions, 'wide', race);
+      const formTrio = generateFormation(predictions, 'trifecta', race);
+      const formTrifecta = generateFormation(predictions, 'trifecta_exact', race);
+      const formQuinella = generateFormation(predictions, 'quinella', race);
+      const formExacta = generateFormation(predictions, 'exacta', race);
+
+      const resWin = [r1].filter(Boolean);
+      const hitWin = formWin && r1 ? formWin.tickets.filter(t => t[0] === r1) : [];
+
+      const resWideMatches: number[][] = [];
+      if (r1 && r2) resWideMatches.push([r1, r2].sort((a,b)=>a-b));
+      if (r1 && r3) resWideMatches.push([r1, r3].sort((a,b)=>a-b));
+      if (r2 && r3) resWideMatches.push([r2, r3].sort((a,b)=>a-b));
+      const hitWide = formWide ? formWide.tickets.filter(t => {
+        const sortedT = [...t].sort((a,b)=>a-b);
+        return resWideMatches.some(match => match[0] === sortedT[0] && match[1] === sortedT[1]);
+      }) : [];
 
       const resTrio = [r1, r2, r3].filter(Boolean).sort((a,b)=>a-b);
       const hitTrio = resTrio.length === 3 ? formTrio.tickets.filter(t => [...t].sort((a,b)=>a-b).every((n,i)=>n===resTrio[i])) : [];
@@ -582,12 +594,12 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
 
   // 各券種の的中判定
   const predictions = race.predictions || [];
-  const formWin = predictions.length > 0 ? generateFormation(predictions, 'win') : null;
-  const formWide = predictions.length > 0 ? generateFormation(predictions, 'wide') : null;
-  const formTrio = predictions.length > 0 ? generateFormation(predictions, 'trifecta') : null;
-  const formTrifecta = predictions.length > 0 ? generateFormation(predictions, 'trifecta_exact') : null;
-  const formQuinella = predictions.length > 0 ? generateFormation(predictions, 'quinella') : null;
-  const formExacta = predictions.length > 0 ? generateFormation(predictions, 'exacta') : null;
+  const formWin = predictions.length > 0 ? generateFormation(predictions, 'win', race) : null;
+  const formWide = predictions.length > 0 ? generateFormation(predictions, 'wide', race) : null;
+  const formTrio = predictions.length > 0 ? generateFormation(predictions, 'trifecta', race) : null;
+  const formTrifecta = predictions.length > 0 ? generateFormation(predictions, 'trifecta_exact', race) : null;
+  const formQuinella = predictions.length > 0 ? generateFormation(predictions, 'quinella', race) : null;
+  const formExacta = predictions.length > 0 ? generateFormation(predictions, 'exacta', race) : null;
 
   const r1 = results[0]?.horseNumber || 0;
   const r2 = results[1]?.horseNumber || 0;
