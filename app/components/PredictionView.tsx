@@ -160,7 +160,6 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
                       {p.horseName}
                       {isAxis && <span className="ml-6 fs-xs text-gold">◎軸</span>}
                       {isDark && <span className="ml-6 fs-xs text-purple">▲闇</span>}
-                      {p.targetTag && <span className="ml-6 tag tag-red fs-xs">⚡弥富物理</span>}
                     </td>
                     <td>
                       <div className="score-bar-wrap">
