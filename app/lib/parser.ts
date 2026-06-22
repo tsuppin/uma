@@ -503,6 +503,63 @@ export function parseJRAText(rawText: string): {
     if (l.match(/(S|G)[Ⅰ-Ⅲ]|リステッド|特別|勝クラス|OP|オープン/) && !raceName) raceName = l;
   }
 
+  // レース結果フォーマットの判定とパース
+  const isResultFormat = rawText.includes("着順") && rawText.includes("馬名") && rawText.includes("タイム") && rawText.includes("払戻金");
+  if (isResultFormat) {
+    let resultBlockStarts: number[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (/^\d+\s*[\t　]+\s*枠\d/.test(lines[i])) {
+        resultBlockStarts.push(i);
+      }
+    }
+    const horses: Horse[] = [];
+    for (let bi = 0; bi < resultBlockStarts.length; bi++) {
+      const start = resultBlockStarts[bi];
+      const end = (bi < resultBlockStarts.length - 1) ? resultBlockStarts[bi+1] : start + 6;
+      const blockLines = lines.slice(start, end).filter(l => l !== "");
+      
+      const combinedStr = blockLines.join("\t");
+      const combined = combinedStr.split(/\t+/).map(s => s.trim()).filter(s => s !== "");
+      
+      let frame = 0, number = 0, name = "", gender: "牡"|"牝"|"セン" = "牡", age = 3, kinryo = 55, jockey = "";
+      let horseWeight = 0, horseWeightChange = 0, trainer = "", popularity = 0;
+      
+      if (combined.length >= 7) {
+        const frameMatch = combined[1].match(/枠(\d)/);
+        if (frameMatch) frame = parseInt(frameMatch[1]);
+        number = parseInt(combined[2]) || 0;
+        name = combined[3].replace("ブリンカー着用", "");
+        
+        const gaMatch = combined[4].match(/^([牡牝セ]|せん)(\d+)/);
+        if (gaMatch) {
+          gender = (gaMatch[1] === "セ" || gaMatch[1] === "せん") ? "セン" : (gaMatch[1] as "牡"|"牝");
+          age = parseInt(gaMatch[2]);
+        }
+        kinryo = parseFloat(combined[5]) || 55;
+        jockey = combined[6];
+        
+        for (let j = 7; j < combined.length; j++) {
+          const field = combined[j];
+          const wm = field.match(/^(\d{3})(?:\(([+-]?\d+|初出走)\))?$/);
+          if (wm) {
+            horseWeight = parseInt(wm[1]);
+            if (wm[2]) horseWeightChange = wm[2] === "初出走" ? 0 : (parseInt(wm[2]) || 0);
+            if (j + 1 < combined.length) trainer = combined[j+1];
+            if (j + 2 < combined.length) popularity = parseInt(combined[j+2]) || 0;
+            break;
+          }
+        }
+        
+        horses.push({
+          id: `H${number}`, number, frame, name, age, gender, coatColor: "", weight: horseWeight, weightChange: horseWeightChange,
+          jockey, jockeyWeight: kinryo, trainer, owner: "", sire: "", dam: "", bms: "", bloodline: "", style: "",
+          pastRaces: [], popularity
+        });
+      }
+    }
+    return { horses, venue, raceNumber, raceName, distance: distance || undefined, surface, condition, headCount: horses.length };
+  }
+
   // クッション値、含水率、仮柵位置の自動抽出
   let cushionValue: number | undefined;
   let moistureContent: number | undefined;
