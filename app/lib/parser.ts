@@ -716,14 +716,14 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
       idx++; continue;
     }
 
-    // Horse Weight
-    const wm = l.match(/^(\d+)kg$/) || l.match(/^(\d{3})$/);
+    // Horse Weight (e.g. "474kg(+14)" or "474kg")
+    const wm = l.match(/^(\d{3})(?:kg)?(?:\(([+-]?\d+|初出走)\))?$/);
     if (wm) {
       horseWeight = parseInt(wm[1]);
+      if (wm[2]) {
+        horseWeightChange = wm[2] === "初出走" ? 0 : parseInt(wm[2]) || 0;
+      }
       idx++;
-      const nextLine = (lines[idx] || "").trim();
-      const wcm = nextLine.match(/^\(([+-]?\d+|初出走)\)$/);
-      if (wcm) { horseWeightChange = wcm[1] === "初出走" ? 0 : parseInt(wcm[1]) || 0; idx++; }
       continue;
     }
 
@@ -789,8 +789,8 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
       }
     }
 
-    // Popularity
-    const pm = l.match(/^(\d+)番人気$/);
+    // Popularity (e.g. "13番人気" or "(13番人気)")
+    const pm = l.match(/^\(?(\d+)番人気\)?$/);
     if (pm) { popularity = parseInt(pm[1]); idx++; continue; }
 
     // Trainer with stable
@@ -815,10 +815,20 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
 
     // Unknown string without numbers is probably jockey if we haven't found it yet
     if (!l.match(/\d/)) {
-      const isOwner = l.includes("(有)") || l.includes("(株)") || l.includes("レーシング") || l.includes("ファーム") || l.includes("ホールディングス") || l.includes("牧場") || l.includes("クラブ") || l.includes("組合");
-      if (isOwner) { owner = l; idx++; continue; }
-      if (!jockey && !isOwner) { jockey = l; idx++; continue; }
-      if (!trainer && !l.match(/^[栗美][東浦]$/) && !isOwner) { trainer = l; idx++; continue; }
+      const isOwnerKeywords = l.includes("(有)") || l.includes("(株)") || l.includes("レーシング") || l.includes("ファーム") || l.includes("ホールディングス") || l.includes("牧場") || l.includes("クラブ") || l.includes("組合");
+      
+      // JRA公式PC版では、馬体重の直後に「馬主」「生産者」「調教師」と続く傾向がある
+      // すでに馬主が埋まっておらず、前後のフィールド状況から騎手より馬主である可能性が高い場合
+      if (isOwnerKeywords || (!owner && horseWeight > 0 && !trainer && lines[idx+1] === "")) {
+        if (!owner) owner = l;
+        idx++; continue;
+      }
+      if (isOwnerKeywords && owner && !breeder) {
+        breeder = l;
+        idx++; continue;
+      }
+      if (!jockey && !isOwnerKeywords && kinryo > 0 && lines[idx-1] === "") { jockey = l; idx++; continue; }
+      if (!trainer && !l.match(/^[栗美][東浦]$/) && !isOwnerKeywords) { trainer = l; idx++; continue; }
     }
 
     idx++; // Skip unrecognized lines
