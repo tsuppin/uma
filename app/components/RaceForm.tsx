@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Race, Horse } from "../types";
 import { generateId } from "../lib/storage";
-import { detectFormat, parseNARText, parseJRAText } from "../lib/parser";
+import { detectFormat, parseNARText, parseJRAText, parseRakutenKeibaText } from "../lib/parser";
 
 const CONDITIONS: Race["condition"][] = ["良","稍重","重","不良"];
 const SURFACES: Race["surface"][] = ["ダート","芝"];
@@ -39,16 +39,18 @@ export default function RaceForm({ onSubmit, onCancel }: {
     if (!pasteText.trim()) { setParseError("テキストを貼り付けてください"); return; }
 
     const fmt = detectFormat(pasteText);
-    let result: ReturnType<typeof parseNARText> | ReturnType<typeof parseJRAText>;
+    let result: ReturnType<typeof parseNARText> | ReturnType<typeof parseJRAText> | ReturnType<typeof parseRakutenKeibaText>;
 
-    if (fmt === "nar") {
+    if (fmt === "rakuten") {
+      result = parseRakutenKeibaText(pasteText);
+    } else if (fmt === "nar") {
       result = parseNARText(pasteText);
     } else {
       result = parseJRAText(pasteText);
     }
 
     if (result.horses.length === 0) {
-      setParseError(`馬情報を解析できませんでした（検出フォーマット: ${fmt === "nar" ? "地方競馬" : "JRA"}）\n出馬表の全テキストをコピーして貼り付けてください。`);
+      setParseError(`馬情報を解析できませんでした（検出フォーマット: ${fmt === "rakuten" ? "楽天競馬" : fmt === "nar" ? "地方競馬" : "JRA"}）\n出馬表の全テキストをコピーして貼り付けてください。`);
       return;
     }
 
@@ -132,7 +134,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
       {parsed && (
         <div className="fade-in">
           <div className="alert alert-success">
-            ✅ {parsed.horses.length}頭を解析完了（{detectFormat(pasteText) === "nar" ? "地方競馬" : "JRA"}形式）
+            ✅ {parsed.horses.length}頭を解析完了（{detectFormat(pasteText) === "rakuten" ? "楽天競馬" : detectFormat(pasteText) === "nar" ? "地方競馬" : "JRA"}形式）
             <button type="button" className="btn btn-secondary btn-sm ml-8" onClick={() => setParsed(null)}>
               ← 貼り直す
             </button>

@@ -4,7 +4,8 @@ import { generateId } from "./storage";
 // ==========================================
 // フォーマット自動判別
 // ==========================================
-export function detectFormat(text: string): "jra" | "nar" {
+export function detectFormat(text: string): "jra" | "nar" | "rakuten" {
+  if (text.includes("楽天競馬") || text.includes("Rakuten Mobile")) return "rakuten";
   if (/枠\d[白黒赤青黄緑橙桃]/.test(text)) return "jra";
   const venue = extractVenue(text);
   const jraTracks = ["東京", "中山", "京都", "阪神", "中京", "新潟", "福島", "小倉", "函館", "札幌"];
@@ -984,3 +985,151 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     trainingRating: trainingRating || undefined,
   };
 }
+
+// ==========================================
+// 楽天競馬出馬表パーサー - フルデータ対応版
+// ==========================================
+export function parseRakutenKeibaText(rawText: string): {
+  horses: Horse[]; venue: string; raceNumber: number;
+  date: string; distance: number; surface: Race["surface"];
+  condition: Race["condition"]; headCount: number; raceName: string;
+  startTime?: string; weather?: string;
+} {
+  const lines = rawText.split("\n").map(l => l.trim());
+  let venue = "";
+  let raceNumber = 1;
+  let date = new Date().toISOString().slice(0, 10);
+  let distance = 1400;
+  let surface: Race["surface"] = "ダート";
+  let condition: Race["condition"] = "良";
+  let headCount = 0;
+  let raceName = "";
+  let startTime = "";
+  let weather = "";
+
+  for (let i = 0; i < Math.min(lines.length, 50); i++) {
+    const l = lines[i];
+    // 日付の抽出 (例: 2026年6月22日 第3回 浦和競馬)
+    const dateM = l.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+    if (dateM && !l.includes("前日")) {
+      date = `${dateM[1]}-${String(dateM[2]).padStart(2,"0")}-${String(dateM[3]).padStart(2,"0")}`;
+    }
+    // 例: ダ1,300m 天候：曇 ダ：重 発走時刻13:30
+    const infoM = l.match(/(ダ|芝)?([,\d]+)m.*天候：([^\s]+).*馬場状態：([^\s]+)|(ダ|芝)?([,\d]+)m.*天候：([^\s]+).*([ダ芝])：([^\s]+)/);
+    if (infoM) {
+      const surfStr = infoM[1] || infoM[5];
+      if (surfStr) surface = surfStr === "芝" ? "芝" : "ダート";
+      const distStr = infoM[2] || infoM[6];
+      if (distStr) distance = parseInt(distStr.replace(/,/g, ""));
+      const wStr = infoM[3] || infoM[7];
+      if (wStr) weather = wStr;
+      const cStr = infoM[4] || infoM[9];
+      if (cStr) condition = cStr as Race["condition"];
+    }
+    const timeM = l.match(/発走時刻(\d{2}:\d{2})/);
+    if (timeM) startTime = timeM[1];
+
+    // レース名 (埼玉シリーズ開幕賞　Ｃ３六七)
+    if (l.includes("賞金 1着")) {
+      if (i > 0) raceName = lines[i-1].trim() + (lines[i-2] ? " " + lines[i-2].trim() : "");
+    }
+    // 競馬場・レース番号
+    const headM = l.match(/^(.+?競馬場)\s+(\d+)R/);
+    if (headM) {
+      venue = headM[1].replace("競馬場", "");
+      raceNumber = parseInt(headM[2]);
+    }
+  }
+
+  const horses: Horse[] = [];
+  let lineIndex = 0;
+  
+  while (lineIndex < lines.length) {
+    const line = lines[lineIndex];
+    // 1	1	-	ジャングルポケット
+    const startMatch = line.match(/^(\d+)\s+(\d+)\s+([^\s]+)\s+(.+)$/);
+    if (startMatch) {
+      const frame = parseInt(startMatch[1]);
+      const number = parseInt(startMatch[2]);
+      const sire = startMatch[4];
+      
+      if (lineIndex + 15 < lines.length) {
+        const name = lines[lineIndex + 1];
+        const dam = lines[lineIndex + 2];
+        const damSire = lines[lineIndex + 3].replace(/^\(|\)$/g, '');
+        const oddsInfo = lines[lineIndex + 4]; // 8.6 （2人気）
+        const owner = lines[lineIndex + 6];
+        const breeder = lines[lineIndex + 7];
+        const sexAge = lines[lineIndex + 8]; // 牝8
+        const color = lines[lineIndex + 9];
+        const weight = parseFloat(lines[lineIndex + 10]); // 54.0
+        const jockey = lines[lineIndex + 11];
+        const affiliation = lines[lineIndex + 12].replace(/^（|）$/g, ''); // （船　橋）
+        const trainer = lines[lineIndex + 15]; // 平山真
+        
+        let gender: Horse["gender"] = "牡";
+        let age = 3;
+        const gm = sexAge.match(/([牡牝セ]|せん)(\d+)/);
+        if (gm) {
+          gender = (gm[1] === "セ" || gm[1] === "せん") ? "セン" : gm[1] as Horse["gender"];
+          age = parseInt(gm[2]);
+        }
+        
+        let odds = 0;
+        let popularity = 0;
+        const om = oddsInfo.match(/([\d\.]+)\s*（(\d+)人気/);
+        if (om) {
+          odds = parseFloat(om[1]);
+          popularity = parseInt(om[2]);
+        }
+
+        let horseWeight = 480;
+        let horseWeightChange = 0;
+        for (let j = lineIndex + 16; j < Math.min(lineIndex + 25, lines.length); j++) {
+            if (lines[j].match(/^\d{3}\s*\d{3}$/)) {
+                horseWeight = parseInt(lines[j].split(/\s+/)[0]);
+            } else if (lines[j].match(/^[+-]\d+$/)) {
+                horseWeightChange = parseInt(lines[j]);
+            }
+        }
+
+        horses.push({
+          id: generateId(),
+          number,
+          frame,
+          name,
+          belonging: affiliation || undefined,
+          age,
+          gender,
+          coatColor: color || undefined,
+          weight: horseWeight,
+          weightChange: horseWeightChange,
+          jockey,
+          jockeyWeight: weight,
+          trainer,
+          owner,
+          breeder,
+          sire,
+          dam,
+          bms: damSire,
+          bloodline: sire || "",
+          style: "中団",
+          odds,
+          popularity,
+          pastRaces: [],
+          stableLocation: affiliation || "地方",
+        });
+      }
+      lineIndex += 15;
+    } else {
+      lineIndex++;
+    }
+  }
+
+  return {
+    horses, venue, raceNumber, date, distance, surface, condition,
+    headCount: horses.length, raceName,
+    startTime: startTime || undefined, weather: weather || undefined
+  };
+}
+
