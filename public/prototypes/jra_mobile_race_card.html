@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>東京 1R 出馬表 (JRA)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #09090b 0%, #18181b 100%);
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f8fafc;
+      --text-secondary: #a1a1aa;
+      --accent-color: #22d3ee;
+      --danger-color: #f87171;
+      
+      /* JRA Frame Colors */
+      --waku-1: #ffffff; --waku-1-text: #000000; --waku-1-border: #d4d4d8;
+      --waku-2: #27272a; --waku-2-text: #ffffff; --waku-2-border: #3f3f46;
+      --waku-3: #ef4444; --waku-3-text: #ffffff; --waku-3-border: #f87171;
+      --waku-4: #3b82f6; --waku-4-text: #ffffff; --waku-4-border: #60a5fa;
+      --waku-5: #eab308; --waku-5-text: #000000; --waku-5-border: #fde047;
+      --waku-6: #22c55e; --waku-6-text: #ffffff; --waku-6-border: #4ade80;
+      --waku-7: #f97316; --waku-7-text: #ffffff; --waku-7-border: #fb923c;
+      --waku-8: #f472b6; --waku-8-text: #000000; --waku-8-border: #f9a8d4;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Header Styles */
+    .race-header {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px 20px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .race-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(90deg, #14b8a6, #3b82f6, #a855f7);
+    }
+
+    .race-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .race-number {
+      font-size: 32px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff, #a1a1aa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .race-status {
+      background: rgba(34, 211, 238, 0.1);
+      color: #22d3ee;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+    }
+
+    .race-subtitle {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #e4e4e7;
+    }
+
+    .race-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 13px;
+      color: #d4d4d8;
+    }
+
+    .detail-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-weight: 500;
+    }
+
+    .dirt-badge {
+      color: #fbbf24;
+      border-color: rgba(251, 191, 36, 0.3);
+      background: rgba(251, 191, 36, 0.1);
+    }
+
+    /* Horse Card Styles */
+    .horse-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .horse-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
+    }
+
+    .horse-card:active {
+      transform: scale(0.98);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .frame-number-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .horse-number {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .blinker-icon {
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    /* Frame Colors */
+    .frame-1 { background: var(--waku-1); color: var(--waku-1-text); border: 2px solid var(--waku-1-border); }
+    .frame-2 { background: var(--waku-2); color: var(--waku-2-text); border: 2px solid var(--waku-2-border); }
+    .frame-3 { background: var(--waku-3); color: var(--waku-3-text); border: 2px solid var(--waku-3-border); }
+    .frame-4 { background: var(--waku-4); color: var(--waku-4-text); border: 2px solid var(--waku-4-border); }
+    .frame-5 { background: var(--waku-5); color: var(--waku-5-text); border: 2px solid var(--waku-5-border); }
+    .frame-6 { background: var(--waku-6); color: var(--waku-6-text); border: 2px solid var(--waku-6-border); }
+    .frame-7 { background: var(--waku-7); color: var(--waku-7-text); border: 2px solid var(--waku-7-border); }
+    .frame-8 { background: var(--waku-8); color: var(--waku-8-text); border: 2px solid var(--waku-8-border); }
+
+    .horse-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .horse-name-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .horse-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.2px;
+    }
+
+    .sex-age {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .sire-info {
+      font-size: 11px;
+      color: #71717a;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sire-info span {
+      color: #a1a1aa;
+    }
+
+    .horse-meta {
+      display: flex;
+      font-size: 13px;
+      color: var(--text-secondary);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .jockey {
+      color: #e4e4e7;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .weight-info {
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .weight-diff.plus { color: #ef4444; }
+    .weight-diff.minus { color: #3b82f6; }
+    .weight-diff.zero { color: #a1a1aa; }
+
+    .odds-container {
+      text-align: right;
+      flex-shrink: 0;
+      min-width: 65px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .odds-value {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--accent-color);
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.5px;
+    }
+
+    .popularity {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .favorite-badge {
+      font-size: 10px;
+      background: rgba(250, 204, 21, 0.15);
+      color: #fde047;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(250, 204, 21, 0.3);
+      font-weight: 700;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+  </script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="race-header">
+      <div class="race-title-row">
+        <div class="race-number">東京 1R</div>
+        <div class="race-status">発走 10:05</div>
+      </div>
+      <div class="race-subtitle">3歳未勝利 牝［指定］ 馬齢</div>
+      <div class="race-details">
+        <div class="detail-badge">
+          <span>📅</span> 2026年6月20日 (土)
+        </div>
+        <div class="detail-badge dirt-badge">
+          <span>🏁</span> ダ1600m (左)
+        </div>
+      </div>
+    </header>
+
+    <!-- Horse List -->
+    <div class="horse-list">
+      
+      <!-- Horse 1 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-1">1</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">リコラピッド</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>レイデオロ</span> / 母父: <span>Diktat</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">丸山 元気</span>
+            <span class="weight-info">474 <span class="weight-diff plus">(+14)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">150.6</div>
+          <div class="popularity">13人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 2 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-1">2</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">アンチェーン</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>ヘニーヒューズ</span> / 母父: <span>ダンカーク</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">江田 照男</span>
+            <span class="weight-info">524 <span class="weight-diff plus">(+12)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">37.5</div>
+          <div class="popularity">6人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 3 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-2">3</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">ホウオウロレンシア</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>ゴールドシップ</span> / 母父: <span>Congrats</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">▲佐藤 翔馬</span>
+            <span class="weight-info">444 <span class="weight-diff plus">(+4)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value" style="color: #60a5fa;">4.2</div>
+          <div class="popularity">2人気</div>
+          <div class="favorite-badge" style="color: #60a5fa; border-color: #60a5fa; background: rgba(96, 165, 250, 0.1);">○ 対抗</div>
+        </div>
+      </div>
+
+      <!-- Horse 4 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-2">4</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">オウケンサクラコ</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>レインボーライン</span> / 母父: <span>オウケンブルースリ</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">丸田 恭介</span>
+            <span class="weight-info">412 <span class="weight-diff minus">(-4)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">59.2</div>
+          <div class="popularity">9人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 5 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-3">5</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">フェスティヴハート</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>アジアエクスプレス</span> / 母父: <span>オルフェーヴル</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">柴田 大知</span>
+            <span class="weight-info">496 <span class="weight-diff plus">(+6)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">22.1</div>
+          <div class="popularity">5人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 6 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-3">6</div>
+          <div class="blinker-icon">B</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">ベッラモレーン</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>アジアエクスプレス</span> / 母父: <span>エンパイアメーカー</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">石橋 脩</span>
+            <span class="weight-info">458 <span class="weight-diff minus">(-4)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">51.0</div>
+          <div class="popularity">8人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 7 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-4">7</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">ホワイトオパール</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>レイデオロ</span> / 母父: <span>Exchange Rate</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">黛 弘人</span>
+            <span class="weight-info">412 <span class="weight-diff minus">(-2)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">237.0</div>
+          <div class="popularity">16人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 8 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-4">8</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">サマースプラッシュ</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>アポロケンタッキー</span> / 母父: <span>アポロキングダム</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">菊沢 一樹</span>
+            <span class="weight-info">492 <span class="weight-diff minus">(-4)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">133.3</div>
+          <div class="popularity">12人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 9 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-5">9</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">ノーブルブロウ</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>レッドファルクス</span> / 母父: <span>ショウナンカンプ</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">木幡 巧也</span>
+            <span class="weight-info">448 <span class="weight-diff zero">(±0)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">178.9</div>
+          <div class="popularity">14人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 10 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-5">10</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">ユニバーサルラヴ</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>ミスチヴィアスアレックス</span> / 母父: <span>オルフェーヴル</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">三浦 皇成</span>
+            <span class="weight-info">436 <span class="weight-diff plus">(+2)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">100.0</div>
+          <div class="popularity">11人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 11 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-6">11</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">カキュウ</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>フィエールマン</span> / 母父: <span>アグネスデジタル</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">原 優介</span>
+            <span class="weight-info">432 <span class="weight-diff zero">(±0)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">213.2</div>
+          <div class="popularity">15人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 12 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-6">12</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">アーティラリー</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>ホッコータルマエ</span> / 母父: <span>ゴールドアリュール</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">杉原 誠人</span>
+            <span class="weight-info">494 <span class="weight-diff plus">(+2)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">47.6</div>
+          <div class="popularity">7人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 13 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-7">13</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">フジサン</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>キズナ</span> / 母父: <span>Tapit</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">大野 拓弥</span>
+            <span class="weight-info">408 <span class="weight-diff plus">(+4)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">15.5</div>
+          <div class="popularity">4人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 14 -->
+      <div class="horse-card" style="border: 1px solid rgba(250, 204, 21, 0.4); box-shadow: 0 0 20px rgba(250, 204, 21, 0.05); background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);">
+        <div class="frame-number-container">
+          <div class="horse-number frame-7">14</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name" style="color: #fde047;">ダノンプレサージュ</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>サートゥルナーリア</span> / 母父: <span>Manhattan Rain</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">横山 典弘</span>
+            <span class="weight-info">488 <span class="weight-diff plus">(+2)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value" style="color: #fde047; font-size: 24px;">1.5</div>
+          <div class="popularity">1人気</div>
+          <div class="favorite-badge">◎ 本命</div>
+        </div>
+      </div>
+
+      <!-- Horse 15 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-8">15</div>
+          <div class="blinker-icon">B</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">マッドヘッドラブ</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>パイロ</span> / 母父: <span>コマンズ</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">武藤 雅</span>
+            <span class="weight-info">476 <span class="weight-diff plus">(+12)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">90.5</div>
+          <div class="popularity">10人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 16 -->
+      <div class="horse-card">
+        <div class="frame-number-container">
+          <div class="horse-number frame-8">16</div>
+        </div>
+        <div class="horse-info">
+          <div>
+            <div class="horse-name-row">
+              <div class="horse-name">ゴールドビリーヴ</div>
+              <div class="sex-age">牝3</div>
+            </div>
+            <div class="sire-info">父: <span>ゴールドアクター</span> / 母父: <span>ハービンジャー</span></div>
+          </div>
+          <div class="horse-meta">
+            <span class="jockey">F.ゴンサルベス</span>
+            <span class="weight-info">496 <span class="weight-diff zero">(±0)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">8.3</div>
+          <div class="popularity">3人気</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

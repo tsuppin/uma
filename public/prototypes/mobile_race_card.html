@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>水沢 1R 出馬表</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-color: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.5);
+      --danger-color: #ef4444;
+      
+      --waku-1: #ffffff; --waku-1-text: #000000;
+      --waku-2: #171717; --waku-2-text: #ffffff;
+      --waku-3: #dc2626; --waku-3-text: #ffffff;
+      --waku-4: #2563eb; --waku-4-text: #ffffff;
+      --waku-5: #facc15; --waku-5-text: #000000;
+      --waku-6: #16a34a; --waku-6-text: #ffffff;
+      --waku-7: #ea580c; --waku-7-text: #ffffff;
+      --waku-8: #f472b6; --waku-8-text: #000000;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Header Styles */
+    .race-header {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .race-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    }
+
+    .race-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .race-number {
+      font-size: 28px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .race-status {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .race-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .detail-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Horse Card Styles */
+    .horse-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .horse-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+    }
+
+    .horse-card:active {
+      transform: scale(0.98);
+    }
+
+    .horse-card.excluded {
+      opacity: 0.5;
+      filter: grayscale(100%);
+    }
+
+    .frame-number {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-weight: 800;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .frame-1 { background: var(--waku-1); color: var(--waku-1-text); border: 1px solid #d1d5db; }
+    .frame-2 { background: var(--waku-2); color: var(--waku-2-text); }
+    .frame-3 { background: var(--waku-3); color: var(--waku-3-text); }
+    .frame-4 { background: var(--waku-4); color: var(--waku-4-text); }
+    .frame-5 { background: var(--waku-5); color: var(--waku-5-text); }
+    .frame-6 { background: var(--waku-6); color: var(--waku-6-text); }
+    .frame-7 { background: var(--waku-7); color: var(--waku-7-text); }
+    .frame-8 { background: var(--waku-8); color: var(--waku-8-text); }
+
+    .horse-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .horse-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .horse-meta {
+      display: flex;
+      font-size: 12px;
+      color: var(--text-secondary);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .jockey {
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    .weight-info {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .weight-diff.plus { color: #f87171; }
+    .weight-diff.minus { color: #60a5fa; }
+    .weight-diff.zero { color: #94a3b8; }
+
+    .odds-container {
+      text-align: right;
+      flex-shrink: 0;
+      min-width: 60px;
+    }
+
+    .odds-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent-color);
+    }
+
+    .popularity {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .favorite-badge {
+      font-size: 10px;
+      background: rgba(250, 204, 21, 0.2);
+      color: #fde047;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(250, 204, 21, 0.3);
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="race-header">
+      <div class="race-title-row">
+        <div class="race-number">水沢 1R</div>
+        <div class="race-status">発走 11:30</div>
+      </div>
+      <div class="race-details">
+        <div class="detail-badge">
+          <span>📅</span> 2026年6月22日
+        </div>
+        <div class="detail-badge">
+          <span>🏁</span> ダ850m
+        </div>
+        <div class="detail-badge" style="color: #60a5fa; border-color: rgba(96, 165, 250, 0.3);">
+          <span>🌧️</span> 不良 / 小雨
+        </div>
+        <div class="detail-badge">
+          <span>🏆</span> Ｃ２
+        </div>
+      </div>
+    </header>
+
+    <!-- Horse List -->
+    <div class="horse-list">
+      
+      <!-- Horse 1 -->
+      <div class="horse-card">
+        <div class="frame-number frame-1">1</div>
+        <div class="horse-info">
+          <div class="horse-name">ゴダルティチェコ</div>
+          <div class="horse-meta">
+            <span>牝4</span>
+            <span class="jockey">鈴木祐</span>
+            <span class="weight-info">430kg <span class="weight-diff plus">(+18)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">5.8</div>
+          <div class="popularity">2人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 2 -->
+      <div class="horse-card">
+        <div class="frame-number frame-2">2</div>
+        <div class="horse-info">
+          <div class="horse-name">リスクテイカー</div>
+          <div class="horse-meta">
+            <span>牝6</span>
+            <span class="jockey">菅原辰</span>
+            <span class="weight-info">469kg <span class="weight-diff minus">(-4)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">38.7</div>
+          <div class="popularity">7人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 3 -->
+      <div class="horse-card">
+        <div class="frame-number frame-3">3</div>
+        <div class="horse-info">
+          <div class="horse-name">ゴーゴーオンリー</div>
+          <div class="horse-meta">
+            <span>牝6</span>
+            <span class="jockey">塚本涼</span>
+            <span class="weight-info">453kg <span class="weight-diff plus">(+3)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">7.2</div>
+          <div class="popularity">3人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 4 -->
+      <div class="horse-card" style="border-color: rgba(250, 204, 21, 0.5); box-shadow: 0 0 15px rgba(250, 204, 21, 0.1);">
+        <div class="frame-number frame-4">4</div>
+        <div class="horse-info">
+          <div class="horse-name">オーロプロサングエ</div>
+          <div class="horse-meta">
+            <span>牡4</span>
+            <span class="jockey">村上忍</span>
+            <span class="weight-info">480kg <span class="weight-diff minus">(-2)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value" style="color: #fde047;">1.5</div>
+          <div class="popularity">1人気</div>
+          <div class="favorite-badge">◎ 本命</div>
+        </div>
+      </div>
+
+      <!-- Horse 5 -->
+      <div class="horse-card">
+        <div class="frame-number frame-5">5</div>
+        <div class="horse-info">
+          <div class="horse-name">コウバイ</div>
+          <div class="horse-meta">
+            <span>牝4</span>
+            <span class="jockey">坂井瑛</span>
+            <span class="weight-info">435kg <span class="weight-diff zero">(±0)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">7.5</div>
+          <div class="popularity">4人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 6 -->
+      <div class="horse-card">
+        <div class="frame-number frame-6">6</div>
+        <div class="horse-info">
+          <div class="horse-name">ルーナ</div>
+          <div class="horse-meta">
+            <span>牝5</span>
+            <span class="jockey">関本玲</span>
+            <span class="weight-info">467kg <span class="weight-diff minus">(-1)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">15.8</div>
+          <div class="popularity">6人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 7 -->
+      <div class="horse-card">
+        <div class="frame-number frame-7">7</div>
+        <div class="horse-info">
+          <div class="horse-name">マローディープ</div>
+          <div class="horse-meta">
+            <span>セ6</span>
+            <span class="jockey">阿部英</span>
+            <span class="weight-info">503kg <span class="weight-diff minus">(-2)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">95.0</div>
+          <div class="popularity">8人気</div>
+        </div>
+      </div>
+
+      <!-- Horse 8 (Excluded) -->
+      <div class="horse-card excluded">
+        <div class="frame-number frame-8">8</div>
+        <div class="horse-info">
+          <div class="horse-name">ダンストンローザ</div>
+          <div class="horse-meta">
+            <span>牝4</span>
+            <span class="jockey">佐々志</span>
+            <span class="weight-info">-</span>
+          </div>
+        </div>
+        <div class="odds-container" style="display: flex; align-items: center; justify-content: flex-end;">
+          <div class="popularity" style="color: #ef4444; font-weight: bold; font-size: 14px; border: 1px solid #ef4444; padding: 2px 8px; border-radius: 4px;">除外</div>
+        </div>
+      </div>
+
+      <!-- Horse 9 -->
+      <div class="horse-card">
+        <div class="frame-number frame-8">9</div>
+        <div class="horse-info">
+          <div class="horse-name">レイズルノワール</div>
+          <div class="horse-meta">
+            <span>牡5</span>
+            <span class="jockey">高松亮</span>
+            <span class="weight-info">566kg <span class="weight-diff minus">(-7)</span></span>
+          </div>
+        </div>
+        <div class="odds-container">
+          <div class="odds-value">15.7</div>
+          <div class="popularity">5人気</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Example logic for adding micro-interactions if needed later.
+    document.querySelectorAll('.horse-card').forEach(card => {
+      if(!card.classList.contains('excluded')) {
+        card.addEventListener('click', () => {
+          // Provide haptic feedback on mobile if supported
+          if(navigator.vibrate) navigator.vibrate(50);
+          
+          // Toggle selection effect
+          const isActive = card.style.backgroundColor === 'rgba(56, 189, 248, 0.1)';
+          document.querySelectorAll('.horse-card').forEach(c => c.style.backgroundColor = '');
+          if (!isActive) {
+            card.style.backgroundColor = 'rgba(56, 189, 248, 0.1)';
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

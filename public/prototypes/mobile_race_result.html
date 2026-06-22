@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>水沢 1R 競走成績</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-color: #38bdf8;
+      --danger-color: #ef4444;
+      --success-color: #10b981;
+      --gold: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      --silver: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+      --bronze: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+      
+      --waku-1: #ffffff; --waku-1-text: #000000;
+      --waku-2: #171717; --waku-2-text: #ffffff;
+      --waku-3: #dc2626; --waku-3-text: #ffffff;
+      --waku-4: #2563eb; --waku-4-text: #ffffff;
+      --waku-5: #facc15; --waku-5-text: #000000;
+      --waku-6: #16a34a; --waku-6-text: #ffffff;
+      --waku-7: #ea580c; --waku-7-text: #ffffff;
+      --waku-8: #f472b6; --waku-8-text: #000000;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Header Styles */
+    .race-header {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .race-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #10b981, #38bdf8, #8b5cf6);
+    }
+
+    .race-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .race-number {
+      font-size: 28px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .race-status {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 800;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .race-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .detail-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-weight: 500;
+    }
+
+    /* Section Titles */
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 32px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-title::before {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 20px;
+      background: var(--accent-color);
+      border-radius: 2px;
+    }
+
+    /* Results List */
+    .result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .result-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Top 3 Highlighting */
+    .result-card.rank-1 {
+      border-color: rgba(251, 191, 36, 0.4);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(251, 191, 36, 0.05) 100%);
+      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.1);
+    }
+    .result-card.rank-2 {
+      border-color: rgba(148, 163, 184, 0.4);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(148, 163, 184, 0.05) 100%);
+    }
+    .result-card.rank-3 {
+      border-color: rgba(180, 83, 9, 0.4);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(180, 83, 9, 0.05) 100%);
+    }
+
+    .rank-badge {
+      width: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .rank-1 .rank-badge { color: #fcd34d; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+    .rank-2 .rank-badge { color: #e2e8f0; }
+    .rank-3 .rank-badge { color: #d97706; }
+
+    .frame-number {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 800;
+      font-size: 18px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .frame-1 { background: var(--waku-1); color: var(--waku-1-text); border: 1px solid #d1d5db; }
+    .frame-2 { background: var(--waku-2); color: var(--waku-2-text); }
+    .frame-3 { background: var(--waku-3); color: var(--waku-3-text); }
+    .frame-4 { background: var(--waku-4); color: var(--waku-4-text); }
+    .frame-5 { background: var(--waku-5); color: var(--waku-5-text); }
+    .frame-6 { background: var(--waku-6); color: var(--waku-6-text); }
+    .frame-7 { background: var(--waku-7); color: var(--waku-7-text); }
+    .frame-8 { background: var(--waku-8); color: var(--waku-8-text); }
+
+    .horse-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .horse-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .horse-meta {
+      display: flex;
+      font-size: 12px;
+      color: var(--text-secondary);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .performance-data {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 2px;
+      min-width: 70px;
+    }
+
+    .time {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.5px;
+    }
+
+    .margin {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+    }
+
+    .agari {
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+    
+    .agari span {
+      color: var(--accent-color);
+      font-weight: 700;
+    }
+
+    /* Payouts Section */
+    .payouts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .payout-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .payout-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .payout-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .payout-type {
+      font-weight: 800;
+      color: #cbd5e1;
+      width: 60px;
+      flex-shrink: 0;
+    }
+
+    .payout-combo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .payout-number {
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 1px;
+    }
+
+    .payout-amount {
+      font-weight: 900;
+      font-size: 18px;
+      color: #fde047;
+      text-align: right;
+      min-width: 90px;
+    }
+
+    .payout-pop {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: right;
+      min-width: 50px;
+    }
+
+    .multi-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 6px;
+    }
+    .multi-row:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Highlight High Payout */
+    .high-payout .payout-amount {
+      color: #fca5a5;
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.4);
+      font-size: 20px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="race-header">
+      <div class="race-title-row">
+        <div class="race-number">水沢 1R</div>
+        <div class="race-status">確定</div>
+      </div>
+      <div class="race-details">
+        <div class="detail-badge">
+          <span>📅</span> 2026年6月22日
+        </div>
+        <div class="detail-badge">
+          <span>🏁</span> ダ850m
+        </div>
+        <div class="detail-badge" style="color: #60a5fa; border-color: rgba(96, 165, 250, 0.3);">
+          <span>🌧️</span> 不良 / 小雨
+        </div>
+        <div class="detail-badge">
+          <span>🏆</span> Ｃ２
+        </div>
+      </div>
+    </header>
+
+    <h2 class="section-title">全着順</h2>
+
+    <!-- Results List -->
+    <div class="result-list">
+      
+      <!-- 1st Place -->
+      <div class="result-card rank-1">
+        <div class="rank-badge">1</div>
+        <div class="frame-number frame-3">3</div>
+        <div class="horse-info">
+          <div class="horse-name">ゴーゴーオンリー</div>
+          <div class="horse-meta">
+            <span>塚本涼</span>
+            <span>3人気</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="time">51.0</div>
+          <div class="agari">上 <span>36.0</span></div>
+        </div>
+      </div>
+
+      <!-- 2nd Place -->
+      <div class="result-card rank-2">
+        <div class="rank-badge">2</div>
+        <div class="frame-number frame-5">5</div>
+        <div class="horse-info">
+          <div class="horse-name">コウバイ</div>
+          <div class="horse-meta">
+            <span>坂井瑛</span>
+            <span>4人気</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="time">51.3</div>
+          <div class="margin">1 1/2</div>
+          <div class="agari">上 <span>36.2</span></div>
+        </div>
+      </div>
+
+      <!-- 3rd Place -->
+      <div class="result-card rank-3">
+        <div class="rank-badge">3</div>
+        <div class="frame-number frame-8">9</div>
+        <div class="horse-info">
+          <div class="horse-name">レイズルノワール</div>
+          <div class="horse-meta">
+            <span>高松亮</span>
+            <span>5人気</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="time">51.5</div>
+          <div class="margin">1 1/4</div>
+          <div class="agari">上 <span>35.6</span></div>
+        </div>
+      </div>
+
+      <!-- 4th Place -->
+      <div class="result-card">
+        <div class="rank-badge">4</div>
+        <div class="frame-number frame-7">7</div>
+        <div class="horse-info">
+          <div class="horse-name">マローディープ</div>
+          <div class="horse-meta">
+            <span>阿部英</span>
+            <span>8人気</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="time">51.5</div>
+          <div class="margin">アタマ</div>
+          <div class="agari">上 <span>36.0</span></div>
+        </div>
+      </div>
+
+      <!-- 5th Place -->
+      <div class="result-card">
+        <div class="rank-badge">5</div>
+        <div class="frame-number frame-2">2</div>
+        <div class="horse-info">
+          <div class="horse-name">リスクテイカー</div>
+          <div class="horse-meta">
+            <span>菅原辰</span>
+            <span>7人気</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="time">51.6</div>
+          <div class="margin">1/2</div>
+          <div class="agari">上 <span>35.8</span></div>
+        </div>
+      </div>
+
+      <!-- 6th Place (1st Popularity) -->
+      <div class="result-card">
+        <div class="rank-badge">6</div>
+        <div class="frame-number frame-4">4</div>
+        <div class="horse-info">
+          <div class="horse-name">オーロプロサングエ</div>
+          <div class="horse-meta">
+            <span>村上忍</span>
+            <span style="color: #ef4444; font-weight: bold; border: 1px solid rgba(239,68,68,0.3); padding: 0 4px; border-radius: 4px;">1人気</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="time">51.7</div>
+          <div class="margin">クビ</div>
+          <div class="agari">上 <span>36.4</span></div>
+        </div>
+      </div>
+
+      <!-- 7th Place -->
+      <div class="result-card">
+        <div class="rank-badge">7</div>
+        <div class="frame-number frame-6">6</div>
+        <div class="horse-info">
+          <div class="horse-name">ルーナ</div>
+          <div class="horse-meta">
+            <span>関本玲</span>
+            <span>6人気</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="time">51.8</div>
+          <div class="margin">3/4</div>
+          <div class="agari">上 <span>35.5</span></div>
+        </div>
+      </div>
+
+      <!-- 8th Place (2nd Popularity, Inner Frame Penalty Victim) -->
+      <div class="result-card">
+        <div class="rank-badge">8</div>
+        <div class="frame-number frame-1">1</div>
+        <div class="horse-info">
+          <div class="horse-name">ゴダルティチェコ</div>
+          <div class="horse-meta">
+            <span>鈴木祐</span>
+            <span style="color: #ef4444; font-weight: bold; border: 1px solid rgba(239,68,68,0.3); padding: 0 4px; border-radius: 4px;">2人気</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="time">51.9</div>
+          <div class="margin">3/4</div>
+          <div class="agari">上 <span>36.4</span></div>
+        </div>
+      </div>
+
+      <!-- Excluded -->
+      <div class="result-card" style="opacity: 0.5; filter: grayscale(100%);">
+        <div class="rank-badge">-</div>
+        <div class="frame-number frame-8">8</div>
+        <div class="horse-info">
+          <div class="horse-name">ダンストンローザ</div>
+          <div class="horse-meta">
+            <span>佐々志</span>
+            <span>-</span>
+          </div>
+        </div>
+        <div class="performance-data">
+          <div class="margin" style="color: #ef4444; border-color: #ef4444; background: transparent;">除外</div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2 class="section-title">払戻金</h2>
+    
+    <div class="payouts-grid">
+      <!-- Standard Payouts -->
+      <div class="payout-card">
+        
+        <div class="payout-row">
+          <div class="payout-type">単勝</div>
+          <div class="payout-combo">
+            <span class="payout-number" style="color: #f87171;">3</span>
+          </div>
+          <div class="payout-amount">720<span style="font-size:12px; margin-left:2px;">円</span></div>
+          <div class="payout-pop">3人気</div>
+        </div>
+
+        <div class="payout-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+          <div style="display: flex; align-items: center;">
+            <div class="payout-type">複勝</div>
+            <div style="flex: 1; display: flex; flex-direction: column;">
+              <div class="multi-row">
+                <span class="payout-number" style="color: #f87171;">3</span>
+                <div style="display: flex; align-items: baseline;">
+                  <span class="payout-amount">160<span style="font-size:12px; margin-left:2px;">円</span></span>
+                  <span class="payout-pop" style="width: 40px;">2人気</span>
+                </div>
+              </div>
+              <div class="multi-row">
+                <span class="payout-number" style="color: #facc15;">5</span>
+                <div style="display: flex; align-items: baseline;">
+                  <span class="payout-amount">210<span style="font-size:12px; margin-left:2px;">円</span></span>
+                  <span class="payout-pop" style="width: 40px;">3人気</span>
+                </div>
+              </div>
+              <div class="multi-row">
+                <span class="payout-number" style="color: #f472b6;">9</span>
+                <div style="display: flex; align-items: baseline;">
+                  <span class="payout-amount">340<span style="font-size:12px; margin-left:2px;">円</span></span>
+                  <span class="payout-pop" style="width: 40px;">5人気</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="payout-row">
+          <div class="payout-type">枠複</div>
+          <div class="payout-combo">
+            <span class="payout-number" style="color: #ef4444;">3</span> - <span class="payout-number" style="color: #eab308;">5</span>
+          </div>
+          <div class="payout-amount">2,620<span style="font-size:12px; margin-left:2px;">円</span></div>
+          <div class="payout-pop">7人気</div>
+        </div>
+
+        <div class="payout-row">
+          <div class="payout-type">馬複</div>
+          <div class="payout-combo">
+            <span class="payout-number" style="color: #ef4444;">3</span> - <span class="payout-number" style="color: #eab308;">5</span>
+          </div>
+          <div class="payout-amount">1,170<span style="font-size:12px; margin-left:2px;">円</span></div>
+          <div class="payout-pop">5人気</div>
+        </div>
+
+        <div class="payout-row">
+          <div class="payout-type">馬単</div>
+          <div class="payout-combo">
+            <span class="payout-number" style="color: #ef4444;">3</span> → <span class="payout-number" style="color: #eab308;">5</span>
+          </div>
+          <div class="payout-amount">3,720<span style="font-size:12px; margin-left:2px;">円</span></div>
+          <div class="payout-pop">10人気</div>
+        </div>
+
+        <div class="payout-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+          <div style="display: flex; align-items: center;">
+            <div class="payout-type">ワイド</div>
+            <div style="flex: 1; display: flex; flex-direction: column;">
+              <div class="multi-row">
+                <span><span class="payout-number" style="color: #ef4444;">3</span> - <span class="payout-number" style="color: #eab308;">5</span></span>
+                <div style="display: flex; align-items: baseline;">
+                  <span class="payout-amount">410<span style="font-size:12px; margin-left:2px;">円</span></span>
+                  <span class="payout-pop" style="width: 45px;">4人気</span>
+                </div>
+              </div>
+              <div class="multi-row">
+                <span><span class="payout-number" style="color: #ef4444;">3</span> - <span class="payout-number" style="color: #f472b6;">9</span></span>
+                <div style="display: flex; align-items: baseline;">
+                  <span class="payout-amount">1,190<span style="font-size:12px; margin-left:2px;">円</span></span>
+                  <span class="payout-pop" style="width: 45px;">12人気</span>
+                </div>
+              </div>
+              <div class="multi-row">
+                <span><span class="payout-number" style="color: #eab308;">5</span> - <span class="payout-number" style="color: #f472b6;">9</span></span>
+                <div style="display: flex; align-items: baseline;">
+                  <span class="payout-amount">1,310<span style="font-size:12px; margin-left:2px;">円</span></span>
+                  <span class="payout-pop" style="width: 45px;">13人気</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+
+      <!-- High Payouts -->
+      <div class="payout-card">
+        <div class="payout-row">
+          <div class="payout-type" style="color: #38bdf8;">三連複</div>
+          <div class="payout-combo">
+            <span class="payout-number" style="color: #ef4444;">3</span> - <span class="payout-number" style="color: #eab308;">5</span> - <span class="payout-number" style="color: #f472b6;">9</span>
+          </div>
+          <div class="payout-amount" style="color: #38bdf8;">8,640<span style="font-size:12px; margin-left:2px;">円</span></div>
+          <div class="payout-pop">22人気</div>
+        </div>
+
+        <div class="payout-row high-payout" style="border-bottom: none;">
+          <div class="payout-type" style="color: #fca5a5;">三連単</div>
+          <div class="payout-combo">
+            <span class="payout-number" style="color: #ef4444;">3</span> → <span class="payout-number" style="color: #eab308;">5</span> → <span class="payout-number" style="color: #f472b6;">9</span>
+          </div>
+          <div class="payout-amount">45,390<span style="font-size:12px; margin-left:2px;">円</span></div>
+          <div class="payout-pop">109人気</div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</body>
+</html>
