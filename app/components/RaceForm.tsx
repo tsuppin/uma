@@ -5,7 +5,7 @@ import { generateId } from "../lib/storage";
 import { detectFormat, parseNARText, parseJRAText, parseRakutenKeibaText } from "../lib/parser";
 
 const CONDITIONS: Race["condition"][] = ["良","稍重","重","不良"];
-const SURFACES: Race["surface"][] = ["ダート","芝"];
+const SURFACES: Race["surface"][] = ["ダート","芝","障害"];
 
 export default function RaceForm({ onSubmit, onCancel }: {
   onSubmit: (race: Race) => void;

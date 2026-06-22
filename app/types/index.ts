@@ -53,7 +53,7 @@ export interface PastRace {
   raceClass: string; // クラス
   distance: number; // 距離
   direction?: '右' | '左' | '直線' | ''; // 回り
-  surface: 'ダート' | '芝'; // 馬場
+  surface: 'ダート' | '芝' | '障害'; // 馬場
   condition: '良' | '稍重' | '重' | '不良'; // 馬場状態
   result: number;   // 着順
   headCount?: number;       // 出走頭数
@@ -97,7 +97,7 @@ export interface Race {
   raceName: string;  // レース名
   raceClass?: string; // レースクラス（A級、B級など）
   distance: number;  // 距離
-  surface: 'ダート' | '芝'; // 馬場種別
+  surface: 'ダート' | '芝' | '障害'; // 馬場種別
   condition: '良' | '稍重' | '重' | '不良'; // 馬場状態
   headCount: number; // 頭数
   trackName: string; // 競馬場名（エンジン用）

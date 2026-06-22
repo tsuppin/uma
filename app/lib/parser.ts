@@ -313,7 +313,7 @@ function parseNARHorse(lines: string[]): Partial<Horse> | null {
       const prDirection = directionM ? directionM[1] as PastRace["direction"] : "";
       const distMatch = courseAttr.match(/(\d+)m/);
       const prDist = distMatch ? parseInt(distMatch[1]) : 0;
-      const prSurf: PastRace["surface"] = courseAttr.includes("芝") ? "芝" : "ダート";
+      const prSurf: PastRace["surface"] = courseAttr.includes("障") ? "障害" : (courseAttr.includes("芝") ? "芝" : "ダート");
 
       const prCond = (p1[4] || "良") as PastRace["condition"];
 
@@ -497,8 +497,8 @@ export function parseJRAText(rawText: string): {
   let condition: Race["condition"] = "良";
   for (let i = 0; i < Math.min(lines.length, 30); i++) {
     const l = lines[i];
-    const dm = l.match(/(\d{3,4})(ダ|芝)/);
-    if (dm) { distance = parseInt(dm[1]); surface = dm[2] === "芝" ? "芝" : "ダート"; }
+    const dm = l.match(/(\d{3,4})(ダ|芝|障)/);
+    if (dm) { distance = parseInt(dm[1]); surface = dm[2] === "障" ? "障害" : (dm[2] === "芝" ? "芝" : "ダート"); }
     if (/^(良|稍重|重|不良)$/.test(l) && !condition) condition = l as Race["condition"];
     if (l.match(/(S|G)[Ⅰ-Ⅲ]|リステッド|特別|勝クラス|OP|オープン/) && !raceName) raceName = l;
   }
@@ -861,9 +861,9 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     idx++;
 
     const distL = lines[idx] || "";
-    const distM2 = distL.match(/(\d+)(ダ|芝)/);
+    const distM2 = distL.match(/(\d+)(ダ|芝|障)/);
     const prDist = distM2 ? parseInt(distM2[1]) : 0;
-    const prSurf: PastRace["surface"] = (distM2?.[2] === "芝" || distL.includes("芝")) ? "芝" : "ダート";
+    const prSurf: PastRace["surface"] = (distM2?.[2] === "障" || distL.includes("障")) ? "障害" : ((distM2?.[2] === "芝" || distL.includes("芝")) ? "芝" : "ダート");
     idx++;
 
     const tl = lines[idx] || "";
@@ -1015,10 +1015,10 @@ export function parseRakutenKeibaText(rawText: string): {
       date = `${dateM[1]}-${String(dateM[2]).padStart(2,"0")}-${String(dateM[3]).padStart(2,"0")}`;
     }
     // 例: ダ1,300m 天候：曇 ダ：重 発走時刻13:30
-    const infoM = l.match(/(ダ|芝)?([,\d]+)m.*天候：([^\s]+).*馬場状態：([^\s]+)|(ダ|芝)?([,\d]+)m.*天候：([^\s]+).*([ダ芝])：([^\s]+)/);
+    const infoM = l.match(/(ダ|芝|障)?([,\d]+)m.*天候：([^\s]+).*馬場状態：([^\s]+)|(ダ|芝|障)?([,\d]+)m.*天候：([^\s]+).*([ダ芝障])：([^\s]+)/);
     if (infoM) {
-      const surfStr = infoM[1] || infoM[5];
-      if (surfStr) surface = surfStr === "芝" ? "芝" : "ダート";
+      const surfStr = infoM[1] || infoM[5] || infoM[8];
+      if (surfStr) surface = surfStr === "障" ? "障害" : (surfStr === "芝" ? "芝" : "ダート");
       const distStr = infoM[2] || infoM[6];
       if (distStr) distance = parseInt(distStr.replace(/,/g, ""));
       const wStr = infoM[3] || infoM[7];
