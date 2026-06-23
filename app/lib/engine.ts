@@ -9195,9 +9195,5 @@ export async function generateAILearningPatch(race: Race, predictions: Predictio
   } catch (err) {
     return null;
   }
-} catch (err) {
-    console.error("AI Learning exception:", err);
-    return null;
-  }
 }
 
