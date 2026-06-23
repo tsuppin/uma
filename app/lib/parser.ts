@@ -1205,9 +1205,9 @@ export function parseRakutenKeibaText(rawText: string): {
               }
 
               const pwnMatch = prPaceWeightNumber.match(/([\d\.]+)\s+(\d+)k\s+(\d+)番/);
-              let p3f = 0, pHWeight = 0, pNumber = 0;
+              let p3fStr = "", pHWeight = 0, pNumber = 0;
               if (pwnMatch) {
-                p3f = parseFloat(pwnMatch[1]);
+                p3fStr = pwnMatch[1];
                 pHWeight = parseInt(pwnMatch[2]);
                 pNumber = parseInt(pwnMatch[3]);
               }
@@ -1234,7 +1234,7 @@ export function parseRakutenKeibaText(rawText: string): {
                 corner4Position: prPassing ? parseInt(prPassing.split('-').pop() || "5") : 5,
                 cornerOuterCount: 1,
                 passingPositions: prPassing,
-                last3fTime: p3f,
+                last3fTime: p3fStr,
                 weight: pHWeight,
                 jockey: pJockey,
                 winnerName: prWinner,
