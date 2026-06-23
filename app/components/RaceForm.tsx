@@ -105,15 +105,19 @@ export default function RaceForm({ onSubmit, onCancel }: {
       {/* Step1: テキスト貼り付け */}
       {!parsed && (
         <div className="card fade-in">
-          <div className="card-header"><div className="card-title">📋 出馬表テキスト貼り付け</div></div>
+          <div className="card-header"><div className="card-title">📋 出馬表（および過去走データ）テキスト貼り付け</div></div>
+          <div className="alert alert-info mt-8">
+            💡 <b>予測精度を高めるためのヒント:</b><br />
+            楽天競馬の「競走成績」やJRAの「過去走」が含まれるページ全体をコピーして貼り付けると、AIエンジンが過去の展開や着差を考慮した精度の高い分析（Yatomi Physics等）を行えるようになります。
+          </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="paste-text">出馬表テキスト</label>
+            <label className="form-label" htmlFor="paste-text">出馬表・過去走テキスト</label>
             <textarea
               id="paste-text"
-              className="form-textarea min-h-200 mono fs-sm"
+              className="form-textarea min-h-200 mono fs-sm mt-4"
               value={pasteText}
               onChange={e => { setPasteText(e.target.value); setParseError(""); }}
-              placeholder={"JRA形式:\n2回東京2日 12R\n枠1白\t1\nスナッピードレッサ\n...\n\n地方競馬形式:\n2026/4/29\n大井 2R\nＣ３二三\n1200m    13頭...\n天候：曇 馬場状態：稍重\n1\t1\tダーカザンブラック(大井)\n　父　サートゥルナーリア\n..."}
+              placeholder={"JRA形式:\n2回東京2日 12R\n枠1白\t1\n...\n\n楽天競馬/地方競馬形式:\n（「競走成績」タブの全体をコピーしてください）\n水沢競馬場 1R 競走成績\n1\t1\t...\n過去映像\n水沢 26.05.25\n..."}
             />
             <div className="fs-xs text-muted mt-4 text-right">
               {pasteText.length.toLocaleString()} 文字

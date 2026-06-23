@@ -1160,6 +1160,100 @@ export function parseRakutenKeibaText(rawText: string): {
             }
         }
 
+        const pastRaces: PastRace[] = [];
+        let rIndex = lineIndex + 16;
+        while (rIndex < lines.length) {
+          if (lines[rIndex] === "過去映像") {
+            const prVenueDate = lines[rIndex + 1]; // 浦和 26.05.25
+            const prRaceName1 = lines[rIndex + 2]; // Ｃ３七
+            const prRaceName2 = lines[rIndex + 3]; // Ｃ３七
+            const prCondStr = lines[rIndex + 4]; // 1300左ダ 2人
+            const prJockeyWeight = lines[rIndex + 5]; // 岡村健 54.0
+            const prTimeDiff = lines[rIndex + 6]; // 1:24.6 (0.3)
+            const prPaceWeightNumber = lines[rIndex + 7]; // 39.2 450k 1番
+            const prPassing = lines[rIndex + 8]; // 1-1-1-1
+            const prWinner = lines[rIndex + 9]; // ニシノテンカ
+
+            if (prVenueDate && prCondStr && prTimeDiff && prPaceWeightNumber && prPassing && prWinner) {
+              const vdMatch = prVenueDate.match(/^([^\s]+)\s+(\d{2})\.(\d{2})\.(\d{2})/);
+              let pVenue = "", pDate = "";
+              if (vdMatch) {
+                pVenue = vdMatch[1];
+                pDate = `20${vdMatch[2]}-${vdMatch[3]}-${vdMatch[4]}`;
+              }
+
+              const condMatch = prCondStr.match(/(\d+)(左|右)?(ダ|芝|障)\s+(\d+)人/);
+              let pDist = 0, pSurf: Race["surface"] = "ダート", pPop = 0;
+              if (condMatch) {
+                pDist = parseInt(condMatch[1]);
+                pSurf = condMatch[3] === "障" ? "障害" : (condMatch[3] === "芝" ? "芝" : "ダート");
+                pPop = parseInt(condMatch[4]);
+              }
+
+              const jwMatch = prJockeyWeight.match(/^(.+?)\s+([\d\.]+)/);
+              let pJockey = "", pWeight = 54;
+              if (jwMatch) {
+                pJockey = jwMatch[1];
+                pWeight = parseFloat(jwMatch[2]);
+              }
+
+              const tMatch = prTimeDiff.match(/([\d:]+\.\d)\s*\(([-+]?\d+\.\d+)\)/) || prTimeDiff.match(/([\d:]+\.\d)/);
+              let pTime = "", pDiff = 0;
+              if (tMatch) {
+                pTime = tMatch[1];
+                pDiff = tMatch[2] ? parseFloat(tMatch[2]) : 0;
+              }
+
+              const pwnMatch = prPaceWeightNumber.match(/([\d\.]+)\s+(\d+)k\s+(\d+)番/);
+              let p3f = 0, pHWeight = 0, pNumber = 0;
+              if (pwnMatch) {
+                p3f = parseFloat(pwnMatch[1]);
+                pHWeight = parseInt(pwnMatch[2]);
+                pNumber = parseInt(pwnMatch[3]);
+              }
+
+              let pResult = 0;
+              // 着順は前の行（過去映像の2つ上など）にある場合が多いですが、正確に取るのが難しい場合は暫定値を設定。
+              // test_input.txt では 過去映像 の2行上が着順 (例: Line 44=4, 45=重, 46=11頭, 47=過去映像)
+              const pResultLine = lines[rIndex - 3];
+              if (pResultLine && pResultLine.match(/^\d+$/)) {
+                 pResult = parseInt(pResultLine);
+              }
+
+              pastRaces.push({
+                date: pDate,
+                venue: pVenue,
+                raceName: prRaceName1,
+                distance: pDist,
+                surface: pSurf,
+                condition: "良", // 一旦仮固定
+                result: pResult,
+                popularity: pPop,
+                jockeyWeight: pWeight,
+                time: pTime,
+                corner4Position: prPassing ? parseInt(prPassing.split('-').pop() || "5") : 5,
+                cornerOuterCount: 1,
+                passingPositions: prPassing,
+                last3fTime: p3f,
+                weight: pHWeight,
+                jockey: pJockey,
+                winnerName: prWinner,
+                timeDiff: pDiff,
+                odds: 0,
+                prize: 0,
+                raceClass: prRaceName2
+              });
+            }
+            rIndex += 9;
+          } else {
+             // 次の馬の始まりが見つかったら抜ける
+             if (lines[rIndex] && lines[rIndex].match(/^\d+\s+\d+\s+[^\s]+\s+.*$/)) {
+                break;
+             }
+             rIndex++;
+          }
+        }
+
         horses.push({
           id: generateId(),
           number,
@@ -1183,11 +1277,14 @@ export function parseRakutenKeibaText(rawText: string): {
           style: "中団",
           odds,
           popularity,
-          pastRaces: [],
+          pastRaces,
           stableLocation: affiliation || "地方",
         });
+
+        lineIndex = rIndex; // 次の馬へ進める
+      } else {
+        lineIndex += 15;
       }
-      lineIndex += 15;
     } else {
       lineIndex++;
     }
