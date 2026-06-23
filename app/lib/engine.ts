@@ -2,6 +2,7 @@
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 import { calculateNARScore } from './engineNAR';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex } from './evaluationUtils';
 
 // モジュール共通のエリート騎手リスト
 const ELITE_JOCKEYS = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ", "松山弘平", "川田", "坂井", "戸崎", "笹川翼", "御神本訓", "吉村智洋", "渡邊竜也", "岡部誠"];
@@ -8579,6 +8580,60 @@ export function calculateTsuchiyaScore(
       if (popularity <= 3 && hanshinBonus >= 35) {
         isTargetYatomi = true; 
       }
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // 【JRA共通】新規評価ロジック（乗り替わり・馬体重・レース展開・スピード指数）
+  // ─────────────────────────────────────────
+  const jockeyAnalysis = analyzeJockeyChange(horse);
+  if (jockeyAnalysis.isEliteSwitch) {
+    potential += 15;
+    tags.push("🔥 勝負気配: トップジョッキーへの勝負の乗り替わり");
+  } else if (jockeyAnalysis.isPrimaryReturn) {
+    potential += 10;
+    tags.push("🔥 主戦戻り: 過去に好走実績のある勝負騎手への手戻り");
+  }
+
+  const weightAnalysis = analyzeWeight(horse);
+  if (weightAnalysis.hasWeightData) {
+    if (weightAnalysis.isIdeal) {
+      potential += 5;
+      tags.push("✨ 状態キープ: 好走時のベスト体重を維持");
+    }
+    if (weightAnalysis.isGrowth) {
+      potential += 5;
+      tags.push("💪 成長分: 休養を挟んでの馬体増（成長分）");
+    } else if (weightAnalysis.isFat) {
+      potential -= 10;
+      tags.push("⚠️ 太め残り: 余裕残しの馬体増・調整不足の懸念");
+    }
+  }
+
+  const passAnalysis = analyzePassingPositions(horse);
+  if (passAnalysis.isMakuri) {
+    potential += 10;
+    tags.push("🌪️ 展開: 前走長く良い脚を使った『まくり』実績あり");
+  } else if (passAnalysis.isTare) {
+    if (prevRaceData && prevRaceData.distance > dist) {
+      potential += 5;
+      tags.push("💡 展開: 前走失速も今回は距離短縮で粘り込み期待");
+    } else {
+      potential -= 10;
+      tags.push("⚠️ 展開: 前走前半飛ばして失速（スタミナ不足懸念）");
+    }
+  } else if (passAnalysis.isKouhou) {
+    potential -= 5;
+    tags.push("⚠️ 展開: テンのスピード不足・後方追走のままの懸念");
+  }
+
+  const speedIndex = getBestSpeedIndex(horse);
+  if (speedIndex > 0) {
+    if (speedIndex > 100) {
+      potential += 15;
+      tags.push(`⏱️ スピード: 持ち時計優秀 (指数: ${speedIndex})`);
+    } else if (speedIndex > 80) {
+      potential += 5;
     }
   }
 

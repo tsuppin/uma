@@ -1,5 +1,6 @@
 import { Horse, Prediction, Race, LearningPatch, MasterData } from '../types';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex } from './evaluationUtils';
 
 // 地方特化のエリート騎手リスト（南関東を中心とした地方トップジョッキー）
 const NAR_ELITE_JOCKEYS = ["森泰斗", "御神本訓史", "矢野貴之", "笹川翼", "吉原寛人", "和田譲治", "山崎誠士", "吉村智洋", "赤岡修次", "山口勲"];
@@ -1031,6 +1032,62 @@ export function calculateNARScore(
   // ==========================================
   // ✅【完全減点方式】NAR地方競馬専用ペナルティブロック（potential -= N;）
   // ==========================================
+
+  // ─────────────────────────────────────────
+  // 【NAR-A0】全場共通：新規評価ロジック（乗り替わり・馬体重・レース展開・スピード指数）
+  // ─────────────────────────────────────────
+  const jockeyAnalysis = analyzeJockeyChange(horse);
+  if (jockeyAnalysis.isEliteSwitch) {
+    potential += 15;
+    tags.push("🔥 勝負気配: トップジョッキーへの勝負の乗り替わり");
+  } else if (jockeyAnalysis.isPrimaryReturn) {
+    potential += 10;
+    tags.push("🔥 主戦戻り: 過去に好走実績のある勝負騎手への手戻り");
+  }
+
+  const weightAnalysis = analyzeWeight(horse);
+  if (weightAnalysis.hasWeightData) {
+    if (weightAnalysis.isIdeal) {
+      potential += 5;
+      tags.push("✨ 状態キープ: 好走時のベスト体重を維持");
+    }
+    if (weightAnalysis.isGrowth) {
+      potential += 5;
+      tags.push("💪 成長分: 休養を挟んでの馬体増（成長分）");
+    } else if (weightAnalysis.isFat) {
+      potential -= 10;
+      tags.push("⚠️ 太め残り: 余裕残しの馬体増・調整不足の懸念");
+    }
+  }
+
+  const passAnalysis = analyzePassingPositions(horse);
+  if (passAnalysis.isMakuri) {
+    potential += 10;
+    tags.push("🌪️ 展開: 前走長く良い脚を使った『まくり』実績あり");
+  } else if (passAnalysis.isTare) {
+    const narPrevRace = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : null;
+    if (narPrevRace && narPrevRace.distance > dist) {
+      potential += 5;
+      tags.push("💡 展開: 前走失速も今回は距離短縮で粘り込み期待");
+    } else {
+      potential -= 10;
+      tags.push("⚠️ 展開: 前走前半飛ばして失速（スタミナ不足懸念）");
+    }
+  } else if (passAnalysis.isKouhou) {
+    potential -= 5;
+    tags.push("⚠️ 展開: テンのスピード不足・後方追走のままの懸念");
+  }
+
+  const speedIndex = getBestSpeedIndex(horse);
+  if (speedIndex > 0) {
+    if (speedIndex > 100) {
+      potential += 15;
+      tags.push(`⏱️ スピード: 持ち時計優秀 (指数: ${speedIndex})`);
+    } else if (speedIndex > 80) {
+      potential += 5;
+    }
+  }
+
 
   // ─────────────────────────────────────────
   // 【NAR-A】全場共通：連続凡走ペナルティ
