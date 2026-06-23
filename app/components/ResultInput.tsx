@@ -100,7 +100,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       const betMultiplier = betAmount / 100;
 
       if (hitWin.length > 0) {
-        const payout = parsedRefunds.win?.[0]?.payout || 0;
+        const payout = parsed.refunds?.win?.[0]?.payout || 0;
         totalProfit += hitWin.length * payout * betMultiplier;
       }
       if (hitWide.length > 0) {
@@ -108,28 +108,28 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         hitWide.forEach(t => {
           // 実際の払戻データから、このチケット(2頭の組み合わせ)に一致する払戻を探す
           const sortedT = [...t].sort((a,b)=>a-b);
-          const refund = parsedRefunds.wide?.find(rw => {
+          const refund = parsed.refunds?.wide?.find(rw => {
             const matchNums = rw.combination?.split(/[\-\s]+/).map(n => parseInt(n)).sort((a,b)=>a-b) || [];
             return matchNums[0] === sortedT[0] && matchNums[1] === sortedT[1];
           });
-          const payout = refund?.payout || (parsedRefunds.wide?.[0]?.payout || 0); // マッチしない場合は1つ目の払戻を使用
+          const payout = refund?.payout || (parsed.refunds?.wide?.[0]?.payout || 0); // マッチしない場合は1つ目の払戻を使用
           totalProfit += payout * betMultiplier;
         });
       }
       if (hitTrio.length > 0) {
-        const payout = parsedRefunds.trio?.[0]?.payout || 0;
+        const payout = parsed.refunds?.trio?.[0]?.payout || 0;
         totalProfit += hitTrio.length * payout * betMultiplier;
       }
       if (hitTrifecta.length > 0) {
-        const payout = parsedRefunds.trifecta?.[0]?.payout || 0;
+        const payout = parsed.refunds?.trifecta?.[0]?.payout || 0;
         totalProfit += hitTrifecta.length * payout * betMultiplier;
       }
       if (hitQuinella.length > 0) {
-        const payout = parsedRefunds.quinella?.[0]?.payout || 0;
+        const payout = parsed.refunds?.quinella?.[0]?.payout || 0;
         totalProfit += hitQuinella.length * payout * betMultiplier;
       }
       if (hitExacta.length > 0) {
-        const payout = parsedRefunds.exacta?.[0]?.payout || 0;
+        const payout = parsed.refunds?.exacta?.[0]?.payout || 0;
         totalProfit += hitExacta.length * payout * betMultiplier;
       }
 
