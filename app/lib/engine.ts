@@ -9101,47 +9101,81 @@ export function sortPredictions(predictions: Prediction[]): Prediction[] {
 }
 
 // AIを利用した非同期ラーニングパッチ生成
-export async function generateAILearningPatch(race: Race, predictions: Prediction[], actualResult: { rank: number; horseNumber: number; }[]): Promise<LearningPatch | null> {
-  // 【新設】ルールベースのローカル学習パッチ生成（APIキー不要のフォールバック）
-  if (predictions.length > 0 && actualResult.length > 0) {
-    // AIが1番手評価（本命）にした馬
-    const topPrediction = predictions[0];
-    // 実際の着順
-    const actualRank = actualResult.find(r => r.horseNumber === topPrediction.horseNumber)?.rank || 99;
+export async function generateAILearningPatch(race: Race, predictions: Prediction[], actualResultObj: any): Promise<LearningPatch | null> {
+  const actualResult = actualResultObj.result || actualResultObj;
+  
+  if (predictions.length > 0 && actualResult && actualResult.length > 0) {
+    const adjustments: LearningPatch['adjustments'] = [];
+    const descriptions: string[] = [];
+    
+    let calculatedPace = "M";
+    if (actualResultObj.lapTimes && actualResultObj.lapTimes.length >= 6) {
+      const first3f = actualResultObj.lapTimes.slice(0, 3).reduce((a: number, b: string) => a + parseFloat(b), 0);
+      const last3fNum = actualResultObj.lapTimes.slice(-3).reduce((a: number, b: string) => a + parseFloat(b), 0);
+      const diff = first3f - last3fNum;
+      if (diff <= -1.0) calculatedPace = "H";
+      else if (diff >= 1.0) calculatedPace = "S";
+    }
 
-    // もし本命馬が6着以下に大敗した場合、弱点を学習
-    if (actualRank >= 6) {
-      const horse = race.horses.find(h => h.number === topPrediction.horseNumber);
-      if (horse) {
-        const isInner = horse.frame <= 3;
-        const isHeavy = race.condition === '重' || race.condition === '不良';
-        const isOvervalued = horse.popularity === 1 && (horse.odds || 0) <= 2.5;
-        
-        let reason = "";
-        let rule = "";
-        
-        if (isInner && isHeavy) {
-          reason = "本命馬が重馬場の内枠で大敗しました。内を嫌うトラックバイアスを見落とした可能性があります。";
-          rule = `競馬場: ${race.trackName}, 馬場: ${race.condition}, 枠: ${horse.frame}枠 -> 評価を大きく下げる（マイナス30点）`;
-        } else if (isOvervalued && horse.weight > 0 && (horse.jockeyWeight || 55) / horse.weight * 100 >= 12.0) {
-          reason = "過剰人気の小柄馬が斤量負けしました。斤量体重比のペナルティを強化する必要があります。";
-          rule = "過剰人気（オッズ2.5倍以下）かつ斤量体重比12%以上の場合は絶対評価を下げる";
-        } else {
-          reason = `本命馬（${horse.name}）が${actualRank}着に大敗。展開や未知のバイアスによる敗因分析が必要です。`;
-          rule = `血統: ${horse.bloodline?.split('/')[0] || '不明'} の ${race.trackName} ${race.distance}m 適性を再評価する`;
+    const top3Actual = actualResult.filter((r: any) => r.rank <= 3);
+    for (const actual of top3Actual) {
+      const predRank = predictions.findIndex(p => p.horseNumber === actual.horseNumber) + 1;
+      if (predRank >= 5) {
+        const horse = race.horses.find(h => h.number === actual.horseNumber);
+        if (horse) {
+          descriptions.push(`過小評価(${horse.name}:予測${predRank}位→${actual.rank}着)`);
+          if (horse.frame <= 3) adjustments.push({ field: 'frame', operator: '<=', value: 3, scoreAdjust: 10 });
+          else if (horse.frame >= 6) adjustments.push({ field: 'frame', operator: '>=', value: 6, scoreAdjust: 10 });
+          
+          if (horse.style === '逃げ' || horse.style === '先行') {
+            adjustments.push({ field: 'style', operator: 'includes', value: horse.style, scoreAdjust: 10 });
+            if (calculatedPace === "H") descriptions.push(`Hペース前残り`);
+          }
+          if (horse.style === '差し' || horse.style === '追込') {
+            adjustments.push({ field: 'style', operator: 'includes', value: horse.style, scoreAdjust: 10 });
+          }
+          
+          if (horse.weight >= 500) adjustments.push({ field: 'weight', operator: '>=', value: 500, scoreAdjust: 10 });
+          
+          if (horse.pastRaces && horse.pastRaces.length > 0 && actual.passing) {
+            if (actual.passing.startsWith("1") || actual.passing.startsWith("2")) {
+               adjustments.push({ field: 'passing', operator: 'regex', value: '^[12]', scoreAdjust: 10 });
+            }
+          }
         }
+      }
+    }
 
-        return {
+    const top2Preds = predictions.slice(0, 2);
+    for (const pred of top2Preds) {
+      const actualRank = actualResult.find((r: any) => r.horseNumber === pred.horseNumber)?.rank || 99;
+      if (actualRank >= 6) {
+        const horse = race.horses.find(h => h.number === pred.horseNumber);
+        if (horse) {
+          descriptions.push(`過大評価(${horse.name}:予測${predictions.findIndex(p=>p.horseNumber===pred.horseNumber)+1}位→${actualRank}着)`);
+          if (horse.frame <= 3) adjustments.push({ field: 'frame', operator: '<=', value: 3, scoreAdjust: -10 });
+          else if (horse.frame >= 6) adjustments.push({ field: 'frame', operator: '>=', value: 6, scoreAdjust: -10 });
+          if (horse.style === '逃げ' || horse.style === '先行') adjustments.push({ field: 'style', operator: 'includes', value: horse.style, scoreAdjust: -10 });
+          if (horse.popularity === 1) adjustments.push({ field: 'popularity', operator: '==', value: 1, scoreAdjust: -10 });
+        }
+      }
+    }
+
+    const uniqueAdjustments = adjustments.filter((adj, index, self) =>
+      index === self.findIndex((t) => t.field === adj.field && t.value === adj.value && t.operator === adj.operator)
+    );
+
+    if (uniqueAdjustments.length > 0) {
+       return {
           id: `patch_local_${Date.now()}`,
-          version: '1.0 (Local)',
+          version: '1.5 (Local Auto-Correction)',
           date: new Date().toISOString(),
-          description: `[${race.trackName} ${race.distance}m] ${reason} (補正: ${rule})`,
+          description: `[${race.trackName}] 補正: ${descriptions.join("/")}`,
           track: race.trackName,
           condition: race.condition,
-          adjustments: [], // ローカルフォールバックはテキスト分析のみとする
+          adjustments: uniqueAdjustments,
           active: true
-        } as unknown as LearningPatch;
-      }
+       } as unknown as LearningPatch;
     }
   }
 
@@ -9153,13 +9187,15 @@ export async function generateAILearningPatch(race: Race, predictions: Predictio
     });
 
     if (!res.ok) {
-      console.warn("AI Learning failed:", await res.text());
       return null;
     }
 
     const patch: LearningPatch = await res.json();
     return patch;
   } catch (err) {
+    return null;
+  }
+} catch (err) {
     console.error("AI Learning exception:", err);
     return null;
   }

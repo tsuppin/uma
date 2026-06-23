@@ -171,22 +171,53 @@ export function analyzeRaceResultsAndLearn(
       });
     }
 
-    // B. 脚質バイアス（前残り有利）
-    if (totalTop3 > 0 && frontRunnerTop3 / totalTop3 >= 0.55) {
-      newPatches.push({
-        id: `auto-bias-front-${groupKey}-${Date.now()}`,
-        version: "1.0",
-        date: today,
-        description: `【自動検知】${group.venue} ${group.surface}: 前残り（逃げ・先行有利）バイアス`,
-        track: group.venue,
-        active: true,
-        adjustments: [
-          { field: "style", operator: "==", value: "逃げ", scoreAdjust: 20 },
-          { field: "style", operator: "==", value: "先行", scoreAdjust: 15 }
-        ]
-      });
-    }
 
+    // B. 脚質バイアス（前残り有利・差し有利）
+    if (totalTop3 > 0) {
+      const frontRatio = frontRunnerTop3 / totalTop3;
+      if (frontRatio >= 0.55) {
+        let desc = `【自動検知】${group.venue} ${group.surface}: 前残り（逃げ・先行有利）バイアス`;
+        let score = 15;
+        if (group.results.some(r => {
+           let calcPace = "M";
+           if (r.result && r.result.lapTimes && r.result.lapTimes.length >= 6) {
+             const f3 = r.result.lapTimes.slice(0, 3).reduce((a, b) => a + parseFloat(b), 0);
+             const l3 = r.result.lapTimes.slice(-3).reduce((a, b) => a + parseFloat(b), 0);
+             if (f3 - l3 <= -1.0) calcPace = "H";
+           }
+           return calcPace === "H";
+        })) {
+           desc = `【自動検知】${group.venue} ${group.surface}: Hペースでも前が止まらない超前残り馬場`;
+           score = 25;
+        }
+        
+        newPatches.push({
+          id: `auto-bias-front-${groupKey}-${Date.now()}`,
+          version: "1.0",
+          date: today,
+          description: desc,
+          track: group.venue,
+          active: true,
+          adjustments: [
+            { field: "style", operator: "==", value: "逃げ", scoreAdjust: score + 5 },
+            { field: "style", operator: "==", value: "先行", scoreAdjust: score }
+          ]
+        });
+      } else if (frontRatio <= 0.25) { // 差し・追込が75%以上
+        newPatches.push({
+          id: `auto-bias-stretch-${groupKey}-${Date.now()}`,
+          version: "1.0",
+          date: today,
+          description: `【自動検知】${group.venue} ${group.surface}: 差し・追込有利（外差し馬場）バイアス`,
+          track: group.venue,
+          active: true,
+          adjustments: [
+            { field: "style", operator: "==", value: "差し", scoreAdjust: 20 },
+            { field: "style", operator: "==", value: "追込", scoreAdjust: 15 }
+          ]
+        });
+      }
+    }
     // C. 波乱バイアス（万馬券多発による大穴ブースト）
     if (group.hugePayouts >= 2) {
       newPatches.push({

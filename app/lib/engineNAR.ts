@@ -990,6 +990,7 @@ export function calculateNARScore(
       } else if (typeof val === 'string' && typeof adj.value === 'string') {
         if (adj.operator === 'includes' && val.includes(adj.value)) applies = true;
         else if (adj.operator === '==' && val === adj.value) applies = true;
+        else if (adj.operator === 'regex' && new RegExp(adj.value).test(val)) applies = true;
       }
       if (applies) { 
         potential += adj.scoreAdjust; 

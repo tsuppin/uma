@@ -124,9 +124,8 @@ export default function KeibaApp() {
     setIsProcessing(true);
 
     try {
-      const actualResult = result.result.map(r => ({ rank: r.rank, horseNumber: r.horseNumber }));
       // APIを通じてAIによる自動学習・反省を実行
-      const patch = await generateAILearningPatch(race, predictions, actualResult);
+      const patch = await generateAILearningPatch(race, predictions, result);
 
       let newState = addResult(state, result);
       if (patch) {
