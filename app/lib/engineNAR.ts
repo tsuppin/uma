@@ -57,10 +57,24 @@ export function calculateNARScore(
   }
 
   // ==========================================
-  // 南関東4場（大井・川崎・船橋・浦和）の特化ロジック
+  // 各地方競馬場の特化ロジック
   // ==========================================
 
-  if (trackName.includes('浦和')) {
+  if (trackName.includes('水沢')) {
+    // 水沢マニアック: 重馬場の内枠（1〜2枠）は深い砂と泥を被るため圧倒的不利
+    if (race.condition === '重' || race.condition === '不良') {
+      if (frame <= 2) {
+        potential -= 30;
+        tags.push("⚠️ 水沢バイアス: 重・不良馬場の内枠は砂が深く、泥を被るため致命的な不利（大幅減点）");
+      }
+    }
+    // 水沢マニアック: 1300mなどの短距離戦における小型馬（440kg未満）のパワー不足
+    if (dist <= 1300 && (horse.weight || 0) > 0 && (horse.weight || 0) < 440) {
+      potential -= 20;
+      tags.push("⚠️ 水沢バイアス: 短距離戦における小型馬のパワー不足（減点）");
+    }
+  }
+  else if (trackName.includes('浦和')) {
     // マニアック1: 日本一の小回り・逃げ先行絶対主義
     if (frame <= 2 && (horse.style === '逃げ' || horse.style === '先行')) {
       // [減点方式] potential += 50;

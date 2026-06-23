@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Race, Formation } from "../types";
 import { generateFormation } from "../lib/engine";
+import MobileRaceEntry from "./MobileRaceEntry";
 
 function FrameBadge({ frame }: { frame: number }) {
   const frameClass = frame >= 1 && frame <= 8 ? `frame-${frame}` : "frame-other";
@@ -110,30 +111,8 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
       </nav>
 
       {tab === "horses" && (
-        <div className="card">
-          <table className="horse-table">
-            <thead><tr><th>枠</th><th>馬番</th><th>馬名</th><th>性齢</th><th>騎手</th><th>斤量</th><th>馬体重</th><th>増減</th><th>父</th><th>脚質</th><th>オッズ</th><th>前走</th></tr></thead>
-            <tbody>
-              {race.horses.map(h => (
-                <tr key={h.id}>
-                  <td><FrameBadge frame={h.frame} /></td>
-                  <td><span className="horse-num">{h.number}</span></td>
-                  <td className="fw-600">{h.name || "—"}</td>
-                  <td className="text-secondary nowrap">{h.gender}{h.age}</td>
-                  <td>{h.jockey || "—"}</td>
-                  <td className="text-muted">{h.jockeyWeight}</td>
-                  <td className="fw-600">{h.weight}kg</td>
-                  <td className={h.weightChange > 0 ? "text-red" : h.weightChange < 0 ? "text-blue" : "text-muted"}>
-                    {h.weightChange > 0 ? `+${h.weightChange}` : h.weightChange}
-                  </td>
-                  <td className="fs-xs text-muted">{h.sire || "—"}</td>
-                  <td className="fs-xs">{h.style || "—"}</td>
-                  <td className="fw-700 text-gold">{h.odds ? `${h.odds}倍` : "—"}</td>
-                  <td className="fs-xs text-muted">{h.pastRaces[0] ? `${h.pastRaces[0].venue} ${h.pastRaces[0].result}着` : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card" style={{ padding: 0, background: 'transparent', border: 'none' }}>
+          <MobileRaceEntry horses={race.horses} />
         </div>
       )}
 
