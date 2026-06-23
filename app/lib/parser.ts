@@ -54,12 +54,25 @@ export function extractVenue(text: string): string | null {
     }
   }
 
+  // 〇回〇〇〇日 のようなパターンを最優先
+  const kaiMatch = headLines.match(/\d+回([^\d\s]+)\d+日/);
+  if (kaiMatch) {
+     for (const track of ALL_TRACKS) {
+       if (kaiMatch[1].includes(track)) return track;
+     }
+  }
+
   // 単純な出現確認（ヘッダー部分のみ）
+  let bestTrack = null;
+  let minIndex = Infinity;
   for (const track of ALL_TRACKS) {
-    if (headLines.includes(track)) {
-      return track;
+    const idx = headLines.indexOf(track);
+    if (idx !== -1 && idx < minIndex) {
+      minIndex = idx;
+      bestTrack = track;
     }
   }
+  if (bestTrack) return bestTrack;
   return null;
 }
 
@@ -752,6 +765,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
   }
 
   // Extract remaining fields using heuristics to handle different copy-paste layouts (table vs list)
+  const unrecognizedLines: string[] = [];
   while (idx < lines.length) {
     const l = (lines[idx] || "").trim();
     
@@ -789,7 +803,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     
     if (kinryoJockeyMatch && kinryoJockeyMatch[2].trim() !== "kg" && parseFloat(kinryoJockeyMatch[1]) >= 48 && parseFloat(kinryoJockeyMatch[1]) <= 65) {
       kinryo = parseFloat(kinryoJockeyMatch[1]);
-      jockey = kinryoJockeyMatch[2].trim();
+      jockey = kinryoJockeyMatch[2].replace(/^[☆△▲◇☆★]/, "").trim();
       idx++;
       continue;
     } else if (l.match(/^\d{2}\.\dkg$/) || (l.match(/^\d{2}\.\d$/) && parseFloat(l) >= 48 && parseFloat(l) <= 65)) {
@@ -808,7 +822,7 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
            if (!owner) owner = nextLine;
            idx = tempIdx + 1;
         } else {
-           jockey = nextLine;
+           jockey = nextLine.replace(/^[☆△▲◇☆★]/, "").trim();
            idx = tempIdx + 1;
         }
       }
@@ -856,6 +870,15 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
 
     // Pedigree
     if (l.startsWith("父：") || l.startsWith("父:")) {
+      if (unrecognizedLines.length >= 3) {
+        if (!owner) owner = unrecognizedLines[unrecognizedLines.length - 3];
+        if (!breeder) breeder = unrecognizedLines[unrecognizedLines.length - 2];
+        if (!trainer) {
+          trainer = unrecognizedLines[unrecognizedLines.length - 1];
+          const tm = trainer.match(/^(.+?)\s*[\(（]([栗美][東浦])[\)）]/);
+          if (tm) { trainer = tm[1].trim(); stableLocation = tm[2]; }
+        }
+      }
       sire = l.replace(/^父[：:]/, "").trim();
       if (!sire && idx + 1 < lines.length) { sire = lines[idx + 1].trim(); idx++; }
       idx++; continue;
