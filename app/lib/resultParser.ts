@@ -16,7 +16,7 @@ export function parseRaceResult(rawText: string, raceHorses: Horse[]): Partial<R
   const isJraText = rawText.includes("勝馬投票に的中された方がいない場合") || 
                     (rawText.includes("払戻金") && lines.some(l => /^\d+\s*[\t　]+\s*枠\d/.test(l)));
 
-  const isRakutenFormat = rawText.includes("楽天競馬") || lines.some(l => /^\d+\t\d+\t\d+\t[^\t]+\t[^\t]+\t[\d\.]+\t\d+$/.test(l));
+  const isRakutenFormat = rawText.includes("楽天競馬") || lines.some(l => /^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)[\t\s]+(.+?)[\t\s]+([牡牝セン騙]\d+[\t\s]*\/[\t\s]*[^\t\s]+)[\t\s]+([\d\.]+)[\t\s]+(\d+)$/.test(l));
 
   if (isJraText) {
     parseJraFormat(lines, parsed, raceHorses);
@@ -372,34 +372,35 @@ function parseRakutenFormat(lines: string[], parsed: Partial<RaceResult>, raceHo
   
   for (let i = 0; i < lines.length; i++) {
     const l1 = lines[i];
-    // Line 1 pattern: Rank, Bracket, HorseNum, Name, Sex/Age/Color, Kinryo, Weight
-    if (!/^\d+\t\d+\t\d+\t[^\t]+\t[^\t]+\t[\d\.]+\t\d+$/.test(l1)) continue;
+    // Line 1 pattern: Rank Bracket HorseNum Name Sex/Age/Color Kinryo Weight
+    const match1 = l1.match(/^(\d+)[\t\s]+(\d+)[\t\s]+(\d+)[\t\s]+(.+?)[\t\s]+([牡牝セン騙]\d+[\t\s]*\/[\t\s]*[^\t\s]+)[\t\s]+([\d\.]+)[\t\s]+(\d+)$/);
+    if (!match1) continue;
 
-    const parts1 = l1.split("\t");
     const l2 = lines[i+1] || "";
-    const parts2 = l2.split("\t");
+    const match2 = l2.match(/^([\+\-±]\d+|±0)[\t\s]+(.+)$/);
     const l3 = lines[i+2] || "";
-    const parts3 = l3.split("\t");
-    
-    if (parts1.length >= 7 && parts2.length >= 2 && parts3.length >= 5) {
-      let rank = parseInt(parts1[0]);
-      let number = parseInt(parts1[2]);
-      let name = parts1[3].trim().replace(/^ブリンカー\s*/, "");
-      let kinryo = parseFloat(parts1[5]);
-      let horseWeight = parseInt(parts1[6]);
+    // Line 3 pattern: (Belonging) Time Margin Agari Trainer Popularity
+    const match3 = l3.match(/^(\([^\)]+\))[\t\s]+([\d\.\:]+)[\t\s]*(.*?)[\t\s]+([\d\.]+)[\t\s]+([^\t\s]+)[\t\s]+(\d+)$/);
+
+    if (match2 && match3) {
+      let rank = parseInt(match1[1]);
+      let number = parseInt(match1[3]);
+      let name = match1[4].trim().replace(/^ブリンカー\s*/, "");
+      let kinryo = parseFloat(match1[6]);
+      let horseWeight = parseInt(match1[7]);
       
       let horseWeightChange = 0;
-      if (parts2[0] !== "±0") {
-         horseWeightChange = parseInt(parts2[0].replace("+", ""));
+      if (match2[1] !== "±0") {
+         horseWeightChange = parseInt(match2[1].replace("+", ""));
       }
       
-      let jockey = parts2[1].replace(/^[▲△☆◇]/, "").trim();
+      let jockey = match2[2].replace(/^[▲△☆◇]/, "").trim();
       
-      let time = parts3[1];
-      let margin = parts3[2] || "";
-      let agari = parts3[3];
-      let trainer = parts3[4];
-      let popularity = parseInt(parts3[5]) || 0;
+      let time = match3[2];
+      let margin = match3[3].trim();
+      let agari = match3[4];
+      let trainer = match3[5];
+      let popularity = parseInt(match3[6]) || 0;
 
       let prize = 0;
       if (rank === 1) prize = 2200;
