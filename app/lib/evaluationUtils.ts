@@ -1,4 +1,4 @@
-import { Horse, PastRace, Race } from '../types';
+import { Horse, PastRace, Race, MasterData } from '../types';
 
 export const ELITE_JOCKEYS_NAR = ["森泰斗", "御神本訓史", "矢野貴之", "笹川翼", "吉原寛人", "和田譲治", "山崎誠士", "吉村智洋", "赤岡修次", "山口勲", "吉村智", "下原理"];
 export const ELITE_JOCKEYS_JRA = ["ルメール", "川田将雅", "武豊", "戸崎圭太", "松山弘平", "横山武史", "坂井瑠星", "岩田望来", "西村淳也", "モレイラ", "レーン"];
@@ -174,4 +174,59 @@ export function getBestSpeedIndex(horse: Horse): number {
   const indices = horse.pastRaces.map(calculateSpeedIndex).filter(i => i > 0);
   if (indices.length === 0) return 0;
   return Math.max(...indices);
+}
+
+// 5. 斤量差（Jockey Weight Diff）評価
+export function analyzeJockeyWeightDiff(horse: Horse) {
+  const currentWeight = horse.jockeyWeight || 0;
+  if (currentWeight === 0 || !horse.pastRaces || horse.pastRaces.length === 0) return { diff: 0, isLightWinReturn: false };
+
+  // 過去の勝利時の斤量を取得
+  const winWeights = horse.pastRaces.filter(pr => pr.result === 1 && pr.jockeyWeight && pr.jockeyWeight > 0).map(pr => pr.jockeyWeight!);
+  if (winWeights.length === 0) return { diff: 0, isLightWinReturn: false };
+
+  // 勝利時の平均斤量
+  const avgWinWeight = winWeights.reduce((a, b) => a + b, 0) / winWeights.length;
+  
+  // 今回の斤量が勝利時より3kg以上重い＝斤量泣き
+  const diff = currentWeight - avgWinWeight;
+
+  return { diff, isLightWinReturn: diff >= 3 };
+}
+
+// 6. オッズ・人気（Odds / Popularity）評価
+export function analyzeOddsAndPopularity(horse: Horse) {
+  const currentPop = horse.popularity || 0;
+  if (currentPop === 0 || !horse.pastRaces || horse.pastRaces.length === 0) return { isOvervalued: false, isFlukeWin: false };
+
+  const prevRace = horse.pastRaces[0];
+  
+  // 前走大穴（人気6以上、またはオッズ30倍以上）で好走（1〜3着）した馬が、今回上位人気（1〜3番人気）になっているか
+  const wasLongshot = (prevRace.popularity && prevRace.popularity >= 6) || (prevRace.odds && prevRace.odds >= 30.0);
+  const isOvervalued = wasLongshot && prevRace.result <= 3 && currentPop <= 3;
+  
+  return { isOvervalued, isFlukeWin: wasLongshot && prevRace.result === 1 };
+}
+
+// 7. 不利からの巻き返し（Incidents Bounce Back）評価
+export function analyzeIncidents(horse: Horse, masterData: MasterData) {
+  const hm = masterData.horses?.[horse.name];
+  if (!hm || !hm.incidents || hm.incidents.length === 0) return { hasDisadvantage: false, note: "" };
+
+  const pastRaces = horse.pastRaces || [];
+  if (pastRaces.length === 0) return { hasDisadvantage: false, note: "" };
+
+  // `learning.ts` で保存された前走の不利録を探す
+  const recentIncident = hm.incidents.find(i => {
+    // 日付が近い、もしくは最新のものを不利とする（簡易的に、前走で負けている＆不利タグがあるかを判定）
+    const incidentNote = i.note || "";
+    const isDisadvantage = incidentNote.includes("不利") || incidentNote.includes("大外ぶん回し") || incidentNote.includes("前が壁");
+    return isDisadvantage && pastRaces[0].result >= 4; // 前走負けていることが条件
+  });
+
+  if (recentIncident) {
+    return { hasDisadvantage: true, note: recentIncident.note };
+  }
+
+  return { hasDisadvantage: false, note: "" };
 }

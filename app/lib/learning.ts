@@ -70,31 +70,61 @@ export function analyzeRaceResultsAndLearn(
       const horseData = updatedMasterData.horses[res.horseName];
       if (!horseData.incidents) horseData.incidents = [];
 
-      // A. 大差圧勝の記録
+      // A. 通常の記録と大差圧勝の記録
+      const resultEntry = {
+        date: today,
+        rank: res.rank,
+        venue: race.trackName,
+        distance: race.distance,
+        time: res.time,
+        passing: res.passing,
+        pace: calculatedPace,
+        condition: race.condition,
+        weight: res.weight,
+        odds: res.odds,
+        popularity: res.popularity,
+        weightChange: res.weightChange,
+        jockeyWeight: res.jockeyWeight,
+        jockey: res.jockey
+      };
+      horseData.results.push(resultEntry);
+
       if (res.rank === 1 && res.margin && (res.margin.includes('大差') || res.margin.includes('1.0'))) {
-        horseData.results.push({
-          date: today,
-          rank: res.rank,
-          venue: race.trackName,
-          distance: race.distance,
-          time: res.time,
-          passing: res.passing,
-          pace: calculatedPace,
-          condition: race.condition
-        });
         horseData.incidents.push({ date: today, venue: race.trackName, note: "大差圧勝" });
-      } else {
-        // 通常の記録
-        horseData.results.push({
-          date: today,
-          rank: res.rank,
-          venue: race.trackName,
-          distance: race.distance,
-          time: res.time,
-          passing: res.passing,
-          pace: calculatedPace,
-          condition: race.condition
-        });
+      }
+
+      // 隊列（cornerPassings）の不利解析
+      if (race.result.cornerPassings && race.result.cornerPassings.length > 0) {
+        // 例: "3角: 1,2(3,4)(5,6,7)"
+        const corner3 = race.result.cornerPassings.find(c => c.includes('3角') || c.startsWith('3:'));
+        const corner4 = race.result.cornerPassings.find(c => c.includes('4角') || c.startsWith('4:'));
+        const targetNumberStr = res.horseNumber.toString();
+
+        if (corner3 && corner4) {
+          // カッコで囲まれた並走グループを抽出
+          const getGroupSizeAndPosition = (cornerStr: string, hNum: string) => {
+            const match = cornerStr.match(new RegExp(`\\(([^\\)]*?\\b${hNum}\\b[^\\)]*?)\\)`));
+            if (match) {
+              const horsesInGroup = match[1].split(/[^\d]+/).filter(s => s.trim() !== "");
+              const posIndex = horsesInGroup.indexOf(hNum);
+              return { size: horsesInGroup.length, posIndex };
+            }
+            return { size: 1, posIndex: 0 };
+          };
+
+          const c3Info = getGroupSizeAndPosition(corner3, targetNumberStr);
+          const c4Info = getGroupSizeAndPosition(corner4, targetNumberStr);
+
+          // 大外ぶん回し判定（3角・4角ともに3頭以上の大外を回された）
+          if (c3Info.size >= 3 && c3Info.posIndex === c3Info.size - 1 && c4Info.size >= 3 && c4Info.posIndex === c4Info.size - 1) {
+             horseData.incidents.push({ date: today, venue: race.trackName, note: "3〜4角大外ぶん回しの不利" });
+          }
+
+          // 包まれ不利判定（内側にいて、着順が悪いか弾けなかった）
+          if (c3Info.size >= 3 && c3Info.posIndex === 0 && res.rank >= 4) {
+             horseData.incidents.push({ date: today, venue: race.trackName, note: "道中包まれ不利・前が壁の可能性" });
+          }
+        }
       }
 
       // B. 競走中不利の記録

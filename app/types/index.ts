@@ -272,7 +272,16 @@ export interface HorseMaster {
   lastWeight?: number;
   lastWeightChange?: number;
   bestTime?: Record<string, string>; // { "venue_dist": "time" }
-  results: { date: string; rank: number; venue: string; distance: number; weight?: number; time?: string; passing?: string; pace?: string; condition?: string }[];
+  results: { 
+    date: string; rank: number; venue: string; distance: number; 
+    weight?: number; time?: string; passing?: string; pace?: string; 
+    condition?: string;
+    odds?: number;
+    popularity?: number;
+    weightChange?: number;
+    jockeyWeight?: number;
+    jockey?: string;
+  }[];
   sire?: string;
   dam?: string;
   owner?: string;

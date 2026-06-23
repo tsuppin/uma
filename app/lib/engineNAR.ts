@@ -1,6 +1,6 @@
 import { Horse, Prediction, Race, LearningPatch, MasterData } from '../types';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
-import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex } from './evaluationUtils';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents } from './evaluationUtils';
 
 // 地方特化のエリート騎手リスト（南関東を中心とした地方トップジョッキー）
 const NAR_ELITE_JOCKEYS = ["森泰斗", "御神本訓史", "矢野貴之", "笹川翼", "吉原寛人", "和田譲治", "山崎誠士", "吉村智洋", "赤岡修次", "山口勲"];
@@ -1086,6 +1086,30 @@ export function calculateNARScore(
     } else if (speedIndex > 80) {
       potential += 5;
     }
+  }
+
+  const weightDiffAnalysis = analyzeJockeyWeightDiff(horse);
+  if (weightDiffAnalysis.isLightWinReturn) {
+    potential -= 10;
+    tags.push(`⚠️ 斤量泣き: 過去の勝利時より斤量が重い (+${weightDiffAnalysis.diff}kg)`);
+  } else if (weightDiffAnalysis.diff <= -2) {
+    potential += 5;
+    tags.push(`💡 減量起用: 過去の好走時より斤量が軽い (${weightDiffAnalysis.diff}kg)`);
+  }
+
+  const oddsPopAnalysis = analyzeOddsAndPopularity(horse);
+  if (oddsPopAnalysis.isOvervalued) {
+    potential -= 20;
+    tags.push("⚠️ 過剰人気: 前走フロック激走からの危険な人気馬");
+  } else if (oddsPopAnalysis.isFlukeWin && (horse.popularity || 0) >= 6) {
+    potential += 5;
+    tags.push("💡 穴馬再考: 前走の大穴激走を再び狙う");
+  }
+
+  const incidentsAnalysis = analyzeIncidents(horse, masterData);
+  if (incidentsAnalysis.hasDisadvantage) {
+    potential += 15;
+    tags.push(`🔥 巻き返し期待: 前走不利あり (${incidentsAnalysis.note})`);
   }
 
 

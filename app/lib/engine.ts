@@ -2,7 +2,7 @@
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 import { calculateNARScore } from './engineNAR';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
-import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex } from './evaluationUtils';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents } from './evaluationUtils';
 
 // モジュール共通のエリート騎手リスト
 const ELITE_JOCKEYS = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ", "松山弘平", "川田", "坂井", "戸崎", "笹川翼", "御神本訓", "吉村智洋", "渡邊竜也", "岡部誠"];
@@ -8635,6 +8635,30 @@ export function calculateTsuchiyaScore(
     } else if (speedIndex > 80) {
       potential += 5;
     }
+  }
+
+  const weightDiffAnalysis = analyzeJockeyWeightDiff(horse);
+  if (weightDiffAnalysis.isLightWinReturn) {
+    potential -= 10;
+    tags.push(`⚠️ 斤量泣き: 過去の勝利時より斤量が重い (+${weightDiffAnalysis.diff}kg)`);
+  } else if (weightDiffAnalysis.diff <= -2) {
+    potential += 5;
+    tags.push(`💡 減量起用: 過去の好走時より斤量が軽い (${weightDiffAnalysis.diff}kg)`);
+  }
+
+  const oddsPopAnalysis = analyzeOddsAndPopularity(horse);
+  if (oddsPopAnalysis.isOvervalued) {
+    potential -= 20;
+    tags.push("⚠️ 過剰人気: 前走フロック激走からの危険な人気馬");
+  } else if (oddsPopAnalysis.isFlukeWin && (horse.popularity || 0) >= 6) {
+    potential += 5;
+    tags.push("💡 穴馬再考: 前走の大穴激走を再び狙う");
+  }
+
+  const incidentsAnalysis = analyzeIncidents(horse, masterData);
+  if (incidentsAnalysis.hasDisadvantage) {
+    potential += 15;
+    tags.push(`🔥 巻き返し期待: 前走不利あり (${incidentsAnalysis.note})`);
   }
 
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;
