@@ -264,7 +264,17 @@ export interface AppState {
 export interface MasterData {
   horses: Record<string, HorseMaster>;
   jockeys: Record<string, JockeyMaster>;
+  sires?: Record<string, SireMaster>;
   laps?: Record<string, { venue: string; distance: number; surface: string; laps: string[]; date: string }[]>; // 蓄積されたラップ履歴
+}
+
+export interface SireMaster {
+  name: string;
+  totalRaces: number;
+  wins: number;
+  top3: number;
+  todayWins?: number; // 当日の勝利数（リアルタイム・バイアス判定用）
+  todayTop3?: number; // 当日の3着以内数
 }
 
 export interface HorseMaster {

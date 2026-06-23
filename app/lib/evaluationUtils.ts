@@ -230,3 +230,73 @@ export function analyzeIncidents(horse: Horse, masterData: MasterData) {
 
   return { hasDisadvantage: false, note: "" };
 }
+
+// 8. 地方競馬のクラス降級判定 (NAR Class Drop)
+function getNarClassValue(className: string): number {
+  if (!className) return 999;
+  const match = className.match(/([A-C])([1-3])/);
+  if (match) {
+    const letter = match[1];
+    const num = parseInt(match[2]);
+    const base = letter === 'A' ? 10 : letter === 'B' ? 20 : 30;
+    return base + num;
+  }
+  return 999;
+}
+
+export function analyzeNARClassDrop(currentClass?: string, pastClass?: string) {
+  if (!currentClass || !pastClass) return { isClassDrop: false, diff: 0, prevClass: "", currClass: "" };
+  const curVal = getNarClassValue(currentClass);
+  const pastVal = getNarClassValue(pastClass);
+  if (curVal === 999 || pastVal === 999) return { isClassDrop: false, diff: 0, prevClass: "", currClass: "" };
+  
+  if (curVal > pastVal) {
+    // クラスの数値が大きい＝下のクラス（降級）
+    return { isClassDrop: true, prevClass: pastClass, currClass: currentClass, diff: curVal - pastVal };
+  }
+  return { isClassDrop: false, diff: 0, prevClass: "", currClass: "" };
+}
+
+// 9. 叩き2戦目（休み明け2戦目）の巻き返し判定
+export function analyzeRotationBounceBack(horse: Horse) {
+  if (!horse.pastRaces || horse.pastRaces.length < 2) return { isBounceBack: false };
+
+  const parseDate = (d: string) => new Date(d.replace(/\//g, '-')).getTime();
+  const today = new Date().getTime();
+  
+  const race0Date = parseDate(horse.pastRaces[0].date);
+  const race1Date = parseDate(horse.pastRaces[1].date);
+
+  const daysBetween0And1 = (race0Date - race1Date) / (1000 * 60 * 60 * 24);
+  
+  // 2走前と前走の間隔が約80日（2ヶ月半）以上あいていた＝前走は休み明けだった
+  if (daysBetween0And1 >= 80) {
+    if (horse.pastRaces[0].result >= 4) { // 休み明けで負けている
+      const daysSinceLastRace = (today - race0Date) / (1000 * 60 * 60 * 24);
+      // 今回が中1週〜中5週（約10日〜45日）なら、叩き2戦目の一変を期待
+      if (daysSinceLastRace >= 10 && daysSinceLastRace <= 45) {
+        return { isBounceBack: true };
+      }
+    }
+  }
+
+  return { isBounceBack: false };
+}
+
+// 10. 調教タイム解析（上がり1Fのキレ）
+export function analyzeTrainingTime(horse: Horse) {
+  if (!horse.trainingTime) return { isExcellent: false, last1f: 0 };
+  const parts = horse.trainingTime.split('-');
+  if (parts.length > 0) {
+    const lastPart = parts[parts.length - 1].trim();
+    // "11.5" などの数値部分を抽出
+    const match = lastPart.match(/(\d+\.\d+)/);
+    if (match) {
+      const last1f = parseFloat(match[1]);
+      if (!isNaN(last1f) && last1f <= 11.4) {
+        return { isExcellent: true, last1f };
+      }
+    }
+  }
+  return { isExcellent: false, last1f: 0 };
+}

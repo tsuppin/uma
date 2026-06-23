@@ -2,7 +2,7 @@
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 import { calculateNARScore } from './engineNAR';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
-import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents } from './evaluationUtils';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeRotationBounceBack, analyzeTrainingTime } from './evaluationUtils';
 
 // モジュール共通のエリート騎手リスト
 const ELITE_JOCKEYS = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ", "松山弘平", "川田", "坂井", "戸崎", "笹川翼", "御神本訓", "吉村智洋", "渡邊竜也", "岡部誠"];
@@ -8659,6 +8659,29 @@ export function calculateTsuchiyaScore(
   if (incidentsAnalysis.hasDisadvantage) {
     potential += 15;
     tags.push(`🔥 巻き返し期待: 前走不利あり (${incidentsAnalysis.note})`);
+  }
+
+  const rotationBounceAnalysis = analyzeRotationBounceBack(horse);
+  if (rotationBounceAnalysis.isBounceBack) {
+    potential += 15;
+    tags.push(`🚀 叩き2戦目: 休養明けを一度使われて状態一変の狙い目`);
+  }
+
+  const trainingAnalysis = analyzeTrainingTime(horse);
+  if (trainingAnalysis.isExcellent) {
+    potential += 15;
+    tags.push(`🏃 絶好調教: 上がり1F ${trainingAnalysis.last1f}秒の猛時計`);
+  }
+
+  if (horse.sire && masterData.sires && masterData.sires[horse.sire]) {
+    const sireData = masterData.sires[horse.sire];
+    if (sireData.todayWins && sireData.todayWins >= 2) {
+      potential += 10;
+      tags.push(`🧬 血統バイアス: 本日絶好調の血統 (${horse.sire}産駒)`);
+    } else if (sireData.todayTop3 && sireData.todayTop3 >= 3) {
+      potential += 5;
+      tags.push(`🧬 血統バイアス: 本日馬券によく絡む血統 (${horse.sire}産駒)`);
+    }
   }
 
   const darkness = (potential / 100) * Math.pow(odds, 1.1) * distortionBoost;

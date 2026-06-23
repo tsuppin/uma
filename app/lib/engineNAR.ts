@@ -1,6 +1,6 @@
 import { Horse, Prediction, Race, LearningPatch, MasterData } from '../types';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
-import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents } from './evaluationUtils';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeNARClassDrop, analyzeRotationBounceBack } from './evaluationUtils';
 
 // 地方特化のエリート騎手リスト（南関東を中心とした地方トップジョッキー）
 const NAR_ELITE_JOCKEYS = ["森泰斗", "御神本訓史", "矢野貴之", "笹川翼", "吉原寛人", "和田譲治", "山崎誠士", "吉村智洋", "赤岡修次", "山口勲"];
@@ -1110,6 +1110,31 @@ export function calculateNARScore(
   if (incidentsAnalysis.hasDisadvantage) {
     potential += 15;
     tags.push(`🔥 巻き返し期待: 前走不利あり (${incidentsAnalysis.note})`);
+  }
+
+  if (horse.raceClass && horse.pastRaces && horse.pastRaces.length > 0) {
+    const classDropAnalysis = analyzeNARClassDrop(horse.raceClass, horse.pastRaces[0].raceClass);
+    if (classDropAnalysis.isClassDrop) {
+      potential += 20;
+      tags.push(`👑 クラス降級: 相手弱化で大幅に有利 (${classDropAnalysis.prevClass}→${classDropAnalysis.currClass})`);
+    }
+  }
+
+  const rotationBounceAnalysis = analyzeRotationBounceBack(horse);
+  if (rotationBounceAnalysis.isBounceBack) {
+    potential += 15;
+    tags.push(`🚀 叩き2戦目: 休養明けを一度使われて状態一変の狙い目`);
+  }
+
+  if (horse.sire && masterData.sires && masterData.sires[horse.sire]) {
+    const sireData = masterData.sires[horse.sire];
+    if (sireData.todayWins && sireData.todayWins >= 2) {
+      potential += 10;
+      tags.push(`🧬 血統バイアス: 本日絶好調の血統 (${horse.sire}産駒)`);
+    } else if (sireData.todayTop3 && sireData.todayTop3 >= 3) {
+      potential += 5;
+      tags.push(`🧬 血統バイアス: 本日馬券によく絡む血統 (${horse.sire}産駒)`);
+    }
   }
 
 

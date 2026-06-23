@@ -8,6 +8,7 @@ export function analyzeRaceResultsAndLearn(
   const updatedMasterData: MasterData = JSON.parse(JSON.stringify(currentMasterData));
   if (!updatedMasterData.horses) updatedMasterData.horses = {};
   if (!updatedMasterData.jockeys) updatedMasterData.jockeys = {};
+  if (!updatedMasterData.sires) updatedMasterData.sires = {};
 
   const newPatches: LearningPatch[] = [];
   const today = new Date().toISOString().split('T')[0];
@@ -22,8 +23,10 @@ export function analyzeRaceResultsAndLearn(
     top3WeightCount: number 
   }> = {};
 
-  // 今日の騎手の勝利数をカウントする用
+  // 今日の騎手・種牡馬の勝利数・馬券内をカウントする用
   const todaysJockeyWins: Record<string, number> = {};
+  const todaysSireWins: Record<string, number> = {};
+  const todaysSireTop3: Record<string, number> = {};
 
   for (const race of races) {
     if (!race.result || !race.result.result) continue; // 結果がまだないレースはスキップ
@@ -151,6 +154,25 @@ export function analyzeRaceResultsAndLearn(
       if (res.jockey && res.rank === 1) {
         if (!todaysJockeyWins[res.jockey]) todaysJockeyWins[res.jockey] = 0;
         todaysJockeyWins[res.jockey] += 1;
+      }
+
+      // 種牡馬のカウント
+      const horseSire = horseData.sire;
+      if (horseSire) {
+        if (!updatedMasterData.sires![horseSire]) {
+          updatedMasterData.sires![horseSire] = { name: horseSire, totalRaces: 0, wins: 0, top3: 0 };
+        }
+        updatedMasterData.sires![horseSire].totalRaces++;
+        if (res.rank === 1) {
+          updatedMasterData.sires![horseSire].wins++;
+          if (!todaysSireWins[horseSire]) todaysSireWins[horseSire] = 0;
+          todaysSireWins[horseSire]++;
+        }
+        if (res.rank <= 3) {
+          updatedMasterData.sires![horseSire].top3++;
+          if (!todaysSireTop3[horseSire]) todaysSireTop3[horseSire] = 0;
+          todaysSireTop3[horseSire]++;
+        }
       }
     }
 
@@ -296,6 +318,14 @@ export function analyzeRaceResultsAndLearn(
           { field: "jockey", operator: "==", value: jockeyName, scoreAdjust: 20 }
         ]
       });
+    }
+  }
+
+  // 種牡馬データの「当日の勝利数・馬券内数」更新
+  if (updatedMasterData.sires) {
+    for (const sName in updatedMasterData.sires) {
+      updatedMasterData.sires[sName].todayWins = todaysSireWins[sName] || 0;
+      updatedMasterData.sires[sName].todayTop3 = todaysSireTop3[sName] || 0;
     }
   }
 
