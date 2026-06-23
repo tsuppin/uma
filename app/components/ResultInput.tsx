@@ -5,7 +5,7 @@ import { generateFormation } from "../lib/engine";
 import MobileRaceResult from "./MobileRaceResult";
 import { parseRaceResult } from "../lib/resultParser";
 
-type ResultRow = { rank: number; horseNumber: number; horseName: string; time: string; odds: number; prize: number; belonging?: string; };
+type ResultRow = { rank: number; horseNumber: number; horseName: string; time: string; odds: number; prize: number; belonging?: string; passing?: string; margin?: string; pace?: string; up3Time?: number; };
 
 export default function ResultInput({ race, onSubmit, onCancel }: {
   race: Race;
