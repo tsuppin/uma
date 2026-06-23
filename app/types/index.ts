@@ -171,6 +171,7 @@ export interface RaceResult {
     last3f?: string;
     margin?: string; // 着差
     belonging?: string; // 所属
+    passing?: string; // 各馬の通過順位
   }[];
   lapTimes?: string[]; // ハロンタイム ["12.1", "11.3", ...]
   last4fTime?: string; // 上がり4F
@@ -271,7 +272,7 @@ export interface HorseMaster {
   lastWeight?: number;
   lastWeightChange?: number;
   bestTime?: Record<string, string>; // { "venue_dist": "time" }
-  results: { date: string; rank: number; venue: string; distance: number; weight?: number; time?: string }[];
+  results: { date: string; rank: number; venue: string; distance: number; weight?: number; time?: string; passing?: string; pace?: string; condition?: string }[];
   sire?: string;
   dam?: string;
   owner?: string;

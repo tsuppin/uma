@@ -46,6 +46,16 @@ export function analyzeRaceResultsAndLearn(
     }
     if (isHugePayout) trackGroups[groupKey].hugePayouts++;
 
+    // 全体ペースの計算 (lapTimesがある場合)
+    let calculatedPace = "M"; // H, M, S
+    if (race.result.lapTimes && race.result.lapTimes.length >= 6) {
+      const first3f = race.result.lapTimes.slice(0, 3).reduce((a, b) => a + parseFloat(b), 0);
+      const last3fNum = race.result.lapTimes.slice(-3).reduce((a, b) => a + parseFloat(b), 0);
+      const diff = first3f - last3fNum;
+      if (diff <= -1.0) calculatedPace = "H"; // 前半の方が速い
+      else if (diff >= 1.0) calculatedPace = "S"; // 前半の方が遅い
+    }
+
     // ==========================================
     // 1. MasterData Update (データベース自動蓄積)
     // ==========================================
@@ -68,8 +78,23 @@ export function analyzeRaceResultsAndLearn(
           venue: race.trackName,
           distance: race.distance,
           time: res.time,
+          passing: res.passing,
+          pace: calculatedPace,
+          condition: race.condition
         });
         horseData.incidents.push({ date: today, venue: race.trackName, note: "大差圧勝" });
+      } else {
+        // 通常の記録
+        horseData.results.push({
+          date: today,
+          rank: res.rank,
+          venue: race.trackName,
+          distance: race.distance,
+          time: res.time,
+          passing: res.passing,
+          pace: calculatedPace,
+          condition: race.condition
+        });
       }
 
       // B. 競走中不利の記録

@@ -82,7 +82,12 @@ function parseJraFormat(lines: string[], parsed: Partial<RaceResult>, raceHorses
         }
       }
 
-      if (combined[8] && !combined[8].match(/^[0-9]+ [0-9]+$/)) {
+      let passing = "";
+      if (combined[8] && combined[8].match(/^[0-9]+( [0-9]+)*$/)) {
+         passing = combined[8]; // e.g. "2 2" or "10 10" or "2 2 2 2"
+      }
+
+      if (combined[8] && !combined[8].match(/^[0-9]+( [0-9]+)*$/)) {
         if (combined[8] !== agari && !combined[8].match(/^\d+\.\d+$/)) {
            margin = combined[8];
         }
@@ -99,7 +104,7 @@ function parseJraFormat(lines: string[], parsed: Partial<RaceResult>, raceHorses
       resultsList.push({
         rank, horseNumber: number, horseName: name, time, odds: 0, prize,
         popularity, weight: horseWeight, weightChange: horseWeightChange,
-        jockey, jockeyWeight: kinryo, trainer, last3f: agari, margin
+        jockey, jockeyWeight: kinryo, trainer, last3f: agari, margin, passing
       });
     }
   }
@@ -253,9 +258,21 @@ function parseNarFormat(lines: string[], parsed: Partial<RaceResult>, raceHorses
       else if (rank === 4) prize = 330;
       else if (rank === 5) prize = 220;
 
+      // 通過順位の探索 (e.g. 1-1-1-2)
+      let passing = "";
+      for (let j = 0; j <= 6; j++) {
+        const l = lines[i + j]?.trim() || "";
+        const parts = l.split(/\s+|\t+/);
+        for (const p of parts) {
+           if (p.match(/^[0-9]+(-[0-9]+)+$/)) {
+             passing = p;
+           }
+        }
+      }
+
       parsedMap.set(rank, {
         rank, horseNumber: finalNum, horseName: cleanName, time, odds: 0, prize,
-        popularity: pop, weight: 0, weightChange: 0, jockey, jockeyWeight, trainer, last3f, margin, belonging
+        popularity: pop, weight: 0, weightChange: 0, jockey, jockeyWeight, trainer, last3f, margin, belonging, passing
       });
 
       rankCounter++;

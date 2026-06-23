@@ -155,7 +155,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   };
 
   const addRow = () => {
-    setResults(prev => [...prev, { rank: prev.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0 }]);
+    setResults(prev => [...prev, { rank: prev.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0, passing: "" }]);
   };
 
   const removeRow = (idx: number) => {
@@ -313,7 +313,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             <thead>
               <tr>
                 <th>着順</th><th>馬番</th><th>馬名</th>
-                <th>走破タイム</th><th>単勝オッズ</th><th>賞金(万円)</th><th></th>
+                <th>通過順</th><th>走破タイム</th><th>単勝オッズ</th><th>賞金(万円)</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -343,6 +343,10 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                     {r.belonging && (
                       <span className="fs-xs text-muted block">({r.belonging})</span>
                     )}
+                  </td>
+                  <td>
+                    <input className="form-input w-80 mono" value={r.passing || ""}
+                      onChange={e => updateResult(i, "passing", e.target.value)} placeholder="2-2-1" aria-label={`${r.rank}着 通過順`} />
                   </td>
                   <td>
                     <input className="form-input w-100" value={r.time}
