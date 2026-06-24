@@ -158,6 +158,16 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     setResults(prev => [...prev, { rank: prev.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0, passing: "" }]);
   };
 
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setPasteText(text);
+      setParseError("");
+    } catch (err) {
+      alert("クリップボードからの読み取りに失敗しました。お手数ですが、テキストエリアを長押しして貼り付けてください。");
+    }
+  };
+
   const removeRow = (idx: number) => {
     setResults(prev => prev.filter((_, i) => i !== idx).map((r, i) => ({ ...r, rank: i + 1 })));
   };
@@ -267,7 +277,12 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         </div>
 
         <div className="form-group">
-          <label className="form-label" htmlFor="result-paste">結果テキスト</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <label className="form-label" htmlFor="result-paste" style={{ marginBottom: 0 }}>結果テキスト</label>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={handlePasteFromClipboard}>
+              📋 クリップボードから貼り付け
+            </button>
+          </div>
           <textarea
             id="result-paste"
             className="form-textarea min-h-180 mono fs-sm"

@@ -121,6 +121,16 @@ export default function RaceForm({ onSubmit, onSubmitResult, onCancel }: {
     onSubmitResult(mockRace, parsedResult.result);
   };
 
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setPasteText(text);
+      setParseError("");
+    } catch (err) {
+      alert("クリップボードからの読み取りに失敗しました。お手数ですが、テキストエリアを長押しして貼り付けてください。");
+    }
+  };
+
   const updateHorse = (idx: number, field: keyof Horse, value: unknown) => {
     if (!parsed) return;
     setParsed({ ...parsed, horses: parsed.horses.map((h, i) => i === idx ? { ...h, [field]: value } : h) });
@@ -150,7 +160,12 @@ export default function RaceForm({ onSubmit, onSubmitResult, onCancel }: {
             楽天競馬の「競走成績」やJRAの「過去走」が含まれるページ全体をコピーして貼り付けると、AIエンジンが過去の展開や着差を考慮した精度の高い分析（Yatomi Physics等）を行えるようになります。
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="paste-text">出馬表・過去走テキスト</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label className="form-label" htmlFor="paste-text" style={{ marginBottom: 0 }}>出馬表・過去走テキスト</label>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={handlePasteFromClipboard}>
+                📋 クリップボードから貼り付け
+              </button>
+            </div>
             <textarea
               id="paste-text"
               className="form-textarea min-h-200 mono fs-sm mt-4"
