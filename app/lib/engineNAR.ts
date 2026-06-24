@@ -64,17 +64,17 @@ export function calculateNARScore(
   if (paceAnalysis.hasData) {
     const p = analyzePassingPositions(horse);
     if (paceAnalysis.paceIntensity === 1) { // ハイペース予想
-      if (p.lateChargerRate > 0.5) { // 差し馬有利
+      if (horse.style === "差し" || horse.style === "追込") { // 差し馬有利
         potential += 30;
         tags.push(`📈 展開利: 前傾ラップ(H)予想で差し・追込台頭`);
-      } else if (p.frontRunnerRate > 0.5) { // 逃げ馬不利
+      } else if (horse.style === "逃げ" || horse.style === "先行") { // 逃げ馬不利
         potential -= 30;
       }
     } else if (paceAnalysis.paceIntensity === -1) { // スローペース予想
-      if (p.frontRunnerRate > 0.5) { // 逃げ馬有利
+      if (horse.style === "逃げ" || horse.style === "先行") { // 逃げ馬有利
         potential += 30;
         tags.push(`📈 展開利: スロー(S)予想で逃げ・先行粘り込み`);
-      } else if (p.lateChargerRate > 0.5) { // 差し馬不利
+      } else if (horse.style === "差し" || horse.style === "追込") { // 差し馬不利
         potential -= 30;
       }
     }
@@ -161,7 +161,7 @@ export function calculateNARScore(
     }
 
     // 4. 展開（後方待機）ペナルティ: 【-10点】
-    if (prevRace && prevRace.corner4Position >= 3) {
+    if (prevRace && (prevRace.corner4Position || 0) >= 3) {
       potential -= 10;
       tags.push("❌ 大井減点: 前走4角3番手以下の後方待機ペナルティ");
     }
@@ -831,7 +831,7 @@ export function calculateNARScore(
   const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
 
   if (odds >= 15.0) {
-    if (prevRaceData && (prevRaceData.isStumbled || prevRaceData.cornerOuterCount >= 4)) {
+    if (prevRaceData && (prevRaceData.isStumbled || (prevRaceData.cornerOuterCount || 0) >= 4)) {
       // [減点方式] potential += 30;
       tags.push("💰 期待値爆発: 前走物理的不利(度外視) × 大穴オッズ");
     }

@@ -1,4 +1,4 @@
-import { Horse, PastRace, Race } from "../types";
+import { Horse, PastRace, Race, RaceResult } from "../types";
 import { generateId } from "./storage";
 
 // ==========================================
@@ -1361,48 +1361,15 @@ export function parseRakutenKeibaText(rawText: string): {
 
         horses.push({
           id: generateId(),
-          number,
-          frame,
-          name,
-          birthday,
-          jockeyWinRate,
-          jockeyPlaceRate,
-          bestWeight,
-          belonging: affiliation || undefined,
-          age,
-          gender,
-          coatColor: color || undefined,
-          weight: horseWeight,
-          weightChange: horseWeightChange,
-          jockey,
-          jockeyWeight: weight,
-          trainer,
-          owner,
-          breeder,
-          sire,
-          dam,
-          bms: damSire,
-          bloodline: sire || "",
-          style: "中団",
-          odds,
-          popularity,
-          pastRaces,
-          stableLocation: affiliation || "地方",
-          totalResults,
-          venueResults,
-          distanceResults,
-          courseResults,
-          under1400Results,
-          from1401To1600Results,
-          from1601To1800Results,
-          over1801Results,
-          bestTimes: Object.keys(bestTimes).length > 0 ? bestTimes : undefined,
+          number, frame, name, weightChange: horseWeightChange,
+          owner, breeder, trainer, sire, dam, bms: damSire, bloodline: sire, gender, age, coatColor: color,
+          weight: horseWeight, jockeyWeight: weight, jockey, odds, popularity, pastRaces,
+          style: estimateStyle(pastRaces),
+          totalResults, venueResults, distanceResults, courseResults, under1400Results, from1401To1600Results, from1601To1800Results, over1801Results,
+          bestTimes: Object.keys(bestTimes).length > 0 ? bestTimes : undefined
         });
 
         lineIndex = rIndex; // 次の馬へ進める
-      } else {
-        lineIndex += 15;
-      }
     } else {
       lineIndex++;
     }
@@ -1608,7 +1575,7 @@ export function parseJRAOfficialText(rawText: string): {
       
       horses.push({
           id: generateId(),
-          number, frame, name, horseWeight, horseWeightChange,
+          number, frame, name, weightChange: horseWeightChange,
           owner, breeder, trainer, sire, dam, bms, bloodline: sire, gender: sex, age, coatColor: coat,
           weight: horseWeight, jockeyWeight: weight, jockey, odds, popularity: pop, pastRaces,
           style: estimateStyle(pastRaces)

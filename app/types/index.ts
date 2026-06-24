@@ -79,8 +79,8 @@ export interface PastRace {
   popularity?: number;      // 単勝人気
   jockeyWeight?: number;    // 騎手斤量（斤量）
   time: string;     // 走破タイム
-  corner4Position: number; // 4角通過順
-  cornerOuterCount: number; // コーナー外回し頭数
+  corner4Position?: number; // 4角通過順
+  cornerOuterCount?: number; // コーナー外回し頭数
   weight: number;   // 馬体重
   jockey: string;   // 騎手
   odds: number;     // オッズ

@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import { Race, Horse } from "../types";
+import { Race, Horse, RaceResult } from "../types";
 import { generateId } from "../lib/storage";
-import { detectFormat, parseNARText, parseJRAText, parseRakutenKeibaText, parseJRAOfficialText } from "../lib/parser";
+import { detectFormat, parseNARText, parseJRAText, parseRakutenKeibaText, parseJRAOfficialText, parseRakutenKeibaResultText } from "../lib/parser";
 
 const CONDITIONS: Race["condition"][] = ["良","稍重","重","不良"];
 const SURFACES: Race["surface"][] = ["ダート","芝","障害"];

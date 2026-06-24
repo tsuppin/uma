@@ -136,14 +136,14 @@ export function calculateTsuchiyaScore(
     if (paceAnalysis.paceIntensity === 1) {
       if (p.lateChargerRate > 0.5) {
         potential += 30;
-        tags.push(📈 展開利: 前傾ラップ(H)予想で差し・追込台頭);
+        tags.push(`📈 展開利: 前傾ラップ(H)予想で差し・追込台頭`);
       } else if (p.frontRunnerRate > 0.5) {
         potential -= 30;
       }
     } else if (paceAnalysis.paceIntensity === -1) {
       if (p.frontRunnerRate > 0.5) {
         potential += 30;
-        tags.push(📈 展開利: スロー(S)予想で逃げ・先行粘り込み);
+        tags.push(`📈 展開利: スロー(S)予想で逃げ・先行粘り込み`);
       } else if (p.lateChargerRate > 0.5) {
         potential -= 30;
       }

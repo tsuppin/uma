@@ -289,7 +289,7 @@ export function analyzePaceFromMasterData(race: Race, masterData: MasterData) {
   let frontRunnersCount = 0;
   race.horses.forEach(h => {
     const p = analyzePassingPositions(h);
-    if (p.frontRunnerRate > 0.5) frontRunnersCount++;
+    if (h.style === "逃げ" || h.style === "先行") frontRunnersCount++;
   });
 
   // H/M/Sペース判定
