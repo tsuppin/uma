@@ -361,9 +361,10 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
   const completed = allCompleted.slice(-24).reverse();
 
   const totalC = allCompleted.length || 1;
-  let winH = 0, qinH = 0, trioH = 0, triH = 0;
+  let winH = 0, exactaH = 0, qinH = 0, trioH = 0, triH = 0;
   allCompleted.forEach(r => {
     if (r.result?.hits?.win) winH++;
+    if (r.result?.hits?.exacta) exactaH++;
     if (r.result?.hits?.quinella) qinH++;
     if (r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)) trioH++;
     if (r.result?.hits?.trifecta) triH++;
@@ -388,20 +389,24 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
           <div className="stat-card-label">的中数</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{((winH / totalC) * 100).toFixed(1)}%</div>
-          <div className="stat-card-label">単勝的中率</div>
+          <div className="stat-card-value" style={{ color: "white" }}>{((winH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">単勝</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{((qinH / totalC) * 100).toFixed(1)}%</div>
-          <div className="stat-card-label">馬連的中率</div>
+          <div className="stat-card-value" style={{ color: "white" }}>{((exactaH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">馬単</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{((trioH / totalC) * 100).toFixed(1)}%</div>
-          <div className="stat-card-label">三連複的中率</div>
+          <div className="stat-card-value" style={{ color: "white" }}>{((qinH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">馬連</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{((triH / totalC) * 100).toFixed(1)}%</div>
-          <div className="stat-card-label">三連単的中率</div>
+          <div className="stat-card-value" style={{ color: "white" }}>{((trioH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">三連複</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value" style={{ color: "white" }}>{((triH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">三連単</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value">{state.learningPatches.filter(p => p.active).length}</div>
