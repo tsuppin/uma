@@ -20,7 +20,17 @@ export default function StatsPanel({ state, onReset }: { state: AppState; onRese
       };
     }
     acc[race.venue].total++;
-    if (race.result?.hitTickets?.length) acc[race.venue].hit++;
+    if (
+      race.result?.hits?.win ||
+      race.result?.hits?.wide ||
+      race.result?.hits?.trio || 
+      race.result?.hits?.trifecta || 
+      race.result?.hits?.quinella || 
+      race.result?.hits?.exacta ||
+      (race.result?.hitTickets && race.result.hitTickets.length > 0)
+    ) {
+      acc[race.venue].hit++;
+    }
     acc[race.venue].profit += race.result?.profit || 0;
 
     if (race.result) {

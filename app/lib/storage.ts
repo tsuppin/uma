@@ -122,7 +122,7 @@ export function addResult(state: AppState, result: RaceResult): AppState {
   const hitRaces = completedRaces.filter(r => {
     const res = r.result;
     if (!res) return false;
-    const isHitViaHits = res.hits && (res.hits.trio || res.hits.trifecta || res.hits.quinella || res.hits.exacta);
+    const isHitViaHits = res.hits && (res.hits.win || res.hits.wide || res.hits.trio || res.hits.trifecta || res.hits.quinella || res.hits.exacta);
     const isHitViaTickets = res.hitTickets && res.hitTickets.length > 0;
     return isHitViaHits || isHitViaTickets;
   });
