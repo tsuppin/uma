@@ -231,6 +231,45 @@ export default function LearningPanel({ state, onStateChange }: { state: AppStat
         </div>
       )}
 
+      {/* 一括削除機能 */}
+      <div className="card mb-12">
+        <div className="card-header"><div className="card-title">🗑️ パッチ一括削除（テキスト判定）</div></div>
+        <div className="form-group">
+          <label className="form-label">成績不振なパッチ等のテキストを貼り付けると、一致するパッチを削除します。</label>
+          <textarea 
+            className="form-input" 
+            rows={4} 
+            placeholder="例: 学習パッチ(v68.1)"
+            id="bulk-delete-textarea"
+          />
+        </div>
+        <button className="btn btn-danger" onClick={() => {
+          const textarea = document.getElementById('bulk-delete-textarea') as HTMLTextAreaElement;
+          const text = textarea.value;
+          if (!text) return;
+          const lines = text.split('\n').map(t => t.trim()).filter(t => t.length > 0);
+          
+          const newPatches = state.learningPatches.filter(p => !lines.includes(p.description));
+          const removed = state.learningPatches.length - newPatches.length;
+          
+          if (removed > 0) {
+            if (confirm(`${removed}件のパッチを削除します。よろしいですか？`)) {
+              const newState = { 
+                ...state, 
+                learningPatches: newPatches, 
+                modelVersion: `TsuchiyaProtocol-Omega v${newPatches.length}.0` 
+              };
+              saveStateToServer(newState);
+              onStateChange(newState);
+              textarea.value = "";
+              alert(`削除しました。`);
+            }
+          } else {
+            alert('一致するパッチが見つかりませんでした。');
+          }
+        }}>マッチするパッチを削除</button>
+      </div>
+
       {state.learningPatches.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">🧬</div>
