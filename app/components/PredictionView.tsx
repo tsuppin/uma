@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Race, Formation } from "../types";
 import { generateFormation } from "../lib/engine";
 import MobileRaceEntry from "./MobileRaceEntry";
+import RacePaceChart from "./RacePaceChart";
 
 function FrameBadge({ frame }: { frame: number }) {
   const frameClass = frame >= 1 && frame <= 8 ? `frame-${frame}` : "frame-other";
@@ -117,7 +118,9 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
       )}
 
       {tab === "prediction" && hasPrediction && (
-        <div className="card">
+        <>
+          <RacePaceChart horses={race.horses} predictions={predictions} />
+          <div className="card">
           <div className="card-header">
             <div className="card-title">📊 土屋プロトコル解析結果</div>
             <div className="fs-xs text-muted">A評価（軸）: 上位3頭 / B評価（ヒモ穴）: Darkness上位</div>
@@ -178,6 +181,7 @@ export default function PredictionView({ race, onRunPrediction, onEnterResult, o
             );
           })()}
         </div>
+        </>
       )}
 
       {tab === "formation" && formation && (
