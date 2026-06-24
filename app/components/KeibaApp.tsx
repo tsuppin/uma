@@ -361,11 +361,12 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
   const completed = allCompleted.slice(-24).reverse();
 
   const totalC = allCompleted.length || 1;
-  let winH = 0, exactaH = 0, qinH = 0, trioH = 0, triH = 0;
+  let winH = 0, exactaH = 0, qinH = 0, wideH = 0, trioH = 0, triH = 0;
   allCompleted.forEach(r => {
     if (r.result?.hits?.win) winH++;
     if (r.result?.hits?.exacta) exactaH++;
     if (r.result?.hits?.quinella) qinH++;
+    if (r.result?.hits?.wide) wideH++;
     if (r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)) trioH++;
     if (r.result?.hits?.trifecta) triH++;
   });
@@ -399,6 +400,10 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
         <div className="stat-card">
           <div className="stat-card-value" style={{ color: "white" }}>{((qinH / totalC) * 100).toFixed(1)}%</div>
           <div className="stat-card-label">馬連</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value" style={{ color: "white" }}>{((wideH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">ワイド</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value" style={{ color: "white" }}>{((trioH / totalC) * 100).toFixed(1)}%</div>
