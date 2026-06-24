@@ -357,7 +357,17 @@ export default function KeibaApp() {
 function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: AppState; onSelectRace: (id: string) => void; onNewRace: () => void; onDeleteRace: (id: string) => void }) {
   const { stats } = state;
   const pending = state.races.filter(r => !r.result);
-  const completed = state.races.filter(r => r.result).slice(-24).reverse();
+  const allCompleted = state.races.filter(r => r.result);
+  const completed = allCompleted.slice(-24).reverse();
+
+  const totalC = allCompleted.length || 1;
+  let winH = 0, qinH = 0, trioH = 0, triH = 0;
+  allCompleted.forEach(r => {
+    if (r.result?.hits?.win) winH++;
+    if (r.result?.hits?.quinella) qinH++;
+    if (r.result?.hits?.trio || (r.result?.hitTickets && r.result.hitTickets.length > 0)) trioH++;
+    if (r.result?.hits?.trifecta) triH++;
+  });
 
   return (
     <div className="fade-in">
@@ -378,8 +388,20 @@ function Dashboard({ state, onSelectRace, onNewRace, onDeleteRace }: { state: Ap
           <div className="stat-card-label">的中数</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{(stats.hitRate * 100).toFixed(1)}%</div>
-          <div className="stat-card-label">的中率</div>
+          <div className="stat-card-value">{((winH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">単勝的中率</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value">{((qinH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">馬連的中率</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value">{((trioH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">三連複的中率</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value">{((triH / totalC) * 100).toFixed(1)}%</div>
+          <div className="stat-card-label">三連単的中率</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value">{state.learningPatches.filter(p => p.active).length}</div>
