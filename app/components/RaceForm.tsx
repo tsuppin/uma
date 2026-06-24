@@ -2,13 +2,14 @@
 import { useState } from "react";
 import { Race, Horse } from "../types";
 import { generateId } from "../lib/storage";
-import { detectFormat, parseNARText, parseJRAText, parseRakutenKeibaText } from "../lib/parser";
+import { detectFormat, parseNARText, parseJRAText, parseRakutenKeibaText, parseJRAOfficialText } from "../lib/parser";
 
 const CONDITIONS: Race["condition"][] = ["良","稍重","重","不良"];
 const SURFACES: Race["surface"][] = ["ダート","芝","障害"];
 
-export default function RaceForm({ onSubmit, onCancel }: {
+export default function RaceForm({ onSubmit, onSubmitResult, onCancel }: {
   onSubmit: (race: Race) => void;
+  onSubmitResult?: (race: Race, result: RaceResult) => void;
   onCancel: () => void;
 }) {
   const [pasteText, setPasteText] = useState("");
@@ -18,6 +19,7 @@ export default function RaceForm({ onSubmit, onCancel }: {
     date?: string; distance?: number; surface?: Race["surface"];
     condition?: Race["condition"]; headCount?: number; raceName?: string;
   } | null>(null);
+  const [parsedResult, setParsedResult] = useState<{ race: Partial<Race>, result: RaceResult } | null>(null);
 
   // レース基本情報（解析後に確認・修正）
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -39,12 +41,31 @@ export default function RaceForm({ onSubmit, onCancel }: {
     if (!pasteText.trim()) { setParseError("テキストを貼り付けてください"); return; }
 
     const fmt = detectFormat(pasteText);
-    let result: ReturnType<typeof parseNARText> | ReturnType<typeof parseJRAText> | ReturnType<typeof parseRakutenKeibaText>;
+    if (fmt === "rakuten_result") {
+      const { race: partialRace, result: parsedResultObj } = parseRakutenKeibaResultText(pasteText);
+      if (!partialRace.venue || parsedResultObj.result.length === 0) {
+        setParseError("競走成績を正しく解析できませんでした。出馬表ではなく成績表か確認してください。");
+        return;
+      }
+      setParsedResult({ race: partialRace, result: parsedResultObj });
+      if (partialRace.venue) setVenue(partialRace.venue);
+      if (partialRace.raceNumber) setRaceNumber(partialRace.raceNumber);
+      if (partialRace.date) setDate(partialRace.date);
+      if (partialRace.distance) setDistance(partialRace.distance);
+      if (partialRace.surface) setSurface(partialRace.surface);
+      if (partialRace.condition) setCondition(partialRace.condition);
+      if (partialRace.raceName) setRaceName(partialRace.raceName);
+      return;
+    }
+
+    let result: ReturnType<typeof parseNARText> | ReturnType<typeof parseJRAText> | ReturnType<typeof parseRakutenKeibaText> | ReturnType<typeof parseJRAOfficialText>;
 
     if (fmt === "rakuten") {
       result = parseRakutenKeibaText(pasteText);
     } else if (fmt === "nar") {
       result = parseNARText(pasteText);
+    } else if (fmt === "jra_official") {
+      result = parseJRAOfficialText(pasteText);
     } else {
       result = parseJRAText(pasteText);
     }
@@ -80,6 +101,24 @@ export default function RaceForm({ onSubmit, onCancel }: {
       weather: weather || undefined,
       horses: parsed.horses,
     });
+  };
+
+  const handleSubmitResult = () => {
+    if (!parsedResult || !onSubmitResult) return;
+    if (!venue) { alert("競馬場を入力してください"); return; }
+    
+    const mockRace: Race = {
+      id: parsedResult.result.raceId || generateId(),
+      date, venue, raceNumber,
+      raceName: raceName || `${raceNumber}R`,
+      distance, surface, condition,
+      headCount: parsedResult.result.result.length,
+      isWin5: false, windSpeed: 0, isHeadwind: false, isInBiasActive: false,
+      trackName: venue,
+      horses: []
+    };
+    
+    onSubmitResult(mockRace, parsedResult.result);
   };
 
   const updateHorse = (idx: number, field: keyof Horse, value: unknown) => {
@@ -295,12 +334,18 @@ export default function RaceForm({ onSubmit, onCancel }: {
           </div>
         </div>
 
-        <div className="flex gap-8 justify-end">
-          <button type="button" className="btn btn-secondary" onClick={() => setParsed(null)}>← 貼り直す</button>
-          <button type="button" className="btn btn-primary p-10-28 fs-md" onClick={handleSubmit}>
-            💾 保存して予想へ
-          </button>
-        </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn btn-secondary" onClick={onCancel} style={{ flex: 1 }}>キャンセル</button>
+              {parsedResult ? (
+                <button className="btn btn-primary" onClick={handleSubmitResult} style={{ flex: 1, backgroundColor: '#10b981' }}>
+                  🏁 結果を蓄積・保存
+                </button>
+              ) : (
+                <button className="btn btn-primary" onClick={handleSubmit} disabled={!parsed} style={{ flex: 1 }}>
+                  ✨ このレースを登録して予想へ
+                </button>
+              )}
+            </div>
       </div>
     )}
     </div>

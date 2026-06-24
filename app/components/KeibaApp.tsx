@@ -96,6 +96,14 @@ export default function KeibaApp() {
     setView("prediction");
   };
 
+  const handleNewResult = (race: Race, result: RaceResult) => {
+    const stateWithRace = addRace(state, race);
+    const newState = addResult(stateWithRace, result);
+    setState(newState);
+    setView("dashboard");
+    alert("競走成績をMasterDataへ保存・蓄積しました！");
+  };
+
   const handleRunPrediction = (race: Race) => {
     setIsProcessing(true);
     setTimeout(() => {
@@ -302,7 +310,7 @@ export default function KeibaApp() {
           <Dashboard state={state} onSelectRace={(id) => { setSelectedRaceId(id); setView("prediction"); }} onNewRace={() => setView("new_race")} onDeleteRace={handleDeleteRace} />
         )}
         {view === "new_race" && (
-          <RaceForm onSubmit={handleNewRace} onCancel={() => setView("dashboard")} />
+          <RaceForm onSubmit={handleNewRace} onSubmitResult={handleNewResult} onCancel={() => setView("dashboard")} />
         )}
         {view === "prediction" && selectedRace && (
           <PredictionView

@@ -4,8 +4,12 @@ import { generateId } from "./storage";
 // ==========================================
 // フォーマット自動判別
 // ==========================================
-export function detectFormat(text: string): "jra" | "nar" | "rakuten" {
-  if (text.includes("楽天競馬") || text.includes("Rakuten Mobile")) return "rakuten";
+export function detectFormat(text: string): "jra" | "jra_official" | "nar" | "rakuten" | "rakuten_result" {
+  if (text.includes("楽天競馬") || text.includes("Rakuten Mobile")) {
+    if (text.includes("競走成績") && text.includes("■全着順")) return "rakuten_result";
+    return "rakuten";
+  }
+  if (text.includes("JRA 日本中央競馬会") || text.includes("ホーム>競馬メニュー>出馬表")) return "jra_official";
   if (/枠\d[白黒赤青黄緑橙桃]/.test(text)) return "jra";
   const venue = extractVenue(text);
   const jraTracks = ["東京", "中山", "京都", "阪神", "中京", "新潟", "福島", "小倉", "函館", "札幌"];
@@ -1082,6 +1086,18 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
 // ==========================================
 // 楽天競馬出馬表パーサー - フルデータ対応版
 // ==========================================
+function parseResultString(str: string): [number, number, number, number] | undefined {
+  if (!str || !str.match(/^\d+$/)) return undefined;
+  if (str.length === 4) {
+      return [parseInt(str[0]), parseInt(str[1]), parseInt(str[2]), parseInt(str[3])];
+  } else if (str.length === 5) {
+      return [parseInt(str[0]), parseInt(str[1]), parseInt(str[2]), parseInt(str.slice(3))];
+  } else if (str.length > 5) {
+      return [parseInt(str[0]), parseInt(str[1]), parseInt(str[2]), parseInt(str.slice(3))];
+  }
+  return undefined;
+}
+
 export function parseRakutenKeibaText(rawText: string): {
   horses: Horse[]; venue: string; raceNumber: number;
   date: string; distance: number; surface: Race["surface"];
@@ -1139,14 +1155,28 @@ export function parseRakutenKeibaText(rawText: string): {
   
   while (lineIndex < lines.length) {
     const line = lines[lineIndex];
-    // 1	1	-	ジャングルポケット
+    // 1	1	-	ジャングルポケット または 6	-	ビーチパトロール (枠番省略時)
     const startMatch = line.match(/^(\d+)\s+(\d+)\s+([^\s]+)\s+(.+)$/);
+    const startMatchMissingWaku = line.match(/^(\d+)\s+([^\s]+)\s+(.+)$/);
+
+    let frame = 0;
+    let number = 0;
+    let sire = "";
+    let matched = false;
+
     if (startMatch) {
-      const frame = parseInt(startMatch[1]);
-      const number = parseInt(startMatch[2]);
-      const sire = startMatch[4];
-      
-      if (lineIndex + 15 < lines.length) {
+      frame = parseInt(startMatch[1]);
+      number = parseInt(startMatch[2]);
+      sire = startMatch[4];
+      matched = true;
+    } else if (startMatchMissingWaku) {
+      number = parseInt(startMatchMissingWaku[1]);
+      frame = 0; // 枠番は省略されているため0とする
+      sire = startMatchMissingWaku[3];
+      matched = true;
+    }
+
+    if (matched) {
         const name = lines[lineIndex + 1];
         const dam = lines[lineIndex + 2];
         const damSire = lines[lineIndex + 3].replace(/^\(|\)$/g, '');
@@ -1179,10 +1209,11 @@ export function parseRakutenKeibaText(rawText: string): {
         let horseWeight = 480;
         let horseWeightChange = 0;
         for (let j = lineIndex + 16; j < Math.min(lineIndex + 25, lines.length); j++) {
-            if (lines[j].match(/^\d{3}\s*\d{3}$/)) {
-                horseWeight = parseInt(lines[j].split(/\s+/)[0]);
-            } else if (lines[j].match(/^[+-]\d+$/)) {
-                horseWeightChange = parseInt(lines[j]);
+            const hwMatch = lines[j].match(/^(\d{3})\s*(\d{3})$/);
+            if (hwMatch) {
+                horseWeight = parseInt(hwMatch[2]);
+            } else if (lines[j].match(/^[+-]\d+|±0$/)) {
+                horseWeightChange = parseInt(lines[j].replace('±0', '0'));
             }
         }
 
@@ -1239,11 +1270,23 @@ export function parseRakutenKeibaText(rawText: string): {
               }
 
               let pResult = 0;
-              // 着順は前の行（過去映像の2つ上など）にある場合が多いですが、正確に取るのが難しい場合は暫定値を設定。
-              // test_input.txt では 過去映像 の2行上が着順 (例: Line 44=4, 45=重, 46=11頭, 47=過去映像)
               const pResultLine = lines[rIndex - 3];
               if (pResultLine && pResultLine.match(/^\d+$/)) {
                  pResult = parseInt(pResultLine);
+              }
+              
+              let pCondition: PastRace["condition"] = "良";
+              const pConditionLine = lines[rIndex - 2];
+              if (pConditionLine && pConditionLine.match(/^(良|稍重|重|不良|稍|不)$/)) {
+                  if (pConditionLine === "稍") pCondition = "稍重";
+                  else if (pConditionLine === "不") pCondition = "不良";
+                  else pCondition = pConditionLine as PastRace["condition"];
+              }
+              
+              let pHeadCount = 0;
+              const pHeadCountLine = lines[rIndex - 1];
+              if (pHeadCountLine && pHeadCountLine.match(/^(\d+)頭$/)) {
+                  pHeadCount = parseInt(pHeadCountLine.replace('頭', ''));
               }
 
               pastRaces.push({
@@ -1252,8 +1295,9 @@ export function parseRakutenKeibaText(rawText: string): {
                 raceName: prRaceName1,
                 distance: pDist,
                 surface: pSurf,
-                condition: "良", // 一旦仮固定
+                condition: pCondition,
                 result: pResult,
+                headCount: pHeadCount,
                 popularity: pPop,
                 jockeyWeight: pWeight,
                 time: pTime,
@@ -1273,11 +1317,46 @@ export function parseRakutenKeibaText(rawText: string): {
             rIndex += 9;
           } else {
              // 次の馬の始まりが見つかったら抜ける
-             if (lines[rIndex] && lines[rIndex].match(/^\d+\s+\d+\s+[^\s]+\s+.*$/)) {
+             if (lines[rIndex] && lines[rIndex].match(/^\d+\s+[^\s]+\s+.*$/)) {
                 break;
              }
              rIndex++;
           }
+        }
+
+        let totalResults, venueResults, distanceResults, courseResults, under1400Results, from1401To1600Results, from1601To1800Results, over1801Results;
+        let bestTimes: Record<string, string> = {};
+        
+        for (let i = lineIndex + 16; i < rIndex; i++) {
+            if (lines[i] === "持ち時計") {
+                if (i >= 8) {
+                    totalResults = parseResultString(lines[i - 8]);
+                    venueResults = parseResultString(lines[i - 7]);
+                    distanceResults = parseResultString(lines[i - 6]);
+                    courseResults = parseResultString(lines[i - 5]);
+                    under1400Results = parseResultString(lines[i - 4]);
+                    from1401To1600Results = parseResultString(lines[i - 3]);
+                    from1601To1800Results = parseResultString(lines[i - 2]);
+                    over1801Results = parseResultString(lines[i - 1]);
+                }
+                
+                let j = i + 1;
+                let currentDistance: string | null = null;
+                while (j < rIndex) {
+                    if (lines[j].match(/^\d+$/) || lines[j].match(/^[^\d]+\d+$/)) {
+                        currentDistance = lines[j];
+                    } else if (lines[j].match(/^[^\d]{1,2}\d{4}[^\s]+$/)) {
+                         if (currentDistance) {
+                             const timeStrMatch = lines[j].match(/(\d)(\d{2})(\d)/);
+                             if (timeStrMatch) {
+                                 bestTimes[currentDistance] = `${timeStrMatch[1]}:${timeStrMatch[2]}.${timeStrMatch[3]}`;
+                             }
+                         }
+                    }
+                    j++;
+                }
+                break;
+            }
         }
 
         horses.push({
@@ -1285,6 +1364,10 @@ export function parseRakutenKeibaText(rawText: string): {
           number,
           frame,
           name,
+          birthday,
+          jockeyWinRate,
+          jockeyPlaceRate,
+          bestWeight,
           belonging: affiliation || undefined,
           age,
           gender,
@@ -1305,6 +1388,15 @@ export function parseRakutenKeibaText(rawText: string): {
           popularity,
           pastRaces,
           stableLocation: affiliation || "地方",
+          totalResults,
+          venueResults,
+          distanceResults,
+          courseResults,
+          under1400Results,
+          from1401To1600Results,
+          from1601To1800Results,
+          over1801Results,
+          bestTimes: Object.keys(bestTimes).length > 0 ? bestTimes : undefined,
         });
 
         lineIndex = rIndex; // 次の馬へ進める
@@ -1323,3 +1415,364 @@ export function parseRakutenKeibaText(rawText: string): {
   };
 }
 
+
+export function parseJRAOfficialText(rawText: string): {
+  horses: Horse[]; venue: string; raceNumber: number;
+  date: string; distance: number; surface: Race["surface"];
+  condition: Race["condition"]; headCount: number; raceName: string;
+} {
+  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l !== '');
+  
+  let date = "";
+  let venue = "";
+  let raceNumber = 0;
+  let distance = 0;
+  let surface: Race["surface"] = "ダート";
+  let condition: Race["condition"] = "良";
+  let raceName = "";
+  
+  for (let i = 0; i < Math.min(lines.length, 50); i++) {
+      const line = lines[i];
+      const dateMatch = line.match(/^(\d{4}年\d{1,2}月\d{1,2}日)（[^）]+）\s*\d+回([^0-9]+)\d+日\s*(\d+)レース/);
+      if (dateMatch) {
+           date = dateMatch[1].replace(/年|月/g, '-').replace('日', '');
+           venue = dateMatch[2].trim();
+           raceNumber = parseInt(dateMatch[3]);
+      }
+      
+      const distMatch = line.match(/コース：([\d,]+)メートル（(ダート|芝|障害)・/);
+      if (distMatch) {
+          distance = parseInt(distMatch[1].replace(',', ''));
+          surface = distMatch[2] === "ダート" ? "ダート" : (distMatch[2] === "芝" ? "芝" : "障害");
+      }
+
+      if (line.match(/^20\d{2}年\d{1,2}月\d{1,2}日/) && !dateMatch) {
+          const m = line.match(/(\d+)回([^0-9]+)\d+日\s+発走時刻：/);
+          if (m) {
+              venue = m[2].trim();
+          }
+      }
+      if (line.includes("歳未勝利") || line.includes("歳以上") || line.includes("新馬")) {
+          if (!raceName) raceName = line;
+      }
+  }
+  
+  const horses: Horse[] = [];
+  const blockStarts: number[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+      if (lines[i].match(/^枠[1-8][白黒赤青黄緑橙桃]\s*(\d+)/)) {
+          blockStarts.push(i);
+      }
+  }
+  
+  for (let i = 0; i < blockStarts.length; i++) {
+      const start = blockStarts[i];
+      const end = i < blockStarts.length - 1 ? blockStarts[i+1] : lines.length;
+      const horseBlock = lines.slice(start, end);
+      
+      const line1Match = horseBlock[0].match(/^枠([1-8])[白黒赤青黄緑橙桃]\s*(\d+)/);
+      let frame = line1Match ? parseInt(line1Match[1]) : 0;
+      let number = line1Match ? parseInt(line1Match[2]) : 0;
+      
+      let offset = 1;
+      if (horseBlock[offset] === 'ブリンカー着用') offset++;
+      let name = horseBlock[offset]; offset++;
+      let odds = parseFloat(horseBlock[offset]); offset++;
+      let pop = 0;
+      if (horseBlock[offset].match(/\((\d+)番人気\)/)) {
+          pop = parseInt(horseBlock[offset].match(/\((\d+)番人気\)/)![1]);
+          offset++;
+      }
+      
+      let horseWeight = 0;
+      let horseWeightChange = 0;
+      if (horseBlock[offset].match(/^(\d{3})kg\(([-+]?\d+|初出走)\)/)) {
+          const hwMatch = horseBlock[offset].match(/^(\d{3})kg\(([-+]?\d+|初出走)\)/)!;
+          horseWeight = parseInt(hwMatch[1]);
+          if (hwMatch[2] !== '初出走') horseWeightChange = parseInt(hwMatch[2]);
+          offset++;
+      }
+      
+      let owner = horseBlock[offset]; offset++;
+      let breeder = horseBlock[offset]; offset++;
+      let trainer = horseBlock[offset].replace(/\([^\)]+\)/, '').trim(); offset++;
+      
+      let sire = horseBlock[offset].replace('父：', ''); offset++;
+      let dam = horseBlock[offset].replace('母：', ''); offset++;
+      let bms = horseBlock[offset].replace('(母の父：', '').replace(')', ''); offset++;
+      
+      if (horseBlock[offset] === '勝負服の画像') offset++;
+      
+      let sex: Horse["gender"] = "牡", age = 0, coat = "";
+      const sexAgeMatch = horseBlock[offset].match(/^([牡牝セセン])(\d+)\/(.+)$/);
+      if (sexAgeMatch) {
+           sex = (sexAgeMatch[1] === "セ" || sexAgeMatch[1] === "セン") ? "セン" : sexAgeMatch[1] as Horse["gender"];
+           age = parseInt(sexAgeMatch[2]);
+           coat = sexAgeMatch[3];
+           offset++;
+      }
+      
+      let weight = parseFloat(horseBlock[offset].replace('kg', '')); offset++;
+      let jockey = horseBlock[offset]; offset++;
+      
+      const pastRaces: PastRace[] = [];
+      
+      for (let j = offset; j < horseBlock.length; j++) {
+          const dateVenueMatch = horseBlock[j].match(/^(\d{4}年\d{1,2}月\d{1,2}日)\s+(.+)$/);
+          if (dateVenueMatch) {
+              let prDate = dateVenueMatch[1].replace(/年|月/g, '-').replace('日', '');
+              let prVenue = dateVenueMatch[2]; j++;
+              let prRaceName = horseBlock[j]; j++;
+              
+              let result = 0, headCount = 0;
+              let resMatch = horseBlock[j].match(/(\d+)着\s*(\d+)頭/);
+              if (resMatch) {
+                  result = parseInt(resMatch[1]);
+                  headCount = parseInt(resMatch[2]);
+              } j++;
+              
+              let prPop = 0;
+              if (horseBlock[j].match(/(\d+)番人気/)) {
+                  prPop = parseInt(horseBlock[j].match(/(\d+)番人気/)![1]);
+              } j++;
+              
+              let prJockey = "", prJWeight = 55;
+              let jwMatch = horseBlock[j].match(/^(.+?)\s+([\d.]+)kg/);
+              if (jwMatch) {
+                  prJockey = jwMatch[1];
+                  prJWeight = parseFloat(jwMatch[2]);
+              } j++;
+              
+              let prDist = 0, prSurf: Race["surface"] = "ダート";
+              let dsMatch = horseBlock[j].match(/(\d+)(ダ|芝|障)/);
+              if (dsMatch) {
+                  prDist = parseInt(dsMatch[1]);
+                  prSurf = dsMatch[2] === "ダ" ? "ダート" : (dsMatch[2] === "芝" ? "芝" : "障害");
+              } j++;
+              
+              let prTime = horseBlock[j]; j++;
+              
+              let prCond: PastRace["condition"] = "良";
+              if (horseBlock[j].match(/^(良|稍重|重|不良|稍|不)$/)) {
+                  let c = horseBlock[j];
+                  if (c === "稍") prCond = "稍重";
+                  else if (c === "不") prCond = "不良";
+                  else prCond = c as PastRace["condition"];
+              } j++;
+              
+              let prHWeight = 0;
+              if (horseBlock[j] && horseBlock[j].match(/(\d{3})kg/)) {
+                  prHWeight = parseInt(horseBlock[j].match(/(\d{3})kg/)![1]);
+              } j++;
+              
+              let prPassing = horseBlock[j] ? horseBlock[j].replace(/\s+/g, '-') : ""; j++;
+              
+              let pr3f = "";
+              if (horseBlock[j] && horseBlock[j].startsWith("3F")) {
+                   pr3f = horseBlock[j].replace("3F", "").trim(); j++;
+              }
+              
+              let prWinner = horseBlock[j] || "";
+              let timeDiff = 0;
+              if (prWinner.includes("(")) {
+                  const diffM = prWinner.match(/\(([-+]?[\d.]+)\)$/);
+                  if (diffM) timeDiff = parseFloat(diffM[1]);
+                  prWinner = prWinner.replace(/\([-+]?[\d.]+\)$/, '');
+              }
+              
+              pastRaces.push({
+                   date: prDate,
+                   venue: prVenue,
+                   raceName: prRaceName,
+                   raceClass: prRaceName,
+                   distance: prDist,
+                   surface: prSurf,
+                   condition: prCond,
+                   result: result,
+                   headCount: headCount,
+                   popularity: prPop,
+                   jockey: prJockey,
+                   jockeyWeight: prJWeight,
+                   time: prTime,
+                   weight: prHWeight,
+                   passingPositions: prPassing,
+                   last3fTime: pr3f,
+                   winnerName: prWinner,
+                   timeDiff: timeDiff,
+                   odds: 0,
+                   prize: 0
+              });
+          }
+      }
+      
+      horses.push({
+          id: generateId(),
+          number, frame, name, horseWeight, horseWeightChange,
+          owner, breeder, trainer, sire, dam, bms, bloodline: sire, gender: sex, age, coatColor: coat,
+          weight: horseWeight, jockeyWeight: weight, jockey, odds, popularity: pop, pastRaces,
+          style: estimateStyle(pastRaces)
+      });
+  }
+  
+  return { date, venue, raceNumber, distance, surface, condition, headCount: horses.length, raceName, horses };
+}
+
+export function parseRakutenKeibaResultText(rawText: string): { race: Partial<Race>, result: RaceResult } {
+  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l !== '');
+  
+  const race: Partial<Race> = {
+      date: "",
+      venue: "",
+      raceNumber: 0,
+      distance: 0,
+      surface: "ダート",
+      condition: "良",
+      raceName: ""
+  };
+  
+  const result: RaceResult = {
+      raceId: "",
+      result: [],
+      lapTimes: [],
+      last4fTime: "",
+      last3fTime: "",
+      cornerPassings: []
+  };
+
+  for (let i = 0; i < Math.min(lines.length, 60); i++) {
+      const line = lines[i];
+      const vrMatch = line.match(/^(.+)競馬場\s+(\d+)R/);
+      if (vrMatch && !race.venue) {
+          race.venue = vrMatch[1];
+          race.raceNumber = parseInt(vrMatch[2]);
+      }
+      
+      const dateMatch = line.match(/^(\d{4}年\d{1,2}月\d{1,2}日)/);
+      if (dateMatch) {
+          race.date = dateMatch[1].replace(/年|月/g, '-').replace('日', '');
+      }
+      
+      const distMatch = line.match(/^(ダ|芝)(\d{1,3}(?:,\d{3})?)m/);
+      if (distMatch) {
+          race.surface = distMatch[1] === "ダ" ? "ダート" : "芝";
+          race.distance = parseInt(distMatch[2].replace(',', ''));
+      }
+      const condMatch = line.match(/(ダ|芝)：(良|稍重|重|不良)/);
+      if (condMatch) {
+          race.condition = condMatch[2] as Race["condition"];
+      }
+  }
+  
+  result.raceId = `${race.date}_${race.venue}_${race.raceNumber}`;
+  
+  let inResultBlock = false;
+  let inTimeBlock = false;
+  let inCornerBlock = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      if (line === "■全着順") {
+          inResultBlock = true;
+          while (i + 1 < lines.length && !lines[i + 1].match(/^\d+\s+\d+\s+\d+/)) {
+              i++;
+          }
+          continue;
+      }
+      if (line === "■タイム") {
+          inResultBlock = false;
+          inTimeBlock = true;
+          continue;
+      }
+      if (line === "■コーナー通過順位") {
+          inTimeBlock = false;
+          inCornerBlock = true;
+          continue;
+      }
+      if (line === "■払戻金") {
+          inCornerBlock = false;
+          break; 
+      }
+      
+      if (inResultBlock) {
+          const rowMatch = line.match(/^(\d+)\s+(\d+)\s+(\d+)\s+(.+?)\s+([牡牝セセン]\d+\s*\/[^	\s]+)\s+([\d.]+)\s+(\d+)/);
+          if (rowMatch) {
+              const rank = parseInt(rowMatch[1]);
+              const frame = parseInt(rowMatch[2]);
+              const number = parseInt(rowMatch[3]);
+              const name = rowMatch[4];
+              const weight = parseInt(rowMatch[7]);
+              
+              i++;
+              const line2 = lines[i];
+              let weightChange = 0;
+              let jockey = "";
+              if (line2) {
+                  const pMatch = line2.match(/^([-+±]?\d+)\s+(.+)$/);
+                  if (pMatch) {
+                      weightChange = pMatch[1] === "±0" ? 0 : parseInt(pMatch[1]);
+                      jockey = pMatch[2].trim();
+                  }
+              }
+              
+              i++;
+              const line3 = lines[i];
+              let time = "", margin = "", last3f = "", trainer = "", popularity = 0;
+              if (line3) {
+                  const parts = line3.split('\t').map(p => p.trim());
+                  if (parts.length >= 6) {
+                      time = parts[1];
+                      margin = parts[2];
+                      last3f = parts[3];
+                      trainer = parts[4];
+                      popularity = parseInt(parts[5]);
+                  } else {
+                      const m3 = line3.match(/\)\s+([\d:.]+)\s*(.*?)\s+([\d.]+)\s+(.+?)\s+(\d+)$/);
+                      if (m3) {
+                          time = m3[1]; margin = m3[2]; last3f = m3[3]; trainer = m3[4]; popularity = parseInt(m3[5]);
+                      }
+                  }
+              }
+              
+              result.result.push({
+                  rank,
+                  horseNumber: number,
+                  horseName: name,
+                  time,
+                  margin,
+                  last3f,
+                  trainer,
+                  popularity,
+                  weight,
+                  weightChange,
+                  jockey,
+                  odds: 0,
+                  prize: 0
+              });
+          }
+      }
+      
+      if (inTimeBlock) {
+          if (line.startsWith("ハロンタイム")) {
+              const lapsStr = line.replace("ハロンタイム", "").trim();
+              result.lapTimes = lapsStr.split('-').map(s => s.trim());
+          }
+          if (line.startsWith("上がり")) {
+              const agariStr = line.replace("上がり", "").trim();
+              const m4f = agariStr.match(/4F\s+([\d.]+)/);
+              if (m4f) result.last4fTime = m4f[1];
+              const m3f = agariStr.match(/3F\s+([\d.]+)/);
+              if (m3f) result.last3fTime = m3f[1];
+          }
+      }
+      
+      if (inCornerBlock) {
+          if (line.match(/^[１-４]角/)) {
+              result.cornerPassings?.push(line.trim());
+          }
+      }
+  }
+  
+  return { race, result };
+}

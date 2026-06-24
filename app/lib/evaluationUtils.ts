@@ -257,7 +257,57 @@ export function analyzeNARClassDrop(currentClass?: string, pastClass?: string) {
   return { isClassDrop: false, diff: 0, prevClass: "", currClass: "" };
 }
 
-// 9. 叩き2戦目（休み明け2戦目）の巻き返し判定
+// 9. ペース・展開予想（MasterData活用）
+export function analyzePaceFromMasterData(race: Race, masterData: MasterData) {
+  const key = `${race.venue}_${race.distance}_${race.surface}`;
+  const pastLaps = masterData.laps?.[key] || [];
+  
+  if (pastLaps.length === 0) {
+    return { hasData: false, expectedPace: 'M', paceIntensity: 0, targetHorsePaceSuitability: 0 };
+  }
+
+  // 過去の同条件での前半3F平均タイムを算出
+  let totalFirst3f = 0;
+  let count = 0;
+  for (const lapInfo of pastLaps) {
+    if (lapInfo.laps.length >= 3) {
+      const first3f = parseFloat(lapInfo.laps[0]) + parseFloat(lapInfo.laps[1]) + parseFloat(lapInfo.laps[2]);
+      if (!isNaN(first3f)) {
+        totalFirst3f += first3f;
+        count++;
+      }
+    }
+  }
+
+  if (count === 0) {
+    return { hasData: false, expectedPace: 'M', paceIntensity: 0, targetHorsePaceSuitability: 0 };
+  }
+
+  const avgFirst3f = totalFirst3f / count;
+  
+  // 今走の逃げ・先行馬の数を概算（今回は簡易的に、過去に逃げたことがある馬を数える）
+  let frontRunnersCount = 0;
+  race.horses.forEach(h => {
+    const p = analyzePassingPositions(h);
+    if (p.frontRunnerRate > 0.5) frontRunnersCount++;
+  });
+
+  // H/M/Sペース判定
+  let expectedPace = 'M';
+  let paceIntensity = 0; // -1: スロー, 0: ミドル, 1: ハイ
+  
+  if (frontRunnersCount >= 4) {
+    expectedPace = 'H';
+    paceIntensity = 1;
+  } else if (frontRunnersCount <= 1) {
+    expectedPace = 'S';
+    paceIntensity = -1;
+  }
+
+  return { hasData: true, avgFirst3f, expectedPace, paceIntensity, frontRunnersCount };
+}
+
+// 10. 叩き2戦目（休み明け2戦目）の巻き返し判定
 export function analyzeRotationBounceBack(horse: Horse) {
   if (!horse.pastRaces || horse.pastRaces.length < 2) return { isBounceBack: false };
 

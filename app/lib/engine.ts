@@ -2,7 +2,7 @@
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 import { calculateNARScore } from './engineNAR';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
-import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeRotationBounceBack, analyzeTrainingTime } from './evaluationUtils';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeRotationBounceBack, analyzeTrainingTime, analyzePaceFromMasterData } from './evaluationUtils';
 
 // モジュール共通のエリート騎手リスト
 const ELITE_JOCKEYS = ["ルメール", "川田将雅", "武豊", "坂井瑠星", "戸崎圭太", "モレイラ", "レーン", "横山武史", "デムーロ", "松山弘平", "川田", "坂井", "戸崎", "笹川翼", "御神本訓", "吉村智洋", "渡邊竜也", "岡部誠"];
@@ -130,6 +130,26 @@ export function calculateTsuchiyaScore(
 
   // ==========================================
   // 【新設】◎ データ・ドリブン・コア（最適化ロジック）
+  const paceAnalysis = analyzePaceFromMasterData(race, masterData);
+  if (paceAnalysis.hasData) {
+    const p = analyzePassingPositions(horse);
+    if (paceAnalysis.paceIntensity === 1) {
+      if (p.lateChargerRate > 0.5) {
+        potential += 30;
+        tags.push(📈 展開利: 前傾ラップ(H)予想で差し・追込台頭);
+      } else if (p.frontRunnerRate > 0.5) {
+        potential -= 30;
+      }
+    } else if (paceAnalysis.paceIntensity === -1) {
+      if (p.frontRunnerRate > 0.5) {
+        potential += 30;
+        tags.push(📈 展開利: スロー(S)予想で逃げ・先行粘り込み);
+      } else if (p.lateChargerRate > 0.5) {
+        potential -= 30;
+      }
+    }
+  }
+
   // 機械学習の結果から導き出された最も重要な「物理・人間」要素を最優先評価
   // ==========================================
   

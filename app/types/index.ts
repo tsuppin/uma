@@ -44,6 +44,24 @@ export interface Horse {
   oddsStandardScore?: number; // オッズ偏差値
   trainingTime?: string;      // 調教タイム（例: "南W 良 67.5-51.2-37.1-11.5"）
   trainingRating?: string;    // 調教評価（例: "S", "A", "B+", "B" など）
+
+  // 新規追加: 楽天競馬の詳細出馬表から取得するデータ
+  birthday?: string;         // 誕生日
+  jockeyWinRate?: number;    // 騎手勝率
+  jockeyPlaceRate?: number;  // 騎手3着内率
+  bestWeight?: number;       // 連対時馬体重
+  
+  // 成績マトリックス: [1着回数, 2着回数, 3着回数, 着外回数]
+  totalResults?: [number, number, number, number]; // 全成績
+  venueResults?: [number, number, number, number]; // 当該競馬場成績
+  distanceResults?: [number, number, number, number]; // 当該距離成績
+  courseResults?: [number, number, number, number]; // 当該コース成績
+  under1400Results?: [number, number, number, number]; // 1400m以下
+  from1401To1600Results?: [number, number, number, number]; // 1401～1600m
+  from1601To1800Results?: [number, number, number, number]; // 1601～1800m
+  over1801Results?: [number, number, number, number]; // 1801m以上
+  
+  bestTimes?: Record<string, string>; // 持ち時計 (例: {"2000": "2:10.7", "浦2000": "2:10.7"})
 }
 
 export interface PastRace {
@@ -265,7 +283,14 @@ export interface MasterData {
   horses: Record<string, HorseMaster>;
   jockeys: Record<string, JockeyMaster>;
   sires?: Record<string, SireMaster>;
-  laps?: Record<string, { venue: string; distance: number; surface: string; laps: string[]; date: string }[]>; // 蓄積されたラップ履歴
+  laps?: Record<string, { // key: venue_distance_surface
+    venue: string;
+    distance: number;
+    surface: string;
+    laps: string[];
+    cornerPassings?: string[]; // (NEW)
+    date: string;
+  }[]>; // 蓄積されたラップ履歴
 }
 
 export interface SireMaster {

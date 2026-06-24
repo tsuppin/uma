@@ -99,6 +99,7 @@ export function updateMasterDataWithResult(masterData: MasterData, result: RaceR
         distance: race.distance,
         surface: race.surface,
         laps: result.lapTimes,
+        cornerPassings: result.cornerPassings,
         date: race.date
       });
     }

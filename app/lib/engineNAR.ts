@@ -1,6 +1,6 @@
 import { Horse, Prediction, Race, LearningPatch, MasterData } from '../types';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
-import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeNARClassDrop, analyzeRotationBounceBack } from './evaluationUtils';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeNARClassDrop, analyzeRotationBounceBack, analyzePaceFromMasterData } from './evaluationUtils';
 
 // 地方特化のエリート騎手リスト（南関東を中心とした地方トップジョッキー）
 const NAR_ELITE_JOCKEYS = ["森泰斗", "御神本訓史", "矢野貴之", "笹川翼", "吉原寛人", "和田譲治", "山崎誠士", "吉村智洋", "赤岡修次", "山口勲"];
@@ -54,6 +54,29 @@ export function calculateNARScore(
       // 便宜上、栗東・美浦などの文字が含まれるかでJRA判定
       // [減点方式] potential += 50;
       tags.push("👑 地方特注: ダート交流重賞におけるJRA所属馬の地力の違い");
+    }
+  }
+
+  // ==========================================
+  // 【新設】⑨ 過去データに基づく展開（ペース）予想
+  // ==========================================
+  const paceAnalysis = analyzePaceFromMasterData(race, masterData);
+  if (paceAnalysis.hasData) {
+    const p = analyzePassingPositions(horse);
+    if (paceAnalysis.paceIntensity === 1) { // ハイペース予想
+      if (p.lateChargerRate > 0.5) { // 差し馬有利
+        potential += 30;
+        tags.push(`📈 展開利: 前傾ラップ(H)予想で差し・追込台頭`);
+      } else if (p.frontRunnerRate > 0.5) { // 逃げ馬不利
+        potential -= 30;
+      }
+    } else if (paceAnalysis.paceIntensity === -1) { // スローペース予想
+      if (p.frontRunnerRate > 0.5) { // 逃げ馬有利
+        potential += 30;
+        tags.push(`📈 展開利: スロー(S)予想で逃げ・先行粘り込み`);
+      } else if (p.lateChargerRate > 0.5) { // 差し馬不利
+        potential -= 30;
+      }
     }
   }
 
