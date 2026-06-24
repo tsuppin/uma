@@ -73,7 +73,7 @@ export function calculateNARScore(
     if (paceAnalysis.paceIntensity === 1) { // ハイペース予想
       if (horse.style === "差し" || horse.style === "追込") { // 差し馬有利
         potential += 30 * biasMod;
-        tags.push(`📈 展開利: 前傾ラップ(H)予想で差し・追込台頭`);
+// [PERFORMANCE FIX]         tags.push(`📈 展開利: 前傾ラップ(H)予想で差し・追込台頭`);
       } else if (horse.style === "逃げ" || horse.style === "先行") { // 逃げ馬不利
         potential -= 30;
       }
@@ -119,7 +119,7 @@ export function calculateNARScore(
     // マニアック1: 日本一の小回り・逃げ先行絶対主義
     if (frame <= 2 && (horse.style === '逃げ' || horse.style === '先行')) {
       // [減点方式] potential += 50;
-      tags.push("🔥 浦和マニアック: 日本一の小回りを制する『1〜2枠×逃げ先行』の絶対優位");
+// [PERFORMANCE FIX]       tags.push("🔥 浦和マニアック: 日本一の小回りを制する『1〜2枠×逃げ先行』の絶対優位");
     }
     // マニアック2: 大外枠の差し・追込の絶望
     if (frame >= 7 && (horse.style === '差し' || horse.style === '追込')) {
@@ -928,7 +928,7 @@ export function calculateNARScore(
   // 1. 馬体重の異常増減ロジック
   if (horse.gender === '牝' && horse.weightChange <= -10) {
     potential -= 30;
-    tags.push('⚠️ 危険信号: 牝馬の大幅馬体減（細化懸念）');
+// [PERFORMANCE FIX]     tags.push('⚠️ 危険信号: 牝馬の大幅馬体減（細化懸念）');
   }
   if (horse.isAfterRest && horse.weightChange >= 15) {
     const penalty = horse.age <= 3 ? 10 : 20;
@@ -1093,7 +1093,7 @@ export function calculateNARScore(
     }
     if (weightAnalysis.isGrowth) {
       potential += 5;
-      tags.push("💪 成長分: 休養を挟んでの馬体増（成長分）");
+// [PERFORMANCE FIX]       tags.push("💪 成長分: 休養を挟んでの馬体増（成長分）");
     } else if (weightAnalysis.isFat) {
       potential -= 10;
       tags.push("⚠️ 太め残り: 余裕残しの馬体増・調整不足の懸念");
@@ -1186,7 +1186,7 @@ export function calculateNARScore(
     const bothBad = recentTwoRaces.every(pr => pr.result >= 8);
     if (bothBad && (horse.popularity || 99) > 4) {
       potential -= 25;
-      tags.push("❌ NAR連続凡走ペナルティ: 直近2走連続8着以下");
+// [PERFORMANCE FIX]       tags.push("❌ NAR連続凡走ペナルティ: 直近2走連続8着以下");
     }
   }
 
@@ -1216,7 +1216,7 @@ export function calculateNARScore(
   const narSmallTrack = ['浦和', '川崎', '笠松', '佐賀'].some(t => race.trackName?.includes(t));
   if (narSmallTrack && (horse.frame || 99) >= 8) {
     potential -= 20;
-    tags.push("❌ NAR大外枠×超小回りペナルティ: コーナーロスが致命的");
+// [PERFORMANCE FIX]     tags.push("❌ NAR大外枠×超小回りペナルティ: コーナーロスが致命的");
   }
 
   // ─────────────────────────────────────────
@@ -1225,7 +1225,7 @@ export function calculateNARScore(
   const narPrevRace = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : null;
   if (narPrevRace && narPrevRace.result >= 10 && (horse.popularity || 99) >= 5) {
     potential -= 15;
-    tags.push("❌ NAR前走10着以下×低人気ペナルティ");
+// [PERFORMANCE FIX]     tags.push("❌ NAR前走10着以下×低人気ペナルティ");
   }
 
   // ─────────────────────────────────────────
