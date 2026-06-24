@@ -1,6 +1,6 @@
 import { Horse, Prediction, Race, LearningPatch, MasterData } from '../types';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
-import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeNARClassDrop, analyzeRotationBounceBack, analyzePaceFromMasterData } from './evaluationUtils';
+import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeNARClassDrop, analyzeRotationBounceBack, analyzePaceFromMasterData, analyzeCourseBias } from './evaluationUtils';
 
 // 地方特化のエリート騎手リスト（南関東を中心とした地方トップジョッキー）
 const NAR_ELITE_JOCKEYS = ["森泰斗", "御神本訓史", "矢野貴之", "笹川翼", "吉原寛人", "和田譲治", "山崎誠士", "吉村智洋", "赤岡修次", "山口勲"];
@@ -61,22 +61,39 @@ export function calculateNARScore(
   // 【新設】⑨ 過去データに基づく展開（ペース）予想
   // ==========================================
   const paceAnalysis = analyzePaceFromMasterData(race, masterData);
+  const courseBias = analyzeCourseBias(race, masterData);
   if (paceAnalysis.hasData) {
-    const p = analyzePassingPositions(horse);
+    // トラックバイアス（コース傾向）との掛け合わせ
+    let biasMod = 1.0;
+    if (courseBias.hasBiasData) {
+      if (courseBias.frontFavor > 0 && (horse.style === "逃げ" || horse.style === "先行")) biasMod = 1.5;
+      if (courseBias.lateFavor > 0 && (horse.style === "差し" || horse.style === "追込")) biasMod = 1.5;
+    }
+
     if (paceAnalysis.paceIntensity === 1) { // ハイペース予想
       if (horse.style === "差し" || horse.style === "追込") { // 差し馬有利
-        potential += 30;
+        potential += 30 * biasMod;
         tags.push(`📈 展開利: 前傾ラップ(H)予想で差し・追込台頭`);
       } else if (horse.style === "逃げ" || horse.style === "先行") { // 逃げ馬不利
         potential -= 30;
       }
     } else if (paceAnalysis.paceIntensity === -1) { // スローペース予想
       if (horse.style === "逃げ" || horse.style === "先行") { // 逃げ馬有利
-        potential += 30;
+        potential += 30 * biasMod;
         tags.push(`📈 展開利: スロー(S)予想で逃げ・先行粘り込み`);
       } else if (horse.style === "差し" || horse.style === "追込") { // 差し馬不利
         potential -= 30;
       }
+    }
+    
+    if (courseBias.hasBiasData) {
+       if (courseBias.frontFavor > 0 && (horse.style === "逃げ" || horse.style === "先行")) {
+         potential += 15;
+         tags.push(`🏁 コース傾向: 前残り多発コース`);
+       } else if (courseBias.lateFavor > 0 && (horse.style === "差し" || horse.style === "追込")) {
+         potential += 15;
+         tags.push(`🏁 コース傾向: 差し・追込が決まりやすい`);
+       }
     }
   }
 

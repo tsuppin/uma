@@ -289,6 +289,7 @@ export interface MasterData {
     surface: string;
     laps: string[];
     cornerPassings?: string[]; // (NEW)
+    top3HorseNumbers?: number[]; // (NEW)
     date: string;
   }[]>; // 蓄積されたラップ履歴
 }

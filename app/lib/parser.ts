@@ -1735,8 +1735,8 @@ export function parseRakutenKeibaResultText(rawText: string): { race: Partial<Ra
       }
       
       if (inCornerBlock) {
-          if (line.match(/^[１-４]角/)) {
-              result.cornerPassings?.push(line.trim());
+          if (line.match(/^[１-４](角|コーナー)/)) {
+              result.cornerPassings?.push(line.replace(/^[１-４](角|コーナー)\s*/, '').trim());
           }
       }
   }

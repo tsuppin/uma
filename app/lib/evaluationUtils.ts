@@ -307,6 +307,47 @@ export function analyzePaceFromMasterData(race: Race, masterData: MasterData) {
   return { hasData: true, avgFirst3f, expectedPace, paceIntensity, frontRunnersCount };
 }
 
+export function analyzeCourseBias(race: Race, masterData: MasterData) {
+  const key = `${race.venue}_${race.distance}_${race.surface}`;
+  const pastLaps = masterData.laps?.[key] || [];
+  
+  let totalTop3PosPct = 0;
+  let count = 0;
+
+  for (const lap of pastLaps) {
+    if (lap.cornerPassings && lap.cornerPassings.length > 0 && lap.top3HorseNumbers && lap.top3HorseNumbers.length > 0) {
+      // 最後のコーナー（通常4角）を取得
+      const lastCornerStr = lap.cornerPassings[lap.cornerPassings.length - 1];
+      const positions = (lastCornerStr.match(/\d+/g) || []).map(Number);
+      
+      if (positions.length > 0) {
+        for (const top3Horse of lap.top3HorseNumbers) {
+          const idx = positions.indexOf(top3Horse);
+          if (idx !== -1) {
+            // 先頭を0%、最後尾を100%としたときの位置割合
+            const pct = idx / positions.length;
+            totalTop3PosPct += pct;
+            count++;
+          }
+        }
+      }
+    }
+  }
+
+  if (count === 0) return { hasBiasData: false, frontFavor: 0, lateFavor: 0 };
+
+  const avgPosPct = totalTop3PosPct / count;
+  // avgPosPct が小さいほど前残り有利（例: 0.3未満ならかなり前有利）
+  // 大きければ差し有利（例: 0.45以上なら差し有利）
+
+  return {
+    hasBiasData: true,
+    avgPosPct,
+    frontFavor: avgPosPct < 0.3 ? 1 : avgPosPct < 0.35 ? 0.5 : 0,
+    lateFavor: avgPosPct > 0.45 ? 1 : avgPosPct > 0.4 ? 0.5 : 0
+  };
+}
+
 // 10. 叩き2戦目（休み明け2戦目）の巻き返し判定
 export function analyzeRotationBounceBack(horse: Horse) {
   if (!horse.pastRaces || horse.pastRaces.length < 2) return { isBounceBack: false };

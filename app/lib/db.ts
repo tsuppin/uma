@@ -100,6 +100,7 @@ export function updateMasterDataWithResult(masterData: MasterData, result: RaceR
         surface: race.surface,
         laps: result.lapTimes,
         cornerPassings: result.cornerPassings,
+        top3HorseNumbers: result.result.filter(r => r.rank <= 3).map(r => r.horseNumber),
         date: race.date
       });
     }
