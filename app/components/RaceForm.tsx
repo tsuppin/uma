@@ -152,13 +152,9 @@ export default function RaceForm({ onSubmit, onSubmitResult, onCancel }: {
       </div>
 
       {/* Step1: テキスト貼り付け */}
-      {!parsed && (
+      {!parsed && !parsedResult && (
         <div className="card fade-in">
           <div className="card-header"><div className="card-title">📋 出馬表（および過去走データ）テキスト貼り付け</div></div>
-          <div className="alert alert-info mt-8">
-            💡 <b>予測精度を高めるためのヒント:</b><br />
-            楽天競馬の「競走成績」やJRAの「過去走」が含まれるページ全体をコピーして貼り付けると、AIエンジンが過去の展開や着差を考慮した精度の高い分析（Yatomi Physics等）を行えるようになります。
-          </div>
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <label className="form-label" htmlFor="paste-text" style={{ marginBottom: 0 }}>出馬表・過去走テキスト</label>
@@ -349,18 +345,31 @@ export default function RaceForm({ onSubmit, onSubmitResult, onCancel }: {
           </div>
         </div>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-secondary" onClick={onCancel} style={{ flex: 1 }}>キャンセル</button>
-              {parsedResult ? (
-                <button className="btn btn-primary" onClick={handleSubmitResult} style={{ flex: 1, backgroundColor: '#10b981' }}>
-                  🏁 結果を蓄積・保存
-                </button>
-              ) : (
-                <button className="btn btn-primary" onClick={handleSubmit} disabled={!parsed} style={{ flex: 1 }}>
-                  ✨ このレースを登録して予想へ
-                </button>
-              )}
-            </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn btn-secondary" onClick={onCancel} style={{ flex: 1 }}>キャンセル</button>
+          <button className="btn btn-primary" onClick={handleSubmit} disabled={!parsed} style={{ flex: 1 }}>
+            ✨ このレースを登録して予想へ
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* 競走成績の確認・保存 */}
+    {parsedResult && !parsed && (
+      <div className="fade-in">
+        <div className="alert alert-success">
+          ✅ 競走成績の解析完了
+        </div>
+        <div className="card mt-16 mb-16 p-16">
+          <p className="mb-8" style={{ fontSize: '1.2rem' }}><strong>{parsedResult.race.date} {parsedResult.race.venue || '競馬場不明'} {parsedResult.race.raceNumber}R</strong></p>
+          <p className="fs-sm text-secondary">出走頭数: {parsedResult.result.result.length}頭</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+          <button className="btn btn-secondary" onClick={onCancel} style={{ flex: 1 }}>キャンセル</button>
+          <button className="btn btn-primary" onClick={handleSubmitResult} style={{ flex: 1, backgroundColor: '#10b981' }}>
+            🏁 結果を蓄積・保存
+          </button>
+        </div>
       </div>
     )}
     </div>

@@ -140,12 +140,17 @@ export function calculateTsuchiyaScore(
       if (courseBias.lateFavor > 0 && (horse.style === "差し" || horse.style === "追込")) biasMod = 1.5;
     }
 
+    // 的中率重視：逃げ・先行には無条件で基礎ボーナス
+    if (horse.style === "逃げ" || horse.style === "先行") {
+      potential += 15;
+    }
+
     if (paceAnalysis.paceIntensity === 1) {
       if (horse.style === "差し" || horse.style === "追込") {
-        potential += 30 * biasMod;
+        potential += 15 * biasMod; // 30から15に半減
 // [PERFORMANCE FIX]         tags.push(`📈 展開利: 前傾ラップ(H)予想で差し・追込台頭`);
       } else if (horse.style === "逃げ" || horse.style === "先行") {
-        potential -= 30;
+        potential -= 10; // 30から10に緩和
       }
     } else if (paceAnalysis.paceIntensity === -1) {
       if (horse.style === "逃げ" || horse.style === "先行") {
@@ -169,6 +174,12 @@ export function calculateTsuchiyaScore(
 
   // 機械学習の結果から導き出された最も重要な「物理・人間」要素を最優先評価
   // ==========================================
+  
+  // 圧倒的人気馬へのボーナス（的中率重視）
+  if (odds >= 1.0 && odds <= 2.9) {
+    potential += 20;
+    tags.push("🎯 堅実本命: 圧倒的支持を受ける強い馬");
+  }
   
   // 【追加】オッズの歪み（期待値）ロジック＆PCI（ペースチェンジインデックス）分析
   const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
@@ -2045,8 +2056,8 @@ export function calculateTsuchiyaScore(
   const cleanJockey = jockey.replace(/[▲△☆◇]/g, '').trim();
   const isEliteJockey = ELITE_JOCKEYS.some(ej => cleanJockey.includes(ej));
   if (isEliteJockey) {
-    // [減点方式] potential += 40;
-    tags.push("👑 トップジョッキー絶対値ブースト(最重要人間ファクター)");
+    potential += 60;
+    tags.push("👑 トップジョッキー絶対値ブースト(的中率最重視: +60点)");
   }
 
   // ==========================================
@@ -8685,8 +8696,8 @@ export function calculateTsuchiyaScore(
 
   const oddsPopAnalysis = analyzeOddsAndPopularity(horse);
   if (oddsPopAnalysis.isOvervalued) {
-    potential -= 20;
-    tags.push("⚠️ 過剰人気: 前走フロック激走からの危険な人気馬");
+    // potential -= 20; 的中率重視のため過剰人気ペナルティは排除
+    tags.push("⚠️ 過剰人気: 前走フロック激走からの危険な人気馬 (ペナルティ免除)");
   } else if (oddsPopAnalysis.isFlukeWin && (horse.popularity || 0) >= 6) {
     potential += 5;
     tags.push("💡 穴馬再考: 前走の大穴激走を再び狙う");

@@ -44,8 +44,8 @@ export function calculateNARScore(
 
   // 地方エリート騎手加点
   if (NAR_ELITE_JOCKEYS.some(j => jockey.includes(j))) {
-    // [減点方式] potential += 35;
-    // [要見直し2] tags.push("👑 地方ダート特注: コースのクセを熟知した地方トップジョッキー");
+    potential += 50;
+    tags.push("👑 地方ダート特注: コースのクセを熟知した地方トップジョッキー(的中率最重視: +50点)");
   }
 
   // JRA所属馬のダートグレード競走（Jpn格付け）における基礎能力差
@@ -60,6 +60,13 @@ export function calculateNARScore(
   // ==========================================
   // 【新設】⑨ 過去データに基づく展開（ペース）予想
   // ==========================================
+  
+  // 圧倒的人気馬へのボーナス（的中率重視）
+  if (horse.odds && horse.odds >= 1.0 && horse.odds <= 2.9) {
+    potential += 20;
+    tags.push("🎯 堅実本命: 圧倒的支持を受ける強い馬");
+  }
+
   const paceAnalysis = analyzePaceFromMasterData(race, masterData);
   const courseBias = analyzeCourseBias(race, masterData);
   if (paceAnalysis.hasData) {
@@ -70,12 +77,17 @@ export function calculateNARScore(
       if (courseBias.lateFavor > 0 && (horse.style === "差し" || horse.style === "追込")) biasMod = 1.5;
     }
 
+    // 的中率重視：地方ダートの逃げ・先行には無条件で強い基礎ボーナス
+    if (horse.style === "逃げ" || horse.style === "先行") {
+      potential += 20;
+    }
+
     if (paceAnalysis.paceIntensity === 1) { // ハイペース予想
       if (horse.style === "差し" || horse.style === "追込") { // 差し馬有利
-        potential += 30 * biasMod;
+        potential += 15 * biasMod; // 30から15に半減
 // [PERFORMANCE FIX]         tags.push(`📈 展開利: 前傾ラップ(H)予想で差し・追込台頭`);
       } else if (horse.style === "逃げ" || horse.style === "先行") { // 逃げ馬不利
-        potential -= 30;
+        potential -= 10; // 30から10に緩和
       }
     } else if (paceAnalysis.paceIntensity === -1) { // スローペース予想
       if (horse.style === "逃げ" || horse.style === "先行") { // 逃げ馬有利
@@ -1139,8 +1151,8 @@ export function calculateNARScore(
 
   const oddsPopAnalysis = analyzeOddsAndPopularity(horse);
   if (oddsPopAnalysis.isOvervalued) {
-    potential -= 20;
-    tags.push("⚠️ 過剰人気: 前走フロック激走からの危険な人気馬");
+    // potential -= 20; 的中率重視のためペナルティ免除
+    tags.push("⚠️ 過剰人気: 前走フロック激走からの危険な人気馬 (ペナルティ免除)");
   } else if (oddsPopAnalysis.isFlukeWin && (horse.popularity || 0) >= 6) {
     potential += 5;
     tags.push("💡 穴馬再考: 前走の大穴激走を再び狙う");
