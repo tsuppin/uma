@@ -8951,29 +8951,35 @@ export function generateFormation(
     }
 
   } else if (raceType === 'quinella') {
-    const ax1 = horseNums[0];
-    const darkByDark = [...sorted].sort((a, b) => b.darkness - a.darkness).slice(0, 3).map(p => p.horseNumber);
-    const partners = [...new Set([horseNums[1], horseNums[2], horseNums[3], ...darkByDark])]
-      .filter(n => n !== undefined && n !== ax1)
-      .slice(0, 5);
-    col1 = [ax1];
-    col2 = partners;
-    col3 = undefined;
-    limitPoints = 5;
+    // 軸馬3頭（予想上位3頭）と闇ヒモ（potential 4〜7位からdarkness上位2頭）を反映
+    const [ax1, ax2, ax3] = axisNos;
+    // 闇ヒモ：darkNosからdarkness値上位2頭を選定
+    const darkTop = [...sorted]
+      .filter(p => darkNos.includes(p.horseNumber))
+      .sort((a, b) => b.darkness - a.darkness)
+      .slice(0, 2)
+      .map(p => p.horseNumber);
 
     const ticketSet = new Set<string>();
-    for (const p of partners) {
-      if (ax1 !== p) ticketSet.add([ax1, p].sort((x, y) => x - y).join('-'));
+    // 軸3頭の総当たり（3通り）
+    if (ax1 && ax2) ticketSet.add([ax1, ax2].sort((x, y) => x - y).join('-'));
+    if (ax1 && ax3) ticketSet.add([ax1, ax3].sort((x, y) => x - y).join('-'));
+    if (ax2 && ax3) ticketSet.add([ax2, ax3].sort((x, y) => x - y).join('-'));
+    // 軸1頭目→闇ヒモ（2点）
+    for (const d of darkTop) {
+      if (ax1 !== d) ticketSet.add([ax1, d].sort((x, y) => x - y).join('-'));
     }
-    const ax2 = horseNums[1];
-    if (ax2 && sorted[1] && sorted[0] && sorted[1].potential >= sorted[0].potential * 0.8) {
-      for (const p of partners) {
-        if (ax2 !== p) ticketSet.add([ax2, p].sort((x, y) => x - y).join('-'));
-      }
-    }
-    tickets = Array.from(ticketSet).map(t => t.split('-').map(Number)).slice(0, limitPoints);
+
+    tickets = Array.from(ticketSet).map(t => t.split('-').map(Number));
+    limitPoints = 5;
+    tickets = tickets.slice(0, limitPoints);
+
+    col1 = ax1 ? [ax1] : [];
+    col2 = [ax2, ax3, ...darkTop].filter(n => n !== undefined && n !== ax1) as number[];
+    col3 = undefined;
+
     riskLevel = 'normal';
-    strategy = '馬連は最大5点以内が鉄則。点数が増えると合成オッズが崩壊。単勝1倍台の圧倒的人気馬からの馬連は配当が低いため非推奨。予想の自信度に応じた資金配分を行う。';
+    strategy = '【馬連】軸3頭（◎軸）の総当たり3点＋軸1頭目から闇ヒモ（▲闇）への流し。予想の上位3頭を全通り押さえつつ、穴要素のある闇ヒモも組み込んだ最大5点以内のフォーメーション。';
     stakeGuide = '推奨購入額: 自信度高=200円/点、普通=100円/点\n購入前に「当たったら何円?」を必ず計算すること。';
     const top1Odds = oddsMap[ax1] || 10;
     if (top1Odds < 2.0) {
@@ -8986,38 +8992,41 @@ export function generateFormation(
     }
 
   } else if (raceType === 'exacta') {
-    const ax1 = horseNums[0];
-    const darkByDark = [...sorted].sort((a, b) => b.darkness - a.darkness).slice(0, 3).map(p => p.horseNumber);
-    const partners = [...new Set([horseNums[1], horseNums[2], horseNums[3], ...darkByDark])]
-      .filter(n => n !== undefined && n !== ax1)
-      .slice(0, 5);
-    col1 = [ax1];
+    // 軸馬1位→軸馬2・3位＋闇ヒモ（darkness上位2頭）へ流し
+    const [ax1, ax2, ax3] = axisNos;
+    const darkTop = [...sorted]
+      .filter(p => darkNos.includes(p.horseNumber))
+      .sort((a, b) => b.darkness - a.darkness)
+      .slice(0, 2)
+      .map(p => p.horseNumber);
+
+    const partners = [...new Set([ax2, ax3, ...darkTop])]
+      .filter(n => n !== undefined && n !== ax1) as number[];
+    col1 = ax1 ? [ax1] : [];
     col2 = partners;
     col3 = undefined;
     limitPoints = 5;
 
+    // 軸1位→相手（軸2・3・闇ヒモ）
     for (const p of partners) {
-      if (ax1 !== p) tickets.push([ax1, p]);
+      tickets.push([ax1, p]);
     }
-    const ax2 = horseNums[1];
+    // 軸2位のpotentialが軸1位の80%以上あれば軸2位からも流す（裏目対策）
     if (ax2 && sorted[1] && sorted[0] && sorted[1].potential >= sorted[0].potential * 0.8) {
-      for (const p of partners) {
-        if (ax2 !== p) tickets.push([ax2, p]);
+      for (const p of [ax1, ax3, ...darkTop].filter(n => n !== undefined && n !== ax2) as number[]) {
+        tickets.push([ax2, p]);
       }
     }
-    
-    const uniqueTickets = [];
-    const seen = new Set();
+
+    const uniqueTickets: number[][] = [];
+    const seen = new Set<string>();
     for (const t of tickets) {
       const key = t.join('-');
-      if (!seen.has(key)) {
-        seen.add(key);
-        uniqueTickets.push(t);
-      }
+      if (!seen.has(key)) { seen.add(key); uniqueTickets.push(t); }
     }
     tickets = uniqueTickets.slice(0, limitPoints);
     riskLevel = 'normal';
-    strategy = '馬単は1着固定から相手へ流す馬券。裏目（1着2着の逆転）に注意し、オッズの旨味がある場合のみ購入。';
+    strategy = '【馬単】軸1位（◎軸）→軸2・3位＋闇ヒモへの流し。着順イメージが明確な時のみ購入。裏目（着順逆転）に注意。';
     stakeGuide = '推奨購入額: 自信度高=200円/点、普通=100円/点';
     const top1Odds = oddsMap[ax1] || 10;
     if (top1Odds < 2.0) {
@@ -9030,130 +9039,138 @@ export function generateFormation(
     }
 
   } else if (raceType === 'trifecta') {
-    const popularHorses = horsesByOdds.slice(0, 4).map(h => {
-      const p = predictions.find(pr => pr.horseNumber === h.num);
-      return { num: h.num, pot: p ? p.potential : 0, dark: p ? p.darkness : 0 };
-    });
-    
-    const darkHorsesList = horsesByOdds.slice(4).map(h => {
-      const p = predictions.find(pr => pr.horseNumber === h.num);
-      return { num: h.num, pot: p ? p.potential : 0, dark: p ? p.darkness : 0 };
-    }).sort((a, b) => b.dark - a.dark);
+    // 軸馬3頭（予想上位3頭）を1・2列目に固定し、闇ヒモを3列目に配置
+    const [ax1, ax2, ax3] = axisNos;
+    // 闇ヒモ：darkNosからdarkness上位を選定
+    const darkSorted = [...sorted]
+      .filter(p => darkNos.includes(p.horseNumber))
+      .sort((a, b) => b.darkness - a.darkness);
+    const darkTop4 = darkSorted.slice(0, 4).map(p => p.horseNumber);
 
-    const sortedPops = [...popularHorses].sort((a, b) => b.pot - a.pot);
-    const mainAxis = sortedPops[0]?.num || popularHorses[0]?.num || horseNums[0];
-    const subAxis = sortedPops[1]?.num || popularHorses[1]?.num;
-    
-    const isSolidRace = sortedPops[0] && sortedPops[0].pot > 950 && (!darkHorsesList[0] || darkHorsesList[0].dark < 100) && !(race?.condition === '重' || race?.condition === '不良');
-    
-    let selectedPattern = 1;
-    
-    if (sortedPops[0]?.pot > 900 && sortedPops[1]?.pot > 900 && subAxis) {
-      selectedPattern = 2;
-    } else if (darkHorsesList.length >= 6 && darkHorsesList[0]?.dark > 150 && darkHorsesList[1]?.dark > 100) {
-      selectedPattern = 3;
-    }
+    const isSolidRace = sorted[0] && sorted[0].potential > 950 && (!darkSorted[0] || darkSorted[0].darkness < 100) && !(race?.condition === '重' || race?.condition === '不良');
 
     const ticketSet = new Set<string>();
-    
-    if (selectedPattern === 2 && subAxis) {
-      col1 = [mainAxis];
-      col2 = [subAxis];
-      col3 = darkHorsesList.slice(0, 8).map(h => h.num);
+
+    if (ax1 && ax2 && ax3) {
+      // パターン①（デフォルト）: 軸3頭を1・2列目に固定、闇ヒモを3列目
+      // 1列目:軸1位, 2列目:軸2・3位, 3列目:闇ヒモ
+      col1 = [ax1];
+      col2 = [ax2, ax3];
+      col3 = darkTop4.length > 0 ? darkTop4 : [];
       limitPoints = 8;
-      
-      for (const c of col3) {
-        if (c !== mainAxis && c !== subAxis) {
-          ticketSet.add([mainAxis, subAxis, c].sort((x, y) => x - y).join('-'));
+
+      // 軸1×軸2×闇ヒモ
+      for (const d of col3) {
+        if (d !== ax1 && d !== ax2) {
+          ticketSet.add([ax1, ax2, d].sort((x, y) => x - y).join('-'));
         }
       }
-      strategy = '【3連複 パターン②】確実な2頭から広く流す（8点）\n馬券内に確実に来そうな人気馬2頭を固定し、3着目に波乱が起きることを想定して穴馬へ手広く流す。';
-      
-    } else if (selectedPattern === 3 && darkHorsesList.length >= 6) {
-      const row2Dark = darkHorsesList.slice(0, 3).map(h => h.num);
-      const row3Dark = darkHorsesList.slice(0, 6).map(h => h.num);
-      
-      col1 = [mainAxis];
+      // 軸1×軸3×闇ヒモ
+      for (const d of col3) {
+        if (d !== ax1 && d !== ax3) {
+          ticketSet.add([ax1, ax3, d].sort((x, y) => x - y).join('-'));
+        }
+      }
+      // 軸3頭すべてが絡む組み合わせ（軸1×軸2×軸3）
+      if (ax1 !== ax2 && ax1 !== ax3 && ax2 !== ax3) {
+        ticketSet.add([ax1, ax2, ax3].sort((x, y) => x - y).join('-'));
+      }
+
+      strategy = '【3連複】軸3頭（◎軸）フォーメーション＋闇ヒモ（▲闇）への流し\n予想の上位3頭（◎軸）を2列目まで固定し、3列目に闇ヒモ（▲闇）を配置。軸3頭が絡む組み合わせもカバー。';
+
+    } else if (ax1 && ax2) {
+      // 軸が2頭のみの場合
+      col1 = [ax1];
+      col2 = [ax2];
+      col3 = darkTop4.length > 0 ? darkTop4 : [];
+      limitPoints = 8;
+      for (const d of col3) {
+        if (d !== ax1 && d !== ax2) {
+          ticketSet.add([ax1, ax2, d].sort((x, y) => x - y).join('-'));
+        }
+      }
+      strategy = '【3連複 パターン②】確実な2頭から広く流す（8点）\n馬券内に確実に来そうな軸2頭を固定し、3着目に闇ヒモを配置。';
+    } else {
+      // フォールバック: 軸1頭＋闇ヒモ
+      const row2Dark = darkSorted.slice(0, 3).map(p => p.horseNumber);
+      const row3Dark = darkSorted.slice(0, 5).map(p => p.horseNumber);
+      col1 = ax1 ? [ax1] : horseNums.slice(0, 1);
       col2 = row2Dark;
       col3 = row3Dark;
-      limitPoints = 12;
-      
-      for (const b of col2) {
-        for (const c of col3) {
-          if (mainAxis !== b && mainAxis !== c && b !== c) {
-            ticketSet.add([mainAxis, b, c].sort((x, y) => x - y).join('-'));
-          }
-        }
-      }
-      strategy = '【3連複 パターン③】穴馬2頭の突っ込みを狙う（12点）\n人気馬1頭を軸に、馬券内に穴馬が2頭入る波乱決着のみを狙い撃ちする超高配当狙いのフォーメーション。';
-      
-    } else {
-      const row2Pops = popularHorses.filter(h => h.num !== mainAxis).slice(0, 2).map(h => h.num);
-      const row3Dark = darkHorsesList.slice(0, 5).map(h => h.num);
-      
-      col1 = [mainAxis];
-      col2 = row2Pops;
-      col3 = row3Dark;
       limitPoints = 10;
-      
       for (const b of col2) {
         for (const c of col3) {
-          if (mainAxis !== b && mainAxis !== c && b !== c) {
-            ticketSet.add([mainAxis, b, c].sort((x, y) => x - y).join('-'));
+          if (col1[0] !== b && col1[0] !== c && b !== c) {
+            ticketSet.add([col1[0], b, c].sort((x, y) => x - y).join('-'));
           }
         }
       }
-      strategy = '【3連複 パターン①】王道のフォーメーション（10点）\n信頼できる人気馬で守りを固めつつ、相手に穴馬を絡めることで高配当を狙う、最も使いやすく安定感のある形。';
+      strategy = '【3連複 パターン①】王道のフォーメーション（10点）\n信頼できる軸馬1頭から闇ヒモへ手広く流す。';
     }
 
     tickets = Array.from(ticketSet).map(t => t.split('-').map(Number)).slice(0, limitPoints);
     riskLevel = 'normal';
-    stakeGuide = '推奨購入額: 100円×点数\n（例: 10点 → 合計1,000円）\n※点数を増やすと合成オッズが崩壊し、トリガミの危険性が高まります。';
-    
+    stakeGuide = '推奨購入額: 100円×点数\n（例: 8点 → 合計800円）\n※点数を増やすと合成オッズが崩壊し、トリガミの危険性が高まります。';
+
     if (isSolidRace) {
       warningMessage = '【警告】このレースは人気馬が強力で堅く決着する可能性が高いです。手広く買うとトリガミになります。「見（ケン）」または単勝・馬連への切り替えを強く推奨します。';
       riskLevel = 'risk';
     }
 
   } else if (raceType === 'trifecta_exact') {
-    const popularHorsesExact = horsesByOdds.slice(0, 4).map(h => {
-      const p = predictions.find(pr => pr.horseNumber === h.num);
-      return { num: h.num, pot: p ? p.potential : 0 };
-    });
-    const sortedPopsExact = [...popularHorsesExact].sort((a, b) => b.pot - a.pot);
-    
-    const darkHorsesListExact = horsesByOdds.slice(4).map(h => {
-      const p = predictions.find(pr => pr.horseNumber === h.num);
-      return { num: h.num, dark: p ? p.darkness : 0 };
-    }).sort((a, b) => b.dark - a.dark);
-
-    const horseA = sortedPopsExact[0];
-    const horseB = sortedPopsExact[1];
-    const horseC = darkHorsesListExact[0];
-    const horseD = darkHorsesListExact[1];
+    // 軸馬3頭（予想上位3頭）を使った三連単フォーメーション
+    // 1列目:軸1位、2列目:軸2位＋闇ヒモ（darkness上位2頭）、3列目:軸2・3位＋闇ヒモ
+    const [ax1, ax2, ax3] = axisNos;
+    const darkTopExact = [...sorted]
+      .filter(p => darkNos.includes(p.horseNumber))
+      .sort((a, b) => b.darkness - a.darkness)
+      .slice(0, 2);
 
     limitPoints = 4;
 
-    if (horseA && horseB && horseC && horseD) {
-      col1 = [horseA.num];
-      col2 = [horseB.num, horseC.num, horseD.num];
-      col3 = [horseB.num, horseC.num, horseD.num];
-      
-      tickets.push([horseA.num, horseB.num, horseC.num]);
-      tickets.push([horseA.num, horseC.num, horseB.num]);
-      tickets.push([horseA.num, horseB.num, horseD.num]);
-      tickets.push([horseA.num, horseD.num, horseB.num]);
+    if (ax1 && ax2) {
+      const darkC = darkTopExact[0];
+      const darkD = darkTopExact[1];
+
+      col1 = [ax1];
+      const col2Candidates = [ax2, ax3, darkC?.horseNumber, darkD?.horseNumber].filter((n): n is number => n !== undefined && n !== ax1);
+      col2 = col2Candidates.slice(0, 3);
+      col3 = col2Candidates.slice(0, 3);
+
+      // 軸1位→軸2位→(軸3位 or 闇ヒモ)
+      if (ax2 && ax3 && ax3 !== ax1 && ax3 !== ax2) {
+        tickets.push([ax1, ax2, ax3]);
+      }
+      if (ax2 && darkC && darkC.horseNumber !== ax1 && darkC.horseNumber !== ax2) {
+        tickets.push([ax1, ax2, darkC.horseNumber]);
+      }
+      // 軸1位→軸3位→(軸2位 or 闇ヒモ)
+      if (ax3 && ax2 && ax2 !== ax1 && ax2 !== ax3) {
+        tickets.push([ax1, ax3, ax2]);
+      }
+      if (ax3 && darkC && darkC.horseNumber !== ax1 && darkC.horseNumber !== ax3) {
+        tickets.push([ax1, ax3, darkC.horseNumber]);
+      }
+      // 重複除去
+      const seenEx = new Set<string>();
+      const uniqueEx: number[][] = [];
+      for (const t of tickets) {
+        const key = t.join('-');
+        if (!seenEx.has(key)) { seenEx.add(key); uniqueEx.push(t); }
+      }
+      tickets = uniqueEx.slice(0, limitPoints);
     } else {
       // Fallback
       col1 = []; col2 = []; col3 = [];
     }
 
     riskLevel = 'normal';
-    strategy = '【3連単】予想を整理するための設計図（4点）\n着順イメージが明確に固まった時のみ買うボーナス馬券。1着は確実なA(1番手)固定、2/3着に手堅いB(2番手)を固定し、残り1枠に荒れるC/D(穴馬)の突っ込みを狙う。';
+    strategy = '【3連単】軸3頭（◎軸）フォーメーション（4点）\n1着は軸1位固定。2着に軸2・3位、3着に軸3位＋闇ヒモ（▲闇）を組み合わせた最大4点の設計図。着順イメージが明確な時のみ購入。';
     stakeGuide = '推奨購入額: 100〜500円/点\n資金効率が悪いため、メインの勝負はワイドや馬連で行い、3連単はボーナス感覚で差し込むのが鉄則。';
-    
-    if (!horseA || horseA.pot < 900) {
-      warningMessage = '【警告】絶対的な1着候補（Aの馬）が不在のため、着順イメージが固まりません。3連単の多点買いは避け、「見（ケン）」または馬連・ワイドでの勝負を強く推奨します。';
+
+    const ax1Pot = sorted.find(p => p.horseNumber === ax1)?.potential || 0;
+    if (!ax1 || ax1Pot < 900) {
+      warningMessage = '【警告】絶対的な1着候補（◎軸1位）のスコアが低いため、着順イメージが固まりません。3連単の多点買いは避け、「見（ケン）」または馬連・ワイドでの勝負を強く推奨します。';
       riskLevel = 'risk';
     }
   }
