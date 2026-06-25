@@ -228,6 +228,11 @@ def _build_base_row(
         '頭数':          float(race_info.get('head_count', 0) or 0),
         'race_month':    float(race_date_obj.month) if race_date_obj else 6.0,
         
+        # 隊列・展開情報
+        'overall_pack_length': float(race_info.get('overall_pack_length', 0.0)),
+        'overall_is_compact':  float(race_info.get('overall_is_compact', 0.0)),
+        'overall_is_elongated': float(race_info.get('overall_is_elongated', 0.0)),
+        
         # 環境データ
         'cushion_value': float(race_info.get('cushion_value') or float('nan')),
         'moisture':      float(race_info.get('moisture') or float('nan')),

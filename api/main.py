@@ -144,6 +144,9 @@ class HorseFeatures(BaseModel):
     class_drop_flag:    float = Field(default=0.0, description="降級馬フラグ")
     first_corner_pos:   float = Field(default=0.0, description="前走初角位置")
     makuri_flag:        float = Field(default=0.0, description="前走マクリフラグ")
+    overall_pack_length: float = Field(default=0.0, description="前走馬群の長さ")
+    overall_is_compact: float = Field(default=0.0, description="前走密集ペースフラグ")
+    overall_is_elongated: float = Field(default=0.0, description="前走縦長ペースフラグ")
     # ---- Target Encoding ----
     jockey_win_rate_te: float = Field(default=0.1, description="騎手×会場の勝率（TE）")
     sire_win_rate_te:   float = Field(default=0.1, description="種牡馬×会場の勝率（TE）")

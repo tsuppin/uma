@@ -1048,5 +1048,1079 @@
       }
     ],
     "active": true
+  },
+  {
+    "id": "patch_local_1782272640921",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T03:44:00.921Z",
+    "description": "[金沢] 補正: 過小評価(イヌボウノユウヒ:予測7位→1着)/過大評価(アルティオーラ:予測2位→9着)",
+    "track": "金沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782273012032",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T03:50:12.032Z",
+    "description": "[金沢] 補正: 過小評価(ディープエフェクト:予測5位→2着)/過小評価(オーシャンドリーム:予測7位→3着)/過大評価(アロンジマンデ:予測1位→6着)",
+    "track": "金沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 500,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782273107959",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T03:51:47.959Z",
+    "description": "[金沢] 補正: 過小評価(パンテレリア:予測6位→1着)/過大評価(スカイトライア:予測2位→9着)",
+    "track": "金沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 500,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782273157996",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T03:52:37.996Z",
+    "description": "[金沢] 補正: 過小評価(アスターディンブラ:予測10位→3着)/過大評価(グランファラオ:予測1位→9着)/過大評価(シントーツバキ:予測2位→6着)",
+    "track": "金沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782273410257",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T03:56:50.257Z",
+    "description": "[阪神] 補正: 過小評価(メイショウナナユキ:予測9位→1着)/過小評価(ムソウテンセイ:予測16位→2着)/過小評価(オアシスアラン:予測10位→3着)/過大評価(モチモチチャン:予測1位→11着)/過大評価(ファイナルコマンド:予測2位→99着)",
+    "track": "阪神",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "差し",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "passing",
+        "operator": "regex",
+        "value": "^[12]",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782273454954",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T03:57:34.954Z",
+    "description": "[阪神] 補正: 過小評価(スマートティアナ:予測17位→1着)/過大評価(ブライトエンジェル:予測1位→14着)/過大評価(バトルセレーネ:予測2位→13着)",
+    "track": "阪神",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "passing",
+        "operator": "regex",
+        "value": "^[12]",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782273571995",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T03:59:31.995Z",
+    "description": "[阪神] 補正: 過小評価(ボーントゥウォリア:予測8位→1着)/過小評価(ウルトラハート:予測13位→3着)/Hペース前残り/過大評価(ハオカノア:予測2位→10着)",
+    "track": "阪神",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782344661519",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T23:44:21.519Z",
+    "description": "[園田] 補正: 過小評価(ニックオブタイム:予測9位→1着)/過小評価(クールブリエ:予測10位→2着)/過大評価(アブラカタブラ:予測1位→9着)",
+    "track": "園田",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "差し",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782357263429",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:14:23.429Z",
+    "description": "[門別] 補正: 過小評価(クリシュナラブリー:予測6位→2着)/過小評価(コスモバラス:予測11位→3着)/過大評価(マウンテントップ:予測2位→12着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "差し",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782357668022",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:21:08.022Z",
+    "description": "[門別] 補正: 過小評価(ベルケム:予測7位→3着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782357687420",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:21:27.420Z",
+    "description": "[門別] 補正: 過小評価(カストール:予測6位→1着)/過小評価(ナガイアイダ:予測9位→3着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782357850715",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:24:10.715Z",
+    "description": "[門別] 補正: 過小評価(テナチュール:予測5位→3着)/過大評価(ハーティーアイズ:予測2位→6着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782357879945",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:24:39.945Z",
+    "description": "[門別] 補正: 過小評価(ワンサックショート:予測7位→1着)/過大評価(ジャスパーロマン:予測2位→10着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782357928406",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:25:28.406Z",
+    "description": "[門別] 補正: 過小評価(クラエンデバー:予測8位→2着)/過小評価(モーニングスミレ:予測9位→3着)/過大評価(ウルトラマックス:予測2位→9着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782357981439",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:26:21.439Z",
+    "description": "[門別] 補正: 過小評価(ヴァーチェ:予測6位→2着)/過小評価(リスペクトライト:予測5位→3着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 500,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "差し",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358090933",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:28:10.933Z",
+    "description": "[門別] 補正: 過小評価(ヤマニンアリーズ:予測6位→2着)/過小評価(イイデスカイハイ:予測5位→3着)/過大評価(ハレタヒニ:予測1位→8着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358142769",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:29:02.769Z",
+    "description": "[門別] 補正: 過小評価(アローグレイシャー:予測7位→2着)/過小評価(クレーバーベン:予測5位→3着)/過大評価(ケイアイブイスリー:予測1位→8着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "先行",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 500,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358178988",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:29:38.988Z",
+    "description": "[門別] 補正: 過小評価(スマイルシエラ:予測10位→1着)/過小評価(リュウノマジシャン:予測9位→3着)/過大評価(デュジャック:予測1位→6着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": -10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358251771",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:30:51.771Z",
+    "description": "[門別] 補正: 過小評価(ニシケンカバル:予測9位→2着)",
+    "track": "門別",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358360267",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:32:40.267Z",
+    "description": "[浦和] 補正: 過小評価(ピノモラーン:予測8位→1着)/過小評価(ダイユウルージュ:予測7位→2着)/過大評価(シャコンヌ:予測1位→9着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": -10
+      },
+      {
+        "field": "popularity",
+        "operator": "==",
+        "value": 1,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358397222",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:33:17.222Z",
+    "description": "[浦和] 補正: 過小評価(リトルエース:予測5位→1着)/過小評価(ウォニョン:予測9位→2着)/過小評価(パワーラクーン:予測6位→3着)/過大評価(エガル:予測2位→6着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": -10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": -10
+      },
+      {
+        "field": "popularity",
+        "operator": "==",
+        "value": 1,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358462408",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:34:22.408Z",
+    "description": "[浦和] 補正: 過小評価(シンエンコゲツ:予測6位→2着)/過小評価(ワンワールド:予測10位→3着)/過大評価(シナノクリスタル:予測1位→10着)/過大評価(キングハービン:予測2位→7着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358495266",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:34:55.266Z",
+    "description": "[浦和] 補正: 過小評価(クーリッジテソーロ:予測7位→1着)/Hペース前残り/過小評価(タカイチナダル:予測5位→2着)/Hペース前残り/過小評価(シンキングモヒート:予測8位→3着)/Hペース前残り",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358577191",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:36:17.191Z",
+    "description": "[浦和] 補正: 過小評価(ピカッティー:予測7位→2着)/過小評価(スウェルティア:予測5位→3着)/過大評価(キタサンエポナ:予測1位→6着)/過大評価(ポレポレ:予測2位→9着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": -10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": -10
+      },
+      {
+        "field": "popularity",
+        "operator": "==",
+        "value": 1,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358613477",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:36:53.477Z",
+    "description": "[浦和] 補正: 過小評価(レベリオン:予測7位→1着)/過小評価(メイショウフソウ:予測6位→2着)/Hペース前残り",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 500,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358649453",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:37:29.453Z",
+    "description": "[浦和] 補正: 過小評価(プレストワンダ:予測6位→3着)/過大評価(ラエティティア:予測1位→6着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358723390",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:38:43.390Z",
+    "description": "[浦和] 補正: 過小評価(タフコール:予測7位→1着)/Hペース前残り/過小評価(ピーチピーチ:予測6位→2着)/Hペース前残り/過大評価(キャプテンデューク:予測2位→7着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358759758",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:39:19.758Z",
+    "description": "[浦和] 補正: 過小評価(マジュツシカエル:予測5位→2着)/過小評価(ブラックエンパイア:予測6位→3着)/過大評価(クラパッション:予測1位→11着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358796115",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:39:56.115Z",
+    "description": "[浦和] 補正: 過小評価(アルマヴィーヴァ:予測7位→1着)/Hペース前残り/過小評価(マスクドサムライ:予測9位→3着)/Hペース前残り/過大評価(リュウノエッセンス:予測1位→6着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358836985",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:40:36.985Z",
+    "description": "[浦和] 補正: 過小評価(ロードフォンス:予測6位→1着)/過小評価(ウィルソンテソーロ:予測12位→2着)/過小評価(イグザルト:予測7位→3着)/過大評価(アウストロ:予測1位→6着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "weight",
+        "operator": ">=",
+        "value": 500,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782358882821",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-25T03:41:22.821Z",
+    "description": "[浦和] 補正: 過小評価(ソレイケドンチャン:予測10位→1着)/過小評価(ベルルート:予測9位→2着)/過大評価(ゴールドキッド:予測2位→7着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "差し",
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782211859308",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-23T10:50:59.308Z",
+    "description": "[水沢] 補正: 過小評価(ヨツバミッチー:予測8位→3着)/過大評価(ジョードプル:予測2位→10着)",
+    "track": "水沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782211940165",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-23T10:52:20.165Z",
+    "description": "[水沢] 補正: 過小評価(タマモキサキ:予測6位→2着)/過大評価(タギマサダス:予測2位→7着)",
+    "track": "水沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782212012145",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-23T10:53:32.145Z",
+    "description": "[水沢] 補正: 過大評価(ハミッツキャンディ:予測1位→9着)",
+    "track": "水沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782212473263",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-23T11:01:13.263Z",
+    "description": "[水沢] 補正: 過小評価(ラヴレインブーケ:予測5位→2着)/過大評価(リケアリングイネ:予測2位→11着)",
+    "track": "水沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782212591915",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-23T11:03:11.915Z",
+    "description": "[水沢] 補正: 過小評価(ベルベストランナー:予測5位→3着)/過大評価(エールヴァーゲ:予測2位→9着)",
+    "track": "水沢",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": -10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782268276109",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T02:31:16.109Z",
+    "description": "[浦和] 補正: 過小評価(リュウノアーダーン:予測7位→3着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782297957778",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T10:45:57.778Z",
+    "description": "[浦和] 補正: 過小評価(ロードフォンス:予測5位→1着)/過小評価(ウィルソンテソーロ:予測8位→2着)/過大評価(シャマル:予測1位→9着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782298062323",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T10:47:42.323Z",
+    "description": "[浦和] 補正: 過小評価(ソレイケドンチャン:予測12位→1着)",
+    "track": "浦和",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      },
+      {
+        "field": "style",
+        "operator": "includes",
+        "value": "逃げ",
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782298203353",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T10:50:03.353Z",
+    "description": "[笠松] 補正: 過小評価(リアルケンチャン:予測6位→2着)",
+    "track": "笠松",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": ">=",
+        "value": 6,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782298256133",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T10:50:56.133Z",
+    "description": "[笠松] 補正: 過小評価(ウインポラリス:予測5位→1着)",
+    "track": "笠松",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "patch_local_1782298313676",
+    "version": "1.5 (Local Auto-Correction)",
+    "date": "2026-06-24T10:51:53.676Z",
+    "description": "[笠松] 補正: 過小評価(ホープレイジング:予測10位→1着)/過小評価(スピアザキック:予測8位→3着)",
+    "track": "笠松",
+    "condition": "良",
+    "adjustments": [
+      {
+        "field": "frame",
+        "operator": "<=",
+        "value": 3,
+        "scoreAdjust": 10
+      }
+    ],
+    "active": true
   }
 ]

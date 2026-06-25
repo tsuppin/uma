@@ -442,9 +442,12 @@ TARGET_ENCODING_FEATURES = [
     'trainer_jockey_win_rate_te', # 調教師×騎手ライン 勝率
     'owner_win_rate_te',          # 馬主×場所 勝率
     'breeder_win_rate_te',        # 生産者×場所 勝率
+    'overall_pack_length',        # 前走馬群の長さ
+    'overall_is_compact',         # 前走密集ペース
+    'overall_is_elongated',       # 前走縦長ペース
 ]
 
-# 全特徴量（合計37）
+# 全特徴量（合計70個）
 ALL_FEATURES = BASE_FEATURES + PREV_RACE_FEATURES + TARGET_ENCODING_FEATURES
 
 

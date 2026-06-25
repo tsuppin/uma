@@ -877,6 +877,48 @@ def parse_jra_text(text: str) -> Dict[str, Any]:
     return {'race_info': race_info, 'horses': horses}
 
 
+def parse_overall_corner_passing(text: str) -> Dict[str, float]:
+    """
+    全体コーナー通過順位（レース全体の隊列状況）を解析する。
+    例: "１コーナー 8,9,3,6,2-4,7,1,5"
+    戻り値は特徴量辞書: pack_length, is_compact, is_elongated
+    """
+    pack_lengths = []
+    is_compact_scores = []
+    is_elongated_scores = []
+
+    # 「１コーナー」〜「４コーナー」または数字の「1コーナー」〜「4コーナー」にマッチ
+    pattern = re.compile(r'^[１-４1-4]コーナー\s+(.+)$', re.MULTILINE)
+    matches = pattern.findall(text)
+
+    if not matches:
+        return {
+            'overall_pack_length': 0.0,
+            'overall_is_compact': 0.0,
+            'overall_is_elongated': 0.0
+        }
+
+    for match in matches:
+        line = match.strip()
+        commas = line.count(',')
+        parallels = line.count('-') + line.count('(')
+
+        # 全ての頭数を大まかなグループに分けた時の長さ (例: 8,9,3-6 -> 4グループ)
+        # (, ), - を考慮してグループ数をざっくり計算
+        groups = re.split(r',|-', re.sub(r'\(|\)', '', line))
+        pack_lengths.append(len(groups))
+
+        # 並走が多ければ密集ペース
+        is_compact_scores.append(1.0 if parallels >= 2 else 0.0)
+        # 単独が多く並走が少なければ縦長ペース
+        is_elongated_scores.append(1.0 if commas >= 6 and parallels == 0 else 0.0)
+
+    return {
+        'overall_pack_length': float(max(pack_lengths)) if pack_lengths else 0.0,
+        'overall_is_compact': 1.0 if sum(is_compact_scores) >= 1 else 0.0,
+        'overall_is_elongated': 1.0 if sum(is_elongated_scores) >= 1 else 0.0
+    }
+
 # =============================================================================
 # 4. 統合パーサー（フォーマット自動判定）
 # =============================================================================
@@ -892,6 +934,11 @@ def parse_text(text: str) -> Dict[str, Any]:
     else:
         result = parse_nar_text(text)
     result['format'] = fmt
+
+    # 全体コーナー通過順位の解析結果を race_info に追加
+    overall_corner_data = parse_overall_corner_passing(text)
+    result['race_info'].update(overall_corner_data)
+
     return result
 
 
