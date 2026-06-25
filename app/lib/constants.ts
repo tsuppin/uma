@@ -15394,5 +15394,46 @@ export const INITIAL_PATCHES: LearningPatch[] = [
       }
     ],
     "active": true
+  },
+
+  // ==========================================
+  // 【実績学習】門別競馬場 (2026-06-25 記録)
+  // 9レース分の自動補正パッチを分析・統合
+  // ==========================================
+  {
+    id: "learned_monbetsu_good_front_runner",
+    version: "v1.5.monbetsu",
+    date: "2026-06-25T23:52:14.719Z",
+    description: "門別・良馬場：逃げ馬優位（ツリーオブライフ/フロンテアブライト等6→1着実績複数回）",
+    track: "門別",
+    condition: "良",
+    adjustments: [
+      { field: "style", operator: "includes", value: "逃げ", scoreAdjust: 10 }
+    ],
+    active: true
+  },
+  {
+    id: "learned_monbetsu_good_heavy_horse",
+    version: "v1.5.monbetsu",
+    date: "2026-06-25T23:52:59.725Z",
+    description: "門別・良馬場：500kg以上の重量馬優位（ミワクノホウショウ/シルバーミラージュ等実績）",
+    track: "門別",
+    condition: "良",
+    adjustments: [
+      { field: "weight", operator: ">=", value: 500, scoreAdjust: 10 }
+    ],
+    active: true
+  },
+  {
+    id: "learned_monbetsu_good_favorite_risk",
+    version: "v1.5.monbetsu",
+    date: "2026-06-25T23:54:06.773Z",
+    description: "門別・良馬場：単勝1番人気の過信禁止（スターオブスカイ1位→7着、ウェルカムランチ2位→99着等）",
+    track: "門別",
+    condition: "良",
+    adjustments: [
+      { field: "popularity", operator: "==", value: 1, scoreAdjust: -10 }
+    ],
+    active: true
   }
 ];

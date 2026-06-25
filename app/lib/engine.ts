@@ -7215,7 +7215,10 @@ export function calculateTsuchiyaScore(
         if (adj.operator === 'includes' && val.includes(adj.value)) applies = true;
         else if (adj.operator === '==' && val === adj.value) applies = true;
       }
-      if (applies) { /* [減点方式] potential += adj.scoreAdjust; */ tags.push(`学習パッチ(${patch.version})`); }
+      if (applies) {
+        potential += adj.scoreAdjust;
+        if (adj.scoreAdjust !== 0) tags.push(`学習補正(${patch.track || '全場'}:${adj.field}${adj.operator}${adj.value}:${adj.scoreAdjust > 0 ? '+' : ''}${adj.scoreAdjust})`);
+      }
     }
   }
 
