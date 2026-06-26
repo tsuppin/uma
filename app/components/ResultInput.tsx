@@ -389,30 +389,24 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               
               const actualHorse = results.find(r => r.rank === (i + 1));
               const actualHorseNumber = actualHorse ? actualHorse.horseNumber : null;
-              const actualHorseName = actualHorse ? actualHorse.horseName : null;
               
               const textColor = isRankHit ? "text-green" : "text-red";
-              const statusText = isRankHit ? "的中 ✓" : "不的中 ✗";
               const cardBg = isRankHit ? "bg-green-muted" : "bg-surface";
               const cardBorder = isRankHit ? "border-green-40" : "border";
               
               return (
                 <div key={p.horseId} className={`p-10-14 rounded-8 ${cardBg} ${cardBorder}`} style={{ flex: '1 1 calc(50% - 8px)', minWidth: '120px' }}>
-                  <div className="fs-xs text-muted mb-8 text-center">予想{i + 1}位</div>
+                  <div className={`fs-xs mb-8 text-center fw-700 ${textColor}`}>予想{i + 1}位</div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px' }}>
                     <div className="text-center">
-                      <div className="fs-xs text-muted mb-2">予想</div>
-                      <div className="fs-lg fw-700">{p.horseNumber}番</div>
-                    </div>
-                    
-                    <div className={`fs-sm fw-700 ${textColor}`}>
-                      {statusText}
+                      <div className={`fs-xs mb-2 ${textColor}`}>予想</div>
+                      <div className="fs-lg fw-700" style={{ color: 'white' }}>{p.horseNumber}番</div>
                     </div>
                     
                     <div className="text-center">
-                      <div className="fs-xs text-muted mb-2">結果({i + 1}着)</div>
-                      <div className={`fs-lg fw-700 ${textColor}`}>
+                      <div className={`fs-xs mb-2 ${textColor}`}>結果({i + 1}着)</div>
+                      <div className="fs-lg fw-700" style={{ color: 'white' }}>
                         {actualHorseNumber ? `${actualHorseNumber}番` : "—"}
                       </div>
                     </div>
