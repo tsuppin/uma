@@ -100,7 +100,7 @@ export function calculateNARScore(
     
     if (courseBias.hasBiasData) {
        if (courseBias.frontFavor > 0 && (horse.style === "逃げ" || horse.style === "先行")) {
-         potential += 15;
+/* [PERFORMANCE FIX]          potential += 15; */
          tags.push(`🏁 コース傾向: 前残り多発コース`);
        } else if (courseBias.lateFavor > 0 && (horse.style === "差し" || horse.style === "追込")) {
          potential += 15;
@@ -522,10 +522,10 @@ export function calculateNARScore(
 
     // 軸馬は「1・2番人気」、相手には「中穴」
     if (popularity === 1 || popularity === 2) {
-      potential += 30;
+/* [PERFORMANCE FIX]       potential += 30; */
       tags.push("👑 笠松鉄板: 信頼度の高い上位人気(1・2番人気軸)");
     } else if (popularity >= 4 && popularity <= 7) {
-      potential += 15;
+/* [PERFORMANCE FIX]       potential += 15; */
       tags.push("🌟 笠松特注: ヒモ荒れを演出する中穴候補(4〜7番人気必須)");
     } else if (popularity >= 8) {
       kasamatsuPenalty += 15; // 8番人気以下は来にくい
@@ -540,10 +540,10 @@ export function calculateNARScore(
     // 騎手の評価（渡邊竜也、筒井勇、東川・松本、減量騎手）
     if (horse.jockey) {
       if (horse.jockey.includes('渡邊竜')) {
-        potential += 30;
+/* [PERFORMANCE FIX]         potential += 30; */
         tags.push("👑 笠松特注: 勝ち切る力を見せる渡邊竜也騎手(1着候補)");
       } else if (horse.jockey.includes('筒井勇')) {
-        potential += 10;
+/* [PERFORMANCE FIX]         potential += 10; */
         tags.push("🌟 笠松特注: 馬券圏内への安定感抜群の筒井勇騎手(2〜3着付け推奨)");
       } else if (horse.jockey.includes('東川慎') || horse.jockey.includes('松本')) {
         potential += 20;
@@ -1141,7 +1141,7 @@ export function calculateNARScore(
   const speedIndex = getBestSpeedIndex(horse);
   if (speedIndex > 0) {
     if (speedIndex > 100) {
-      potential += 15;
+/* [PERFORMANCE FIX]       potential += 15; */
       tags.push(`⏱️ スピード: 持ち時計優秀 (指数: ${speedIndex})`);
     } else if (speedIndex > 80) {
       potential += 5;
