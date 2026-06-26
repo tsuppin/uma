@@ -824,9 +824,8 @@ export function calculateNARScore(
       // 2〜3着候補（ヒモ）としての評価を保つため、枠と脚質の減点を免除する
       if (frame >= 1 && frame <= 4) mombetsuPenalty -= 15;
       if (horse.style === '差し' || horse.style === '追込') mombetsuPenalty -= 10;
-      
-      // 頭（1着）候補からは外すため、ベースポテンシャルをわずかに削る
-      potential -= 5;
+      // ヒモとして2〜3着に残れる程度の加点（頭は取らせない）
+      potential += 5;
       tags.push("🌟 門別特例: ヒモ職人(服部/岩橋/減量騎手)による枠・脚質ペナルティ免除");
     }
 
@@ -984,7 +983,7 @@ export function calculateNARScore(
 
   // 3. 減量騎手（軽斤量）の逃げ残り物理アドバンテージ
   if (!trackName.includes('大井') && horse.jockeyWeight && horse.jockeyWeight <= 53 && (horse.style === '逃げ' || horse.style === '先行')) {
-    // [減点方式] potential += 20;
+    potential += 15; // 軽量×先行の物理的優位を加点
     tags.push(`🪽 裸同然の軽斤量(${horse.jockeyWeight}kg): 減量騎手×先行力によるアドバンテージ`);
   }
 

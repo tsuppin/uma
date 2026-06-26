@@ -6205,7 +6205,7 @@ export function calculateTsuchiyaScore(
   } else if (wave.level >= 4) {
     // 波乱度高（波乱・大波乱）フェーズ：1番人気が崩れ、中穴が台頭
     if (popularity === 1) {
-      potential -= 5;
+      potential -= 10; // 波乱フェーズでの1番人気過信を強化
       tags.push(`⚠️波乱フェーズ:1番人気過信禁物 (${wave.category})`);
     } else if (popularity >= 5 && popularity <= 8) {
       // [減点方式] potential += 25;
@@ -8649,7 +8649,7 @@ export function calculateTsuchiyaScore(
   const weightAnalysis = analyzeWeight(horse);
   if (weightAnalysis.hasWeightData) {
     if (weightAnalysis.isIdeal) {
-      potential += 5;
+      potential += 3; // 実績樹立まで保守的に抑制
       tags.push("✨ 状態キープ: 好走時のベスト体重を維持");
     }
     if (weightAnalysis.isGrowth) {
@@ -8663,7 +8663,7 @@ export function calculateTsuchiyaScore(
 
   const passAnalysis = analyzePassingPositions(horse);
   if (passAnalysis.isMakuri) {
-    potential += 10;
+    potential += 7; // まくり実績は評価するが実績樹立まで抱制
     tags.push("🌪️ 展開: 前走長く良い脚を使った『まくり』実績あり");
   } else if (passAnalysis.isTare) {
     if (prevRaceData && prevRaceData.distance > dist) {
