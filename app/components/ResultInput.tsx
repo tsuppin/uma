@@ -397,27 +397,23 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               const cardBorder = isRankHit ? "border-green-40" : "border";
               
               return (
-                <div key={p.horseId} className={`p-10-14 rounded-8 ${cardBg} ${cardBorder}`} style={{ flex: '1 1 calc(50% - 8px)', minWidth: '160px' }}>
+                <div key={p.horseId} className={`p-10-14 rounded-8 ${cardBg} ${cardBorder}`} style={{ flex: '1 1 calc(50% - 8px)', minWidth: '120px' }}>
                   <div className="fs-xs text-muted mb-8 text-center">予想{i + 1}位</div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="text-center" style={{ flex: 1, overflow: 'hidden' }}>
-                      <div className="fs-xs text-muted">予想</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
+                    <div className="text-center">
+                      <div className="fs-xs text-muted mb-2">予想</div>
                       <div className="fs-lg fw-700">{p.horseNumber}番</div>
-                      <div className="fs-xs" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.horseName}</div>
                     </div>
                     
-                    <div className={`fs-sm fw-700 ${textColor} px-4`}>
+                    <div className={`fs-sm fw-700 ${textColor}`}>
                       {statusText}
                     </div>
                     
-                    <div className="text-center" style={{ flex: 1, overflow: 'hidden' }}>
-                      <div className="fs-xs text-muted">結果({i + 1}着)</div>
+                    <div className="text-center">
+                      <div className="fs-xs text-muted mb-2">結果({i + 1}着)</div>
                       <div className={`fs-lg fw-700 ${textColor}`}>
                         {actualHorseNumber ? `${actualHorseNumber}番` : "—"}
-                      </div>
-                      <div className="fs-xs text-muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {actualHorseName || "—"}
                       </div>
                     </div>
                   </div>
