@@ -11,7 +11,10 @@ export function analyzeRaceResultsAndLearn(
   if (!updatedMasterData.sires) updatedMasterData.sires = {};
 
   const newPatches: LearningPatch[] = [];
-  const today = new Date().toISOString().split('T')[0];
+  const today = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  })();
 
   // 競馬場・芝ダートごとに結果をグルーピング
   const trackGroups: Record<string, { 

@@ -91,7 +91,10 @@ export function parseNARText(rawText: string): {
 } {
   const lines = rawText.split("\n").map(l => l.trim());
 
-  let date = new Date().toISOString().slice(0, 10);
+  let date = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  })();
   let venue = extractVenue(rawText) || "";
   let raceNumber = 1, distance = 1200, headCount = 0, raceName = "";
   const surface: Race["surface"] = "ダート";
@@ -508,7 +511,10 @@ export function parseJRAText(rawText: string): {
   const raceNumber = headerMatch ? parseInt(headerMatch[4]) : 1;
 
   const dateMatch = rawText.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
-  const date = dateMatch ? `${dateMatch[1]}-${String(dateMatch[2]).padStart(2,"0")}-${String(dateMatch[3]).padStart(2,"0")}` : new Date().toISOString().slice(0, 10);
+  const date = dateMatch ? `${dateMatch[1]}-${String(dateMatch[2]).padStart(2,"0")}-${String(dateMatch[3]).padStart(2,"0")}` : (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  })();
 
   // レース名・距離・馬場・条件
   let raceName = "";
@@ -1107,7 +1113,10 @@ export function parseRakutenKeibaText(rawText: string): {
   const lines = rawText.split("\n").map(l => l.trim());
   let venue = "";
   let raceNumber = 1;
-  let date = new Date().toISOString().slice(0, 10);
+  let date = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  })();
   let distance = 1400;
   let surface: Race["surface"] = "ダート";
   let condition: Race["condition"] = "良";

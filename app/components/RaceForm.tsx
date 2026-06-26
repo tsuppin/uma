@@ -22,7 +22,10 @@ export default function RaceForm({ onSubmit, onSubmitResult, onCancel }: {
   const [parsedResult, setParsedResult] = useState<{ race: Partial<Race>, result: RaceResult } | null>(null);
 
   // レース基本情報（解析後に確認・修正）
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
   const [venue, setVenue] = useState("");
   const [raceNumber, setRaceNumber] = useState(1);
   const [raceName, setRaceName] = useState("");

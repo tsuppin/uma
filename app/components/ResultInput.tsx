@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Race, RaceResult } from "../types";
 import { generateFormation } from "../lib/engine";
 import MobileRaceResult from "./MobileRaceResult";
-import { parseRaceResult } from "../lib/resultParser";
+
 
 type ResultRow = { rank: number; horseNumber: number; horseName: string; time: string; odds: number; prize: number; belonging?: string; passing?: string; margin?: string; pace?: string; up3Time?: number; };
 
@@ -13,8 +13,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   onCancel: () => void;
 }) {
   const existing = race.result;
-  const [pasteText, setPasteText] = useState("");
-  const [parseError, setParseError] = useState("");
+
   const [results, setResults] = useState<ResultRow[]>(
     existing?.result || Array.from({ length: Math.min(3, race.horses.length) }, (_, i) => ({
       rank: i + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0,
@@ -32,115 +31,6 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
   const [winnerProfile, setWinnerProfile] = useState<RaceResult["winnerProfile"] | undefined>(existing?.winnerProfile);
   const [refunds, setRefunds] = useState<RaceResult["refunds"] | undefined>(existing?.refunds);
 
-  // ==========================================
-  // テキスト貼り付けパーサー
-  // ==========================================
-  const parsePasteText = () => {
-    setParseError("");
-    
-    if (!pasteText.trim()) return;
-
-    try {
-      const parsed = parseRaceResult(pasteText, race.horses);
-
-      if (!parsed.result || parsed.result.length === 0) {
-        setParseError("着順を解析できませんでした。テキストデータのフォーマットを確認してください。");
-        return;
-      }
-
-      if (parsed.lapTimes) setLapTimes(parsed.lapTimes);
-      if (parsed.last4fTime) setLast4fTime(parsed.last4fTime);
-      if (parsed.last3fTime) setLast3fTime(parsed.last3fTime);
-      if (parsed.cornerPassings) setCornerPassings(parsed.cornerPassings);
-      if (parsed.incidents) setIncidents(parsed.incidents);
-      if (parsed.winnerProfile) setWinnerProfile(parsed.winnerProfile);
-      if (parsed.refunds && Object.keys(parsed.refunds).length > 0) setRefunds(parsed.refunds);
-
-      const calculated = parsed.result as ResultRow[];
-
-    // 的中払戻金の自動計算（初期betAmount = 100円ベース）
-    if (race.predictions && calculated.length >= 2) {
-      const r1 = calculated[0]?.horseNumber || 0;
-      const r2 = calculated[1]?.horseNumber || 0;
-      const r3 = calculated[2]?.horseNumber || 0;
-
-      const predictions = race.predictions;
-      const formWin = generateFormation(predictions, 'win', race);
-      const formWide = generateFormation(predictions, 'wide', race);
-      const formTrio = generateFormation(predictions, 'trifecta', race);
-      const formTrifecta = generateFormation(predictions, 'trifecta_exact', race);
-      const formQuinella = generateFormation(predictions, 'quinella', race);
-      const formExacta = generateFormation(predictions, 'exacta', race);
-
-      const resWin = [r1].filter(Boolean);
-      const hitWin = formWin && r1 ? formWin.tickets.filter(t => t[0] === r1) : [];
-
-      const resWideMatches: number[][] = [];
-      if (r1 && r2) resWideMatches.push([r1, r2].sort((a,b)=>a-b));
-      if (r1 && r3) resWideMatches.push([r1, r3].sort((a,b)=>a-b));
-      if (r2 && r3) resWideMatches.push([r2, r3].sort((a,b)=>a-b));
-      const hitWide = formWide ? formWide.tickets.filter(t => {
-        const sortedT = [...t].sort((a,b)=>a-b);
-        return resWideMatches.some(match => match[0] === sortedT[0] && match[1] === sortedT[1]);
-      }) : [];
-
-      const resTrio = [r1, r2, r3].filter(Boolean).sort((a,b)=>a-b);
-      const hitTrio = resTrio.length === 3 ? formTrio.tickets.filter(t => [...t].sort((a,b)=>a-b).every((n,i)=>n===resTrio[i])) : [];
-
-      const resTrifecta = [r1, r2, r3].filter(Boolean);
-      const hitTrifecta = resTrifecta.length === 3 ? formTrifecta.tickets.filter(t => t.every((n,i)=>n===resTrifecta[i])) : [];
-
-      const resQuinella = [r1, r2].filter(Boolean).sort((a,b)=>a-b);
-      const hitQuinella = resQuinella.length === 2 ? formQuinella.tickets.filter(t => [...t].sort((a,b)=>a-b).every((n,i)=>n===resQuinella[i])) : [];
-
-      const resExacta = [r1, r2].filter(Boolean);
-      const hitExacta = resExacta.length === 2 ? formExacta.tickets.filter(t => t.every((n,i)=>n===resExacta[i])) : [];
-
-      let totalProfit = 0;
-      const betMultiplier = betAmount / 100;
-
-      if (hitWin.length > 0) {
-        const payout = parsed.refunds?.win?.[0]?.payout || 0;
-        totalProfit += hitWin.length * payout * betMultiplier;
-      }
-      if (hitWide.length > 0) {
-        // ワイドは複数の的中の可能性があるため、すべての的中チケットに対して払い戻しを加算
-        hitWide.forEach(t => {
-          // 実際の払戻データから、このチケット(2頭の組み合わせ)に一致する払戻を探す
-          const sortedT = [...t].sort((a,b)=>a-b);
-          const refund = parsed.refunds?.wide?.find(rw => {
-            const matchNums = rw.combination?.split(/[\-\s]+/).map(n => parseInt(n)).sort((a,b)=>a-b) || [];
-            return matchNums[0] === sortedT[0] && matchNums[1] === sortedT[1];
-          });
-          const payout = refund?.payout || (parsed.refunds?.wide?.[0]?.payout || 0); // マッチしない場合は1つ目の払戻を使用
-          totalProfit += payout * betMultiplier;
-        });
-      }
-      if (hitTrio.length > 0) {
-        const payout = parsed.refunds?.trio?.[0]?.payout || 0;
-        totalProfit += hitTrio.length * payout * betMultiplier;
-      }
-      if (hitTrifecta.length > 0) {
-        const payout = parsed.refunds?.trifecta?.[0]?.payout || 0;
-        totalProfit += hitTrifecta.length * payout * betMultiplier;
-      }
-      if (hitQuinella.length > 0) {
-        const payout = parsed.refunds?.quinella?.[0]?.payout || 0;
-        totalProfit += hitQuinella.length * payout * betMultiplier;
-      }
-      if (hitExacta.length > 0) {
-        const payout = parsed.refunds?.exacta?.[0]?.payout || 0;
-        totalProfit += hitExacta.length * payout * betMultiplier;
-      }
-
-      setProfit(totalProfit);
-    }
-    
-    setResults(calculated);
-    } catch (err: any) {
-      setParseError("パース中にエラーが発生しました：" + err.message);
-    }
-  };
 
   const updateResult = (idx: number, field: string, value: unknown) => {
     setResults(prev => prev.map((r, i) => {
@@ -158,15 +48,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
     setResults(prev => [...prev, { rank: prev.length + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0, passing: "" }]);
   };
 
-  const handlePasteFromClipboard = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      setPasteText(text);
-      setParseError("");
-    } catch (err) {
-      alert("クリップボードからの読み取りに失敗しました。お手数ですが、テキストエリアを長押しして貼り付けてください。");
-    }
-  };
+
 
   const removeRow = (idx: number) => {
     setResults(prev => prev.filter((_, i) => i !== idx).map((r, i) => ({ ...r, rank: i + 1 })));
@@ -270,54 +152,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
         </div>
       )}
 
-      {/* 📋 テキスト貼り付け・解析エリア */}
-      <div className="card fade-in">
-        <div className="card-header">
-          <div className="card-title">📋 レース結果テキスト貼り付け</div>
-        </div>
 
-        <div className="form-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-            <label className="form-label" htmlFor="result-paste" style={{ marginBottom: 0 }}>結果テキスト</label>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={handlePasteFromClipboard}>
-              📋 クリップボードから貼り付け
-            </button>
-          </div>
-          <textarea
-            id="result-paste"
-            className="form-textarea min-h-180 mono fs-sm"
-            value={pasteText}
-            onChange={e => { setPasteText(e.target.value); setParseError(""); }}
-            placeholder={`例:\n1着 3番 クラウンヴィラン 1:14.2\n2着 8番 バイアーナ 1:14.5\n3着 12番 シナモンデイジー 1:14.8\n\n（JRA・地方競馬の結果テキストをそのまま貼付けもOK）`}
-            maxLength={5000}
-          />
-          <div className="fs-xs text-muted mt-4 text-right">
-            {pasteText.length} / 5000文字
-          </div>
-        </div>
-
-        {parseError && (
-          <div className="alert alert-warning">
-            ⚠️ {parseError}
-          </div>
-        )}
-
-        <div className="flex gap-8">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={parsePasteText}
-            disabled={!pasteText.trim()}
-            style={{ opacity: pasteText.trim() ? 1 : 0.5 }}
-          >
-            🔍 テキストを解析
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => setPasteText("")}>
-            クリア
-          </button>
-        </div>
-
-      </div>
 
       {/* ✏️ 手動入力・詳細エリア */}
       <div className="card fade-in mt-16">
@@ -552,20 +387,39 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
               const actualRank = hitResult ? hitResult.rank : null;
               const isRankHit = actualRank === (i + 1);
               
+              const actualHorse = results.find(r => r.rank === (i + 1));
+              const actualHorseNumber = actualHorse ? actualHorse.horseNumber : null;
+              const actualHorseName = actualHorse ? actualHorse.horseName : null;
+              
               const textColor = isRankHit ? "text-green" : "text-red";
               const statusText = isRankHit ? "的中 ✓" : "不的中 ✗";
               const cardBg = isRankHit ? "bg-green-muted" : "bg-surface";
               const cardBorder = isRankHit ? "border-green-40" : "border";
               
               return (
-                <div key={p.horseId} className={`p-10-14 text-center rounded-8 ${cardBg} ${cardBorder}`} style={{ flex: '1 1 calc(50% - 8px)', minWidth: '120px' }}>
-                  <div className="fs-xs text-muted mb-4">予想{i + 1}位</div>
-                  <div className={`fs-lg fw-700 ${textColor} mb-4`}>
-                    {p.horseNumber}番
-                  </div>
-                  <div className="fs-sm mb-4">{p.horseName}</div>
-                  <div className={`fs-lg fw-700 ${textColor}`}>
-                    {actualRank ? `${actualRank}着` : "—"} ({statusText})
+                <div key={p.horseId} className={`p-10-14 rounded-8 ${cardBg} ${cardBorder}`} style={{ flex: '1 1 calc(50% - 8px)', minWidth: '160px' }}>
+                  <div className="fs-xs text-muted mb-8 text-center">予想{i + 1}位</div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="text-center" style={{ flex: 1, overflow: 'hidden' }}>
+                      <div className="fs-xs text-muted">予想</div>
+                      <div className="fs-lg fw-700">{p.horseNumber}番</div>
+                      <div className="fs-xs" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.horseName}</div>
+                    </div>
+                    
+                    <div className={`fs-sm fw-700 ${textColor} px-4`}>
+                      {statusText}
+                    </div>
+                    
+                    <div className="text-center" style={{ flex: 1, overflow: 'hidden' }}>
+                      <div className="fs-xs text-muted">結果({i + 1}着)</div>
+                      <div className={`fs-lg fw-700 ${textColor}`}>
+                        {actualHorseNumber ? `${actualHorseNumber}番` : "—"}
+                      </div>
+                      <div className="fs-xs text-muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {actualHorseName || "—"}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
