@@ -15435,5 +15435,45 @@ export const INITIAL_PATCHES: LearningPatch[] = [
       { field: "popularity", operator: "==", value: 1, scoreAdjust: -10 }
     ],
     active: true
+  },
+
+  // ==========================================
+  // 【実績学習】園田競馬場 (2026-06-25 8レース記録)
+  // ==========================================
+  {
+    id: "learned_sonoda_good_favorite_risk_1",
+    version: "v1.5.sonoda",
+    date: "2026-06-25T10:52:31.280Z",
+    description: "園田・良馬場：単勝1番人気の過信禁止（ウインカグヤヒメ1位→6着、クオンタムゲート1位→8着等）",
+    track: "園田",
+    condition: "良",
+    adjustments: [
+      { field: "popularity", operator: "==", value: 1, scoreAdjust: -12 }
+    ],
+    active: true
+  },
+  {
+    id: "learned_sonoda_good_favorite_risk_2",
+    version: "v1.5.sonoda",
+    date: "2026-06-25T10:51:44.374Z",
+    description: "園田・良馬場：2番人気の過信禁止（シマノダイヤモンド2位→8着、イデアールマッチ2位→8着等）",
+    track: "園田",
+    condition: "良",
+    adjustments: [
+      { field: "popularity", operator: "==", value: 2, scoreAdjust: -10 }
+    ],
+    active: true
+  },
+  {
+    id: "learned_sonoda_good_front_runner",
+    version: "v1.5.sonoda",
+    date: "2026-06-25T10:49:59.178Z",
+    description: "園田・良馬場：逃げ馬優位（メイショウコウラン/アスクサステナブル等6〜8位→1着実績）",
+    track: "園田",
+    condition: "良",
+    adjustments: [
+      { field: "style", operator: "includes", value: "逃げ", scoreAdjust: 10 }
+    ],
+    active: true
   }
 ];

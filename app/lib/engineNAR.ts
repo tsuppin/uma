@@ -590,20 +590,29 @@ export function calculateNARScore(
     const prevRaceData = horse.pastRaces && horse.pastRaces.length > 0 ? horse.pastRaces[0] : undefined;
     
     // -----------------------------------------------------
-    // 【1. 基本能力・適性による減点】
+    // 【1. 基本能力・適性による減点】 (2026/06 8レース分析反映)
     // -----------------------------------------------------
-    // 人気減点【-10点】：当日「4番人気以下」
-    if (popularity >= 4) {
-      potential -= 10;
+    // 人気減点：1・2番人気は過信禁物（メイショウロンド/シマノダイヤモンド等1位→大敗の実績）
+    if (popularity === 1 || popularity === 2) {
+      potential -= 12;
+      tags.push(`⚠️ 園田減点: 上位人気過信禁物（${popularity}番人気大敗頻発の実績あり）`);
+    } else if (popularity >= 4) {
+      potential -= 8;
       tags.push("⚠️ 園田減点: 1着候補としては信頼度減(4番人気以下)");
     }
-    
+
+    // 逃げ馬加点【+10点】：2026/06の複数レースで逃げ馬の展開利得を確認
+    if (horse.style === '逃げ') {
+      potential += 10;
+      tags.push("🌟 園田優先: 逃げ馬の展開利得(2026/06複数レース実績)");
+    }
+
     // 馬体重減点【-20点】：前走比で±10kg以上
     if (typeof horse.weightChange === 'number' && Math.abs(horse.weightChange) >= 10) {
       potential -= 20;
       tags.push("⚠️ 園田消去法: 極端な馬体重変動(±10kg以上)によるアタマ除外");
     }
-    
+
     // 距離ローテ減点【-10点】：前走の距離が異なる
     if (prevRaceData && prevRaceData.distance !== undefined && prevRaceData.distance !== dist) {
       potential -= 10;
@@ -692,18 +701,18 @@ export function calculateNARScore(
       tags.push("⚠️ 園田減点: 枠番と馬番の不一致(マイナスバイアス)");
     }
     
-    // 馬場傾向減点（前半1〜4R）【-5点】：外枠（5〜8枠）
+    // 馬場傾向減点（前半1〜4R）【-8点】：外枠（5〜8枠）― -5から強化
     const raceNumMatch = race.raceName ? race.raceName.match(/(\d+)R/) : null;
     const raceNum = raceNumMatch ? parseInt(raceNumMatch[1], 10) : (race.raceNumber || 0);
     if (raceNum >= 1 && raceNum <= 4 && frame >= 5) {
-      potential -= 5;
-      tags.push("⚠️ 園田減点: 前半レースの外枠不利");
+      potential -= 8;
+      tags.push("⚠️ 園田減点: 前半レースの外枠不利(強化)");
     }
     
-    // 馬場傾向減点（後半5〜12R）【-5点】：内枠（1〜4枠）
+    // 馬場傾向減点（後半5〜12R）【-8点】：内枠（1〜4枠）― -5から強化
     if (raceNum >= 5 && raceNum <= 12 && frame <= 4) {
-      potential -= 5;
-      tags.push("⚠️ 園田減点: 後半レースの内枠不利");
+      potential -= 8;
+      tags.push("⚠️ 園田減点: 後半レースの内枠不利(強化)");
     }
 
     // -----------------------------------------------------
