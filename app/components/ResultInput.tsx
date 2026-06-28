@@ -19,6 +19,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
       rank: i + 1, horseNumber: 0, horseName: "", time: "", odds: 0, prize: 0,
     }))
   );
+  // New state for pasting raw result text
+  const [pasteResultText, setPasteResultText] = useState<string>("");
   const [profit, setProfit] = useState(existing?.profit || 0);
   const [betAmount, setBetAmount] = useState(100);
 
@@ -151,6 +153,44 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           <MobileRaceResult result={existing} horses={race.horses} />
         </div>
       )}
+
+      {/* Paste result data area */}
+      <div className="card fade-in mb-8">
+        <div className="card-header">
+          <div className="card-title">📋 結果データ貼り付け</div>
+        </div>
+        <div className="form-group">
+          <textarea
+            className="form-textarea min-h-200 mono fs-sm mt-4"
+            value={pasteResultText}
+            onChange={e => setPasteResultText(e.target.value)}
+            placeholder="ここに結果テキストを貼り付けてください"
+          />
+          <div className="flex gap-8 mt-4">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                if (!pasteResultText.trim()) {
+                  alert('貼り付けデータが空です');
+                  return;
+                }
+                // TODO: Implement proper parsing of pasted result data
+                alert('貼り付けデータの解析は現在未実装です');
+              }}
+            >
+              解析
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setPasteResultText('')}
+            >
+              クリア
+            </button>
+          </div>
+        </div>
+      </div>
 
 
 
