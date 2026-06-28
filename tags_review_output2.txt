@@ -1,0 +1,868 @@
+
+=== File: app/lib/engine.ts | Keyword: 前残り多発コース ===
+L164:     if (courseBias.hasBiasData) {
+L165:        if (courseBias.frontFavor > 0 && (horse.style === "逃げ" || horse.style === "先行")) {
+L166:          potential += 15;
+L167:          tags.push(`🏁 コース傾向: 前残り多発コース`);
+L168:        } else if (courseBias.lateFavor > 0 && (horse.style === "差し" || horse.style === "追込")) {
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L265:       tags.push("⚠️ 東京減点方式: D1600mの致命的条件「内枠(1・2枠)×差し・追込」(砂被り×前残り)");
+L266:     }
+L267: 
+L268:     // 【新規】減点ルール5: 減量騎手（若手騎手）への過大評価排除 (-20点)
+L269:     if (horse.jockey && horse.jockey.match(/[☆▲△◇★]/)) {
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L268:     // 【新規】減点ルール5: 減量騎手（若手騎手）への過大評価排除 (-20点)
+L269:     if (horse.jockey && horse.jockey.match(/[☆▲△◇★]/)) {
+L270:       potential -= 20;
+L271:       tags.push("⚠️ 東京減点方式: コース形態と直線の長さで腕の差が出やすい東京での減量騎手");
+L272:     }
+
+=== File: app/lib/engine.ts | Keyword: 究極の末脚 ===
+L327:     const hasFast3F = horse.pastRaces && horse.pastRaces.some(pr => pr.last3fTime && parseFloat(pr.last3fTime) <= 34.5);
+L328:     if (hasFast3F) {
+L329:       potential += 25;
+L330:       tags.push("🔥 東京新特注(13/14日分析): 究極の末脚・上がり最速候補(軸推奨)");
+L331:     }
+
+=== File: app/lib/engine.ts | Keyword: 優秀な年齢 ===
+L498:     } else {
+L499:       if (age === 3 || age === 4) {
+L500:         potential += 10;
+L501:         tags.push("🎯 東京新特注: 基本属性として優秀な年齢(3歳/4歳)");
+L502:       }
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L638: // [PERFORMANCE FIX]       tags.push("⚠️ 東京新特注(13/14日分析): 6歳以上の高齢馬はアタマ(1着)・連軸としては危険");
+L639:     }
+L640: 
+L641:     // 新ルール24: 「▲」などの記号がつく減量騎手（若手騎手）は連軸・1着候補としては危険
+L642:     const isApprentice = horse.jockey && /[▲★△☆◇]/.test(horse.jockey);
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L642:     const isApprentice = horse.jockey && /[▲★△☆◇]/.test(horse.jockey);
+L643:     if (isApprentice) {
+L644:       potential -= 25;
+L645:       tags.push("⚠️ 東京新特注(13/14日分析): 減量騎手(▲★等)はアタマ・軸としての信頼度低(消し推奨)");
+L646:     }
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手(▲★等)はアタマ ===
+L642:     const isApprentice = horse.jockey && /[▲★△☆◇]/.test(horse.jockey);
+L643:     if (isApprentice) {
+L644:       potential -= 25;
+L645:       tags.push("⚠️ 東京新特注(13/14日分析): 減量騎手(▲★等)はアタマ・軸としての信頼度低(消し推奨)");
+L646:     }
+
+=== File: app/lib/engine.ts | Keyword: 左回り長直線 ===
+L674:     if (hasFast3FLeftLong) {
+L675:       // 新ルール25: 左回り/直線長での上がり実績は無条件で大評価
+L676:       potential += 20;
+L677:       tags.push("🚀 東京新特注(13/14日分析): 左回り長直線コースでの極限の末脚実績(爆発確定)");
+L678:     }
+
+=== File: app/lib/engine.ts | Keyword: 信頼度抜群の上がり ===
+L694:       } else {
+L695:         // 中団からの差し
+L696:         potential += 15;
+L697:         tags.push("💥 東京新特注(13/14日分析): 東京で信頼度抜群の上がり上位差し馬");
+L698:       }
+
+=== File: app/lib/engine.ts | Keyword: 揉まれない中外枠 ===
+L797:     if (race.surface === 'ダート' && dist <= 1400) {
+L798:       if (['先行', '差し'].includes(horse.style) && (frame === 5 || frame === 6 || frame === 8)) {
+L799:         // [減点方式] potential += 45;
+L800:         tags.push("🔥 東京TB特注: D短距離の揉まれない中外枠×差し・好位");
+L801:       } else if (frame <= 2 && horse.style === '差し') {
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L940:   const isJraCourse = ['東京', '中山', '京都', '阪神', '中京', '新潟', '福島', '小倉', '函館', '札幌'].some(t => trackName.includes(t));
+L941: 
+L942:   if (isJraCourse) {
+L943:     // JRAコンボ1: 外厩帰り × トップ騎手 × 休み明け初戦
+L944:     if (horse.isAfterRest && eliteJockeys.some(j => jockey.includes(j))) {
+
+=== File: app/lib/engine.ts | Keyword: 鬼脚 ===
+L958:       const last3f = parseFloat(prevRaceData.last3fTime);
+L959:       if (!isNaN(last3f) && last3f <= 34.0) {
+L960:         // [減点方式] potential += 35;
+L961:         tags.push("🔥 JRA極秘: 長い直線 × 鬼脚(上がり33秒台実績)");
+L962:       }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L1294:         const isPrevBad = prevRaceData.result >= 4;
+L1295:         const isPrevTerrible = prevRaceData.result >= 10;
+L1296:         
+L1297:         // 1. 【鉄板軸馬】「トップ騎手」×「上位人気」×「前走好走」
+L1298:         if (isHanshinTopJockey && isTopPop && isPrevGood) {
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L1297:         // 1. 【鉄板軸馬】「トップ騎手」×「上位人気」×「前走好走」
+L1298:         if (isHanshinTopJockey && isTopPop && isPrevGood) {
+L1299:           // [減点方式] potential += 20;
+L1300:           tags.push("🎯 阪神鉄板: トップ騎手×上位人気×前走好走の勝負気配");
+L1301:         }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L1300:           tags.push("🎯 阪神鉄板: トップ騎手×上位人気×前走好走の勝負気配");
+L1301:         }
+L1302:         
+L1303:         // 4. 【過信禁物】「トップ騎手」×「中位人気」×「前走好走」
+L1304:         if (isHanshinTopJockey && isMidPop && isPrevGood) {
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L1303:         // 4. 【過信禁物】「トップ騎手」×「中位人気」×「前走好走」
+L1304:         if (isHanshinTopJockey && isMidPop && isPrevGood) {
+L1305:           potential -= 30; // 何らかの不安要素あり
+L1306:           tags.push("⚠️ 阪神危険: トップ騎手で前走好走なのにオッズが甘い(過信禁物)");
+L1307:         }
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L1309:         // 2. 【オッズ妙味・勝ち切り】「減量・若手騎手」×「上位〜中位人気」×「前走好走」
+L1310:         if (isHanshinYoungJockey && (isTopPop || isMidPop) && isPrevGood) {
+L1311:           /* [減点方式] potential += 45; */ // 期待値が高いため強めに加点
+L1312:           tags.push("🔥 阪神妙味: 若手・減量騎手×前走好走の期待値大(勝ち切り注意)");
+L1313:         }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L1377:       // 【新設】阪神特化・究極ナレッジデータ 統合フラグ判定
+L1378:       // ==========================================
+L1379:       // 【統合】的中率特化フラグ（※1）
+L1380:       // 条件: 内〜中枠(1〜5枠) × 前走好走(3着以内) × 上位人気(1〜3番人気) × トップ騎手or減量若手
+L1381:       if (frame <= 5 && prevRaceData && prevRaceData.result <= 3 && popularity <= 3) {
+
+=== File: app/lib/engine.ts | Keyword: 鬼脚 ===
+L1451:             const prevLast3f = parseFloat(prevRaceData.last3fTime);
+L1452:             if (!isNaN(prevLast3f) && prevLast3f <= 33.5) {
+L1453:               // [減点方式] potential += 40;
+L1454:               tags.push("🔥 新潟外回り特注: 日本最長の直線を大外一気で突き抜ける鬼脚");
+L1455:             }
+
+=== File: app/lib/engine.ts | Keyword: 鬼脚 ===
+L1689:         tags.push("👑 阪神特注: 阪神重賞における川田将雅の鉄板騎乗");
+L1690:       }
+L1691: 
+L1692:       // 阪神重賞2: 外回り（1600m・2400m）の鬼脚と王道血統（桜花賞・阪神JF等）
+L1693:       if (dist === 1600 || dist === 2400) {
+
+=== File: app/lib/engine.ts | Keyword: 後方待機馬 ===
+L1746:         tags.push("👑 中山特注: 厳しい小回りコースで培われた圧倒的『機動力』");
+L1747:       }
+L1748: 
+L1749:       // 中山重賞4: 直線一気の罠回避（極端な後方待機馬のペナルティ）
+L1750:       // 中山は直線が310mしかないため、後方からの直線一気は物理的にほぼ不可能
+
+=== File: app/lib/engine.ts | Keyword: 鬼脚 ===
+L1880:         tags.push("👑 新潟特注: 千直(1000m)における大外枠(7〜8枠)の絶対的アドバンテージ");
+L1881:       }
+L1882: 
+L1883:       // 新潟重賞2: 日本一長い直線の鬼脚（上がり33秒台前半の実績）
+L1884:       // 外回り（1600m・2000m）は直線が659mあり、究極の瞬発力と持続力が問われる
+
+=== File: app/lib/engine.ts | Keyword: ノーザンファーム ===
+L2149:     const breederName = horseBreeder;
+L2150:     const isGradeOrSpecial = race.raceName?.match(/(GⅠ|GⅡ|GⅢ|重賞|特別|ステークス|カップ)/);
+L2151: 
+L2152:     if (breederName.includes("ノーザンファーム")) {
+L2153:       if (isGradeOrSpecial) {
+
+=== File: app/lib/engine.ts | Keyword: ノーザンファーム ===
+L2152:     if (breederName.includes("ノーザンファーム")) {
+L2153:       if (isGradeOrSpecial) {
+L2154:         // [減点方式] potential += 30;
+L2155:         tags.push("👑 ノーザンファーム生産(大舞台エリート)");
+L2156:       } else {
+
+=== File: app/lib/engine.ts | Keyword: ノーザンファーム ===
+L2155:         tags.push("👑 ノーザンファーム生産(大舞台エリート)");
+L2156:       } else {
+L2157:         // [減点方式] potential += 15;
+L2158:         tags.push("👑 ノーザンファーム生産(育成力抜群)");
+L2159:       }
+
+=== File: app/lib/engine.ts | Keyword: 大幅距離短縮ローテ ===
+L2773:         }
+L2774:       }
+L2775: 
+L2776:       // 【激走】芝・大幅距離短縮ローテ×斤量減
+L2777:       if (prevRace && prevRace.distance >= 1500) {
+
+=== File: app/lib/engine.ts | Keyword: 大幅距離短縮ローテ ===
+L2778:         const prevJockeyWeight = prevRace.jockeyWeight || 55;
+L2779:         if (prevJockeyWeight - kinryo >= 1) {
+L2780:           // [減点方式] potential += 35;
+L2781:           tags.push("⚡ 新潟千直：大幅距離短縮ローテ×斤量減エッジ");
+L2782:         } else if (kinryo < prevJockeyWeight) {
+
+=== File: app/lib/engine.ts | Keyword: 大幅距離短縮ローテ ===
+L2781:           tags.push("⚡ 新潟千直：大幅距離短縮ローテ×斤量減エッジ");
+L2782:         } else if (kinryo < prevJockeyWeight) {
+L2783:           // [減点方式] potential += 25;
+L2784:           tags.push("⚡ 千直激変：大幅距離短縮ローテ×斤量減エッジ");
+L2785:         }
+
+=== File: app/lib/engine.ts | Keyword: テンのスピード不足 ===
+L3052:       if (prevRaceData && prevRaceData.corner1Position !== undefined && prevRaceData.corner2Position !== undefined) {
+L3053:         if (prevRaceData.corner1Position >= 4 && prevRaceData.corner2Position >= 4) {
+L3054:           potential -= 10;
+L3055:           tags.push("⚠️ 函館減点1-B: 前走1〜2コーナーが中団〜後方でテンのスピード不足");
+L3056:         }
+
+=== File: app/lib/engine.ts | Keyword: 差し届かずリスク ===
+L3641:         tags.push("🏃 東京ダート：前残り先行アドバンテージ");
+L3642:       } else if (horse.style === "差し" || horse.style === "追込") {
+L3643:         // [減点方式] potential += 5;
+L3644:         tags.push("⚠️ 東京ダート：差し届かずリスク割引");
+L3645:       }
+
+=== File: app/lib/engine.ts | Keyword: テンのスピード不足 ===
+L3929:             tags.push("🚀 名古屋短距離特注: 最初のコーナー1〜2番手のテンのスピード(絶対条件クリア)");
+L3930:           } else if (passingArr[0] >= 5) {
+L3931:             potential -= 30;
+L3932:             tags.push("🔻 名古屋短距離危険: テンのスピード不足(後方からの競馬は絶望的)");
+L3933:           }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L3958:         // 1. 中堅・若手から「トップジョッキー」への乗り替わりは強烈な勝負気配
+L3959:         if (!isPrevTop && isCurrentTop) {
+L3960:           potential += 40;
+L3961:           tags.push(`🌟 名古屋勝負気配: 弱化→トップ騎手(${currentJockey})への乗り替わり(激ヤリ・1着候補)`);
+L3962:         }
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L3961:           tags.push(`🌟 名古屋勝負気配: 弱化→トップ騎手(${currentJockey})への乗り替わり(激ヤリ・1着候補)`);
+L3962:         }
+L3963:         
+L3964:         // 2. 一般騎手から「減量騎手（▲・◇等）」への乗り替わりは斤量減の恩恵
+L3965:         const isCurrentClaiming = currentJockey.match(/[▲△☆◇]/);
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L3966:         const isPrevClaiming = prevJockey.match(/[▲△☆◇]/);
+L3967:         if (!isPrevClaiming && isCurrentClaiming) {
+L3968:           potential += 25;
+L3969:           tags.push(`🎯 名古屋減量恩恵: 一般騎手から減量騎手(${currentJockey})への乗り替わり(斤量減でヒモ・穴候補)`);
+L3970:         }
+
+=== File: app/lib/engine.ts | Keyword: 一般騎手から減量騎手 ===
+L3966:         const isPrevClaiming = prevJockey.match(/[▲△☆◇]/);
+L3967:         if (!isPrevClaiming && isCurrentClaiming) {
+L3968:           potential += 25;
+L3969:           tags.push(`🎯 名古屋減量恩恵: 一般騎手から減量騎手(${currentJockey})への乗り替わり(斤量減でヒモ・穴候補)`);
+L3970:         }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L3969:           tags.push(`🎯 名古屋減量恩恵: 一般騎手から減量騎手(${currentJockey})への乗り替わり(斤量減でヒモ・穴候補)`);
+L3970:         }
+L3971: 
+L3972:         // 3. JRA転入初戦×「トップ騎手」への乗り替わりは鉄板のサイン
+L3973:         if (isJraTransferRecent && isCurrentTop) {
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L3972:         // 3. JRA転入初戦×「トップ騎手」への乗り替わりは鉄板のサイン
+L3973:         if (isJraTransferRecent && isCurrentTop) {
+L3974:           potential += 45;
+L3975:           tags.push(`🔥 名古屋鉄板転入: JRA転入初戦×トップ騎手(${currentJockey})配備(実力上位＆勝負気配・頭確定)`);
+L3976:         }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L3975:           tags.push(`🔥 名古屋鉄板転入: JRA転入初戦×トップ騎手(${currentJockey})配備(実力上位＆勝負気配・頭確定)`);
+L3976:         }
+L3977: 
+L3978:         // 4. トップ騎手同士の乗り替わりは「素質の証」として評価を下げない
+L3979:         if (isPrevTop && isCurrentTop) {
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L3978:         // 4. トップ騎手同士の乗り替わりは「素質の証」として評価を下げない
+L3979:         if (isPrevTop && isCurrentTop) {
+L3980:           potential += 30;
+L3981:           tags.push(`👑 名古屋素質馬: トップ騎手同士の乗り替わり(${prevJockey}→${currentJockey})(馬の能力が高い証拠・絶好の狙い目)`);
+L3982:         }
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L4007:         }
+L4008:       }
+L4009: 
+L4010:       // 3. 牝馬の斤量恩恵（特に減量騎手）
+L4011:       if (horse.gender === '牝') {
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L4015:         const isCurrentClaiming = currentJockey.match(/[▲△☆◇]/);
+L4016:         if (isCurrentClaiming) {
+L4017:           potential += 25;
+L4018:           tags.push(`🚀 名古屋最軽量兵器: 牝馬×減量騎手(${currentJockey})の最大5kg減(一発警戒・ヒモ必須)`);
+L4019:         }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L4193:         tags.push("🌟 門別黄金コンビ:トップジョッキー×有力厩舎");
+L4194:       }
+L4195:     } else {
+L4196:       potential -= 10; // トップ騎手でない場合は的中率向上のため割引
+L4197:     }
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L4221:       tags.push("🐎 門別牝馬エッジ(微加点)");
+L4222:     }
+L4223: 
+L4224:     // 2着・3着（ヒモ穴）モデルの期待値（大幅体重増減・減量騎手）
+L4225:     const absWeightChange = Math.abs(weightChange);
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L4229:         tags.push("⚡ 門別特選:大幅馬体重変則仕上げ妙味");
+L4230:       }
+L4231:     }
+L4232:     // 減量騎手フラグ（適正化）
+L4233:     const isApprentice = jockey.match(/^[▲△☆◇]/) || jockey.includes("減量") || jockey.includes("▲") || jockey.includes("△");
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L4234:     if (isApprentice) {
+L4235:       if (isFrontRunner) {
+L4236:         /* [減点方式] potential += 10; */ // 30から10へ
+L4237:         tags.push("🏃 門別減量騎手×先行力");
+L4238:       } else {
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L4236:         /* [減点方式] potential += 10; */ // 30から10へ
+L4237:         tags.push("🏃 門別減量騎手×先行力");
+L4238:       } else {
+L4239:         potential -= 15; // 差し追込の減量騎手は割引
+L4240:         tags.push("⚠️ 門別減量騎手×控える競馬(割引)");
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L4237:         tags.push("🏃 門別減量騎手×先行力");
+L4238:       } else {
+L4239:         potential -= 15; // 差し追込の減量騎手は割引
+L4240:         tags.push("⚠️ 門別減量騎手×控える競馬(割引)");
+L4241:       }
+
+=== File: app/lib/engine.ts | Keyword: 筒井勇 ===
+L4372:       tags.push("👑 笠松鉄板軸: 渡邊竜也×上位人気(1着固定特注)");
+L4373:     } else if (jockey.includes("筒井") && popularity <= 3) {
+L4374:       // [減点方式] potential += 35;
+L4375:       tags.push("🥈 笠松連対特注: 筒井勇×上位人気(高確率で2着確保)");
+L4376:     } else if (jockey.includes("松本一") && (popularity === 5 || popularity === 6)) {
+
+=== File: app/lib/engine.ts | Keyword: 差し届かずリスク ===
+L4536:       tags.push("🏃 金沢超小回り:前残り先行絶対有利");
+L4537:     } else if (hStyle === "追込") {
+L4538:       potential -= 25;
+L4539:       tags.push("⚠️ 金沢超小回り:直線極短・差し届かずリスク割引");
+L4540:     }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L4604:       tags.push("👑 船橋トップジョッキー信頼度");
+L4605:       if (isEliteTrainerF) {
+L4606:         // [減点方式] potential += 20;
+L4607:         tags.push("🌟 船橋地元名門シナジー: トップ騎手×地元名門厩舎");
+L4608:       }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L4798:       // [減点方式] potential += 35;
+L4799:       tags.push("👑 佐賀トップジョッキー無双エッジ");
+L4800:       
+L4801:       // トップ騎手×人気馬は「鉄板」
+L4802:       if (popularity <= 2) {
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L4801:       // トップ騎手×人気馬は「鉄板」
+L4802:       if (popularity <= 2) {
+L4803:         // [減点方式] potential += 25;
+L4804:         tags.push("🎯 佐賀鉄板: トップ騎手×上位人気");
+L4805:       }
+
+=== File: app/lib/engine.ts | Keyword: 4番人気以下 ===
+L4832:         tags.push("👑 園田1番人気絶対軸補正");
+L4833:       }
+L4834:     } else {
+L4835:       potential -= 20; // 4番人気以下の1着率の大幅低下に伴う減点
+L4836:       tags.push("⚠️ 園田4番人気以下アタマ割引");
+
+=== File: app/lib/engine.ts | Keyword: 4番人気以下 ===
+L4833:       }
+L4834:     } else {
+L4835:       potential -= 20; // 4番人気以下の1着率の大幅低下に伴う減点
+L4836:       tags.push("⚠️ 園田4番人気以下アタマ割引");
+L4837:     }
+
+=== File: app/lib/engine.ts | Keyword: 後方待機馬 ===
+L5168:     
+L5169:     if (horse.style === "差し" || horse.style === "追込") {
+L5170:       potential += 15;
+L5171:       tags.push("🌟 東京特注: 長い直線で存分に末脚を発揮できる後方待機馬(差し・追い込み)");
+L5172:     }
+
+=== File: app/lib/engine.ts | Keyword: 後方待機馬 ===
+L5328:           }
+L5329:         } else if (style === "差し" || style === "追込") {
+L5330:           potential -= 15;
+L5331:           tags.push("🔻 中京芝2000m減点: ペースが遅く、タイトなコーナーで外を回らされる後方待機馬(差し・追い込み)は不利");
+L5332:         }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L5569:       tags.push("🔻 水沢減点: 1番人気の単勝リスク(-15点)");
+L5570:     }
+L5571: 
+L5572:     // 岩手特有のトップ騎手補正
+L5573:     if (jockey.includes("村上忍") || jockey.includes("坂井瑛") || jockey.includes("佐々志") || jockey.includes("山本政") || jockey.includes("小林凌")) {
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L5573:     if (jockey.includes("村上忍") || jockey.includes("坂井瑛") || jockey.includes("佐々志") || jockey.includes("山本政") || jockey.includes("小林凌")) {
+L5574:       tags.push("🎯 水沢特注: 当日好調騎手");
+L5575:     }
+L5576:     // 岩手リーディング全般のフォロー(残りのトップ騎手)
+L5577:     const isIwateEliteJ = ["山本聡", "高松亮", "菅原辰"].some(j => jockey.includes(j));
+
+=== File: app/lib/engine.ts | Keyword: 前傾ハイペース適合 ===
+L5888:         if (isHighPace) {
+L5889:           if (horse.style === '差し' || horse.style === '追込') {
+L5890:             // [減点方式] potential += 25;
+L5891:             tags.push('⚡前傾ハイペース適合(差し追込有利)');
+L5892:           } else if (horse.style === '逃げ') {
+
+=== File: app/lib/engine.ts | Keyword: ノーザンファーム ===
+L5917:       tags.push(`🧬ダート黄金血統(適性抜群)`);
+L5918:     }
+L5919: 
+L5920:     const eliteDirtBreeders = /(カタオカフアーム|ノーザンファーム|社台|グランド牧場|ヤナガワ牧場)/;
+L5921:     if (breederName.match(eliteDirtBreeders)) {
+
+=== File: app/lib/engine.ts | Keyword: ノーザンファーム ===
+L5928:       // [減点方式] potential += 20;
+L5929:       tags.push(`🧬芝クラシック血統(${sireName})`);
+L5930:     }
+L5931:     if (breederName.match(/(ノーザンファーム|社台ファーム|追分ファーム)/)) {
+L5932:       // [減点方式] potential += 25;
+
+=== File: app/lib/engine.ts | Keyword: 波乱フェーズ ===
+L6205:   } else if (wave.level >= 4) {
+L6206:     // 波乱度高（波乱・大波乱）フェーズ：1番人気が崩れ、中穴が台頭
+L6207:     if (popularity === 1) {
+L6208:       potential -= 10; // 波乱フェーズでの1番人気過信を強化
+L6209:       tags.push(`⚠️波乱フェーズ:1番人気過信禁物 (${wave.category})`);
+
+=== File: app/lib/engine.ts | Keyword: 波乱フェーズ ===
+L6206:     // 波乱度高（波乱・大波乱）フェーズ：1番人気が崩れ、中穴が台頭
+L6207:     if (popularity === 1) {
+L6208:       potential -= 10; // 波乱フェーズでの1番人気過信を強化
+L6209:       tags.push(`⚠️波乱フェーズ:1番人気過信禁物 (${wave.category})`);
+L6210:     } else if (popularity >= 5 && popularity <= 8) {
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L6213:       // [要見直し2] tags.push(`💎波乱の使者:激走の伏兵 (${wave.category})`);
+L6214:     }
+L6215:     
+L6216:     // 波乱期における「減量騎手」の一発評価
+L6217:     const isWeightReduced = kinryo <= 53 || horse.prevJockey?.match(/[▲△☆]/);
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L6218:     if (isWeightReduced) {
+L6219:       // [減点方式] potential += 30;
+L6220:       distortionBoost += 0.5;
+L6221:       tags.push(`⚡波乱警戒:減量騎手の爆発力 (${wave.category})`);
+L6222:     }
+
+=== File: app/lib/engine.ts | Keyword: 若駒の順調なビルドアップ ===
+L6354:           }
+L6355:         }
+L6356:         
+L6357:         // 若駒の順調なビルドアップ（成長期トレンド）
+L6358:         if (age <= 3 && prevDiff >= 2 && actualDiff >= 2 && actualDiff <= 12) {
+
+=== File: app/lib/engine.ts | Keyword: 若駒の順調なビルドアップ ===
+L6357:         // 若駒の順調なビルドアップ（成長期トレンド）
+L6358:         if (age <= 3 && prevDiff >= 2 && actualDiff >= 2 && actualDiff <= 12) {
+L6359:           // [減点方式] potential += 25;
+L6360:           tags.push('🚀 成長期トレンド: 若駒の順調なビルドアップ・好調キープ');
+L6361:         }
+
+=== File: app/lib/engine.ts | Keyword: タイム異常値 ===
+L6451:       }
+L6452:     }
+L6453: 
+L6454:     // ⑤ 隠れた「タイム異常値」検知：着順は大敗でもタイム差が極少な馬
+L6455:     const hiddenGem = horse.pastRaces.find(pr => pr.result >= 8 && pr.timeDiff !== undefined && pr.timeDiff <= 0.5);
+
+=== File: app/lib/engine.ts | Keyword: タイム異常値 ===
+L6455:     const hiddenGem = horse.pastRaces.find(pr => pr.result >= 8 && pr.timeDiff !== undefined && pr.timeDiff <= 0.5);
+L6456:     if (hiddenGem) {
+L6457:       // [減点方式] potential += 35;
+L6458:       tags.push('💎タイム異常値(着順不問・実力不一致)');
+L6459:     }
+
+=== File: app/lib/engine.ts | Keyword: 末脚不発リスク ===
+L6493:         if (bestLast3f <= 36.5) {
+L6494:           potential -= 10; // 上がり最速でも届かないリスクを考慮
+L6495:           distortionBoost += 0.5; // 2-3着（紐）としての期待値を上げる
+L6496:           tags.push('⚠️末脚不発リスク(前残り馬場考慮)');
+L6497:         }
+
+=== File: app/lib/engine.ts | Keyword: 減量騎手 ===
+L6789:         tags.push('⚠️鞍上交代:前走エリートからの弱化懸念');
+L6790:       }
+L6791:       
+L6792:       // 減量騎手への乗り替えによる斤量恩恵
+L6793:       const isApprentice = /[▲△☆★◇]/.test(horse.jockey) || horse.jockey.includes('減量') || horse.jockey.includes('▲') || horse.jockey.includes('△');
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L7006:       tags.push('🌅前半フェーズ:先行・ポジション優位');
+L7007:     }
+L7008:   } 
+L7009:   // ② 後半フェーズ（7-12R / 上位条件・特別）：末脚の質とトップ騎手の勝負強さ
+L7010:   else {
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L7021:     // 重要な局面（特別・メイン）でのリーディング上位騎手への期待値
+L7022:     if (isEliteJockey) {
+L7023:       // [減点方式] potential += 25;
+L7024:       tags.push('🌃後半フェーズ:トップ騎手の勝負強さ');
+L7025:     }
+
+=== File: app/lib/engine.ts | Keyword: 期待値クロス ===
+L7046:       const prevLast3f = parseFloat(prevRaceData.last3fTime);
+L7047:       if ((horse.style === '差し' || horse.style === '追込') && prevRaceData.result >= 4 && !isNaN(prevLast3f) && prevLast3f <= 34.5) {
+L7048:         // [減点方式] potential += 45;
+L7049:         tags.push("🔥 期待値クロス: 前走展開泣きの上がり最速馬（ハイペース必至で台頭）");
+L7050:       }
+
+=== File: app/lib/engine.ts | Keyword: 期待値クロス ===
+L7053:     // 単騎逃げ確定
+L7054:     if (horse.style === '逃げ') {
+L7055:       // [減点方式] potential += 40;
+L7056:       // [要見直し2] tags.push("🔥 期待値クロス: 競り掛ける馬が不在の単騎逃げ確定（マイペース絶対有利）");
+L7057:     }
+
+=== File: app/lib/engine.ts | Keyword: 期待値クロス ===
+L7061:   if (prevRaceData && prevRaceData.result >= 6 && prevRaceData.timeDiff !== undefined) {
+L7062:     if (prevRaceData.timeDiff <= 0.5) {
+L7063:       // [減点方式] potential += 35;
+L7064:       tags.push("🔥 期待値クロス: 前走6着以下だが着差0.5秒以内の実力馬（オッズ盲点）");
+L7065:     }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L7065:     }
+L7066:   }
+L7067: 
+L7068:   // 3. 陣営の勝負気配（トップ騎手への乗り替わり）検知
+L7069:   const jraTopJockeys = ['ルメール', '川田', '武豊', '戸崎', '横山武', '松山', 'モレイラ', 'レーン'];
+
+=== File: app/lib/engine.ts | Keyword: 期待値クロス ===
+L7072:     const nowIsTop = jraTopJockeys.some(j => horse.jockey.includes(j));
+L7073:     if (!prevWasTop && nowIsTop) {
+L7074:       // [減点方式] potential += 40;
+L7075:       tags.push("🔥 期待値クロス: 前走非トップ騎手からのトップ騎手手配（陣営の超勝負気配）");
+L7076:     }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L7072:     const nowIsTop = jraTopJockeys.some(j => horse.jockey.includes(j));
+L7073:     if (!prevWasTop && nowIsTop) {
+L7074:       // [減点方式] potential += 40;
+L7075:       tags.push("🔥 期待値クロス: 前走非トップ騎手からのトップ騎手手配（陣営の超勝負気配）");
+L7076:     }
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L7100:     tags.push('⚠️ 危険信号: 休み明けの大幅馬体増（太め残り懸念）');
+L7101:   }
+L7102: 
+L7103:   // 3. エリートブランド × トップ騎手
+L7104:   if (horse.breeder && horse.breeder.includes('ノーザンファーム')) {
+
+=== File: app/lib/engine.ts | Keyword: ノーザンファーム ===
+L7101:   }
+L7102: 
+L7103:   // 3. エリートブランド × トップ騎手
+L7104:   if (horse.breeder && horse.breeder.includes('ノーザンファーム')) {
+L7105:     const topEliteJockeys = ['ルメール', '川田', 'モレイラ'];
+
+=== File: app/lib/engine.ts | Keyword: トップ騎手 ===
+L7105:     const topEliteJockeys = ['ルメール', '川田', 'モレイラ'];
+L7106:     if (topEliteJockeys.some(j => horse.jockey.includes(j))) {
+L7107:       // [減点方式] potential += 25;
+L7108:       tags.push('💎 エリート包囲網: ノーザンF × トップ騎手（勝負気配MAX）');
+L7109:     }
+
+=== File: app/lib/engine.ts | Keyword: 鬼脚 ===
+L7155:     const match = horse.trainingTime.match(/-11\.[0-6]$/);
+L7156:     if (match) {
+L7157:       // [減点方式] potential += 20;
+L7158:       tags.push('⚡ 鬼脚仕上: 調教ラスト1F 11秒台の超加速ラップ');
+L7159:     }
+
+=== File: app/lib/engine.ts | Keyword: タイム異常値 ===
+L7315:     // [要見直し2] tags.push('🌌東京:爆穴ポテンシャル加速');
+L7316:   }
+L7317: 
+L7318:   // タイム異常値（着順大敗・タイム僅差）ブースト
+L7319:   if (horse.pastRaces && horse.pastRaces.find(pr => pr.result >= 8 && pr.timeDiff !== undefined && pr.timeDiff <= 0.5)) {
+
+=== File: app/lib/engine.ts | Keyword: タイム異常値 ===
+L7318:   // タイム異常値（着順大敗・タイム僅差）ブースト
+L7319:   if (horse.pastRaces && horse.pastRaces.find(pr => pr.result >= 8 && pr.timeDiff !== undefined && pr.timeDiff <= 0.5)) {
+L7320:     distortionBoost += 0.6;
+L7321:     tags.push('💎3連系:タイム異常値ブースト');
+L7322:   }
+
+=== File: app/lib/engine.ts | Keyword: 持ち時計優秀 ===
+L7741: 
+L7742:       if (hasExcellentTime && (odds >= 10.0 || popularity >= 4)) {
+L7743:         // [減点方式] potential += 30;
+L7744:         tags.push("💎 持ち時計優秀の過小評価馬(期待値特大の穴馬)");
+L7745:       }
+
+=== File: app/lib/engine.ts | Keyword: 4番人気以下 ===
+L8117:   // ─────────────────────────────────────────
+L8118:   if (prevRaceData && prevRaceData.result >= 10 && popularity >= 5) {
+L8119:     potential -= 15;
+L8120: // [PERFORMANCE FIX]     tags.push("❌ 前走10着以下×4番人気以下ペナルティ");
+L8121:   }
+
+=== File: app/lib/engine.ts | Keyword: 大幅距離短縮ローテ ===
+L8500:     // ②「大幅な距離短縮」ローテの馬
+L8501:     if (prevRaceData && prevRaceData.distance >= 1600 && race.distance <= 1400) {
+L8502:       holeBonus += 50;
+L8503:       holeReasons.push('大幅距離短縮ローテ');
+L8504:     }
+
+=== File: app/lib/engine.ts | Keyword: テンのスピード不足 ===
+L8675:     }
+L8676:   } else if (passAnalysis.isKouhou) {
+L8677:     potential -= 5;
+L8678:     tags.push("⚠️ 展開: テンのスピード不足・後方追走のままの懸念");
+L8679:   }
+
+=== File: app/lib/engine.ts | Keyword: 持ち時計優秀 ===
+L8682:   if (speedIndex > 0) {
+L8683:     if (speedIndex > 100) {
+L8684:       potential += 15;
+L8685:       tags.push(`⏱️ スピード: 持ち時計優秀 (指数: ${speedIndex})`);
+L8686:     } else if (speedIndex > 80) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 前残り多発コース ===
+L101:     if (courseBias.hasBiasData) {
+L102:        if (courseBias.frontFavor > 0 && (horse.style === "逃げ" || horse.style === "先行")) {
+L103:          potential += 15;
+L104:          tags.push(`🏁 コース傾向: 前残り多発コース`);
+L105:        } else if (courseBias.lateFavor > 0 && (horse.style === "差し" || horse.style === "追込")) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L254:     // 減点2. 騎手・斤量による減点（Jockey & Weight Deduction）
+L255:     if (jName.includes('☆') || jName.includes('△') || jName.includes('▲') || jName.includes('◇') || jName.includes('★')) {
+L256:       potential -= 25;
+L257:       tags.push("⚠️ 川崎減点: 重馬場で難易度アップ。若手・減量騎手の経験不足を軽視");
+L258:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L391:       tags.push("👑 名古屋特注: 圧倒的信頼度を誇るトップジョッキー(1着軸推奨)");
+L392:     }
+L393: 
+L394:     // 詳細ルール1-B: 減量騎手（ヒモ穴必須）
+L395:     const isApprentice = horse.jockey && horse.jockey.match(/[◇▲]/);
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L395:     const isApprentice = horse.jockey && horse.jockey.match(/[◇▲]/);
+L396:     if (isApprentice) {
+L397:       potential += 15;
+L398:       tags.push("🌟 名古屋特注: 軽斤量を活かして食い込む減量騎手(ヒモ必須)");
+L399:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L405:       tags.push("💥 名古屋特注: 波乱をもたらす中堅・若手騎手(オッズ妙味)");
+L406:     }
+L407: 
+L408:     // 詳細ルール1-D: JRA交流戦におけるJRA減量騎手
+L409:     const isJraExchange = race.raceName && race.raceName.includes('交流');
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L410:     // JRA所属騎手であることを簡易的に名前等で判定できなければisFromJRAと併用するなどで代替
+L411:     if (isJraExchange && isApprentice) {
+L412:       potential += 25;
+L413:       tags.push("🚀 名古屋特注: JRA交流戦における減量騎手の斤量＆能力恩恵警戒");
+L414:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: スピード負けしやすい ===
+L462:     // 減点ルール2：年齢が「5歳以上（特に7歳以上の高齢馬）」
+L463:     if (horse.age >= 7) {
+L464:       kasamatsuPenalty += 20;
+L465:       tags.push("❌ 笠松減点: スピード負けしやすい7歳以上の高齢馬");
+L466:     } else if (horse.age === 5 || horse.age === 6) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 届かない後方脚質 ===
+L486:     // 減点ルール5：前走の通過順位が「5番手以降」の差し・追い込み馬
+L487:     if (horse.style === '差し' || horse.style === '追込') {
+L488:       kasamatsuPenalty += 15;
+L489:       tags.push("❌ 笠松減点: 前残り馬場で届かない後方脚質(差し・追い込み)");
+L490:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: 中穴候補 ===
+L526:       tags.push("👑 笠松鉄板: 信頼度の高い上位人気(1・2番人気軸)");
+L527:     } else if (popularity >= 4 && popularity <= 7) {
+L528:       potential += 15;
+L529:       tags.push("🌟 笠松特注: ヒモ荒れを演出する中穴候補(4〜7番人気必須)");
+L530:     } else if (popularity >= 8) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 筒井勇 ===
+L537:       tags.push("⚠️ 笠松特注: 1番人気は1着を取りこぼしやすいため2着(連対)候補推奨");
+L538:     }
+L539: 
+L540:     // 騎手の評価（渡邊竜也、筒井勇、東川・松本、減量騎手）
+L541:     if (horse.jockey) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L537:       tags.push("⚠️ 笠松特注: 1番人気は1着を取りこぼしやすいため2着(連対)候補推奨");
+L538:     }
+L539: 
+L540:     // 騎手の評価（渡邊竜也、筒井勇、東川・松本、減量騎手）
+L541:     if (horse.jockey) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 筒井勇 ===
+L542:       if (horse.jockey.includes('渡邊竜')) {
+L543:         potential += 30;
+L544:         tags.push("👑 笠松特注: 勝ち切る力を見せる渡邊竜也騎手(1着候補)");
+L545:       } else if (horse.jockey.includes('筒井勇')) {
+L546:         potential += 10;
+
+=== File: app/lib/engineNAR.ts | Keyword: 筒井勇 ===
+L544:         tags.push("👑 笠松特注: 勝ち切る力を見せる渡邊竜也騎手(1着候補)");
+L545:       } else if (horse.jockey.includes('筒井勇')) {
+L546:         potential += 10;
+L547:         tags.push("🌟 笠松特注: 馬券圏内への安定感抜群の筒井勇騎手(2〜3着付け推奨)");
+L548:       } else if (horse.jockey.includes('東川慎') || horse.jockey.includes('松本')) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L553:       const isApprenticeKasamatsu = horse.jockey.match(/[☆▲△◇]/);
+L554:       if (isApprenticeKasamatsu) {
+L555:         potential += 15;
+L556:         tags.push("🌟 笠松特注: 軽斤量を活かして馬券圏内に飛び込む減量騎手(ヒモ穴必須)");
+L557:       }
+
+=== File: app/lib/engineNAR.ts | Keyword: 4番人気以下 ===
+L598:       tags.push(`⚠️ 園田減点: 上位人気過信禁物（${popularity}番人気大敗頻発の実績あり）`);
+L599:     } else if (popularity >= 4) {
+L600:       potential -= 8;
+L601:       tags.push("⚠️ 園田減点: 1着候補としては信頼度減(4番人気以下)");
+L602:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: 距離変更ローテーション ===
+L616:     // 距離ローテ減点【-10点】：前走の距離が異なる
+L617:     if (prevRaceData && prevRaceData.distance !== undefined && prevRaceData.distance !== dist) {
+L618:       potential -= 10;
+L619:       tags.push("⚠️ 園田減点: ペースに戸惑う距離変更ローテーション");
+L620:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: 前走4着以下の凡走 ===
+L653:     if (prevRaceData && prevRaceData.result >= 4) {
+L654:       if (top3Count < 3) {
+L655:         potential -= 10;
+L656:         tags.push("⚠️ 園田減点: 前走4着以下の凡走");
+L657:       }
+
+=== File: app/lib/engineNAR.ts | Keyword: トップ騎手 ===
+L673:     // 騎手力減点【-15点】：田野豊・小牧太以外
+L674:     if (!isTopJockey) {
+L675:       potential -= 15;
+L676:       tags.push("⚠️ 園田減点: トップ騎手(田野/小牧太)以外の騎乗");
+L677:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: トップ騎手 ===
+L676:       tags.push("⚠️ 園田減点: トップ騎手(田野/小牧太)以外の騎乗");
+L677:     }
+L678:     
+L679:     // 継続騎乗不信減点【-10点】：上位人気かつ乗り替わり（トップ騎手へは免除）
+L680:     const isJockeyChanged = prevRaceData && prevRaceData.jockey && jName !== prevRaceData.jockey;
+
+=== File: app/lib/engineNAR.ts | Keyword: 上位人気馬の不穏な乗り替わり ===
+L680:     const isJockeyChanged = prevRaceData && prevRaceData.jockey && jName !== prevRaceData.jockey;
+L681:     if (popularity <= 3 && isJockeyChanged && !isTopJockey) {
+L682:       potential -= 10;
+L683:       tags.push("⚠️ 園田減点: 上位人気馬の不穏な乗り替わり");
+L684:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: 波乱メーカー陣営 ===
+L735:       }
+L736:       // フラグC：陣営の波乱使者（小谷哲 / 尾林二 / 碇清次）
+L737:       if (jName.includes('小谷') || ['尾林二', '碇清次'].some(t => tName.includes(t))) {
+L738:         isHimoHole = true; himoReason = "波乱メーカー陣営";
+L739:       }
+
+=== File: app/lib/engineNAR.ts | Keyword: 本命馬の同枠 ===
+L748:       // フラグE：本命馬と同枠・隣枠
+L749:       const favHorse = race.horses.find(h => h.popularity === 1);
+L750:       if (favHorse && favHorse.frame && Math.abs(frame - favHorse.frame) <= 1) {
+L751:         isHimoHole = true; himoReason = "本命馬の同枠/隣枠";
+L752:       }
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L825:       tags.push("❌ 門別減点: 距離変更(ローテーション)ペナルティ");
+L826:     }
+L827: 
+L828:     // 特例3: 相手候補限定の騎手特例（減量騎手、服部茂、岩橋勇）
+L829:     const isApprentice = horse.jockey && horse.jockey.match(/[☆▲△◇]/);
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L835:       if (horse.style === '差し' || horse.style === '追込') mombetsuPenalty -= 10;
+L836:       // ヒモとして2〜3着に残れる程度の加点（頭は取らせない）
+L837:       potential += 5;
+L838:       tags.push("🌟 門別特例: ヒモ職人(服部/岩橋/減量騎手)による枠・脚質ペナルティ免除");
+L839:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: 期待値クロス ===
+L893:       const prevLast3f = parseFloat(prevRaceData.last3fTime);
+L894:       if ((horse.style === '差し' || horse.style === '追込') && prevRaceData.result >= 4 && !isNaN(prevLast3f) && prevLast3f <= 38.0) {
+L895:         // [減点方式] potential += 45;
+L896:         // [要見直し2] tags.push("🔥 期待値クロス: 前走展開泣きの上がり上位馬（ハイペース必至で台頭）");
+L897:       }
+
+=== File: app/lib/engineNAR.ts | Keyword: 期待値クロス ===
+L899:   } else if (frontRunnersCount === 1) {
+L900:     if (horse.style === '逃げ') {
+L901:       // [減点方式] potential += 40;
+L902:       // [要見直し2] tags.push("🔥 期待値クロス: 競り掛ける馬が不在の単騎逃げ確定（マイペース絶対有利）");
+L903:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: 期待値クロス ===
+L916:   if (prevRaceData && prevRaceData.result >= 6 && prevRaceData.timeDiff !== undefined) {
+L917:     if (prevRaceData.timeDiff <= 0.6) {
+L918:       // [減点方式] potential += 35;
+L919:       tags.push("🔥 期待値クロス: 前走6着以下だが着差0.6秒以内の実力馬（オッズ盲点）");
+L920:     }
+
+=== File: app/lib/engineNAR.ts | Keyword: トップ騎手 ===
+L920:     }
+L921:   }
+L922: 
+L923:   // 3. 陣営の勝負気配（トップ騎手への乗り替わり・ヤリ）検知
+L924:   if (prevRaceData && prevRaceData.jockey) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L990:     }
+L991:   }
+L992: 
+L993:   // 3. 減量騎手（軽斤量）の逃げ残り物理アドバンテージ
+L994:   if (!trackName.includes('大井') && horse.jockeyWeight && horse.jockeyWeight <= 53 && (horse.style === '逃げ' || horse.style === '先行')) {
+
+=== File: app/lib/engineNAR.ts | Keyword: 減量騎手 ===
+L993:   // 3. 減量騎手（軽斤量）の逃げ残り物理アドバンテージ
+L994:   if (!trackName.includes('大井') && horse.jockeyWeight && horse.jockeyWeight <= 53 && (horse.style === '逃げ' || horse.style === '先行')) {
+L995:     potential += 15; // 軽量×先行の物理的優位を加点
+L996:     tags.push(`🪽 裸同然の軽斤量(${horse.jockeyWeight}kg): 減量騎手×先行力によるアドバンテージ`);
+L997:   }
+
+=== File: app/lib/engineNAR.ts | Keyword: 波乱フェーズ ===
+L1081:     // 地方特有のヒモ荒れ・前残り波乱
+L1082:     if (popularity === 1) {
+L1083:       potential -= 10;
+L1084:       tags.push(`⚠️波乱フェーズ:1番人気過信禁物 (${wave.category})`);
+L1085:     } else if (popularity >= 4 && popularity <= 8) {
+
+=== File: app/lib/engineNAR.ts | Keyword: テンのスピード不足 ===
+L1135:     }
+L1136:   } else if (passAnalysis.isKouhou) {
+L1137:     potential -= 5;
+L1138:     tags.push("⚠️ 展開: テンのスピード不足・後方追走のままの懸念");
+L1139:   }
+
+=== File: app/lib/engineNAR.ts | Keyword: 持ち時計優秀 ===
+L1142:   if (speedIndex > 0) {
+L1143:     if (speedIndex > 100) {
+L1144:       potential += 15;
+L1145:       tags.push(`⏱️ スピード: 持ち時計優秀 (指数: ${speedIndex})`);
+L1146:     } else if (speedIndex > 80) {
