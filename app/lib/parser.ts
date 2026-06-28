@@ -1752,3 +1752,454 @@ export function parseRakutenKeibaResultText(rawText: string): { race: Partial<Ra
   
   return { race, result };
 }
+
+// ==========================================
+// JRA公式レース結果パーサー
+// ==========================================
+export function parseJRAOfficialResultText(rawText: string): {
+  results: {
+    rank: number;
+    horseNumber: number;
+    horseName: string;
+    time: string;
+    odds: number;
+    prize: number;
+    passing?: string;
+    margin?: string;
+    jockey?: string;
+    jockeyWeight?: number;
+    weight?: number;
+    weightChange?: number;
+    trainer?: string;
+    popularity?: number;
+    belonging?: string;
+  }[];
+  lapTimes: string[];
+  last4fTime: string;
+  last3fTime: string;
+  cornerPassings: string[];
+  refunds: RaceResult["refunds"];
+  winnerProfile: RaceResult["winnerProfile"];
+  incidents: string;
+} {
+  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l !== '');
+
+  const results: {
+    rank: number; horseNumber: number; horseName: string; time: string;
+    odds: number; prize: number; passing?: string; margin?: string;
+    jockey?: string; jockeyWeight?: number; weight?: number; weightChange?: number;
+    trainer?: string; popularity?: number; belonging?: string;
+  }[] = [];
+  let lapTimes: string[] = [];
+  let last4fTime = "";
+  let last3fTime = "";
+  const cornerPassings: string[] = [];
+  let winnerProfile: RaceResult["winnerProfile"] | undefined;
+  let incidents = "";
+
+  // 払戻金
+  const refunds: RaceResult["refunds"] = {};
+
+  // --- 着順結果のパース ---
+  // JRA公式形式: 着順行は "1\t枠4青\t5\tディベルティスマン\t牡4\t60.0\t伴 啓太\t3:00.2\t\t" のようなパターン
+  // または改行で分かれている場合もあるので、着順番号→枠→馬番→馬名→性齢→斤量→騎手→タイム→着差→通過順→平均1F→馬体重→調教師→人気 の順
+  
+  // まず、着順データブロックを見つける
+  let resultBlockStartIdx = -1;
+  let resultBlockEndIdx = -1;
+  
+  for (let i = 0; i < lines.length; i++) {
+    // "1\t枠" or just starts with rank number followed by 枠
+    if (/^1\s+枠\d/.test(lines[i]) || (lines[i] === '1' && i + 1 < lines.length && /^枠\d/.test(lines[i + 1]))) {
+      resultBlockStartIdx = i;
+      break;
+    }
+  }
+
+  if (resultBlockStartIdx >= 0) {
+    // JRA公式の結果テキストをパース
+    // 各馬のデータは連続した行として出現する
+    let i = resultBlockStartIdx;
+    
+    while (i < lines.length) {
+      const line = lines[i];
+      
+      // 着順行の開始を検出: 数字 or "中止" or "取消" or "除外" or "失格"
+      const rankMatch = line.match(/^(\d+)\s+枠(\d)/) || 
+                        (line.match(/^(\d+)$/) && i + 1 < lines.length && /^枠\d/.test(lines[i + 1]) ? line.match(/^(\d+)$/) : null);
+      const cancelMatch = line.match(/^(中止|取消|除外|失格)\s+枠(\d)/) ||
+                          (line.match(/^(中止|取消|除外|失格)$/) && i + 1 < lines.length && /^枠\d/.test(lines[i + 1]) ? line.match(/^(中止|取消|除外|失格)$/) : null);
+      
+      if (!rankMatch && !cancelMatch) {
+        // タイム・コーナー・払戻金ブロックに到達したら終了
+        if (line.includes('タイム') && line.includes('上り') || 
+            line.includes('払戻金') || 
+            line.includes('コーナー通過順位') ||
+            line === 'タイム') {
+          resultBlockEndIdx = i;
+          break;
+        }
+        i++;
+        continue;
+      }
+      
+      const rank = rankMatch ? parseInt(rankMatch[1]) : 0; // 0 = 中止/取消等
+      const statusText = cancelMatch ? cancelMatch[1] : "";
+      
+      // この着順の馬のデータを収集
+      // 行をまとめて読む
+      const horseDataLines: string[] = [];
+      let j = i;
+      // 次の着順行 or セクション変更まで行を集める
+      const maxCollect = 20; // 安全策
+      let collected = 0;
+      while (j < lines.length && collected < maxCollect) {
+        horseDataLines.push(lines[j]);
+        j++;
+        collected++;
+        // 次の行が新しい着順行かチェック
+        if (j < lines.length) {
+          const nextLine = lines[j];
+          if (/^\d+\s+枠\d/.test(nextLine) || /^(中止|取消|除外|失格)\s+枠\d/.test(nextLine)) break;
+          if (/^\d+$/.test(nextLine) && j + 1 < lines.length && /^枠\d/.test(lines[j + 1])) break;
+          if (/^(中止|取消|除外|失格)$/.test(nextLine) && j + 1 < lines.length && /^枠\d/.test(lines[j + 1])) break;
+          if (nextLine === 'タイム' || nextLine.includes('払戻金') || nextLine.includes('コーナー通過順位')) break;
+          if (nextLine.match(/^タイム$/) || nextLine.match(/^上り/)) break;
+        }
+      }
+      
+      // horseDataLines を結合してパース
+      const combined = horseDataLines.join('\t');
+      const parts = combined.split(/[\t]+/).map(s => s.trim()).filter(s => s !== '');
+      
+      // パーツから各フィールドを抽出
+      let horseNumber = 0;
+      let horseName = "";
+      let time = "";
+      let margin = "";
+      let passing = "";
+      let weight = 0;
+      let weightChange = 0;
+      let jockey = "";
+      let jockeyWeight = 0;
+      let trainer = "";
+      let popularity = 0;
+      
+      // 馬番を探す: 枠の次
+      for (let p = 0; p < parts.length; p++) {
+        const framePart = parts[p].match(/^枠(\d)[白黒赤青黄緑橙桃]?$/);
+        if (framePart && p + 1 < parts.length) {
+          const numPart = parseInt(parts[p + 1]);
+          if (!isNaN(numPart) && numPart >= 1 && numPart <= 18) {
+            horseNumber = numPart;
+            // 馬名は次
+            if (p + 2 < parts.length) {
+              horseName = parts[p + 2].replace(/ブリンカー着用/g, '').trim();
+            }
+            break;
+          }
+        }
+      }
+      
+      // 性齢を探してそこから騎手・タイム等を特定
+      for (let p = 0; p < parts.length; p++) {
+        const gaMatch = parts[p].match(/^([牡牝セ]|せん)\d+$/);
+        if (gaMatch) {
+          // p+1 = 斤量, p+2 = 騎手
+          if (p + 1 < parts.length) {
+            const kw = parseFloat(parts[p + 1]);
+            if (!isNaN(kw) && kw >= 40 && kw <= 70) jockeyWeight = kw;
+          }
+          if (p + 2 < parts.length) {
+            // 騎手名（▲△等の減量マーク含む）
+            jockey = parts[p + 2].replace(/^[▲△☆◇]/, '').trim();
+          }
+          // タイム: "X:XX.X" のパターンを探す
+          for (let q = p + 3; q < parts.length; q++) {
+            if (parts[q].match(/^\d+:\d+\.\d+$/)) {
+              time = parts[q];
+              // 次が着差の可能性
+              if (q + 1 < parts.length && !parts[q + 1].match(/^\d+:\d+/)) {
+                const marg = parts[q + 1];
+                if (!marg.match(/^\d+\s/) && !marg.match(/^\d+$/)) {
+                  margin = marg;
+                }
+              }
+              break;
+            }
+          }
+          break;
+        }
+      }
+      
+      // 通過順位: "X X X X" のようなスペース区切り4数字パターン
+      for (let p = 0; p < parts.length; p++) {
+        if (parts[p].match(/^\d+\s+\d+\s+\d+\s+\d+$/)) {
+          passing = parts[p].replace(/\s+/g, '-');
+          break;
+        }
+        // 各数字が別パートの場合も
+        if (parts[p].match(/^\d{1,2}$/) && p + 3 < parts.length &&
+            parts[p+1].match(/^\d{1,2}$/) && parts[p+2].match(/^\d{1,2}$/) && parts[p+3].match(/^\d{1,2}$/)) {
+          // コーナー通過順位っぽいか確認（連続した1-2桁の数字4つ）
+          const nums = [parseInt(parts[p]), parseInt(parts[p+1]), parseInt(parts[p+2]), parseInt(parts[p+3])];
+          if (nums.every(n => n >= 1 && n <= 18)) {
+            passing = nums.join('-');
+            break;
+          }
+        }
+      }
+      
+      // 馬体重: "XXX(+Y)" or "XXX(-Y)" or "XXX(0)"
+      for (let p = 0; p < parts.length; p++) {
+        const wm = parts[p].match(/^(\d{3,4})\(([+-]?\d+)\)$/);
+        if (wm) {
+          weight = parseInt(wm[1]);
+          weightChange = parseInt(wm[2]);
+          break;
+        }
+      }
+      
+      // 調教師名: 馬体重の次
+      for (let p = 0; p < parts.length; p++) {
+        if (parts[p].match(/^\d{3,4}\([+-]?\d+\)$/)) {
+          if (p + 1 < parts.length && parts[p + 1].match(/[ぁ-んァ-ヶ一-龥]/)) {
+            trainer = parts[p + 1];
+          }
+          // 人気: 調教師の次
+          if (p + 2 < parts.length && /^\d+$/.test(parts[p + 2])) {
+            popularity = parseInt(parts[p + 2]);
+          }
+          break;
+        }
+      }
+      
+      if (horseNumber > 0) {
+        results.push({
+          rank: rank || 99, // 中止等は99扱い
+          horseNumber,
+          horseName,
+          time,
+          odds: 0,
+          prize: 0,
+          passing,
+          margin: margin || (statusText || undefined),
+          jockey,
+          jockeyWeight,
+          weight,
+          weightChange,
+          trainer,
+          popularity,
+        });
+      }
+      
+      i = j;
+    }
+  }
+
+  // --- 払戻金のパース ---
+  let inRefundBlock = false;
+  let currentRefundType = "";
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    if (line === '払戻金') {
+      inRefundBlock = true;
+      continue;
+    }
+    
+    if (inRefundBlock) {
+      // 払戻金セクション終了判定
+      if (line.includes('勝馬投票に的中') || line === '・' || line.includes('勝馬の紹介') || line.includes('競走中の出来事')) {
+        if (line.includes('勝馬の紹介') || line.includes('競走中の出来事')) {
+          inRefundBlock = false;
+          // don't increment i, let the next section parse it
+          i--;
+        }
+        continue;
+      }
+      
+      // 券種名の検出
+      if (line === '単勝') { currentRefundType = 'win'; continue; }
+      if (line === '複勝') { currentRefundType = 'place'; continue; }
+      if (line === '枠連') { currentRefundType = 'bracketQuinella'; continue; }
+      if (line === 'ワイド') { currentRefundType = 'wide'; continue; }
+      if (line === '馬連') { currentRefundType = 'quinella'; continue; }
+      if (line === '馬単') { currentRefundType = 'exacta'; continue; }
+      if (line === '3連複') { currentRefundType = 'trio'; continue; }
+      if (line === '3連単') { currentRefundType = 'trifecta'; continue; }
+      
+      // 払戻データ行: "5\t540円\t4番人気" or "5-10\t24,200円\t46番人気"
+      // または別行: 馬番行 → 金額行 → 人気行
+      const payoutMatch = line.match(/^([\d-]+)\s+([\d,]+)円\s+(\d+)番人気$/);
+      if (payoutMatch && currentRefundType) {
+        const combo = payoutMatch[1];
+        const payout = parseInt(payoutMatch[2].replace(/,/g, ''));
+        const pop = parseInt(payoutMatch[3]);
+        
+        const entry = currentRefundType === 'win' || currentRefundType === 'place'
+          ? { horse: combo, payout, popularity: pop }
+          : { combination: combo, payout, popularity: pop };
+        
+        if (!refunds[currentRefundType as keyof typeof refunds]) {
+          (refunds as Record<string, unknown[]>)[currentRefundType] = [];
+        }
+        (refunds[currentRefundType as keyof typeof refunds] as unknown[]).push(entry);
+        continue;
+      }
+      
+      // 馬番/組み合わせだけの行
+      if (/^[\d-]+$/.test(line) && currentRefundType) {
+        // 次の行が金額の可能性
+        if (i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          const amountMatch = nextLine.match(/^([\d,]+)円\s+(\d+)番人気$/);
+          if (amountMatch) {
+            const combo = line;
+            const payout = parseInt(amountMatch[1].replace(/,/g, ''));
+            const pop = parseInt(amountMatch[2]);
+            
+            const entry = currentRefundType === 'win' || currentRefundType === 'place'
+              ? { horse: combo, payout, popularity: pop }
+              : { combination: combo, payout, popularity: pop };
+            
+            if (!refunds[currentRefundType as keyof typeof refunds]) {
+              (refunds as Record<string, unknown[]>)[currentRefundType] = [];
+            }
+            (refunds[currentRefundType as keyof typeof refunds] as unknown[]).push(entry);
+            i++; // skip the amount line
+            continue;
+          }
+        }
+      }
+    }
+  }
+
+  // --- 単勝オッズを結果に反映 ---
+  if (refunds.win && refunds.win.length > 0) {
+    const winEntry = refunds.win[0];
+    const winHorseNum = parseInt(winEntry.horse);
+    const r1 = results.find(r => r.horseNumber === winHorseNum);
+    if (r1) {
+      r1.odds = winEntry.payout / 100; // 100円あたりの払戻 → オッズ
+    }
+  }
+
+  // --- タイム・上がりのパース ---
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // "上り\t1マイル 1分 44秒 2　4F 50.8 - 3F 37.2" のようなパターン
+    if (line === '上り' || line.startsWith('上り')) {
+      // 同じ行か次の行にデータ
+      const dataLine = line === '上り' ? (lines[i + 1] || '') : line.replace(/^上り\s*/, '');
+      
+      const f4Match = dataLine.match(/4F\s*([\d.]+)/);
+      if (f4Match) last4fTime = f4Match[1];
+      
+      const f3Match = dataLine.match(/3F\s*([\d.]+)/);
+      if (f3Match) last3fTime = f3Match[1];
+      
+      if (line === '上り') i++;
+    }
+    
+    // ラップタイム抽出はここでは行わない（JRA公式にはハロンタイム個別は少ない）
+  }
+
+  // --- コーナー通過順位のパース ---
+  let inCornerBlock = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    if (line === 'コーナー通過順位') {
+      inCornerBlock = true;
+      continue;
+    }
+    
+    if (inCornerBlock) {
+      // "1コーナー\t1,4(14,10)-5-9-(8,6)-12-2-3-7" のようなパターン
+      const cornerMatch = line.match(/^(\d)コーナー(?:\(.*?\))?\s*(.+)$/);
+      if (cornerMatch) {
+        cornerPassings.push(`${cornerMatch[1]}角: ${cornerMatch[2]}`);
+        continue;
+      }
+      // 払戻金セクション等に到達したら終了
+      if (line === '払戻金' || line.includes('着順') || !line.match(/[\d(,)\-=*]/)) {
+        inCornerBlock = false;
+      }
+    }
+  }
+
+  // --- 勝馬の紹介パース ---
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    if (line === '勝馬の紹介') {
+      // 次の行: "ディベルティスマン 2022年2月14日生牡4"
+      if (i + 1 < lines.length) {
+        const profileLine = lines[i + 1];
+        const profileMatch = profileLine.match(/^(.+?)\s+(\d{4})年(\d{1,2})月(\d{1,2})日生/);
+        const horseName = profileMatch ? profileMatch[1] : profileLine.split(/\s+/)[0] || "";
+        const birthDate = profileMatch ? `${profileMatch[2]}年${profileMatch[3]}月${profileMatch[4]}日` : "";
+        
+        let sire = "", dam = "", owner = "", breeder = "";
+        
+        // 次の行: "父：キズナ母：レディオブキャメロット"
+        if (i + 2 < lines.length) {
+          const pedigreeLineRaw = lines[i + 2];
+          const sireMatch = pedigreeLineRaw.match(/父[：:](.+?)(?:母[：:]|$)/);
+          if (sireMatch) sire = sireMatch[1].trim();
+          const damMatch = pedigreeLineRaw.match(/母[：:](.+?)$/);
+          if (damMatch) dam = damMatch[1].trim();
+        }
+        
+        // "馬主：堂守 貴志生産牧場：タイヘイ牧場"
+        if (i + 3 < lines.length) {
+          const ownerLine = lines[i + 3];
+          const ownerMatch = ownerLine.match(/馬主[：:](.+?)(?:生産牧場[：:]|$)/);
+          if (ownerMatch) owner = ownerMatch[1].trim();
+          const breederMatch = ownerLine.match(/生産牧場[：:](.+?)$/);
+          if (breederMatch) breeder = breederMatch[1].trim();
+        }
+        
+        winnerProfile = { horseName, birthDate, sire, dam, owner, breeder };
+      }
+      break;
+    }
+  }
+
+  // --- 競走中の出来事等パース ---
+  let inIncidentsBlock = false;
+  const incidentLines: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    if (line === '競走中の出来事等') {
+      inIncidentsBlock = true;
+      continue;
+    }
+    
+    if (inIncidentsBlock) {
+      // 終了条件: 次のセクション
+      if (line.includes('開催選択へ戻る') || line.includes('レース選択へ戻る') || line.includes('印刷用ページ') || line.match(/^\d+レース/)) {
+        break;
+      }
+      if (line !== '・' && line.trim()) {
+        incidentLines.push(line);
+      }
+    }
+  }
+  incidents = incidentLines.join('\n');
+
+  return {
+    results,
+    lapTimes,
+    last4fTime,
+    last3fTime,
+    cornerPassings,
+    refunds: Object.keys(refunds).length > 0 ? refunds : undefined,
+    winnerProfile,
+    incidents,
+  };
+}

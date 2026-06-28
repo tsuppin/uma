@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Race, RaceResult } from "../types";
 import { generateFormation } from "../lib/engine";
+import { parseJRAOfficialResultText } from "../lib/parser";
 import MobileRaceResult from "./MobileRaceResult";
 
 
@@ -164,8 +165,11 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             className="form-textarea min-h-200 mono fs-sm mt-4"
             value={pasteResultText}
             onChange={e => setPasteResultText(e.target.value)}
-            placeholder="ここに結果テキストを貼り付けてください"
+            placeholder={"JRA公式サイトのレース結果ページ全体をコピーして貼り付けてください。\n着順・払戻金・コーナー通過順位・勝馬紹介・競走中の出来事等を自動解析します。"}
           />
+          <div className="fs-xs text-muted mt-4 text-right">
+            {pasteResultText.length.toLocaleString()} 文字
+          </div>
           <div className="flex gap-8 mt-4">
             <button
               type="button"
@@ -175,11 +179,39 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                   alert('貼り付けデータが空です');
                   return;
                 }
-                // TODO: Implement proper parsing of pasted result data
-                alert('貼り付けデータの解析は現在未実装です');
+                try {
+                  const parsed = parseJRAOfficialResultText(pasteResultText);
+                  if (parsed.results.length === 0) {
+                    alert('着順データを解析できませんでした。JRA公式レース結果ページのテキストを貼り付けてください。');
+                    return;
+                  }
+                  // 着順データを反映
+                  setResults(parsed.results.map(r => ({
+                    rank: r.rank,
+                    horseNumber: r.horseNumber,
+                    horseName: r.horseName || (race.horses.find(h => h.number === r.horseNumber)?.name || ''),
+                    time: r.time,
+                    odds: r.odds,
+                    prize: r.prize,
+                    passing: r.passing,
+                    margin: r.margin,
+                  })));
+                  // 詳細データを反映
+                  if (parsed.lapTimes.length > 0) setLapTimes(parsed.lapTimes);
+                  if (parsed.last4fTime) setLast4fTime(parsed.last4fTime);
+                  if (parsed.last3fTime) setLast3fTime(parsed.last3fTime);
+                  if (parsed.cornerPassings.length > 0) setCornerPassings(parsed.cornerPassings);
+                  if (parsed.refunds) setRefunds(parsed.refunds);
+                  if (parsed.winnerProfile) setWinnerProfile(parsed.winnerProfile);
+                  if (parsed.incidents) setIncidents(parsed.incidents);
+                  
+                  alert(`✅ ${parsed.results.length}頭の着順データを解析しました。`);
+                } catch (e) {
+                  alert('解析中にエラーが発生しました: ' + (e instanceof Error ? e.message : String(e)));
+                }
               }}
             >
-              解析
+              🔍 解析実行
             </button>
             <button
               type="button"
