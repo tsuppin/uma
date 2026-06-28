@@ -2203,3 +2203,307 @@ export function parseJRAOfficialResultText(rawText: string): {
     incidents,
   };
 }
+
+// ==========================================
+// 楽天競馬 競走成績パーサー（ResultInput用）
+// ==========================================
+export function parseRakutenResultForResultInput(rawText: string): {
+  results: {
+    rank: number;
+    horseNumber: number;
+    horseName: string;
+    time: string;
+    odds: number;
+    prize: number;
+    passing?: string;
+    margin?: string;
+    jockey?: string;
+    jockeyWeight?: number;
+    weight?: number;
+    weightChange?: number;
+    trainer?: string;
+    popularity?: number;
+    belonging?: string;
+  }[];
+  lapTimes: string[];
+  last4fTime: string;
+  last3fTime: string;
+  cornerPassings: string[];
+  refunds: RaceResult["refunds"];
+  winnerProfile: RaceResult["winnerProfile"];
+  incidents: string;
+} {
+  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l !== '');
+
+  const results: {
+    rank: number; horseNumber: number; horseName: string; time: string;
+    odds: number; prize: number; passing?: string; margin?: string;
+    jockey?: string; jockeyWeight?: number; weight?: number; weightChange?: number;
+    trainer?: string; popularity?: number; belonging?: string;
+  }[] = [];
+  let lapTimes: string[] = [];
+  let last4fTime = "";
+  let last3fTime = "";
+  const cornerPassings: string[] = [];
+  const refunds: RaceResult["refunds"] = {};
+  let incidents = "";
+
+  // --- 着順結果のパース ---
+  let inResultBlock = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line === "■全着順") {
+      inResultBlock = true;
+      // ヘッダー行をスキップ
+      while (i + 1 < lines.length && !lines[i + 1].match(/^\d+\s+\d+\s+\d+/)) {
+        i++;
+      }
+      continue;
+    }
+    if (line === "■タイム" || line === "■払戻金" || line === "■コーナー通過順位") {
+      inResultBlock = false;
+    }
+
+    if (inResultBlock) {
+      // 着順行: "1\t3\t3\tサダノブラボー\t牡8 /栗毛\t630\t1018"
+      const rowMatch = line.match(/^(\d+)\s+(\d+)\s+(\d+)\s+(.+?)\s+([牡牝セセン]+\d+\s*\/[^\t\s]+)\s+([\d.]+)\s+(\d+)/);
+      if (rowMatch) {
+        const rank = parseInt(rowMatch[1]);
+        const number = parseInt(rowMatch[3]);
+        const name = rowMatch[4].trim();
+        const jockeyWeightVal = parseFloat(rowMatch[6]);
+        const weight = parseInt(rowMatch[7]);
+
+        // 次行: 増減 + 騎手
+        i++;
+        let weightChange = 0;
+        let jockey = "";
+        let belonging = "";
+        if (i < lines.length) {
+          const line2 = lines[i];
+          const pMatch = line2.match(/^([+-±]?\d+)\s+(.+)$/);
+          if (pMatch) {
+            weightChange = pMatch[1] === "±0" ? 0 : parseInt(pMatch[1].replace("±", ""));
+            const jockeyRaw = pMatch[2].trim();
+            // "松本秀\n(ばんえい)" のようにカッコ内が所属
+            const jbMatch = jockeyRaw.match(/^(.+?)\s*[（\(](.+?)[）\)]$/);
+            if (jbMatch) {
+              jockey = jbMatch[1].replace(/^[▲△☆◇]/, '').trim();
+              belonging = jbMatch[2].trim();
+            } else {
+              jockey = jockeyRaw.replace(/^[▲△☆◇]/, '').trim();
+            }
+          }
+        }
+
+        // 次行: タイム・着差・上がり・調教師・人気
+        // "(ばんえい)\t1:39.0\t\t-\t大橋和\t9"
+        i++;
+        let time = "", margin = "", last3f = "", trainer = "";
+        let popularity = 0;
+        if (i < lines.length) {
+          const line3 = lines[i];
+          // 所属行の場合スキップ
+          if (line3.match(/^\(.*\)$/)) {
+            belonging = line3.replace(/[（\(）\)]/g, '').trim();
+            i++;
+          }
+        }
+        if (i < lines.length) {
+          const line3 = lines[i];
+          // タブ区切り: "(ばんえい)\t1:39.0\t\t-\t大橋和\t9"
+          const parts = line3.split('\t').map(p => p.trim());
+          if (parts.length >= 4) {
+            // 所属が先頭にある場合を考慮
+            let startIdx = 0;
+            if (parts[0].match(/^\(.*\)$/) || parts[0].match(/^（.*）$/)) {
+              belonging = parts[0].replace(/[（\(）\)]/g, '').trim();
+              startIdx = 1;
+            }
+            // タイムを探す
+            for (let p = startIdx; p < parts.length; p++) {
+              if (parts[p].match(/^\d+:\d+\.\d+$/)) {
+                time = parts[p];
+                // 着差
+                if (p + 1 < parts.length && parts[p + 1] && parts[p + 1] !== '-') {
+                  margin = parts[p + 1];
+                }
+                break;
+              }
+            }
+            // 調教師: 後ろから2番目
+            if (parts.length >= 2) {
+              const lastPart = parts[parts.length - 1];
+              const secondLast = parts[parts.length - 2];
+              if (/^\d+$/.test(lastPart)) {
+                popularity = parseInt(lastPart);
+                if (secondLast && /[ぁ-んァ-ヶ一-龥]/.test(secondLast) && secondLast !== '-') {
+                  trainer = secondLast;
+                }
+              }
+            }
+          } else {
+            // スペース区切りのフォールバック
+            const m3 = line3.match(/(\d+:\d+\.\d+)\s*(.*?)\s+(-|[\d.]+)\s+(.+?)\s+(\d+)$/);
+            if (m3) {
+              time = m3[1]; margin = m3[2]; last3f = m3[3]; trainer = m3[4]; popularity = parseInt(m3[5]);
+            }
+          }
+        }
+
+        results.push({
+          rank,
+          horseNumber: number,
+          horseName: name,
+          time,
+          odds: 0,
+          prize: 0,
+          passing: undefined,
+          margin: margin || undefined,
+          jockey,
+          jockeyWeight: jockeyWeightVal,
+          weight,
+          weightChange,
+          trainer,
+          popularity,
+          belonging,
+        });
+      }
+    }
+  }
+
+  // --- 払戻金のパース ---
+  // 楽天形式: "単勝\t3\t3,850 円\t9番人気\t馬単\t3-7\t51,450 円\t75番人気"
+  // または: "■払戻金" の後に各行
+  let inPayBlock = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line === "■払戻金") {
+      inPayBlock = true;
+      continue;
+    }
+
+    if (inPayBlock) {
+      if (line.startsWith("備考") || line.startsWith("■") || line.includes("本日の発売情報")) {
+        break;
+      }
+
+      // 1行に複数券種: "単勝\t3\t3,850 円\t9番人気\t馬単\t3-7\t51,450 円\t75番人気"
+      const parts = line.split('\t').map(p => p.trim()).filter(p => p !== '');
+
+      // パーツを左から解析
+      let pi = 0;
+      while (pi < parts.length) {
+        const typeName = parts[pi];
+        let refundType = '';
+        if (typeName === '単勝') refundType = 'win';
+        else if (typeName === '複勝') refundType = 'place';
+        else if (typeName === '枠複') refundType = 'bracketQuinella';
+        else if (typeName === '枠単') refundType = 'bracketExacta';
+        else if (typeName === 'ワイド') refundType = 'wide';
+        else if (typeName === '馬複') refundType = 'quinella';
+        else if (typeName === '馬単') refundType = 'exacta';
+        else if (typeName === '三連複') refundType = 'trio';
+        else if (typeName === '三連単') refundType = 'trifecta';
+        else { pi++; continue; }
+
+        pi++; // 券種名の次
+
+        // 複数エントリ（複勝・ワイドは複数行分が改行で来る）
+        while (pi < parts.length) {
+          const combo = parts[pi];
+          if (!combo || combo === '-') { pi++; break; }
+          // 次の券種名にぶつかったら終了
+          if (['単勝','複勝','枠複','枠単','ワイド','馬複','馬単','三連複','三連単'].includes(combo)) break;
+
+          pi++;
+          if (pi >= parts.length) break;
+          const amountStr = parts[pi];
+          const amountMatch = amountStr?.match(/([\d,]+)\s*円/);
+          if (!amountMatch) break;
+          const payout = parseInt(amountMatch[1].replace(/,/g, ''));
+
+          pi++;
+          let pop = 0;
+          if (pi < parts.length) {
+            const popMatch = parts[pi]?.match(/(\d+)番人気/);
+            if (popMatch) {
+              pop = parseInt(popMatch[1]);
+              pi++;
+            }
+          }
+
+          if (refundType && payout > 0) {
+            const entry = (refundType === 'win' || refundType === 'place')
+              ? { horse: combo, payout, popularity: pop }
+              : { combination: combo, payout, popularity: pop };
+
+            if (!refunds[refundType as keyof typeof refunds]) {
+              (refunds as Record<string, unknown[]>)[refundType] = [];
+            }
+            (refunds[refundType as keyof typeof refunds] as unknown[]).push(entry);
+          }
+
+          // 複勝・ワイドは改行で複数エントリが続く場合
+          // 次のパーツが馬番(数字orハイフン区切り)なら続行、券種名なら終了
+          if (pi < parts.length && ['単勝','複勝','枠複','枠単','ワイド','馬複','馬単','三連複','三連単'].includes(parts[pi])) {
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // --- 単勝オッズを結果に反映 ---
+  if (refunds.win && refunds.win.length > 0) {
+    const winEntry = refunds.win[0];
+    const winHorseNum = parseInt(winEntry.horse);
+    const r1 = results.find(r => r.horseNumber === winHorseNum);
+    if (r1) {
+      r1.odds = winEntry.payout / 100;
+    }
+  }
+
+  // --- タイム・上がり ---
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith("ハロンタイム")) {
+      const lapsStr = line.replace("ハロンタイム", "").trim();
+      lapTimes = lapsStr.split('-').map(s => s.trim()).filter(s => s);
+    }
+    if (line.startsWith("上がり") || line.includes("上がり")) {
+      const m4f = line.match(/4F\s*([\d.]+)/);
+      if (m4f) last4fTime = m4f[1];
+      const m3f = line.match(/3F\s*([\d.]+)/);
+      if (m3f) last3fTime = m3f[1];
+    }
+  }
+
+  // --- コーナー通過順位 ---
+  let inCornerBlock = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i] === "■コーナー通過順位") {
+      inCornerBlock = true; continue;
+    }
+    if (inCornerBlock) {
+      if (lines[i].startsWith("■") || lines[i].includes("払戻金")) break;
+      if (lines[i].match(/^[１-４1-4](角|コーナー)/)) {
+        cornerPassings.push(lines[i]);
+      }
+    }
+  }
+
+  return {
+    results,
+    lapTimes,
+    last4fTime,
+    last3fTime,
+    cornerPassings,
+    refunds: Object.keys(refunds).length > 0 ? refunds : undefined,
+    winnerProfile: undefined,
+    incidents,
+  };
+}

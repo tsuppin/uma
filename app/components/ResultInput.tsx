@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Race, RaceResult } from "../types";
 import { generateFormation } from "../lib/engine";
-import { parseJRAOfficialResultText } from "../lib/parser";
+import { parseJRAOfficialResultText, parseRakutenResultForResultInput } from "../lib/parser";
 import MobileRaceResult from "./MobileRaceResult";
 
 
@@ -165,7 +165,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
             className="form-textarea min-h-200 mono fs-sm mt-4"
             value={pasteResultText}
             onChange={e => setPasteResultText(e.target.value)}
-            placeholder={"JRA公式サイトのレース結果ページ全体をコピーして貼り付けてください。\n着順・払戻金・コーナー通過順位・勝馬紹介・競走中の出来事等を自動解析します。"}
+            placeholder={"JRA公式サイトまたは楽天競馬のレース結果ページ全体をコピーして貼り付けてください。\n着順・払戻金・コーナー通過順位・勝馬紹介・競走中の出来事等を自動解析します。\n\n対応形式: JRA公式 / 楽天競馬（地方・ばんえい含む）"}
           />
           <div className="fs-xs text-muted mt-4 text-right">
             {pasteResultText.length.toLocaleString()} 文字
@@ -180,9 +180,17 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                   return;
                 }
                 try {
-                  const parsed = parseJRAOfficialResultText(pasteResultText);
+                  // フォーマット自動判別
+                  const isRakuten = pasteResultText.includes('楽天競馬') || 
+                                    pasteResultText.includes('Rakuten') || 
+                                    (pasteResultText.includes('■全着順') && pasteResultText.includes('■払戻金'));
+                  
+                  const parsed = isRakuten 
+                    ? parseRakutenResultForResultInput(pasteResultText)
+                    : parseJRAOfficialResultText(pasteResultText);
+                  
                   if (parsed.results.length === 0) {
-                    alert('着順データを解析できませんでした。JRA公式レース結果ページのテキストを貼り付けてください。');
+                    alert('着順データを解析できませんでした。JRA公式またはの楽天競馬のレース結果ページのテキストを貼り付けてください。');
                     return;
                   }
                   // 着順データを反映
@@ -205,7 +213,8 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                   if (parsed.winnerProfile) setWinnerProfile(parsed.winnerProfile);
                   if (parsed.incidents) setIncidents(parsed.incidents);
                   
-                  alert(`✅ ${parsed.results.length}頭の着順データを解析しました。`);
+                  const formatName = isRakuten ? '楽天競馬' : 'JRA公式';
+                  alert(`✅ ${parsed.results.length}頭の着順データを解析しました。（${formatName}形式）`);
                 } catch (e) {
                   alert('解析中にエラーが発生しました: ' + (e instanceof Error ? e.message : String(e)));
                 }
