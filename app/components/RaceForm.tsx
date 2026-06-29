@@ -161,9 +161,6 @@ export default function RaceForm({ onSubmit, onSubmitResult, onCancel }: {
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <label className="form-label" htmlFor="paste-text" style={{ marginBottom: 0 }}>出馬表・過去走テキスト</label>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={handlePasteFromClipboard}>
-                📋 クリップボードから貼り付け
-              </button>
             </div>
             <textarea
               id="paste-text"
@@ -178,6 +175,9 @@ export default function RaceForm({ onSubmit, onSubmitResult, onCancel }: {
           </div>
           {parseError && <div className="alert alert-warning">⚠️ {parseError}</div>}
           <div className="flex gap-8">
+            <button type="button" className="btn btn-secondary" onClick={handlePasteFromClipboard}>
+              📋 クリップボードから貼り付け
+            </button>
             <button type="button" className="btn btn-primary p-10-28 fs-md"
               onClick={handleParse} disabled={!pasteText.trim()}>
               🔍 解析実行
