@@ -85,6 +85,10 @@ def main():
         X, y_rank, y_hit, test_size=0.2, random_state=42
     )
 
+    # 的中率向上のため、上位着順（1〜3着）の学習を重視する重み（Loss Function調整の代替）
+    weight_train_rank = np.where(y_rank_train <= 3, 5.0, 1.0)
+    weight_test_rank = np.where(y_rank_test <= 3, 5.0, 1.0)
+
     # モデル保存ディレクトリの作成
     save_dir = 'latest_models/central_keiba'
     os.makedirs(save_dir, exist_ok=True)
@@ -94,21 +98,21 @@ def main():
     
     # LightGBM
     print(" - Training LightGBM...")
-    lgb_rank = lgb.LGBMRegressor(random_state=42, n_estimators=200, n_jobs=-1)
-    lgb_rank.fit(X_train, y_rank_train, eval_set=[(X_test, y_rank_test)])
+    lgb_rank = lgb.LGBMRegressor(random_state=42, n_estimators=200, n_jobs=-1, objective='rmse')
+    lgb_rank.fit(X_train, y_rank_train, sample_weight=weight_train_rank, eval_set=[(X_test, y_rank_test)], eval_sample_weight=[weight_test_rank])
     joblib.dump(lgb_rank, os.path.join(save_dir, 'lgb_rank_model.pkl'))
     
     # XGBoost
     print(" - Training XGBoost...")
-    xgb_rank = xgb.XGBRegressor(random_state=42, n_estimators=200, n_jobs=-1)
-    xgb_rank.fit(X_train, y_rank_train, eval_set=[(X_test, y_rank_test)], verbose=False)
+    xgb_rank = xgb.XGBRegressor(random_state=42, n_estimators=200, n_jobs=-1, objective='reg:squarederror')
+    xgb_rank.fit(X_train, y_rank_train, sample_weight=weight_train_rank, eval_set=[(X_test, y_rank_test)], sample_weight_eval_set=[weight_test_rank], verbose=False)
     xgb_rank.save_model(os.path.join(save_dir, 'xgb_rank_model.json'))
     
     # CatBoost
     print(" - Training CatBoost...")
     cat_features_indices = [X.columns.get_loc(c) for c in categorical_features]
-    cat_rank = CatBoostRegressor(random_state=42, iterations=200, verbose=False, thread_count=-1)
-    cat_rank.fit(X_train, y_rank_train, cat_features=cat_features_indices, eval_set=(X_test, y_rank_test))
+    cat_rank = CatBoostRegressor(random_state=42, iterations=200, verbose=False, thread_count=-1, loss_function='RMSE')
+    cat_rank.fit(X_train, y_rank_train, sample_weight=weight_train_rank, cat_features=cat_features_indices, eval_set=(X_test, y_rank_test))
     cat_rank.save_model(os.path.join(save_dir, 'cat_rank_model.cbm'))
 
     # --- 的中予測 (分類) ---
@@ -116,19 +120,20 @@ def main():
     
     # LightGBM
     print(" - Training LightGBM...")
-    lgb_hit = lgb.LGBMClassifier(random_state=42, n_estimators=200, n_jobs=-1)
+    lgb_hit = lgb.LGBMClassifier(random_state=42, n_estimators=200, n_jobs=-1, class_weight='balanced')
     lgb_hit.fit(X_train, y_hit_train, eval_set=[(X_test, y_hit_test)])
     joblib.dump(lgb_hit, os.path.join(save_dir, 'lgb_hit_model.pkl'))
     
     # XGBoost
     print(" - Training XGBoost...")
-    xgb_hit = xgb.XGBClassifier(random_state=42, n_estimators=200, n_jobs=-1)
+    # 的中（1）の割合が少ないため、scale_pos_weight等でバランスをとる（ここでは簡単化のためデフォルトに近い形で）
+    xgb_hit = xgb.XGBClassifier(random_state=42, n_estimators=200, n_jobs=-1, scale_pos_weight=3)
     xgb_hit.fit(X_train, y_hit_train, eval_set=[(X_test, y_hit_test)], verbose=False)
     xgb_hit.save_model(os.path.join(save_dir, 'xgb_hit_model.json'))
     
     # CatBoost
     print(" - Training CatBoost...")
-    cat_hit = CatBoostClassifier(random_state=42, iterations=200, verbose=False, thread_count=-1)
+    cat_hit = CatBoostClassifier(random_state=42, iterations=200, verbose=False, thread_count=-1, auto_class_weights='Balanced')
     cat_hit.fit(X_train, y_hit_train, cat_features=cat_features_indices, eval_set=(X_test, y_hit_test))
     cat_hit.save_model(os.path.join(save_dir, 'cat_hit_model.cbm'))
 

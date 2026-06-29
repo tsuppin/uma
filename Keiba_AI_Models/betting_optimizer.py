@@ -2,7 +2,7 @@
 import numpy as np
 
 class BettingOptimizer:
-    def __init__(self, ev_threshold=1.5, core_prob_threshold=0.3):
+    def __init__(self, ev_threshold=1.1, core_prob_threshold=0.5):
         # ev_threshold: 期待値(EV)がこの値以上の馬を「穴馬（バリュー馬）」として扱う
         # core_prob_threshold: モデルの予測勝率がこの値以上の馬を「絶対的な軸馬」として扱う
         self.ev_threshold = ev_threshold
