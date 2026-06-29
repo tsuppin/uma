@@ -2,6 +2,7 @@
 import { Horse, Prediction, Race, LearningPatch, Formation, MasterData } from '../types';
 import { calculateNARScore } from './engineNAR';
 import { calculateUnifiedWaveLevel } from './waveLevelCalculator';
+import { evaluateKnowledgeBase } from './ruleEngine';
 import { analyzeJockeyChange, analyzeWeight, analyzePassingPositions, getBestSpeedIndex, analyzeJockeyWeightDiff, analyzeOddsAndPopularity, analyzeIncidents, analyzeRotationBounceBack, analyzeTrainingTime, analyzePaceFromMasterData, analyzeCourseBias } from './evaluationUtils';
 
 // モジュール共通のエリート騎手リスト
