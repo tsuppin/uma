@@ -231,8 +231,7 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
                   if (parsed.winnerProfile) setWinnerProfile(parsed.winnerProfile);
                   if (parsed.incidents) setIncidents(parsed.incidents);
                   
-                  const formatName = isRakuten ? '楽天競馬' : 'JRA公式';
-                  alert(`✅ ${parsed.results.length}頭の着順データを解析しました。（${formatName}形式）`);
+
                 } catch (e) {
                   alert('解析中にエラーが発生しました: ' + (e instanceof Error ? e.message : String(e)));
                 }
