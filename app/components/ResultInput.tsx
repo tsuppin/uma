@@ -173,6 +173,24 @@ export default function ResultInput({ race, onSubmit, onCancel }: {
           <div className="flex gap-8 mt-4">
             <button
               type="button"
+              className="btn btn-secondary"
+              onClick={async () => {
+                try {
+                  const text = await navigator.clipboard.readText();
+                  if (text) {
+                    setPasteResultText(text);
+                  } else {
+                    alert('クリップボードにテキストがありません');
+                  }
+                } catch {
+                  alert('クリップボードへのアクセスが拒否されました。ブラウザの設定を確認してください。');
+                }
+              }}
+            >
+              📋 クリップボードから貼り付け
+            </button>
+            <button
+              type="button"
               className="btn btn-primary"
               onClick={() => {
                 if (!pasteResultText.trim()) {
