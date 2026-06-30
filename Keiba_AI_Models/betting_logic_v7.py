@@ -127,6 +127,34 @@ class AdvancedBettingLogic:
                             'score': 1.0 # ここは実際の3連複オッズ取得後に再計算を推奨
                         })
 
+        # 3連単フォーメーション（1着:軸馬 -> 2着:軸+上位ヒモ -> 3着:全ヒモ）
+        # 買い目点数が増えすぎるのを防ぐため、ある程度絞ったフォーメーション
+        for h1 in jiku_horses:
+            # 2着候補（もう1頭の軸馬、またはヒモ上位2頭）
+            second_horses = [h for h in jiku_horses if h != h1] + himo_horses[:2]
+            # 3着候補（2着候補 + 残りのヒモ穴）
+            third_horses = second_horses + himo_horses[2:]
+            
+            for h2 in set(second_horses):
+                if h1 == h2: continue
+                for h3 in set(third_horses):
+                    if h1 == h3 or h2 == h3: continue
+                    
+                    comb = (h1, h2, h3) # 3連単は着順が意味を持つのでソートしない
+                    
+                    # 簡易的なスコア（1着馬の勝率 × 2着馬の勝率 × 3着馬のEV）
+                    h1_prob = jiku_df[jiku_df['horse_num'] == h1]['win_prob'].values[0]
+                    h2_val = df[df['horse_num'] == h2]['win_prob'].values[0]
+                    h3_val = df[df['horse_num'] == h3]['ev'].values[0]
+                    
+                    comb_score = h1_prob * h2_val * h3_val * 0.5 # 3連単は難易度が高いのでスコアを補正
+                    
+                    tickets.append({
+                        'type': '3連単',
+                        'combination': comb,
+                        'score': comb_score
+                    })
+
         # --- 3. 重複排除と足切りフィルター ---
         unique_tickets = []
         seen = set()
