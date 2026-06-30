@@ -132,6 +132,151 @@ def _parse_nar_race_header(lines: List[str]) -> Dict[str, Any]:
     return info
 
 
+def _parse_nar_past_races_vertical(lines: List[str], start_idx: int) -> List[Dict[str, Any]]:
+    past_races: List[Dict[str, Any]] = []
+    idx = start_idx
+    VERTICAL_PAST_HEADER_RE = re.compile(r'^(?:\d+|取消|除外|中止|失格)$')
+
+    while idx < len(lines) and len(past_races) < 10:
+        if not lines[idx].strip() or not VERTICAL_PAST_HEADER_RE.match(lines[idx].strip()):
+            idx += 1
+            continue
+
+        pr_result = 0
+        pr_cond = "良"
+        pr_head_count = 0
+        pr_date = ""
+        pr_venue = ""
+        pr_class = ""
+        pr_dist = 0
+        pr_surf = "ダート"
+        pr_popularity = 0
+        pr_jockey = ""
+        pr_kinryo = 0.0
+        pr_time = ""
+        pr_time_diff = 0.0
+        pr_last3f = 0.0
+        pr_weight = 480
+        pr_frame = 0
+        pr_passing = ""
+
+        # 着順
+        if lines[idx].strip().isdigit():
+            pr_result = int(lines[idx].strip())
+        idx += 1
+
+        # 馬場
+        if idx < len(lines):
+            cond_str = lines[idx].strip()
+            if cond_str in ["良", "稍", "稍重", "重", "不良"]:
+                pr_cond = "稍重" if cond_str == "稍" else cond_str
+                idx += 1
+
+        # 頭数
+        if idx < len(lines):
+            m = re.match(r'(\d+)頭', lines[idx].strip())
+            if m:
+                pr_head_count = int(m.group(1))
+                idx += 1
+
+        # 過去映像などスキップ
+        while idx < len(lines) and ("過去映像" in lines[idx] or not lines[idx].strip()):
+            idx += 1
+
+        # 場所と日付 "水沢 26.06.15" または "水沢 26/06/15"
+        if idx < len(lines):
+            p = lines[idx].strip().split()
+            if len(p) >= 2:
+                pr_venue = p[0]
+                dm = re.search(r'(\d{2})[./](\d{2})[./](\d{2})', lines[idx].strip())
+                if dm:
+                    pr_date = f"20{dm.group(1)}-{dm.group(2)}-{dm.group(3)}"
+            idx += 1
+
+        # クラス
+        while idx < len(lines) and not any(x in lines[idx] for x in ["ダ", "芝", "m", "人"]):
+            pr_class += " " + lines[idx].strip()
+            idx += 1
+
+        # 距離、右左、馬場、人気 "1400右ダ 2人"
+        if idx < len(lines):
+            l = lines[idx].strip()
+            dm = re.search(r'(\d+)m?', l)
+            if dm:
+                pr_dist = int(dm.group(1))
+            if "ダ" in l: pr_surf = "ダート"
+            elif "芝" in l: pr_surf = "芝"
+            pm = re.search(r'(\d+)人', l)
+            if pm:
+                pr_popularity = int(pm.group(1))
+            idx += 1
+
+        # 騎手、斤量 "高橋悠 54.0"
+        if idx < len(lines):
+            p = lines[idx].strip().split()
+            if len(p) >= 2:
+                pr_jockey = p[0]
+                pr_kinryo = float(p[1])
+            elif len(p) == 1:
+                pr_jockey = p[0]
+            idx += 1
+
+        # タイム、差 "1:29.2 (0.8)"
+        if idx < len(lines):
+            m = re.match(r'(\d+:\d+\.\d+|\d+\.\d+)\s*\(([-+]?\d+\.\d+)\)', lines[idx].strip())
+            if m:
+                pr_time = m.group(1)
+                pr_time_diff = float(m.group(2))
+                idx += 1
+
+        # 上がり、体重、馬番 "39.8 474k 11番"
+        if idx < len(lines):
+            p = lines[idx].strip().split()
+            if len(p) >= 1 and re.match(r'^\d{2}\.\d$', p[0]):
+                pr_last3f = float(p[0])
+            for part in p:
+                if 'k' in part or 'kg' in part:
+                    pr_weight = int(re.sub(r'\D', '', part) or 480)
+                elif '番' in part:
+                    pr_frame = int(re.sub(r'\D', '', part) or 0)
+            idx += 1
+
+        # 通過順 "4-5-3-3"
+        if idx < len(lines):
+            posl = lines[idx].strip()
+            if re.match(r'^\d+(?:-\d+)*$', posl):
+                pr_passing = posl
+                idx += 1
+
+        # 1着馬スキップ
+        if idx < len(lines) and not VERTICAL_PAST_HEADER_RE.match(lines[idx].strip()):
+            idx += 1
+
+        if pr_date and pr_result:
+            past_races.append({
+                'result':     pr_result,
+                'date':       pr_date,
+                'venue':      pr_venue,
+                'race_name':  "",
+                'race_class': pr_class.strip(),
+                'distance':   pr_dist,
+                'surface':    pr_surf,
+                'condition':  pr_cond,
+                'head_count': pr_head_count,
+                'frame':      pr_frame,
+                'popularity': pr_popularity,
+                'kinryo':     pr_kinryo,
+                'weight':     pr_weight,
+                'jockey':     pr_jockey,
+                'last3f':     pr_last3f,
+                'last3f_rank': 0,
+                'time_diff':  pr_time_diff,
+                'time':       pr_time,
+                'passing':    pr_passing,
+            })
+
+    return past_races
+
 def _parse_nar_past_races(lines: List[str], start_idx: int) -> List[Dict[str, Any]]:
     """
     NAR の過去走ブロックを解析する。
@@ -147,6 +292,10 @@ def _parse_nar_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
     PAST_HEADER_RE = re.compile(
         r'^(?:\d+|取消|除外|中止|失格)[\t\s]+\d{2}/\d{2}/\d{2}'
     )
+    VERTICAL_PAST_HEADER_RE = re.compile(r'^(?:\d+|取消|除外|中止|失格)$')
+
+    if idx < len(lines) and VERTICAL_PAST_HEADER_RE.match(lines[idx].strip()):
+        return _parse_nar_past_races_vertical(lines, start_idx)
 
     while idx < len(lines) and len(past_races) < 10:
         l1 = lines[idx].strip()
@@ -334,11 +483,24 @@ def _parse_nar_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
 
     # 過去走開始インデックスを探す
     PAST_HEADER_RE = re.compile(r'^(?:\d+|取消|除外|中止|失格)[\t\s]+\d{2}/\d{2}/\d{2}')
+    VERTICAL_PAST_HEADER_RE = re.compile(r'^(?:\d+|取消|除外|中止|失格)$')
     past_start_idx = -1
     for i in range(1, len(lines)):
-        if PAST_HEADER_RE.match(lines[i].strip()):
+        l_strip = lines[i].strip()
+        if PAST_HEADER_RE.match(l_strip):
             past_start_idx = i
             break
+        if VERTICAL_PAST_HEADER_RE.match(l_strip):
+            found_head = False
+            found_date = False
+            for j in range(i + 1, min(i + 8, len(lines))):
+                if re.match(r'^\d+頭$', lines[j].strip()):
+                    found_head = True
+                if re.search(r'\d{2}\.\d{2}\.\d{2}|\d{2}/\d{2}/\d{2}', lines[j]):
+                    found_date = True
+            if found_head and found_date:
+                past_start_idx = i
+                break
 
     profile_end = past_start_idx if past_start_idx != -1 else len(lines)
 
