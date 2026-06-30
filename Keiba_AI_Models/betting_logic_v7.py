@@ -48,6 +48,26 @@ class AdvancedBettingLogic:
         # --- 2. フォーメーションの自動生成 ---
         tickets = []
         
+        # 1. 単勝（本命・確勝狙いロジック）- 的中率特化
+        # 予測勝率が極めて高い馬（例：勝率40%以上）を対象とする
+        for _, row in df.iterrows():
+            if row['win_prob'] >= 0.40:
+                tickets.append({
+                    'type': '単勝(本命)',
+                    'combination': (row['horse_num'],),
+                    'score': row['win_prob'] * 2.0  # スコアを底上げして優先度を高くする
+                })
+                
+        # 2. 単勝（バリュー・期待値狙いロジック）- 回収率特化
+        # 勝率自体は中程度（10%以上）だが、期待値(EV)が1.2以上ある美味しいオッズの馬を対象とする
+        for _, row in df.iterrows():
+            if 0.10 <= row['win_prob'] < 0.40 and row['ev'] >= 1.2:
+                tickets.append({
+                    'type': '単勝(穴狙い)',
+                    'combination': (row['horse_num'],),
+                    'score': row['ev'] * 1.5
+                })
+        
         # ワイド流し（軸馬からヒモ穴へ）
         for jiku in jiku_horses:
             for himo in himo_horses:
