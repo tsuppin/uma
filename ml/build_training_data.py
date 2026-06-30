@@ -240,7 +240,37 @@ def _build_base_row(
         # 血統系統フラグ
         'is_roberto_line': 1.0 if horse.get('sire') in ROBERTO_SIRES else 0.0,
         'is_heavy_track_sire': 1.0 if horse.get('sire') in HEAVY_TRACK_SIRES else 0.0,
+        
+        # 新規追加（レース単位の特徴量・ターゲット等として蓄積するため）
+        'race_furlong_time': race_info.get('race_furlong_time', ''),
+        'race_agari': race_info.get('race_agari', ''),
+        'race_corner_3': race_info.get('race_corner_3', ''),
+        'race_corner_4': race_info.get('race_corner_4', ''),
+        'horse_passing': horse.get('passing', ''),
+        'horse_last3f': horse.get('last3f', 0.0),
     }
+
+    # Furlong time parsing (if available)
+    furlong_str = race_info.get('race_furlong_time', '')
+    first_3f_time = 0.0
+    last_3f_time = 0.0
+    avg_furlong = 0.0
+    if furlong_str:
+        try:
+            furlongs = [float(x.strip()) for x in furlong_str.replace(',', '.').split('-') if x.strip()]
+            if len(furlongs) >= 3:
+                first_3f_time = sum(furlongs[:3])
+                last_3f_time = sum(furlongs[-3:])
+            if furlongs:
+                avg_furlong = sum(furlongs) / len(furlongs)
+        except Exception:
+            pass
+            
+    row.update({
+        'race_first_3f': first_3f_time,
+        'race_last_3f': last_3f_time,
+        'race_avg_furlong': avg_furlong,
+    })
 
     # --- 前走特徴量 (8個) ---
     if prev:
@@ -439,24 +469,25 @@ def build_rows_from_text(
     race_date_obj = _date_str_to_date(race_info.get('date', ''))
 
     # モード自動判定:
-    # 馬番[0]の frame が "着順" として解釈できる（1〜頭数の範囲）かつ
-    # past_races[0]が実際の過去走(日付あり)なら成績表モード
     if mode == 'auto':
-        first_horse = horses[0] if horses else {}
-        actual_result_candidate = first_horse.get('frame', 0)
-        # 成績表: 最初のフィールドが着順(1〜18)として妥当
-        # 出馬表: 最初のフィールドが枠番(1〜8)
-        # NAR format では frame フィールドが着順として入ることがある
-        if 1 <= actual_result_candidate <= 18:
+        if parsed.get('format') == 'jra_result':
             mode = 'result'
         else:
-            mode = 'past'
+            first_horse = horses[0] if horses else {}
+            actual_result_candidate = first_horse.get('frame', 0)
+            if 1 <= actual_result_candidate <= 18:
+                mode = 'result'
+            else:
+                mode = 'past'
 
     rows = []
     for horse in horses:
         if mode == 'result':
-            # 成績表モード: frame フィールドが着順
-            actual_result = horse.get('frame', 0)
+            # 成績表モード
+            if parsed.get('format') == 'jra_result':
+                actual_result = horse.get('result', 0)
+            else:
+                actual_result = horse.get('frame', 0)
             row = build_row_from_result(race_info, horse, actual_result, race_date_obj)
         else:
             # 出馬表モード: past_races[0] から生成

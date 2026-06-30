@@ -48,7 +48,10 @@ GENDER_VALUES    = {"牡": 0, "牝": 1, "セ": 2, "セン": 2}
 # =============================================================================
 
 def detect_format(text: str) -> str:
-    """テキストが JRA フォーマットか NAR フォーマットかを判定する"""
+    """テキストが JRA フォーマットか NAR フォーマットか、あるいは JRA結果 フォーマットかを判定する"""
+    # JRA公式レース結果
+    if re.search(r'着順\s*枠\s*馬\s*番', text) or re.search(r'着順\t枠\t馬番', text):
+        return 'jra_result'
     # JRA特有: "枠X[白黒赤青...]" または "X回OO場YY日 ZR"
     if re.search(r'枠\s*\d\s*[白黒赤青黄緑橙桃]', text):
         return 'jra'
@@ -516,10 +519,20 @@ def _parse_jra_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
             pr_venue = lines[idx].strip() if idx < len(lines) else ""
             idx += 1
 
-        pr_race_name  = lines[idx].strip() if idx < len(lines) else ""
-        idx += 1
-        pr_race_class = lines[idx].strip() if idx < len(lines) else ""
-        idx += 1
+        # レース名とクラス
+        pr_race_name = ""
+        pr_race_class = ""
+        name_class_line = lines[idx].strip() if idx < len(lines) else ""
+        if name_class_line:
+            idx += 1
+            if '\t' in name_class_line:
+                parts = name_class_line.split('\t')
+                pr_race_name = parts[0].strip()
+                pr_race_class = parts[1].strip() if len(parts) > 1 else ""
+            else:
+                pr_race_name = name_class_line
+                pr_race_class = lines[idx].strip() if idx < len(lines) else ""
+                idx += 1
 
         # "X着 Y頭Z番"
         rl = lines[idx].strip() if idx < len(lines) else ""
@@ -531,7 +544,10 @@ def _parse_jra_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
         if hm2:
             pr_head_count = int(hm2.group(1))
             pr_frame      = int(hm2.group(2))
-        idx += 1
+        
+        # 着順・頭数行があれば進める
+        if rm or hm2:
+            idx += 1
 
         # 人気
         pr_popularity = 0
@@ -546,11 +562,12 @@ def _parse_jra_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
         pr_kinryo = 0.0
         if idx < len(lines):
             jl = lines[idx].strip()
-            jp = re.split(r'[\t\s]+', jl)
-            pr_jockey = re.sub(r'^[▲△☆◇]', '', jp[0]).strip() if jp else ""
             km = re.search(r'(\d+\.?\d*)kg', jl)
             if km:
                 pr_kinryo = float(km.group(1))
+            # 斤量部分を除去して騎手名を取得
+            jockey_str = re.sub(r'[\t\s]*\d+\.?\d*kg.*$', '', jl)
+            pr_jockey = re.sub(r'^[▲△☆◇]', '', jockey_str).strip()
             idx += 1
 
         # 距離・芝ダ
@@ -598,8 +615,8 @@ def _parse_jra_past_races(lines: List[str], start_idx: int) -> List[Dict[str, An
         pr_passing = ""
         if idx < len(lines):
             posl = lines[idx].strip()
-            if re.match(r'^\d+(?:[\t\-]\d+)+$', posl):
-                pr_passing = posl.replace('\t', '-')
+            if re.match(r'^\d+(?:[\t\s\-]+\d+)+$', posl):
+                pr_passing = re.sub(r'[\t\s]+', '-', posl)
                 idx += 1
 
         # 上がり3F
@@ -926,20 +943,203 @@ def parse_overall_corner_passing(text: str) -> Dict[str, float]:
 def parse_text(text: str) -> Dict[str, Any]:
     """
     テキストフォーマットを自動判定して解析する。
-    戻り値: {'format': 'jra'/'nar', 'race_info': {...}, 'horses': [...]}
+    戻り値: {'format': 'jra'/'nar'/'jra_result', 'race_info': {...}, 'horses': [...]}
     """
     fmt = detect_format(text)
-    if fmt == 'jra':
+    if fmt == 'jra_result':
+        result = _parse_jra_official_result(text)
+    elif fmt == 'jra':
         result = parse_jra_text(text)
     else:
         result = parse_nar_text(text)
     result['format'] = fmt
 
     # 全体コーナー通過順位の解析結果を race_info に追加
-    overall_corner_data = parse_overall_corner_passing(text)
-    result['race_info'].update(overall_corner_data)
+    if fmt != 'jra_result':  # jra_result already handles it
+        overall_corner_data = parse_overall_corner_passing(text)
+        result['race_info'].update(overall_corner_data)
 
     return result
+
+# =============================================================================
+# 新規: JRA 公式結果テキストパーサー
+# =============================================================================
+
+def _parse_jra_official_result(text: str) -> Dict[str, Any]:
+    """
+    JRA公式のレース結果画面をコピー＆ペーストしたテキストを解析する。
+    """
+    info: Dict[str, Any] = {
+        'venue': '', 'race_number': 0, 'date': '',
+        'distance': 0, 'surface': 'ダート', 'condition': '良',
+        'head_count': 0, 'race_name': '',
+        'race_furlong_time': '', 'race_agari': '',
+        'race_corner_3': '', 'race_corner_4': ''
+    }
+    
+    # 日付
+    date_match = re.search(r'(\d{4})年(\d{1,2})月(\d{1,2})日', text)
+    if date_match:
+        info['date'] = f"{date_match.group(1)}-{date_match.group(2).zfill(2)}-{date_match.group(3).zfill(2)}"
+        
+    # 会場・レース番号
+    venue_match = re.search(r'\d+回(.+?)\d+日.*?(?:発走時刻|.*?\d+時)', text)
+    if venue_match:
+        info['venue'] = venue_match.group(1).strip()
+    race_num_match = re.search(r'(\d+)レース', text)
+    if race_num_match:
+        info['race_number'] = int(race_num_match.group(1))
+        
+    # 馬場・距離
+    surface_cond = re.search(r'(芝|ダート)\s+(良|稍重|重|不良)', text)
+    if surface_cond:
+        info['surface'] = surface_cond.group(1)
+        info['condition'] = surface_cond.group(2)
+    dist_match = re.search(r'(\d{1,3}(?:,\d{3})*)\s*メートル', text)
+    if dist_match:
+        info['distance'] = int(dist_match.group(1).replace(',', ''))
+        
+    # ハロンタイムと上がり
+    furlong_match = re.search(r'ハロンタイム\s+([\d\.\s-]+)', text)
+    if furlong_match:
+        info['race_furlong_time'] = furlong_match.group(1).strip()
+        
+    agari_match = re.search(r'^上り\s+(.+)$', text, re.MULTILINE)
+    if agari_match:
+        info['race_agari'] = agari_match.group(1).strip()
+        
+    # コーナー順位
+    c3_match = re.search(r'^3コーナー\s+(.+)$', text, re.MULTILINE)
+    if c3_match:
+        info['race_corner_3'] = c3_match.group(1).strip()
+    c4_match = re.search(r'^4コーナー\s+(.+)$', text, re.MULTILINE)
+    if c4_match:
+        info['race_corner_4'] = c4_match.group(1).strip()
+        
+    # 全体コーナー通過順位の解析（既存の関数を利用または模倣）
+    pack_lengths = []
+    is_compact_scores = []
+    is_elongated_scores = []
+    for corner_str in [info['race_corner_3'], info['race_corner_4']]:
+        if corner_str:
+            commas = corner_str.count(',')
+            parallels = corner_str.count('-') + corner_str.count('(')
+            groups = re.split(r',|-', re.sub(r'\(|\)', '', corner_str))
+            pack_lengths.append(len(groups))
+            is_compact_scores.append(1.0 if parallels >= 2 else 0.0)
+            is_elongated_scores.append(1.0 if commas >= 6 and parallels == 0 else 0.0)
+            
+    info['overall_pack_length'] = float(max(pack_lengths)) if pack_lengths else 0.0
+    info['overall_is_compact'] = 1.0 if sum(is_compact_scores) >= 1 else 0.0
+    info['overall_is_elongated'] = 1.0 if sum(is_elongated_scores) >= 1 else 0.0
+        
+    # 馬情報のパース
+    lines = text.split('\n')
+    horses = []
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        # 着順行の判定 (例: "1	枠7橙	10	マリブサーフ	牝3	54.0	☆舟山 瑠泉	0:57.8")
+        if re.match(r'^\d+\s+枠', line) or re.match(r'^\d+\t枠', line):
+            parts = re.split(r'\t', line)
+            
+            # 着順
+            rank_str = parts[0]
+            result = int(rank_str) if rank_str.isdigit() else 0
+            
+            # 枠番
+            frame_match = re.search(r'枠(\d)', parts[1])
+            frame = int(frame_match.group(1)) if frame_match else 0
+            
+            # 馬番
+            number = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
+            
+            # 馬名
+            name = parts[3] if len(parts) > 3 else ""
+            
+            # 性齢
+            gender = "牡"
+            age = 4
+            if len(parts) > 4:
+                ga_match = re.search(r'([牡牝セ])(\d+)', parts[4])
+                if ga_match:
+                    gender = "セン" if ga_match.group(1) == "セ" else ga_match.group(1)
+                    age = int(ga_match.group(2))
+                    
+            # 斤量
+            kinryo = float(parts[5]) if len(parts) > 5 and parts[5].replace('.','').isdigit() else 55.0
+            
+            # 騎手
+            jockey_raw = parts[6] if len(parts) > 6 else ""
+            is_apprentice = bool(re.match(r'^[▲△☆◇★]', jockey_raw))
+            jockey = re.sub(r'^[▲△☆◇★\s]', '', jockey_raw).strip()
+            
+            # タイム
+            time_str = parts[7] if len(parts) > 7 else ""
+            
+            # 次行以降 (通過順位, 上がり, 馬体重など)
+            passing = ""
+            last3f = 0.0
+            weight = 480
+            weight_chg = 0
+            trainer = ""
+            popularity = 0
+            
+            # 通常、次の行にコーナー通過順位がある
+            i += 1
+            if i < len(lines):
+                next_line = lines[i].strip()
+                if re.match(r'^[\d\s]+$', next_line):
+                    passing = next_line.replace(' ', '-')
+                    i += 1
+            
+            # その次の行に上がりなど
+            if i < len(lines):
+                info_line = lines[i].strip()
+                info_parts = re.split(r'\t', info_line)
+                
+                if len(info_parts) > 0:
+                    last3f_match = re.match(r'(\d{2}\.\d)', info_parts[0])
+                    if last3f_match:
+                        last3f = float(last3f_match.group(1))
+                        
+                if len(info_parts) > 1:
+                    w_match = re.match(r'(\d+)kg?\(([+\-]?\d+)\)', info_parts[1]) or re.match(r'(\d+)\(([+\-]?\d+)\)', info_parts[1])
+                    if w_match:
+                        weight = int(w_match.group(1))
+                        weight_chg = int(w_match.group(2).lstrip('+'))
+                        
+                if len(info_parts) > 2:
+                    trainer = info_parts[2]
+                    
+                if len(info_parts) > 3:
+                    popularity_str = info_parts[3]
+                    popularity = int(popularity_str) if popularity_str.isdigit() else 0
+                    
+            horses.append({
+                'frame': frame,
+                'number': number,
+                'name': name,
+                'gender': gender,
+                'age': age,
+                'weight': weight,
+                'weight_chg': weight_chg,
+                'kinryo': kinryo,
+                'jockey': jockey,
+                'is_apprentice': is_apprentice,
+                'trainer': trainer,
+                'popularity': popularity,
+                'result': result,
+                'time': time_str,
+                'last3f': last3f,
+                'passing': passing,
+                'past_races': [] # 今回のレース自身がpast_racesの要素として扱われるため、ここは空でよい
+            })
+        i += 1
+        
+    info['head_count'] = len(horses)
+    return {'race_info': info, 'horses': horses}
 
 
 # =============================================================================

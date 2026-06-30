@@ -35,14 +35,25 @@ def main():
     print(f"Loading data from {data_path}...")
     df = pd.read_csv(data_path)
 
-    # 過去成績（前走着順）の計算 (中央競馬は前4走まで)
+    # 過去成績（前走着順等）の計算 (中央競馬は前4走まで)
     print("Calculating past race results (up to 4 races)...")
     df = df.sort_values(by=['馬名', 'race_id'])
     prev_features = []
+    
+    # 既存の着順シフト
     for i in range(1, 5):
         feature_name = f'prev_result_{i}'
         df[feature_name] = df.groupby('馬名')['着順_num'].shift(i)
         prev_features.append(feature_name)
+        
+    # 新規追加：ハロンタイムや上がりなどレース単位の指標の過去データ
+    new_metrics = ['race_first_3f', 'race_last_3f', 'race_avg_furlong', 'horse_last3f']
+    for metric in new_metrics:
+        if metric in df.columns:
+            for i in range(1, 5):
+                feature_name = f'prev_{metric}_{i}'
+                df[feature_name] = df.groupby('馬名')[metric].shift(i)
+                prev_features.append(feature_name)
 
     # 2. 中央競馬のフィルタリング
     central_venues = ['東京', '中山', '京都', '阪神', '中京', '小倉', '新潟', '福島', '札幌', '函館']
