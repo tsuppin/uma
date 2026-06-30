@@ -109,6 +109,27 @@ class AdvancedBettingLogic:
                     'score': comb_score
                 })
         
+        # 馬単フォーメーション（1着固定：軸馬 -> 2着：もう1頭の軸馬 ＋ 厳選ヒモ穴）
+        for h1 in jiku_horses:
+            second_horses = [h for h in jiku_horses if h != h1] + umaren_himo_horses
+            for h2 in second_horses:
+                comb = (h1, h2) # 馬単は着順が意味を持つのでソートしない
+                
+                h1_prob = jiku_df[jiku_df['horse_num'] == h1]['win_prob'].values[0]
+                if h2 in jiku_horses:
+                    h2_prob = jiku_df[jiku_df['horse_num'] == h2]['win_prob'].values[0]
+                else:
+                    h2_prob = umaren_himo_df[umaren_himo_df['horse_num'] == h2]['win_prob'].values[0]
+                
+                # 馬単用のスコア（1着確率 × 2着確率）
+                comb_score = h1_prob * h2_prob * 1.2
+                
+                tickets.append({
+                    'type': '馬単',
+                    'combination': comb,
+                    'score': comb_score
+                })
+        
         # 3連複フォーメーション（軸1頭 - 軸+ヒモ - ヒモ）
         for jiku in jiku_horses:
             # 2頭目はもう1頭の軸馬、またはヒモ上位2頭
