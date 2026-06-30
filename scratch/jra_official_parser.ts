@@ -3,7 +3,16 @@ export function parseJRAOfficialText(rawText: string): {
   date: string; distance: number; surface: Race["surface"];
   condition: Race["condition"]; headCount: number; raceName: string;
 } {
-  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l !== '');
+  // スマホからのコピペで混入する特殊空白・全角数字を正規化
+  const normalizedText = rawText
+    .replace(/\xa0/g, ' ')
+    .replace(/\u3000/g, ' ')
+    .replace(/[０１２３４５６７８９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  const lines = normalizedText.split('\n').map(l => l.trim()).filter(l => l !== '');
+  const VENUES = ['帯広','門別','盛岡','水沢','浦和','船橋','大井','川崎','金沢','笠松',
+                  '名古屋','園田','姫路','高知','佐賀','東京','中山','阪神','京都',
+                  '新潟','中京','小倉','福島','札幌','函館'];
+  const VENUES_PAT = VENUES.join('|');
   
   let date = "";
   let venue = "";
@@ -13,27 +22,40 @@ export function parseJRAOfficialText(rawText: string): {
   let condition: Race["condition"] = "良";
   let raceName = "";
   
+  // まずテキスト全体から競馬場名を抽出する（スマホコピペ対応・3段フォールバック）
+  const venueRe1 = new RegExp(`\\d+\\s*回\\s*(${VENUES_PAT})\\s*\\d+\\s*日`);
+  const venueRe2 = new RegExp(`(${VENUES_PAT})(?:競馬場|\\s+\\d{1,2}R)`);
+  const venueRe3 = new RegExp(`\\d{4}年\\d{1,2}月\\d{1,2}日[\\s　]+(${VENUES_PAT})`);
+  const vm1 = normalizedText.match(venueRe1);
+  const vm2 = !vm1 ? normalizedText.match(venueRe2) : null;
+  const vm3 = (!vm1 && !vm2) ? normalizedText.match(venueRe3) : null;
+  if (vm1) venue = vm1[1];
+  else if (vm2) venue = vm2[1];
+  else if (vm3) venue = vm3[1];
+
   for (let i = 0; i < Math.min(lines.length, 50); i++) {
       const line = lines[i];
-      const dateMatch = line.match(/^(\d{4}年\d{1,2}月\d{1,2}日)（[^）]+）\s*\d+回([^0-9]+)\d+日\s*(\d+)レース/);
-      if (dateMatch) {
+
+      // 日付抽出 (行頭アンカーなし: スマホコピペでインデントがずれても対応)
+      const dateMatch = line.match(/(\d{4}年\d{1,2}月\d{1,2}日)/);
+      if (dateMatch && !date) {
+           // 「（日曜）」等の曜日表記は除外して日付部分のみ取得
            date = dateMatch[1].replace(/年|月/g, '-').replace('日', '');
-           venue = dateMatch[2].trim();
-           raceNumber = parseInt(dateMatch[3]);
       }
-      
-      const distMatch = line.match(/コース：([\d,]+)メートル（(ダート|芝|障害)・/);
+
+      // レース番号（「2レース」または「2R」形式）
+      if (!raceNumber) {
+          const rnM = line.match(/(\d{1,2})(?:レース|R)$/) || line.match(/^(\d{1,2})レース$/);
+          if (rnM) raceNumber = parseInt(rnM[1]);
+      }
+
+      // 距離・馬場（「コース：1,700メートル（ダート・右）」形式）
+      const distMatch = line.match(/コース：([\d,]+)メートル[（(](ダート|芝|障害)/);
       if (distMatch) {
           distance = parseInt(distMatch[1].replace(',', ''));
           surface = distMatch[2] === "ダート" ? "ダート" : (distMatch[2] === "芝" ? "芝" : "障害");
       }
 
-      if (line.match(/^20\d{2}年\d{1,2}月\d{1,2}日/) && !dateMatch) {
-          const m = line.match(/(\d+)回([^0-9]+)\d+日\s+発走時刻：/);
-          if (m) {
-              venue = m[2].trim();
-          }
-      }
       if (line.includes("歳未勝利") || line.includes("歳以上") || line.includes("新馬")) {
           if (!raceName) raceName = line;
       }
