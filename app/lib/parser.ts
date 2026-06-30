@@ -51,14 +51,29 @@ export function extractVenue(text: string): string | null {
   // レース情報が集まっている先頭100行程度から検索する（馬名や所属による誤爆を防ぐため）
   const headLines = text.split("\n").slice(0, 100).join("\n");
   
-  // 「大井 11R」や「東京11R」のような明確なパターンを優先
+  let bestTrack: string | null = null;
+  let minIndex = Infinity;
+
+  const updateBest = (track: string, idx: number) => {
+    if (idx !== -1 && idx < minIndex) {
+      minIndex = idx;
+      bestTrack = track;
+    }
+  };
+
+  // パターン1: 競馬場名の直後（または 〇日、競馬場 を挟んで）にレース番号が来るパターンを最優先
+  // 例: 「東京11R」「東京 11レース」「3回東京5日 1レース」「中山競馬場\n11レース」
   for (const track of ALL_TRACKS) {
-    if (new RegExp(`${track}\\s*[0-9０-９]+(?:R|レース)`).test(headLines)) {
-      return track;
+    const regex = new RegExp(`${track}(?:競馬場)?(?:\\s*[0-9０-９]+日(?:目)?)?\\s*[0-9０-９]+(?:R|レース)`);
+    const match = regex.exec(headLines);
+    if (match) {
+      updateBest(track, match.index);
     }
   }
 
-  // 〇回〇〇〇日 のようなパターンを最優先
+  if (bestTrack) return bestTrack;
+
+  // パターン2: 〇回〇〇〇日 (レース番号が離れている場合のフォールバック)
   const kaiMatch = headLines.match(/[0-9０-９]+回\s*([^0-9０-９]+?)\s*[0-9０-９]+日/);
   if (kaiMatch) {
      for (const track of ALL_TRACKS) {
@@ -66,23 +81,21 @@ export function extractVenue(text: string): string | null {
      }
   }
   
-  // 「〇〇競馬場」が含まれる場合
+  // パターン3: 〇〇競馬場
   for (const track of ALL_TRACKS) {
-    if (headLines.includes(`${track}競馬場`)) return track;
+    const idx = headLines.indexOf(`${track}競馬場`);
+    updateBest(track, idx);
   }
 
+  if (bestTrack) return bestTrack;
+
   // 単純な出現確認（ヘッダー部分のみ）
-  let bestTrack = null;
-  let minIndex = Infinity;
   for (const track of ALL_TRACKS) {
     const idx = headLines.indexOf(track);
-    if (idx !== -1 && idx < minIndex) {
-      minIndex = idx;
-      bestTrack = track;
-    }
+    updateBest(track, idx);
   }
-  if (bestTrack) return bestTrack;
-  return null;
+  
+  return bestTrack;
 }
 
 // ==========================================
