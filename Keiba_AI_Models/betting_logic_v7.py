@@ -176,6 +176,23 @@ class AdvancedBettingLogic:
                         'score': comb_score
                     })
 
+        # WIN5候補（このレースがWIN5対象だった場合に選ぶべき1着候補）
+        # WIN5は「1着」しか意味がないため、勝率が非常に高い馬、または期待値が高く一発逆転があり得る馬を抽出
+        win5_horses = df[(df['win_prob'] >= 0.15) | ((df['ev'] >= 1.2) & (df['win_prob'] >= 0.05))].nlargest(3, 'win_prob')
+        win5_horses_list = win5_horses['horse_num'].tolist()
+        
+        # もし条件を満たす馬が1頭もいない大混戦レースの場合は、最低でも勝率トップの1頭を選ぶ
+        if not win5_horses_list and jiku_horses:
+            win5_horses_list = [jiku_horses[0]]
+            
+        for h in win5_horses_list:
+            h_prob = df[df['horse_num'] == h]['win_prob'].values[0]
+            tickets.append({
+                'type': 'WIN5候補(1着)',
+                'combination': (h,),
+                'score': h_prob * 1.5 # WIN5専用スコア補正
+            })
+
         # --- 3. 重複排除と足切りフィルター ---
         unique_tickets = []
         seen = set()
