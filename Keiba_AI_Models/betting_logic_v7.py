@@ -66,6 +66,29 @@ class AdvancedBettingLogic:
                     'score': comb_score
                 })
         
+        # 馬連流し（連対重視：軸馬から、勝率が一定以上のヒモへ流す）
+        # 馬連は2着以内が必要なため、単なるEVだけでなく最低限の勝率を要求する
+        umaren_himo_df = df[~df['horse_num'].isin(jiku_horses)]
+        # EVが0.9以上、かつ勝率が上位の馬を抽出（ワイドより厳しめ）
+        umaren_himo_df = umaren_himo_df[(umaren_himo_df['ev'] >= 0.9) & (umaren_himo_df['win_prob'] >= 0.05)].nlargest(4, 'win_prob')
+        umaren_himo_horses = umaren_himo_df['horse_num'].tolist()
+        
+        for jiku in jiku_horses:
+            for himo in umaren_himo_horses:
+                comb = tuple(sorted([jiku, himo]))
+                
+                jiku_prob = jiku_df[jiku_df['horse_num'] == jiku]['win_prob'].values[0]
+                himo_prob = umaren_himo_df[umaren_himo_df['horse_num'] == himo]['win_prob'].values[0]
+                
+                # 馬連用のスコア（連対確率の掛け合わせを意識）
+                comb_score = jiku_prob * himo_prob * 1.5 
+                
+                tickets.append({
+                    'type': '馬連',
+                    'combination': comb,
+                    'score': comb_score
+                })
+        
         # 3連複フォーメーション（軸1頭 - 軸+ヒモ - ヒモ）
         for jiku in jiku_horses:
             # 2頭目はもう1頭の軸馬、またはヒモ上位2頭
