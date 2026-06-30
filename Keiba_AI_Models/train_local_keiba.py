@@ -35,6 +35,15 @@ def main():
     print(f"Loading data from {data_path}...")
     df = pd.read_csv(data_path)
 
+    # 過去成績（前走着順）の計算 (地方競馬は前5走まで)
+    print("Calculating past race results (up to 5 races)...")
+    df = df.sort_values(by=['馬名', 'race_id'])
+    prev_features = []
+    for i in range(1, 6):
+        feature_name = f'prev_result_{i}'
+        df[feature_name] = df.groupby('馬名')['着順_num'].shift(i)
+        prev_features.append(feature_name)
+
     # 2. 地方競馬のフィルタリング
     local_venues = ['笠松', '名古屋', '金沢', '盛岡', '水沢', '浦和', '船橋', '大井', '川崎', '帯広', '門別', '園田', '姫路', '高知', '佐賀']
     initial_len = len(df)
@@ -49,7 +58,7 @@ def main():
     df = df.dropna(subset=[target_rank, target_hit])
 
     # 特徴量とするカラム
-    numeric_features = ['枠番', '馬番', '斤量', '単勝', '人気', '体重', '体重増減', '年齢']
+    numeric_features = ['枠番', '馬番', '斤量', '単勝', '人気', '体重', '体重増減', '年齢'] + prev_features
     categorical_features = ['性別', '会場', '騎手', '調教師']
     
     # 実際のデータフレームに存在するカラムのみを使用する
