@@ -10,7 +10,7 @@ export function detectFormat(text: string): "jra" | "jra_official" | "nar" | "ra
     return "rakuten";
   }
   if (text.includes("JRA 日本中央競馬会") || text.includes("ホーム>競馬メニュー>出馬表")) return "jra_official";
-  if (/枠\d[白黒赤青黄緑橙桃]/.test(text)) return "jra";
+  if (/枠\d[白黒赤青黄緑橙桃]/.test(text)) return "jra_official";
   const venue = extractVenue(text);
   const jraTracks = ["東京", "中山", "京都", "阪神", "中京", "新潟", "福島", "小倉", "函館", "札幌"];
   
@@ -957,10 +957,18 @@ function parseJRAHorse(lines: string[]): Partial<Horse> | null {
     if (popM) { prPopularity = parseInt(popM[1]); idx++; }
 
     const jl = lines[idx] || "";
-    const prJockey = jl.split(/[\t\s]+/)[0]?.trim().replace(/^[▲△☆◇]/, "") || "";
+    let prJockey = "";
     let prKinryo = 0;
-    const kjm = jl.match(/(\d+\.?\d*)kg/);
-    if (kjm) prKinryo = parseFloat(kjm[1]);
+    const jm = jl.match(/^(.+?)\s+(\d+\.?\d*)kg/);
+    if (jm) {
+        prJockey = jm[1].trim().replace(/^[▲△☆◇]/, "");
+        prKinryo = parseFloat(jm[2]);
+    } else {
+        const parts = jl.split(/[\t\s]+/);
+        prJockey = parts[0]?.trim().replace(/^[▲△☆◇]/, "") || "";
+        const kjmFallback = jl.match(/(\d+\.?\d*)kg/);
+        if (kjmFallback) prKinryo = parseFloat(kjmFallback[1]);
+    }
     idx++;
 
     const distL = lines[idx] || "";
@@ -1498,63 +1506,87 @@ export function parseJRAOfficialText(rawText: string): {
           const dateVenueMatch = horseBlock[j].match(/^(\d{4}年\d{1,2}月\d{1,2}日)\s+(.+)$/);
           if (dateVenueMatch) {
               let prDate = dateVenueMatch[1].replace(/年|月/g, '-').replace('日', '');
-              let prVenue = dateVenueMatch[2]; j++;
-              let prRaceName = horseBlock[j]; j++;
+              let prVenue = dateVenueMatch[2]; 
               
+              if (j + 1 >= horseBlock.length) break;
+              j++;
+              let prRaceName = horseBlock[j]; 
+              
+              if (j + 1 >= horseBlock.length) break;
+              j++;
               let result = 0, headCount = 0;
               let resMatch = horseBlock[j].match(/(\d+)着\s*(\d+)頭/);
+              if (!resMatch) resMatch = horseBlock[j].match(/(除外|中止|取消)\s*(\d+)頭/);
               if (resMatch) {
-                  result = parseInt(resMatch[1]);
+                  result = parseInt(resMatch[1]) || 0;
                   headCount = parseInt(resMatch[2]);
-              } j++;
+              } 
               
               let prPop = 0;
-              if (horseBlock[j].match(/(\d+)番人気/)) {
+              if (j + 1 < horseBlock.length && horseBlock[j + 1].match(/(\d+)番人気/)) {
+                  j++;
                   prPop = parseInt(horseBlock[j].match(/(\d+)番人気/)![1]);
-              } j++;
+              } 
               
               let prJockey = "", prJWeight = 55;
-              let jwMatch = horseBlock[j].match(/^(.+?)\s+([\d.]+)kg/);
-              if (jwMatch) {
-                  prJockey = jwMatch[1];
-                  prJWeight = parseFloat(jwMatch[2]);
-              } j++;
+              if (j + 1 < horseBlock.length && horseBlock[j + 1].match(/^(.+?)\s+([\d.]+)kg/)) {
+                  j++;
+                  let jwMatch = horseBlock[j].match(/^(.+?)\s+([\d.]+)kg/);
+                  prJockey = jwMatch![1];
+                  prJWeight = parseFloat(jwMatch![2]);
+              } 
               
               let prDist = 0, prSurf: Race["surface"] = "ダート";
-              let dsMatch = horseBlock[j].match(/(\d+)(ダ|芝|障)/);
-              if (dsMatch) {
-                  prDist = parseInt(dsMatch[1]);
-                  prSurf = dsMatch[2] === "ダ" ? "ダート" : (dsMatch[2] === "芝" ? "芝" : "障害");
-              } j++;
+              if (j + 1 < horseBlock.length && horseBlock[j + 1].match(/(\d+)(ダ|芝|障)/)) {
+                  j++;
+                  let dsMatch = horseBlock[j].match(/(\d+)(ダ|芝|障)/);
+                  prDist = parseInt(dsMatch![1]);
+                  prSurf = dsMatch![2] === "ダ" ? "ダート" : (dsMatch![2] === "芝" ? "芝" : "障害");
+              } 
               
-              let prTime = horseBlock[j]; j++;
+              let prTime = "";
+              if (j + 1 < horseBlock.length && horseBlock[j + 1].match(/^(\d+:)?\d+\.\d+$/)) {
+                  j++;
+                  prTime = horseBlock[j]; 
+              } 
               
               let prCond: PastRace["condition"] = "良";
-              if (horseBlock[j].match(/^(良|稍重|重|不良|稍|不)$/)) {
+              if (j + 1 < horseBlock.length && horseBlock[j + 1].match(/^(良|稍重|重|不良|稍|不)$/)) {
+                  j++;
                   let c = horseBlock[j];
                   if (c === "稍") prCond = "稍重";
                   else if (c === "不") prCond = "不良";
                   else prCond = c as PastRace["condition"];
-              } j++;
+              } 
               
               let prHWeight = 0;
-              if (horseBlock[j] && horseBlock[j].match(/(\d{3})kg/)) {
+              if (j + 1 < horseBlock.length && horseBlock[j + 1].match(/(\d{3})kg/)) {
+                  j++;
                   prHWeight = parseInt(horseBlock[j].match(/(\d{3})kg/)![1]);
-              } j++;
+              } 
               
-              let prPassing = horseBlock[j] ? horseBlock[j].replace(/\s+/g, '-') : ""; j++;
+              let prPassing = "";
+              if (j + 1 < horseBlock.length && horseBlock[j + 1].match(/^[\d\s\t-]+$/)) {
+                  j++;
+                  prPassing = horseBlock[j].replace(/\s+/g, '-');
+              } 
               
               let pr3f = "";
-              if (horseBlock[j] && horseBlock[j].startsWith("3F")) {
-                   pr3f = horseBlock[j].replace("3F", "").trim(); j++;
-              }
+              if (j + 1 < horseBlock.length && horseBlock[j + 1].startsWith("3F")) {
+                   j++;
+                   pr3f = horseBlock[j].replace("3F", "").trim(); 
+              } 
               
-              let prWinner = horseBlock[j] || "";
+              let prWinner = "";
               let timeDiff = 0;
-              if (prWinner.includes("(")) {
-                  const diffM = prWinner.match(/\(([-+]?[\d.]+)\)$/);
-                  if (diffM) timeDiff = parseFloat(diffM[1]);
-                  prWinner = prWinner.replace(/\([-+]?[\d.]+\)$/, '');
+              if (j + 1 < horseBlock.length && !horseBlock[j + 1].match(/^(\d{4}年\d{1,2}月\d{1,2}日)/) && !horseBlock[j + 1].match(/^枠[1-8]/)) {
+                  j++;
+                  prWinner = horseBlock[j];
+                  if (prWinner.includes("(")) {
+                      const diffM = prWinner.match(/\(([-+]?[\d.]+)\)$/);
+                      if (diffM) timeDiff = parseFloat(diffM[1]);
+                      prWinner = prWinner.replace(/\([-+]?[\d.]+\)$/, '');
+                  }
               }
               
               pastRaces.push({
@@ -1901,7 +1933,7 @@ export function parseJRAOfficialResultText(rawText: string): {
         }
       }
       
-      // 性齢を探してそこから騎手・タイム等を特定
+      // 性齢を探してそこから騎手等を特定
       for (let p = 0; p < parts.length; p++) {
         const gaMatch = parts[p].match(/^([牡牝セ]|せん)\d+$/);
         if (gaMatch) {
@@ -1914,21 +1946,33 @@ export function parseJRAOfficialResultText(rawText: string): {
             // 騎手名（▲△等の減量マーク含む）
             jockey = parts[p + 2].replace(/^[▲△☆◇]/, '').trim();
           }
-          // タイム: "X:XX.X" のパターンを探す
-          for (let q = p + 3; q < parts.length; q++) {
-            if (parts[q].match(/^\d+:\d+\.\d+$/)) {
-              time = parts[q];
-              // 次が着差の可能性
-              if (q + 1 < parts.length && !parts[q + 1].match(/^\d+:\d+/)) {
-                const marg = parts[q + 1];
-                if (!marg.match(/^\d+\s/) && !marg.match(/^\d+$/)) {
-                  margin = marg;
-                }
-              }
-              break;
-            }
-          }
           break;
+        }
+      }
+
+      // タイム、着差、オッズ、人気の抽出
+      let p_time = -1;
+      let p_weight = -1;
+      for (let p = 0; p < parts.length; p++) {
+        if (parts[p].match(/^\d+:\d+\.\d+$/)) { p_time = p; break; }
+      }
+      for (let p = 0; p < parts.length; p++) {
+        if (parts[p].match(/^(\d{3,4})\(([+-]?\d+|初出走)\)$/)) { p_weight = p; break; }
+      }
+
+      if (p_time !== -1 && p_weight !== -1 && p_time < p_weight) {
+        time = parts[p_time];
+        const betweens = parts.slice(p_time + 1, p_weight);
+        // betweens は [着差, 単勝オッズ, 人気] または [単勝オッズ, 人気]
+        if (betweens.length === 3) {
+          margin = betweens[0];
+          popularity = parseInt(betweens[2]);
+        } else if (betweens.length === 2) {
+          margin = "";
+          popularity = parseInt(betweens[1]);
+        } else if (betweens.length > 3) {
+          margin = betweens.slice(0, betweens.length - 2).join(' ');
+          popularity = parseInt(betweens[betweens.length - 1]);
         }
       }
       
@@ -1950,25 +1994,21 @@ export function parseJRAOfficialResultText(rawText: string): {
         }
       }
       
-      // 馬体重: "XXX(+Y)" or "XXX(-Y)" or "XXX(0)"
+      // 馬体重: "XXX(+Y)" or "XXX(-Y)" or "XXX(0)" or "XXX(初出走)"
       for (let p = 0; p < parts.length; p++) {
-        const wm = parts[p].match(/^(\d{3,4})\(([+-]?\d+)\)$/);
+        const wm = parts[p].match(/^(\d{3,4})\(([+-]?\d+|初出走)\)$/);
         if (wm) {
           weight = parseInt(wm[1]);
-          weightChange = parseInt(wm[2]);
+          weightChange = wm[2] === '初出走' ? 0 : parseInt(wm[2]);
           break;
         }
       }
       
       // 調教師名: 馬体重の次
       for (let p = 0; p < parts.length; p++) {
-        if (parts[p].match(/^\d{3,4}\([+-]?\d+\)$/)) {
+        if (parts[p].match(/^\d{3,4}\([+-]?\d+|初出走\)$/)) {
           if (p + 1 < parts.length && parts[p + 1].match(/[ぁ-んァ-ヶ一-龥]/)) {
             trainer = parts[p + 1];
-          }
-          // 人気: 調教師の次
-          if (p + 2 < parts.length && /^\d+$/.test(parts[p + 2])) {
-            popularity = parseInt(parts[p + 2]);
           }
           break;
         }
