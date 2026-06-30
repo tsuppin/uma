@@ -53,17 +53,22 @@ export function extractVenue(text: string): string | null {
   
   // 「大井 11R」や「東京11R」のような明確なパターンを優先
   for (const track of ALL_TRACKS) {
-    if (new RegExp(`${track}\\s*\\d+R`).test(headLines)) {
+    if (new RegExp(`${track}\\s*[0-9０-９]+(?:R|レース)`).test(headLines)) {
       return track;
     }
   }
 
   // 〇回〇〇〇日 のようなパターンを最優先
-  const kaiMatch = headLines.match(/\d+回([^\d\s]+)\d+日/);
+  const kaiMatch = headLines.match(/[0-9０-９]+回\s*([^0-9０-９]+?)\s*[0-9０-９]+日/);
   if (kaiMatch) {
      for (const track of ALL_TRACKS) {
        if (kaiMatch[1].includes(track)) return track;
      }
+  }
+  
+  // 「〇〇競馬場」が含まれる場合
+  for (const track of ALL_TRACKS) {
+    if (headLines.includes(`${track}競馬場`)) return track;
   }
 
   // 単純な出現確認（ヘッダー部分のみ）
@@ -506,12 +511,13 @@ export function parseJRAText(rawText: string): {
   const lines = rawText.split("\n").map(l => l.trim());
 
   // ヘッダー解析: "3回京都6日 11R" または "3回京都6日 11レース"
-  const headerMatch = rawText.match(/(\d+)回(.+?)(\d+)日\s*(\d+)(?:R|レース)/);
-  const venue = headerMatch?.[2]?.trim() || extractVenue(rawText) || "";
-  const raceNumber = headerMatch ? parseInt(headerMatch[4]) : 1;
+  // 発走時刻などが間に入る場合があるため別々にパースする
+  const venue = extractVenue(rawText) || "";
+  const raceMatch = rawText.match(/([0-9０-９]+)\s*(?:R|レース)/);
+  const raceNumber = raceMatch ? parseInt(raceMatch[1].replace(/[０-９]/g, (s: string) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))) : 1;
 
-  const dateMatch = rawText.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
-  const date = dateMatch ? `${dateMatch[1]}-${String(dateMatch[2]).padStart(2,"0")}-${String(dateMatch[3]).padStart(2,"0")}` : (() => {
+  const dateMatch = rawText.match(/([0-9０-９]{4})年([0-9０-９]{1,2})月([0-9０-９]{1,2})日/);
+  const date = dateMatch ? `${dateMatch[1].replace(/[０-９]/g, (s: string) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))}-${String(parseInt(dateMatch[2].replace(/[０-９]/g, (s: string) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)))).padStart(2,"0")}-${String(parseInt(dateMatch[3].replace(/[０-９]/g, (s: string) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)))).padStart(2,"0")}` : (() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   })();
@@ -523,8 +529,8 @@ export function parseJRAText(rawText: string): {
   let condition: Race["condition"] = "良";
   for (let i = 0; i < Math.min(lines.length, 100); i++) {
     const l = lines[i];
-    const dm = l.match(/(\d{3,4})(ダ|芝|障)/);
-    if (dm) { distance = parseInt(dm[1]); surface = dm[2] === "障" ? "障害" : (dm[2] === "芝" ? "芝" : "ダート"); }
+    const dm = l.match(/([0-9０-９]{3,4})\s*(ダ|芝|障)/);
+    if (dm) { distance = parseInt(dm[1].replace(/[０-９]/g, (s: string) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))); surface = dm[2] === "障" ? "障害" : (dm[2] === "芝" ? "芝" : "ダート"); }
     if (/^(良|稍重|重|不良)$/.test(l) && !condition) condition = l as Race["condition"];
     if (l.match(/(S|G)[Ⅰ-Ⅲ]|リステッド|特別|勝クラス|OP|オープン/) && !raceName) raceName = l;
   }
