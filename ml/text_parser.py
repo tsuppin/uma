@@ -565,6 +565,23 @@ def _parse_nar_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
     if past_start_idx != -1:
         past_races = _parse_nar_past_races(lines, past_start_idx)
 
+    # 成績ブロック（全成績、当該コース等）の解析
+    stats_data = {}
+    for i, line in enumerate(lines[:profile_end]):
+        if line.strip() == "成績":
+            stat_values = []
+            for j in range(i + 1, profile_end):
+                if lines[j].strip() == "持ち時計":
+                    break
+                if re.match(r'^\d+$', lines[j].strip()):
+                    stat_values.append(lines[j].strip())
+            if len(stat_values) >= 8:
+                stats_data['all_record'] = stat_values[0]
+                stats_data['venue_record'] = stat_values[1]
+                stats_data['dist_record'] = stat_values[2]
+                stats_data['course_record'] = stat_values[3]
+            break
+
     return {
         'frame':       frame,
         'number':      number,
@@ -585,6 +602,7 @@ def _parse_nar_horse(lines: List[str]) -> Optional[Dict[str, Any]]:
         'odds':        0.0,
         'popularity':  0,
         'past_races':  past_races,
+        'stats_data':  stats_data,
     }
 
 

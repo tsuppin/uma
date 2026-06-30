@@ -58,7 +58,13 @@ def main():
     df = df.dropna(subset=[target_rank, target_hit])
 
     # 特徴量とするカラム
-    numeric_features = ['枠番', '馬番', '斤量', '単勝', '人気', '体重', '体重増減', '年齢'] + prev_features
+    stats_features = [
+        'stats_all_win_rate', 'stats_all_top3_rate',
+        'stats_venue_win_rate', 'stats_venue_top3_rate',
+        'stats_dist_win_rate', 'stats_dist_top3_rate',
+        'stats_course_win_rate', 'stats_course_top3_rate'
+    ]
+    numeric_features = ['枠番', '馬番', '斤量', '単勝', '人気', '体重', '体重増減', '年齢'] + prev_features + stats_features
     categorical_features = ['性別', '会場', '騎手', '調教師']
     
     # 実際のデータフレームに存在するカラムのみを使用する

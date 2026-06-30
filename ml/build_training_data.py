@@ -162,6 +162,26 @@ def build_row_from_past(
     )
 
 
+def _parse_stat_record(record_str: str):
+    """'41316' のような成績文字列を (1着, 2着, 3着, 着外) の数値に変換する"""
+    if not record_str or len(record_str) < 4:
+        return 0, 0, 0, 0
+    try:
+        first = int(record_str[0])
+        second = int(record_str[1])
+        third = int(record_str[2])
+        outside = int(record_str[3:])
+        return first, second, third, outside
+    except Exception:
+        return 0, 0, 0, 0
+
+def _calc_rates(first: int, second: int, third: int, outside: int):
+    """(1着, 2着, 3着, 着外) から (勝率, 複勝率) を計算する"""
+    total = first + second + third + outside
+    if total == 0:
+        return 0.0, 0.0
+    return first / total, (first + second + third) / total
+
 def _build_base_row(
     race_info:      Dict[str, Any],
     horse:          Dict[str, Any],
@@ -249,6 +269,21 @@ def _build_base_row(
         'horse_passing': horse.get('passing', ''),
         'horse_last3f': horse.get('last3f', 0.0),
     }
+
+    # 馬の成績（NAR全成績など）特徴量追加
+    stats_data = horse.get('stats_data', {})
+    
+    all_f, all_s, all_t, all_o = _parse_stat_record(stats_data.get('all_record', ''))
+    row['stats_all_win_rate'], row['stats_all_top3_rate'] = _calc_rates(all_f, all_s, all_t, all_o)
+    
+    venue_f, venue_s, venue_t, venue_o = _parse_stat_record(stats_data.get('venue_record', ''))
+    row['stats_venue_win_rate'], row['stats_venue_top3_rate'] = _calc_rates(venue_f, venue_s, venue_t, venue_o)
+    
+    dist_f, dist_s, dist_t, dist_o = _parse_stat_record(stats_data.get('dist_record', ''))
+    row['stats_dist_win_rate'], row['stats_dist_top3_rate'] = _calc_rates(dist_f, dist_s, dist_t, dist_o)
+
+    course_f, course_s, course_t, course_o = _parse_stat_record(stats_data.get('course_record', ''))
+    row['stats_course_win_rate'], row['stats_course_top3_rate'] = _calc_rates(course_f, course_s, course_t, course_o)
 
     # Furlong time parsing (if available)
     furlong_str = race_info.get('race_furlong_time', '')
